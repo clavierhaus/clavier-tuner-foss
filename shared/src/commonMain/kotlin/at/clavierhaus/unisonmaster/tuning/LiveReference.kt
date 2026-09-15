@@ -3,6 +3,7 @@ package at.clavierhaus.unisonmaster.tuning
 import at.clavierhaus.unisonmaster.dsp.PreciseF0
 import at.clavierhaus.unisonmaster.dsp.Yin
 import kotlin.math.ceil
+import kotlin.math.ln
 import kotlin.math.log10
 import kotlin.math.sqrt
 
@@ -22,7 +23,8 @@ import kotlin.math.sqrt
  *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
  *    microphone distance, and the bell sinks as the note decays.
  *  - When the tone dies, the last value is held; [level] falls to zero.
- *  - Each reading also measures partials 1..12 ([partials]); a partial that
+ *  - Each reading also measures partials 1..12 ([partials]), located by the
+ *    spectrum peak and then read by phase, like the fundamental; a partial that
  *    stands [AUDIBLE_SNR_DB] above the noise floor at any time during the
  *    current strike is [audible] until the next strike.
  *  - Per strike, every partial's position, peak level and sustain are
@@ -161,8 +163,15 @@ class LiveReference(
         val f1 = median(estimates)
         hz = f1
 
-        val readings = tracker.analyse(ring, f1)
-        val heard = readings.filter { it.snrDb >= AUDIBLE_SNR_DB }
+        val heard = tracker.analyse(ring, f1)
+            .filter { it.snrDb >= AUDIBLE_SNR_DB }
+            .map { r ->
+                // the peak locates the partial; the phase reads it to millihertz
+                if (r.k == 1) r.copy(hz = f1, cents = 0.0) else {
+                    val hz = PreciseF0.refine(ring, sr, r.hz, hopSize)
+                    r.copy(hz = hz, cents = 1200.0 * ln(hz / (r.k * f1)) / ln(2.0))
+                }
+            }
         for (r in heard) if (r.db > partialPeakDb) partialPeakDb = r.db
         audible = audible + heard.map { it.k }
         partials = heard.map { r ->

@@ -283,4 +283,70 @@ class TuningSessionTest {
         tuning.toggleTuningView()
         assertTrue(!tuning.readoutView.value)
     }
+
+    @Test
+    fun partialsAreReadToMillihertz() {
+        val b = 4.0e-4
+        val f1 = TuningSession.targetF1(68, 440.0)
+        val live = LiveReference(SR)
+        val signal = FloatArray(HOP * 2) + stiffStrike(f0For(f1, b), b, 8, 3.0)
+        var pos = 0
+        val buf = FloatArray(HOP)
+        while (pos + HOP <= signal.size) { signal.copyInto(buf, 0, pos, pos + HOP); live.push(buf); pos += HOP }
+        val f0 = f0For(f1, b)
+        for (k in listOf(2, 5, 8)) {
+            val truth = k * f0 * sqrt(1 + b * k * k)
+            val read = live.partials.first { it.k == k }.hz
+            assertTrue(abs(read - truth) < 0.01, "partial $k read $read, truth $truth")
+        }
+    }
+
+    @Test
+    fun targetsComeFromTheStringItself() {
+        // A4 has B = 4.0e-4; the G#4 string is 15 % stiffer. With its fundamental
+        // exactly on target every partial must match, whatever A4 predicted.
+        val g4 = TuningSession.targetF1(68, 440.0)
+        val tuning = TuningController(
+            QueueSource(
+                listOf(
+                    FloatArray(HOP * 2) + stiffStrike(f0For(440.0, 4.0e-4), 4.0e-4, 10, 3.0),
+                    FloatArray(HOP * 2) + stiffStrike(f0For(g4, 4.6e-4), 4.6e-4, 10, 3.0),
+                ),
+            ),
+        )
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        val predicted5 = tuning.targets.value.first { it.k == 5 }.hz
+        tuning.startLive()
+        val target5 = tuning.targets.value.first { it.k == 5 }.hz
+        val live5 = tuning.livePartials.value.first { it.k == 5 }.hz
+        assertTrue(abs(predicted5 - live5) > 0.5, "the neighbour's prediction is off by ${live5 - predicted5} Hz")
+        assertTrue(TuningSession.matched(live5, target5), "own target $target5, live $live5")
+        for (k in 2..8) {
+            val tk = tuning.targets.value.first { it.k == k }.hz
+            val lk = tuning.livePartials.value.first { it.k == k }.hz
+            assertTrue(TuningSession.matched(lk, tk), "partial $k: target $tk, live $lk")
+        }
+    }
+
+    @Test
+    fun aPartialMagnifiesTheFundamentalsError() {
+        val g4 = TuningSession.targetF1(68, 440.0)
+        val delta = -0.05
+        val tuning = TuningController(
+            QueueSource(
+                listOf(
+                    FloatArray(HOP * 2) + stiffStrike(f0For(440.0, 4.0e-4), 4.0e-4, 10, 3.0),
+                    FloatArray(HOP * 2) + stiffStrike(f0For(g4 + delta, 4.3e-4), 4.3e-4, 10, 3.0),
+                ),
+            ),
+        )
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        tuning.startLive()
+        assertTrue(TuningSession.matched(tuning.liveHz.value, g4), "fundamental within the window")
+        val target5 = tuning.targets.value.first { it.k == 5 }.hz
+        val live5 = tuning.livePartials.value.first { it.k == 5 }.hz
+        val gap = live5 - target5
+        assertTrue(abs(gap - 5 * delta) < 0.03, "partial 5 gap $gap Hz, expected ${5 * delta}")
+        assertTrue(!TuningSession.matched(live5, target5), "partial 5 exposes the 0.05 Hz error")
+    }
 }

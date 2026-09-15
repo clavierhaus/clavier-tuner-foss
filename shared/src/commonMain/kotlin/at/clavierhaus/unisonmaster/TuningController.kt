@@ -6,6 +6,7 @@ import at.clavierhaus.unisonmaster.dsp.Yin
 import kotlin.math.abs
 import kotlin.math.pow
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
+import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.LiveReference
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
@@ -113,7 +114,7 @@ class TuningController(
         _hiddenPartials.value = emptySet()
         val t = _tuning.value ?: return
         _shownPartials.value = if (_fullSpectrum.value) {
-            t.predicted.map { it.k }.toSet() + _liveAudible.value + 1
+            _targets.value.map { it.k }.toSet() + _liveAudible.value + 1
         } else setOf(1)
         _activePartial.value = 1
     }
@@ -132,7 +133,7 @@ class TuningController(
             k == 1 -> _activePartial.value = 1
             // a new partial is added and becomes the one being tuned
             k !in shown -> {
-                val available = t.predicted.map { it.k }.toSet() + _liveAudible.value
+                val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
                 if (k !in available) return
                 _shownPartials.value = shown + k
                 _activePartial.value = k
@@ -196,6 +197,22 @@ class TuningController(
 
     private val _liveSummary = MutableStateFlow<NoteMeasurement?>(null)
 
+    private val _targets = MutableStateFlow<List<PredictedPartial>>(emptyList())
+    /**
+     * Target frequencies of the current note's partials. Before the string
+     * has sounded they are predicted from the nearest measured note; from
+     * the first reading on they come from the string itself
+     * ([Inharmonicity.ownTargets]), so they agree with the fundamental's
+     * target by construction. Partials not yet heard keep the prediction.
+     */
+    val targets: StateFlow<List<PredictedPartial>> = _targets.asStateFlow()
+
+    private fun refreshTargets(t: TuningView, own: NoteMeasurement?) {
+        val self = own?.let { Inharmonicity.ownTargets(t.targetHz, it) } ?: emptyList()
+        val heard = self.map { it.k }.toSet()
+        _targets.value = (self + t.predicted.filter { it.k !in heard }).sortedBy { it.k }
+    }
+
     private val _range = MutableStateFlow(380.0 to 500.0)
 
     /** The session's measurements so far (A4 first). */
@@ -220,6 +237,7 @@ class TuningController(
             measured = s.measurements.keys.toSet(),
             complete = complete,
         )
+        refreshTargets(_tuning.value!!, null)
         _shownPartials.value = setOf(1)
         _activePartial.value = 1
         _fullSpectrum.value = false
@@ -276,7 +294,10 @@ class TuningController(
                 _liveLevel.value = follower.level
                 _livePartials.value = follower.partials
                 _liveAudible.value = follower.audible
-                _liveSummary.value = follower.summary(_tuning.value?.midi ?: TuningSession.MIDI_A4)
+                val t = _tuning.value
+                val summary = follower.summary(t?.midi ?: TuningSession.MIDI_A4)
+                _liveSummary.value = summary
+                if (t != null) refreshTargets(t, summary)
             }
             true
         } catch (e: Exception) {

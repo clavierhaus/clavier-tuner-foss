@@ -90,6 +90,19 @@ object Inharmonicity {
         return Fit(b, sqrt(ss / ws), use.size)
     }
 
+    /**
+     * Targets from the string itself. A single string has one free variable,
+     * its tension: once the fundamental is on target, partial k is wherever
+     * this string's own ratio f_k / f1 puts it. The ratio is measured on the
+     * current strike (median over its hops) and needs no model, so the
+     * partial targets and the fundamental target can never disagree, and a
+     * partial shows the fundamental's error magnified k times.
+     */
+    fun ownTargets(targetF1: Double, own: NoteMeasurement): List<PredictedPartial> =
+        own.partials.map { p ->
+            PredictedPartial(p.k, targetF1 * p.k * 2.0.pow(p.cents / 1200.0), p.levelDb, p.sustainS)
+        }
+
     /** Partials of a note tuned to [targetF1] whose string behaves like [basis]. */
     fun predict(targetF1: Double, basis: NoteMeasurement, maxPartials: Int = LiveReference.PARTIALS): List<PredictedPartial> =
         basis.partials.filter { it.k <= maxPartials }.map { p ->

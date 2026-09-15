@@ -58,6 +58,7 @@ fun BasicHub(controller: TuningController) {
     val suggested by controller.suggested.collectAsState()
     val active by controller.activePartial.collectAsState()
     val readout by controller.readoutView.collectAsState()
+    val targets by controller.targets.collectAsState()
 
     val t = tuning
     Box(
@@ -117,7 +118,7 @@ fun BasicHub(controller: TuningController) {
                 sounding = level > 0.0,
                 targetHz = t.targetHz,
                 shown = shownTuning,
-                predicted = t.predicted,
+                predicted = targets,
                 livePartials = partials,
                 readout = readout,
                 active = active,
@@ -132,7 +133,7 @@ fun BasicHub(controller: TuningController) {
                     active = active,
                     targetHz = t.targetHz,
                     liveHz = hz,
-                    predicted = t.predicted,
+                    predicted = targets,
                     livePartials = partials,
                     a4Hz = a4,
                     onSelect = { k -> if (k != active) controller.tapPartial(k) },
@@ -165,7 +166,7 @@ fun BasicHub(controller: TuningController) {
                     a4Hz = a4,
                     baseHz = t.targetHz,
                     shown = shownTuning,
-                    tappable = (t.predicted.map { it.k }.toSet() + audible) - 1,
+                    tappable = (targets.map { it.k }.toSet() + audible) - 1,
                     onTap = { k -> controller.tapPartial(k) },
                     pulse = if (matched) suggested else null,
                     modifier = Modifier.weight(1f),
