@@ -3,16 +3,13 @@ package at.clavierhaus.unisonmaster.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,32 +20,39 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.tuning.LiveReference
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
+import at.clavierhaus.unisonmaster.tuning.TuningSession
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.pow
 
 /** Note name of partial [k] of a note whose first partial is [f1Hz]. */
 fun partialNoteName(k: Int, f1Hz: Double, a4Hz: Double): String =
     Notes.name(Notes.nearestMidi(k * f1Hz, a4Hz))
 
 /**
- * The tuning graph. The white centre line is the target of every shown
- * partial; the axis is fixed, ±4 Hz around the fundamental's target, and
- * labelled at every whole Hz. Light-blue bells are the calculated targets
- * (on the line, height from the neighbour's measured level); orange bells
- * are the live string. A string Δ Hz off shows its partial k about k·Δ Hz
- * from the line — the higher partials are the finer guide.
+ * The tuning graph: pairs of bells on a fixed axis, ±4 Hz around the
+ * fundamental's target, labelled at every whole Hz.
+ *
+ * Each shown partial is one pair of equal, fixed height: the light-blue
+ * target on the white line and the orange live string beside it. Only the
+ * horizontal distance changes; the orange bell stays at full height while
+ * the string sounds. Within ±0.1 Hz of its target a pair turns green.
+ * The fundamental's pair is the tallest; partials the tuner adds sit lower,
+ * in order, so pairs never hide each other. A string Δ Hz off shows its
+ * partial k about k·Δ Hz from the line.
  */
 @Composable
 fun TuningGraph(
     liveHz: Double?,
+    sounding: Boolean,
     targetHz: Double,
-    level: Float,
     shown: Set<Int>,
     predicted: List<PredictedPartial>,
     livePartials: List<LiveReference.LivePartial>,
@@ -58,7 +62,7 @@ fun TuningGraph(
         android.graphics.Paint().apply {
             color = Color(Brand.WHITE_MUTED).toArgb()
             textSize = 26f
-            textAlign = android.graphics.Paint.Align.CENTER
+            textAlign = android.graphics.Paint.Align.RIGHT
             isAntiAlias = true
         }
     }
@@ -77,7 +81,7 @@ fun TuningGraph(
         ) {
             Text(
                 liveHz?.let { formatHz(it) } ?: "— Hz",
-                color = Color(Brand.WHITE),
+                color = if (TuningSession.matched(liveHz, targetHz)) Color(Brand.GO_GREEN) else Color(Brand.WHITE),
                 fontFamily = DejaVuSerif,
                 fontSize = 30.sp,
             )
@@ -96,45 +100,26 @@ fun TuningGraph(
             val w = size.width
             val base = size.height - 36f
             val xc = w / 2f
-            val sigma = w / 80f
-            val half = w / 2f - 5f * sigma
-            val blue = Color(Brand.TARGET_BLUE)
-            val orange = Color(Brand.ORANGE)
+            val sigma = w / 30f
+            val half = w / 2f - 3f * sigma
+            val green = Color(Brand.GO_GREEN)
             val muted = Color(Brand.WHITE_MUTED)
             val native = drawContext.canvas.nativeCanvas
             fun xOf(offsetHz: Double): Float =
                 xc + (offsetHz / HZ_SPAN).coerceIn(-1.0, 1.0).toFloat() * half
 
-            // calculated targets, all on the line
-            for (k in shown.sorted()) {
-                val p = predicted.firstOrNull { it.k == k }
-                val lvl = if (k == 1) 1.0 else ((p?.levelDb ?: continue) / LiveReference.RANGE_DB + 1.0)
-                val peak = base * 0.9f * lvl.coerceIn(0.05, 1.0).toFloat()
-                bellOutline(xc, peak, sigma, base, blue)
+            for ((i, k) in shown.sorted().withIndex()) {
+                val height = base * 0.85f * 0.75f.pow(i)
+                val targetK = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz ?: continue
+                val liveK = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
+                val match = TuningSession.matched(liveK, targetK)
+                bellOutline(xc, height, sigma, base, if (match) green else Color(Brand.TARGET_BLUE))
+                if (sounding && liveK != null) {
+                    bellFilled(xOf(liveK - targetK), height, sigma, base, if (match) green else Color(Brand.ORANGE))
+                }
+                if (shown.size > 1) native.drawText("$k", xc - sigma * 1.3f, base - height + 4f, labelPaint)
             }
 
-            // the live string
-            if (liveHz != null) {
-                if (1 in shown) {
-                    val peak = base * 0.9f * level.coerceIn(0f, 1f)
-                    if (peak > 1f) {
-                        val x = xOf(liveHz - targetHz)
-                        bellFilled(x, peak, sigma, base, orange)
-                        if (shown.size > 1) native.drawText("1", x, base - peak - 8f, labelPaint)
-                    }
-                }
-                for (k in shown.filter { it > 1 }.sorted()) {
-                    val live = livePartials.firstOrNull { it.k == k } ?: continue
-                    val target = predicted.firstOrNull { it.k == k }?.hz ?: continue
-                    val peak = base * 0.9f * live.level.toFloat()
-                    if (peak <= 1f) continue
-                    val x = xOf(live.hz - target)
-                    bellFilled(x, peak, sigma, base, orange)
-                    native.drawText("$k", x, base - peak - 8f, labelPaint)
-                }
-            }
-
-            // fixed axis around the fundamental's target
             val first = ceil(targetHz - HZ_SPAN).toInt()
             val last = floor(targetHz + HZ_SPAN).toInt()
             for (n in first..last) {
@@ -148,50 +133,46 @@ fun TuningGraph(
     }
 }
 
-/** The notes of the session: current in orange, finished ones ticked. */
+/** ◀ note ▶ — one semitone down or up. */
 @Composable
-fun NoteStrip(
-    notes: List<Int>,
-    current: Int,
-    measured: Set<Int>,
-    selectable: (Int) -> Boolean,
-    onSelect: (Int) -> Unit,
+fun NoteStepper(
+    name: String,
+    canDown: Boolean,
+    canUp: Boolean,
+    onDown: () -> Unit,
+    onUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier.horizontalScroll(rememberScrollState()),
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        StepArrow("◀", canDown, onDown)
+        Text(
+            name,
+            color = Color(Brand.WHITE),
+            fontFamily = DejaVuSerif,
+            fontSize = 22.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(64.dp),
+        )
+        StepArrow("▶", canUp, onUp)
+    }
+}
+
+@Composable
+private fun StepArrow(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(40.dp)
+            .background(
+                color = if (enabled) Color(0xFF3A3A3A) else Color(0xFF1C1C1C),
+                shape = RoundedCornerShape(6.dp),
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        for (midi in notes) {
-            val isCurrent = midi == current
-            val done = midi in measured
-            val canTap = selectable(midi) && !isCurrent
-            Box(
-                Modifier
-                    .width(56.dp)
-                    .height(30.dp)
-                    .background(
-                        color = when {
-                            isCurrent -> Color(Brand.ORANGE)
-                            done -> Color(0xFF2A2A2A)
-                            else -> Color(0xFF1C1C1C)
-                        },
-                        shape = RoundedCornerShape(6.dp),
-                    )
-                    .clickable(enabled = canTap) { onSelect(midi) },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    Notes.name(midi) + if (done) " ✓" else "",
-                    color = when {
-                        isCurrent -> Color(Brand.BLACK)
-                        done -> Color(Brand.WHITE)
-                        else -> Color(Brand.WHITE_MUTED)
-                    },
-                    fontFamily = DejaVuSerif,
-                    fontSize = 12.sp,
-                )
-            }
-        }
+        Text(
+            label,
+            color = if (enabled) Color(Brand.WHITE) else Color(Brand.WHITE_MUTED),
+            fontSize = 18.sp,
+        )
     }
 }

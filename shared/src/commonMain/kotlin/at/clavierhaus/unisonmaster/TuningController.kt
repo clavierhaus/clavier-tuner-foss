@@ -30,8 +30,6 @@ class TuningController(
         const val MIN_REFERENCE_HZ = 415.0
         const val MAX_REFERENCE_HZ = 450.0
         const val DEFAULT_REFERENCE_HZ = 440.0
-        /** Done is refused while the string is further than this from its target. */
-        const val DONE_WITHIN_CENTS = 50.0
 
         /** Accept the running median regardless once this many estimates
             have accumulated (~4 s of qualifying tone). */
@@ -162,7 +160,11 @@ class TuningController(
     val shownPartials: StateFlow<Set<Int>> = _shownPartials.asStateFlow()
 
     private val _suggested = MutableStateFlow<Int?>(null)
-    /** The partial to add next for a finer match, once the fundamental is close. */
+    /**
+     * The partial recommended for a finer match, fixed for the whole note:
+     * chosen once, from the neighbour's measurement. The screen offers it
+     * only after the fundamental has matched; it never changes by itself.
+     */
     val suggested: StateFlow<Int?> = _suggested.asStateFlow()
 
     private val _liveSummary = MutableStateFlow<NoteMeasurement?>(null)
@@ -194,16 +196,26 @@ class TuningController(
         _shownPartials.value = setOf(1)
         _fullSpectrum.value = false
         _hiddenPartials.value = emptySet()
-        _suggested.value = null
+        _suggested.value = TuningSession.recommend(s.basisFor(midi)?.partials ?: emptyList())
         _liveSummary.value = null
         val semis = 2.0.pow(3.0 / 12.0)
         _range.value = (target / semis) to (target * semis)
     }
 
+    /** Arrows: one semitone down (-1) or up (+1), within G#4..A3. */
+    fun stepNote(delta: Int) {
+        val s = session ?: return
+        val to = s.stepped(delta)
+        if (to == s.current) return
+        s.select(to)
+        publish(s, complete = s.nextUnmeasured() == null)
+    }
+
+    /** After Done: one semitone down; on A3 the session stays and reports complete. */
     private fun advance(s: TuningSession) {
-        val next = s.nextUnmeasured()
+        val next = s.below()
         if (next != null) s.select(next)
-        publish(s, complete = next == null)
+        publish(s, complete = next == null || s.nextUnmeasured() == null)
     }
 
     private val _liveLevel = MutableStateFlow(0.0)
@@ -236,17 +248,7 @@ class TuningController(
                 _liveLevel.value = follower.level
                 _livePartials.value = follower.partials
                 _liveAudible.value = follower.audible
-                val t = _tuning.value
-                val summary = follower.summary(t?.midi ?: TuningSession.MIDI_A4)
-                _liveSummary.value = summary
-                if (t != null) {
-                    val close = hz != null &&
-                        abs(TuningSession.centsOff(hz, t.targetHz)) <= TuningSession.SUGGEST_WITHIN_CENTS
-                    val pick = if (close) {
-                        TuningSession.recommend(t.basisPartials, summary?.partials ?: emptyList())
-                    } else null
-                    if (pick != _suggested.value) _suggested.value = pick
-                }
+                _liveSummary.value = follower.summary(_tuning.value?.midi ?: TuningSession.MIDI_A4)
             }
             true
         } catch (e: Exception) {
@@ -269,9 +271,9 @@ class TuningController(
      * string's full measurement is kept as the session's foundation and the
      * session moves to G#4. Returns the reference.
      *
-     * While tuning: the current note's measurement is kept (if the string is
-     * within [DONE_WITHIN_CENTS] of its target) and the session moves to the
-     * next unmeasured note. Returns the note's reading, or null if refused.
+     * While tuning: the current note's measurement is kept (only while its
+     * fundamental matches the target, i.e. shows green) and the session moves
+     * one semitone down. Returns the note's reading, or null if refused.
      */
     fun acceptLive(): Double? {
         val hz = _liveHz.value ?: return null
@@ -286,7 +288,7 @@ class TuningController(
             return _referenceA4Hz.value
         }
         val s = session ?: return null
-        if (abs(TuningSession.centsOff(hz, t.targetHz)) > DONE_WITHIN_CENTS) return null
+        if (!TuningSession.matched(hz, t.targetHz)) return null
         val m = _liveSummary.value ?: return null
         s.record(m.copy(midi = t.midi, timeMs = clock()))
         advance(s)

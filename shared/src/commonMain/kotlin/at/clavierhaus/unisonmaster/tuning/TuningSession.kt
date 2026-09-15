@@ -109,17 +109,21 @@ class TuningSession(val a4Hz: Double) {
         const val MIDI_A3 = 57
         /** A basis note whose fit is worse than this is skipped for prediction. */
         const val MAX_BASIS_RESIDUAL_CENTS = 1.5
-        /** The fundamental must be this close before a partial is suggested. */
-        const val SUGGEST_WITHIN_CENTS = 1.0
         /** A recommended partial stays within 30 dB of the loudest this long. */
         const val MIN_SUSTAIN_S = 2.0
         const val MAX_LEVEL_DOWN_DB = 30.0
+        /** A partial is matched when it is this close to its target, Hz (the display resolution). */
+        const val MATCH_HZ = 0.1
 
         val sequence: List<Int> = (MIDI_A4 downTo MIDI_A3).toList()
 
         fun targetF1(midi: Int, a4Hz: Double): Double = a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0)
 
         fun centsOff(hz: Double, targetHz: Double): Double = 1200.0 * ln(hz / targetHz) / ln(2.0)
+
+        /** Green: the live frequency lies within [MATCH_HZ] of its target. */
+        fun matched(hz: Double?, targetHz: Double?): Boolean =
+            hz != null && targetHz != null && abs(hz - targetHz) <= MATCH_HZ + 1e-9
 
         /**
          * The partial that gives the finest match: the highest one that is both
@@ -151,6 +155,12 @@ class TuningSession(val a4Hz: Double) {
 
     /** Next note down that has no measurement yet, or null when the octave is done. */
     fun nextUnmeasured(): Int? = sequence.firstOrNull { it !in measured }
+
+    /** One semitone down from the current note, or null below A3. */
+    fun below(): Int? = (current - 1).takeIf { it >= MIDI_A3 }
+
+    /** The note [delta] semitones away, kept within G#4..A3 (A4 is the reference). */
+    fun stepped(delta: Int): Int = (current + delta).coerceIn(MIDI_A3, MIDI_A4 - 1)
 
     fun targetF1(midi: Int = current): Double = targetF1(midi, a4Hz)
 

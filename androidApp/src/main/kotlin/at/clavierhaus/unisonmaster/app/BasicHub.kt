@@ -29,19 +29,18 @@ import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
-import at.clavierhaus.unisonmaster.ui.NoteStrip
+import at.clavierhaus.unisonmaster.ui.NoteStepper
 import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
 import at.clavierhaus.unisonmaster.ui.partialNoteName
-import kotlin.math.abs
 
 /**
  * The one main screen. Before A4 is set it is the hub (define A4 on one
- * string); after Done it keeps its layout but tunes the octave A4..A3,
- * single strings, against calculated targets.
+ * string); after Done it keeps its layout but tunes the octave down to A3,
+ * single strings: the fundamental first, to green, then partials by choice.
  */
 @Composable
 fun BasicHub(controller: TuningController) {
@@ -98,60 +97,60 @@ fun BasicHub(controller: TuningController) {
             }
         } else {
             val name = Notes.name(t.midi)
-            val onTarget = hz?.let {
-                abs(TuningSession.centsOff(it, t.targetHz)) <= TuningController.DONE_WITHIN_CENTS
-            } ?: false
-            val hint = if (t.complete) "Octave A3–A4 complete." else "Tune $name, single string, to the blue target."
-            val advice = suggested?.takeIf { it !in shownTuning }?.let { k ->
-                "Add ${partialNoteName(k, t.targetHz, a4)} (partial $k) for a finer match."
+            val matched = TuningSession.matched(hz, t.targetHz)
+            val hint = when {
+                t.complete -> "Octave A3–A4 complete."
+                matched -> "$name matches. Tap Done, or refine with a partial."
+                else -> "Tune $name, single string, until both bells turn green."
             }
+            val advice = if (matched) {
+                suggested?.takeIf { it !in shownTuning }?.let { k ->
+                    "Add ${partialNoteName(k, t.targetHz, a4)} (partial $k) for a finer match."
+                }
+            } else null
             TuningGraph(
                 liveHz = hz,
+                sounding = level > 0.0,
                 targetHz = t.targetHz,
-                level = level.toFloat(),
                 shown = shownTuning,
                 predicted = t.predicted,
                 livePartials = partials,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 124.dp),
+                    .padding(bottom = 80.dp),
             )
             Header(hint, advice)
-            Column(
-                Modifier
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth(),
             ) {
-                NoteStrip(
-                    notes = TuningSession.sequence,
-                    current = t.midi,
-                    measured = t.measured,
-                    selectable = { it != TuningSession.MIDI_A4 },
-                    onSelect = { controller.selectNote(it) },
+                NoteStepper(
+                    name = name,
+                    canDown = t.midi > TuningSession.MIDI_A3,
+                    canUp = t.midi < TuningSession.MIDI_A4 - 1,
+                    onDown = { controller.stepNote(-1) },
+                    onUp = { controller.stepNote(+1) },
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    SpectrumToggle(
-                        fullSpectrum = full,
-                        onClick = { controller.toggleFullSpectrum() },
-                        fundamentalLabel = "Fundamental $name",
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    PartialRow(
-                        a4Hz = a4,
-                        baseHz = t.targetHz,
-                        shown = shownTuning,
-                        tappable = (t.predicted.map { it.k }.toSet() + audible) - 1,
-                        onTap = { k -> controller.tapPartial(k) },
-                        pulse = suggested,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    DoneButton(onClick = { controller.acceptLive() }, enabled = onTarget)
-                }
+                Spacer(Modifier.width(10.dp))
+                SpectrumToggle(
+                    fullSpectrum = full,
+                    onClick = { controller.toggleFullSpectrum() },
+                    fundamentalLabel = "Fundamental $name",
+                )
+                Spacer(Modifier.width(10.dp))
+                PartialRow(
+                    a4Hz = a4,
+                    baseHz = t.targetHz,
+                    shown = shownTuning,
+                    tappable = (t.predicted.map { it.k }.toSet() + audible) - 1,
+                    onTap = { k -> controller.tapPartial(k) },
+                    pulse = if (matched) suggested else null,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(10.dp))
+                DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
             }
         }
     }

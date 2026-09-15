@@ -150,6 +150,8 @@ class TuningSessionTest {
         assertEquals(68, view.midi)
         assertTrue(abs(view.targetHz - g4) < 1e-9)
         assertTrue(view.predicted.size >= 8, "predicted ${view.predicted.map { it.k }}")
+        val fixed = tuning.suggested.value
+        assertNotNull(fixed, "the suggestion comes from A4's measurement")
         val a4m = tuning.measurements().getValue(69)
         assertTrue(abs(a4m.b / b - 1) < 0.1, "A4 B ${a4m.b}")
         assertEquals(1234L, a4m.timeMs)
@@ -157,7 +159,8 @@ class TuningSessionTest {
         tuning.startLive()
         assertTrue(abs(tuning.liveHz.value!! - g4) < 0.05, "G#4 live ${tuning.liveHz.value}")
         val pick = tuning.suggested.value
-        assertNotNull(pick, "a partial should be suggested once G#4 is on target")
+        assertEquals(fixed, pick, "the suggestion does not change while the note sounds")
+        assertNotNull(pick)
         assertTrue(pick >= 6, "suggested $pick")
         assertEquals(setOf(1), tuning.shownPartials.value)
         tuning.tapPartial(pick)
@@ -185,5 +188,63 @@ class TuningSessionTest {
         tuning.startLive()
         assertNull(tuning.acceptLive())
         assertEquals(68, tuning.tuning.value?.midi)
+    }
+
+    @Test
+    fun greenMeansWithinATenthOfAHertz() {
+        assertTrue(TuningSession.matched(415.35, 415.30))
+        assertTrue(TuningSession.matched(415.20, 415.30))
+        assertTrue(!TuningSession.matched(415.41, 415.30))
+        assertTrue(!TuningSession.matched(null, 415.30))
+    }
+
+    @Test
+    fun arrowsStepWithinTheSessionAndDoneGoesDown() {
+        val s = TuningSession(440.0)
+        s.select(68)
+        assertEquals(67, s.stepped(-1))
+        assertEquals(68, s.stepped(+1), "A4 is the reference, not a step target")
+        s.select(57)
+        assertEquals(57, s.stepped(-1))
+        assertNull(s.below())
+        s.select(60)
+        assertEquals(59, s.below())
+    }
+
+    @Test
+    fun doneOnA3CompletesTheOctave() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))
+        for (midi in 68 downTo 57) {
+            signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(midi, 440.0), b), b, 8, 3.0))
+        }
+        val tuning = TuningController(QueueSource(signals))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        for (midi in 68 downTo 57) {
+            assertEquals(midi, tuning.tuning.value?.midi)
+            tuning.startLive()
+            assertNotNull(tuning.acceptLive(), "Done refused on ${Notes.name(midi)} at ${tuning.liveHz.value}")
+            tuning.stopLive()
+        }
+        val end = assertNotNull(tuning.tuning.value)
+        assertTrue(end.complete)
+        assertEquals(57, end.midi)
+        assertEquals((57..69).toSet(), end.measured)
+    }
+
+    @Test
+    fun stepNoteMovesTheTargetAndKeepsTheSuggestionFixed() {
+        val b = 4.0e-4
+        val tuning = TuningController(
+            QueueSource(listOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 10, 3.5))),
+        )
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        tuning.stepNote(-1)
+        assertEquals(67, tuning.tuning.value?.midi)
+        assertTrue(abs(tuning.tuning.value!!.targetHz - TuningSession.targetF1(67, 440.0)) < 1e-9)
+        tuning.stepNote(+1)
+        tuning.stepNote(+1)
+        assertEquals(68, tuning.tuning.value?.midi)
+        assertNotNull(tuning.suggested.value)
     }
 }
