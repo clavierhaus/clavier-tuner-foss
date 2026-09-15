@@ -247,4 +247,40 @@ class TuningSessionTest {
         assertEquals(68, tuning.tuning.value?.midi)
         assertNotNull(tuning.suggested.value)
     }
+
+    @Test
+    fun tapsAddActivateAndRemovePartials() {
+        val b = 4.0e-4
+        val tuning = TuningController(
+            QueueSource(listOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 10, 3.5))),
+        )
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        assertEquals(1, tuning.activePartial.value)
+
+        tuning.tapPartial(5)                       // add -> active
+        assertEquals(setOf(1, 5), tuning.shownPartials.value)
+        assertEquals(5, tuning.activePartial.value)
+        tuning.tapPartial(3)                       // add -> active
+        assertEquals(3, tuning.activePartial.value)
+        tuning.tapPartial(5)                       // shown, not active -> active
+        assertEquals(setOf(1, 3, 5), tuning.shownPartials.value)
+        assertEquals(5, tuning.activePartial.value)
+        tuning.tapPartial(5)                       // active -> removed
+        assertEquals(setOf(1, 3), tuning.shownPartials.value)
+        assertEquals(3, tuning.activePartial.value)
+        tuning.tapPartial(1)                       // fundamental: active, never removed
+        tuning.tapPartial(1)
+        assertEquals(setOf(1, 3), tuning.shownPartials.value)
+        assertEquals(1, tuning.activePartial.value)
+        tuning.tapPartial(12)                      // not predicted, not heard -> ignored
+        assertEquals(setOf(1, 3), tuning.shownPartials.value)
+
+        tuning.stepNote(-1)                        // a new note starts from the fundamental
+        assertEquals(setOf(1), tuning.shownPartials.value)
+        assertEquals(1, tuning.activePartial.value)
+
+        assertTrue(tuning.readoutView.value)
+        tuning.toggleTuningView()
+        assertTrue(!tuning.readoutView.value)
+    }
 }

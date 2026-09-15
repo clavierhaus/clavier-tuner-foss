@@ -113,8 +113,9 @@ class TuningController(
         _hiddenPartials.value = emptySet()
         val t = _tuning.value ?: return
         _shownPartials.value = if (_fullSpectrum.value) {
-            t.predicted.map { it.k }.toSet() + _liveAudible.value
+            t.predicted.map { it.k }.toSet() + _liveAudible.value + 1
         } else setOf(1)
+        _activePartial.value = 1
     }
 
     fun tapPartial(k: Int) {
@@ -125,11 +126,37 @@ class TuningController(
             )
             return
         }
-        if (k == 1) return
-        val available = t.predicted.map { it.k }.toSet() + _liveAudible.value
-        if (k !in available) return
         val shown = _shownPartials.value
-        _shownPartials.value = if (k in shown) shown - k else shown + k
+        when {
+            // the fundamental is always shown; a tap only makes it the active one
+            k == 1 -> _activePartial.value = 1
+            // a new partial is added and becomes the one being tuned
+            k !in shown -> {
+                val available = t.predicted.map { it.k }.toSet() + _liveAudible.value
+                if (k !in available) return
+                _shownPartials.value = shown + k
+                _activePartial.value = k
+            }
+            // a shown partial that is not active becomes active
+            k != _activePartial.value -> _activePartial.value = k
+            // tapping the active partial removes it
+            else -> {
+                _shownPartials.value = shown - k
+                _activePartial.value = (shown - k).maxOrNull() ?: 1
+            }
+        }
+    }
+
+    private val _activePartial = MutableStateFlow(1)
+    /** The partial currently being tuned: the last one added or tapped. */
+    val activePartial: StateFlow<Int> = _activePartial.asStateFlow()
+
+    private val _readoutView = MutableStateFlow(true)
+    /** Tuning screen: true = one target bell and a readout column; false = bell pairs. */
+    val readoutView: StateFlow<Boolean> = _readoutView.asStateFlow()
+
+    fun toggleTuningView() {
+        _readoutView.value = !_readoutView.value
     }
 
     // ---- Tuning session: after A4, the octave down to A3, single strings ----
@@ -194,6 +221,7 @@ class TuningController(
             complete = complete,
         )
         _shownPartials.value = setOf(1)
+        _activePartial.value = 1
         _fullSpectrum.value = false
         _hiddenPartials.value = emptySet()
         _suggested.value = TuningSession.recommend(s.basisFor(midi)?.partials ?: emptyList())

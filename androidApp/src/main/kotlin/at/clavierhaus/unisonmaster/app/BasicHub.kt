@@ -31,10 +31,12 @@ import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.NoteStepper
 import at.clavierhaus.unisonmaster.ui.PartialRow
+import at.clavierhaus.unisonmaster.ui.ReadoutColumn
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
+import at.clavierhaus.unisonmaster.ui.TuningViewToggle
 import at.clavierhaus.unisonmaster.ui.partialNoteName
 
 /**
@@ -54,6 +56,8 @@ fun BasicHub(controller: TuningController) {
     val tuning by controller.tuning.collectAsState()
     val shownTuning by controller.shownPartials.collectAsState()
     val suggested by controller.suggested.collectAsState()
+    val active by controller.activePartial.collectAsState()
+    val readout by controller.readoutView.collectAsState()
 
     val t = tuning
     Box(
@@ -115,11 +119,26 @@ fun BasicHub(controller: TuningController) {
                 shown = shownTuning,
                 predicted = t.predicted,
                 livePartials = partials,
+                readout = readout,
+                active = active,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
             Header(hint, advice)
+            if (readout) {
+                ReadoutColumn(
+                    shown = shownTuning,
+                    active = active,
+                    targetHz = t.targetHz,
+                    liveHz = hz,
+                    predicted = t.predicted,
+                    livePartials = partials,
+                    a4Hz = a4,
+                    onSelect = { k -> if (k != active) controller.tapPartial(k) },
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -139,6 +158,8 @@ fun BasicHub(controller: TuningController) {
                     onClick = { controller.toggleFullSpectrum() },
                     fundamentalLabel = "Fundamental $name",
                 )
+                Spacer(Modifier.width(6.dp))
+                TuningViewToggle(readout = readout, onClick = { controller.toggleTuningView() })
                 Spacer(Modifier.width(10.dp))
                 PartialRow(
                     a4Hz = a4,
