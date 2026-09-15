@@ -4,8 +4,13 @@ import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.dsp.PreciseF0
 import at.clavierhaus.unisonmaster.dsp.Yin
 import kotlin.math.abs
+import kotlin.math.pow
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
 import at.clavierhaus.unisonmaster.tuning.LiveReference
+import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
+import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
+import at.clavierhaus.unisonmaster.tuning.PredictedPartial
+import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,11 +23,15 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class TuningController(
     private val audioSource: AudioSource,
+    /** Wall clock for measurement timestamps, ms. */
+    private val clock: () -> Long = { 0L },
 ) {
     companion object {
         const val MIN_REFERENCE_HZ = 415.0
         const val MAX_REFERENCE_HZ = 450.0
         const val DEFAULT_REFERENCE_HZ = 440.0
+        /** Done is refused while the string is further than this from its target. */
+        const val DONE_WITHIN_CENTS = 50.0
 
         /** Accept the running median regardless once this many estimates
             have accumulated (~4 s of qualifying tone). */
@@ -104,12 +113,97 @@ class TuningController(
     fun toggleFullSpectrum() {
         _fullSpectrum.value = !_fullSpectrum.value
         _hiddenPartials.value = emptySet()
+        val t = _tuning.value ?: return
+        _shownPartials.value = if (_fullSpectrum.value) {
+            t.predicted.map { it.k }.toSet() + _liveAudible.value
+        } else setOf(1)
     }
 
     fun tapPartial(k: Int) {
-        _hiddenPartials.value = at.clavierhaus.unisonmaster.tuning.PartialSelection.tap(
-            k, _fullSpectrum.value, _liveAudible.value, _hiddenPartials.value,
+        val t = _tuning.value
+        if (t == null) {
+            _hiddenPartials.value = at.clavierhaus.unisonmaster.tuning.PartialSelection.tap(
+                k, _fullSpectrum.value, _liveAudible.value, _hiddenPartials.value,
+            )
+            return
+        }
+        if (k == 1) return
+        val available = t.predicted.map { it.k }.toSet() + _liveAudible.value
+        if (k !in available) return
+        val shown = _shownPartials.value
+        _shownPartials.value = if (k in shown) shown - k else shown + k
+    }
+
+    // ---- Tuning session: after A4, the octave down to A3, single strings ----
+
+    /** What the tuning screen shows for the current note. */
+    data class TuningView(
+        val midi: Int,
+        /** Equal-temperament target of the first partial, Hz. */
+        val targetHz: Double,
+        /** Target partials, predicted from the nearest measured note. */
+        val predicted: List<PredictedPartial>,
+        /** The basis note's partials (levels, sustain) for the suggestion. */
+        val basisPartials: List<MeasuredPartial>,
+        /** Notes already measured. */
+        val measured: Set<Int>,
+        /** True once every note of the session is measured. */
+        val complete: Boolean,
+    )
+
+    private var session: TuningSession? = null
+
+    private val _tuning = MutableStateFlow<TuningView?>(null)
+    /** Null while A4 is being defined (hub); set once Done has been tapped on A4. */
+    val tuning: StateFlow<TuningView?> = _tuning.asStateFlow()
+
+    private val _shownPartials = MutableStateFlow(setOf(1))
+    /** Partials displayed on the tuning screen. Partial 1 is always among them. */
+    val shownPartials: StateFlow<Set<Int>> = _shownPartials.asStateFlow()
+
+    private val _suggested = MutableStateFlow<Int?>(null)
+    /** The partial to add next for a finer match, once the fundamental is close. */
+    val suggested: StateFlow<Int?> = _suggested.asStateFlow()
+
+    private val _liveSummary = MutableStateFlow<NoteMeasurement?>(null)
+
+    private val _range = MutableStateFlow(380.0 to 500.0)
+
+    /** The session's measurements so far (A4 first). */
+    fun measurements(): Map<Int, NoteMeasurement> = session?.measurements ?: emptyMap()
+
+    /** Tuning screen: tune [midi] next (any note of the session except A4). */
+    fun selectNote(midi: Int) {
+        val s = session ?: return
+        if (midi == TuningSession.MIDI_A4 || midi !in TuningSession.sequence) return
+        s.select(midi)
+        publish(s, complete = s.nextUnmeasured() == null)
+    }
+
+    private fun publish(s: TuningSession, complete: Boolean) {
+        val midi = s.current
+        val target = s.targetF1(midi)
+        _tuning.value = TuningView(
+            midi = midi,
+            targetHz = target,
+            predicted = s.predictedPartials(midi),
+            basisPartials = s.basisFor(midi)?.partials ?: emptyList(),
+            measured = s.measurements.keys.toSet(),
+            complete = complete,
         )
+        _shownPartials.value = setOf(1)
+        _fullSpectrum.value = false
+        _hiddenPartials.value = emptySet()
+        _suggested.value = null
+        _liveSummary.value = null
+        val semis = 2.0.pow(3.0 / 12.0)
+        _range.value = (target / semis) to (target * semis)
+    }
+
+    private fun advance(s: TuningSession) {
+        val next = s.nextUnmeasured()
+        if (next != null) s.select(next)
+        publish(s, complete = next == null)
     }
 
     private val _liveLevel = MutableStateFlow(0.0)
@@ -123,16 +217,36 @@ class TuningController(
     fun startLive(hopSize: Int = 4096): Boolean {
         if (_live.value) return true
         if (_measuring.value) return false
-        val follower = LiveReference(audioSource.sampleRateHz, hopSize = hopSize)
+        var applied = _range.value
+        val follower = LiveReference(
+            audioSource.sampleRateHz, hopSize = hopSize, minHz = applied.first, maxHz = applied.second,
+        )
         _live.value = true
         return try {
             audioSource.start(hopSize) { chunk ->
                 if (!_live.value) return@start
+                val want = _range.value
+                if (want != applied) {
+                    follower.setRange(want.first, want.second)
+                    applied = want
+                }
                 follower.push(chunk)
-                _liveHz.value = follower.hz
+                val hz = follower.hz
+                _liveHz.value = hz
                 _liveLevel.value = follower.level
                 _livePartials.value = follower.partials
                 _liveAudible.value = follower.audible
+                val t = _tuning.value
+                val summary = follower.summary(t?.midi ?: TuningSession.MIDI_A4)
+                _liveSummary.value = summary
+                if (t != null) {
+                    val close = hz != null &&
+                        abs(TuningSession.centsOff(hz, t.targetHz)) <= TuningSession.SUGGEST_WITHIN_CENTS
+                    val pick = if (close) {
+                        TuningSession.recommend(t.basisPartials, summary?.partials ?: emptyList())
+                    } else null
+                    if (pick != _suggested.value) _suggested.value = pick
+                }
             }
             true
         } catch (e: Exception) {
@@ -148,11 +262,35 @@ class TuningController(
         audioSource.stop()
     }
 
-    /** "Done": the live reading, to 0.1 Hz, becomes the A4 reference. Returns it, or null. */
+    /**
+     * "Done".
+     *
+     * On the hub: the live reading, to 0.1 Hz, becomes the A4 reference; the
+     * string's full measurement is kept as the session's foundation and the
+     * session moves to G#4. Returns the reference.
+     *
+     * While tuning: the current note's measurement is kept (if the string is
+     * within [DONE_WITHIN_CENTS] of its target) and the session moves to the
+     * next unmeasured note. Returns the note's reading, or null if refused.
+     */
     fun acceptLive(): Double? {
         val hz = _liveHz.value ?: return null
-        setReference(LiveReference.roundToTenth(hz))
-        return _referenceA4Hz.value
+        val t = _tuning.value
+        if (t == null) {
+            setReference(LiveReference.roundToTenth(hz))
+            val s = TuningSession(_referenceA4Hz.value)
+            val m = _liveSummary.value ?: NoteMeasurement(TuningSession.MIDI_A4, hz, 0.0, 0.0, emptyList())
+            s.record(m.copy(midi = TuningSession.MIDI_A4, timeMs = clock()))
+            session = s
+            advance(s)
+            return _referenceA4Hz.value
+        }
+        val s = session ?: return null
+        if (abs(TuningSession.centsOff(hz, t.targetHz)) > DONE_WITHIN_CENTS) return null
+        val m = _liveSummary.value ?: return null
+        s.record(m.copy(midi = t.midi, timeMs = clock()))
+        advance(s)
+        return hz
     }
 
     /**

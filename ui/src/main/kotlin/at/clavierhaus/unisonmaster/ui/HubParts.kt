@@ -1,5 +1,10 @@
 package at.clavierhaus.unisonmaster.ui
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -99,6 +104,32 @@ fun formatHz(hz: Double): String = String.format(Locale.ROOT, "%.1f Hz", hz)
 
 /** Note name of partial [k] of A4, the handle a tuner thinks in (e.g. 3 -> E6). */
 fun partialNoteName(k: Int, a4Hz: Double): String = Notes.name(Notes.nearestMidi(k * a4Hz, a4Hz))
+
+internal fun DrawScope.bellFilled(xc: Float, peak: Float, sigma: Float, base: Float, color: Color) =
+    bell(xc, peak, sigma, base, color)
+
+/** A calculated bell: outline only, faint fill, so the live bell reads through it. */
+internal fun DrawScope.bellOutline(xc: Float, peak: Float, sigma: Float, base: Float, color: Color) {
+    val path = bellPath(xc, peak, sigma, base)
+    drawPath(path, color.copy(alpha = 0.10f))
+    drawPath(path, color, style = Stroke(width = 2.5f))
+}
+
+private fun DrawScope.bellPath(xc: Float, peak: Float, sigma: Float, base: Float): Path {
+    val x0 = (xc - 4.5f * sigma).coerceAtLeast(0f)
+    val x1 = (xc + 4.5f * sigma).coerceAtMost(size.width)
+    val path = Path()
+    path.moveTo(x0, base)
+    val steps = 90
+    for (i in 0..steps) {
+        val x = x0 + (x1 - x0) * i / steps
+        val d = (x - xc) / sigma
+        path.lineTo(x, base - peak * exp(-0.5f * d * d))
+    }
+    path.lineTo(x1, base)
+    path.close()
+    return path
+}
 
 private fun DrawScope.bell(xc: Float, peak: Float, sigma: Float, base: Float, color: Color) {
     val x0 = (xc - 4.5f * sigma).coerceAtLeast(0f)
@@ -225,7 +256,23 @@ const val HZ_SPAN = 4.0
 
 /** One partial button: note name inside, partial number below. */
 @Composable
-fun PartialButton(k: Int, note: String, on: Boolean, tappable: Boolean, onClick: () -> Unit) {
+fun PartialButton(
+    k: Int,
+    note: String,
+    on: Boolean,
+    tappable: Boolean,
+    onClick: () -> Unit,
+    pulse: Boolean = false,
+) {
+    val glow = if (pulse) {
+        val t = rememberInfiniteTransition(label = "pulse")
+        t.animateFloat(
+            initialValue = 0.25f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+            label = "pulse",
+        ).value
+    } else 1f
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
@@ -234,6 +281,7 @@ fun PartialButton(k: Int, note: String, on: Boolean, tappable: Boolean, onClick:
                 .background(
                     color = when {
                         on -> Color(Brand.ORANGE)
+                        pulse -> Color(Brand.ORANGE).copy(alpha = glow)
                         tappable -> GREY_ON
                         else -> GREY_OFF
                     },
@@ -244,7 +292,7 @@ fun PartialButton(k: Int, note: String, on: Boolean, tappable: Boolean, onClick:
         ) {
             Text(
                 note,
-                color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
+                color = if (on || pulse) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
                 fontFamily = DejaVuSerif,
                 fontSize = 12.sp,
             )
@@ -261,6 +309,8 @@ fun PartialRow(
     tappable: Set<Int>,
     onTap: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    baseHz: Double = a4Hz,
+    pulse: Int? = null,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -269,10 +319,11 @@ fun PartialRow(
         for (k in 1..LiveReference.PARTIALS) {
             PartialButton(
                 k = k,
-                note = partialNoteName(k, a4Hz),
+                note = partialNoteName(k, baseHz, a4Hz),
                 on = k in shown,
                 tappable = k in tappable,
                 onClick = { onTap(k) },
+                pulse = k == pulse && k !in shown,
             )
         }
     }
@@ -280,7 +331,12 @@ fun PartialRow(
 
 /** Orange mode toggle: "Full Spectrum" <-> "Fundamental A4". */
 @Composable
-fun SpectrumToggle(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SpectrumToggle(
+    fullSpectrum: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    fundamentalLabel: String = "Fundamental A4",
+) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -290,7 +346,7 @@ fun SpectrumToggle(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifie
         ),
     ) {
         Text(
-            if (fullSpectrum) "Fundamental A4" else "Full Spectrum",
+            if (fullSpectrum) fundamentalLabel else "Full Spectrum",
             fontFamily = DejaVuSerif,
             fontSize = 16.sp,
             maxLines = 1,

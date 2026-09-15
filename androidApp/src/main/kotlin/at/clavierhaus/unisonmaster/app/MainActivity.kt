@@ -84,7 +84,7 @@ import kotlin.math.roundToInt
 class MainActivity : ComponentActivity() {
 
     private val audioSource by lazy { createAudioSource() }
-    private val controller by lazy { TuningController(audioSource) }
+    private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
     private val monitor by lazy { PartialMonitor(audioSource, controller) }
 
     private val permissionRequest =

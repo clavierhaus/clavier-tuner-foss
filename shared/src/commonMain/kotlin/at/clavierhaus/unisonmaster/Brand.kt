@@ -36,6 +36,9 @@ object Brand {
     /** Confirmation (the "Done" action). Functional, not decorative. */
     const val GO_GREEN: Long = 0xFF32D74B
 
+    /** Calculated targets, and nothing else. Functional, not decorative. */
+    const val TARGET_BLUE: Long = 0xFF8FD0FF
+
     const val ALERT_RED: Long = 0xFFE02020
     const val ALERT_RED_DIM: Long = 0xFF7A1414
 }
