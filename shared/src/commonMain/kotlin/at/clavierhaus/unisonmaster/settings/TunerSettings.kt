@@ -17,7 +17,7 @@ class MemoryStore : KeyValueStore {
 }
 
 /** Octave types a stretch can be built on: which partials of the two notes coincide. */
-enum class OctaveType(val label: String) { O2_1("2:1"), O4_2("4:2"), O6_3("6:3"), O8_4("8:4"), O4_1("4:1") }
+enum class OctaveType(val label: String) { O2_1("2:1"), O4_2("4:2"), O6_3("6:3"), O8_4("8:4"), O10_5("10:5"), O4_1("4:1") }
 
 /**
  * Everything the tuner sets in Settings. Values that determine a target

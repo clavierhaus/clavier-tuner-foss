@@ -1,5 +1,8 @@
 package at.clavierhaus.unisonmaster.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +81,22 @@ fun TuningGraph(
             isAntiAlias = true
         }
     }
+    fun targetOf(k: Int): Double? = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz
+    fun liveOf(k: Int): Double? = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
+
+    // The reading arrives every 85 ms; the bell glides between readings so
+    // the eye follows a movement, not a sequence of jumps. Display only —
+    // the readout column shows the unsmoothed value.
+    val glide = HashMap<Int, Float>()
+    for (k in shown.sorted()) {
+        val tk = targetOf(k)
+        val lk = liveOf(k)
+        key(k) {
+            val target = if (tk != null && lk != null) (lk - tk).toFloat() else 0f
+            glide[k] = animateFloatAsState(target, tween(110, easing = LinearEasing), label = "bell$k").value
+        }
+    }
+
     Canvas(
         modifier.padding(top = 24.dp),
     ) {
@@ -90,8 +110,6 @@ fun TuningGraph(
         val native = drawContext.canvas.nativeCanvas
         fun xOf(offsetHz: Double): Float =
             xc + (offsetHz / HZ_SPAN).coerceIn(-1.0, 1.0).toFloat() * half
-        fun targetOf(k: Int): Double? = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz
-        fun liveOf(k: Int): Double? = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
 
         val height = base * 0.85f
         val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it), matchHz) }
@@ -102,7 +120,7 @@ fun TuningGraph(
             val lk = liveOf(k) ?: continue
             if (!sounding) continue
             val match = TuningSession.matched(lk, tk, matchHz)
-            val x = xOf(lk - tk)
+            val x = xOf((glide[k] ?: (lk - tk).toFloat()).toDouble())
             bellFilled(x, height, sigma, base, if (match) green else Color(Brand.ORANGE))
             if (shown.size > 1) native.drawText("$k", x, base - height - 10f, topLabel)
         }
