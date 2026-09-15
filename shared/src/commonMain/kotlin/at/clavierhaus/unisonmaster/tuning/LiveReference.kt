@@ -23,6 +23,9 @@ import kotlin.math.sqrt
  *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
  *    microphone distance, and the bell sinks as the note decays.
  *  - When the tone dies, the last value is held; [level] falls to zero.
+ *  - Each reading also measures partials 1..16 ([partials]); a partial that
+ *    stands [AUDIBLE_SNR_DB] above the noise floor at any time during the
+ *    current strike is [audible] until the next strike.
  */
 class LiveReference(
     private val sampleRateHz: Int,
@@ -37,6 +40,8 @@ class LiveReference(
         const val RELEASE_RMS = 0.00025  // -72 dBFS: tone considered ended below this
         const val ONSET_RATIO = 2.0      // hop energy jump that counts as a strike
         const val RANGE_DB = 48.0        // bell falls from full height to zero over this
+        const val AUDIBLE_SNR_DB = 12.0  // a partial this far above the noise floor is audible
+        const val PARTIALS = 16
 
         /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
         fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0
@@ -49,6 +54,19 @@ class LiveReference(
     private var settle = -1 // -1: waiting for a strike
     private val estimates = ArrayDeque<Double>()
     private var peakDb = Double.NEGATIVE_INFINITY // loudest hop of the current strike
+    private val tracker = PartialTracker(sampleRateHz, windowSize, PARTIALS)
+    private var partialPeakDb = Double.NEGATIVE_INFINITY // loudest partial of the current strike
+
+    /** One partial as the hub draws it. */
+    data class LivePartial(val k: Int, val cents: Double, val level: Double)
+
+    /** Partials of the current reading; level 0 .. 1 relative to the strike's loudest partial. */
+    var partials: List<LivePartial> = emptyList()
+        private set
+
+    /** Partials that have been audible during the current strike. */
+    var audible: Set<Int> = emptySet()
+        private set
 
     /** Current pitch of the string in Hz, or null before the first reading. */
     var hz: Double? = null
@@ -67,6 +85,9 @@ class LiveReference(
         hz = null
         level = 0.0
         peakDb = Double.NEGATIVE_INFINITY
+        partialPeakDb = Double.NEGATIVE_INFINITY
+        partials = emptyList()
+        audible = emptySet()
     }
 
     fun push(chunk: FloatArray) {
@@ -88,11 +109,18 @@ class LiveReference(
         if (strike) {
             settle = settleHops
             estimates.clear()
+            partials = emptyList()
+            audible = emptySet()
+            partialPeakDb = Double.NEGATIVE_INFINITY
             return
         }
         if (settle == -1) return
         if (settle > 0) { settle--; return }
-        if (rms < RELEASE_RMS) { settle = -1; return }
+        if (rms < RELEASE_RMS) {
+            settle = -1
+            partials = partials.map { it.copy(level = 0.0) }
+            return
+        }
         if (filled < windowSize) return
 
         val sr = sampleRateHz.toDouble()
@@ -104,6 +132,15 @@ class LiveReference(
         while (estimates.size > recent) estimates.removeFirst()
         val sorted = estimates.sorted()
         val n = sorted.size
-        hz = if (n % 2 == 1) sorted[n / 2] else (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+        val f1 = if (n % 2 == 1) sorted[n / 2] else (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+        hz = f1
+
+        val readings = tracker.analyse(ring, f1)
+        val heard = readings.filter { it.snrDb >= AUDIBLE_SNR_DB }
+        for (r in heard) if (r.db > partialPeakDb) partialPeakDb = r.db
+        audible = audible + heard.map { it.k }
+        partials = heard.map { r ->
+            LivePartial(r.k, r.cents, (1.0 + (r.db - partialPeakDb) / RANGE_DB).coerceIn(0.0, 1.0))
+        }
     }
 }

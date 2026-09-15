@@ -85,6 +85,33 @@ class TuningController(
     /** Live pitch of the sounding string; held after the tone dies. */
     val liveHz: StateFlow<Double?> = _liveHz.asStateFlow()
 
+    private val _livePartials = MutableStateFlow<List<LiveReference.LivePartial>>(emptyList())
+    /** Measured partials of the sounding string (hub, Full Spectrum). */
+    val livePartials: StateFlow<List<LiveReference.LivePartial>> = _livePartials.asStateFlow()
+
+    private val _liveAudible = MutableStateFlow<Set<Int>>(emptySet())
+    /** Partials audible during the current strike. */
+    val liveAudible: StateFlow<Set<Int>> = _liveAudible.asStateFlow()
+
+    private val _fullSpectrum = MutableStateFlow(false)
+    /** Hub mode: false = fundamental only, true = all audible partials. */
+    val fullSpectrum: StateFlow<Boolean> = _fullSpectrum.asStateFlow()
+
+    private val _hiddenPartials = MutableStateFlow<Set<Int>>(emptySet())
+    /** Partials the tuner has switched off in Full Spectrum mode. */
+    val hiddenPartials: StateFlow<Set<Int>> = _hiddenPartials.asStateFlow()
+
+    fun toggleFullSpectrum() {
+        _fullSpectrum.value = !_fullSpectrum.value
+        _hiddenPartials.value = emptySet()
+    }
+
+    fun tapPartial(k: Int) {
+        _hiddenPartials.value = at.clavierhaus.unisonmaster.tuning.PartialSelection.tap(
+            k, _fullSpectrum.value, _liveAudible.value, _hiddenPartials.value,
+        )
+    }
+
     private val _liveLevel = MutableStateFlow(0.0)
     /** Live loudness 0 .. 1. */
     val liveLevel: StateFlow<Double> = _liveLevel.asStateFlow()
@@ -104,6 +131,8 @@ class TuningController(
                 follower.push(chunk)
                 _liveHz.value = follower.hz
                 _liveLevel.value = follower.level
+                _livePartials.value = follower.partials
+                _liveAudible.value = follower.audible
             }
             true
         } catch (e: Exception) {
