@@ -161,7 +161,7 @@ class TuningSessionTest {
         val pick = tuning.suggested.value
         assertEquals(fixed, pick, "the suggestion does not change while the note sounds")
         assertNotNull(pick)
-        assertTrue(pick >= 6, "suggested $pick")
+        assertEquals(5, pick, "the highest partial below D#7 for G#4")
         assertEquals(setOf(1), tuning.shownPartials.value)
         tuning.tapPartial(pick)
         assertEquals(setOf(1, pick), tuning.shownPartials.value)
@@ -323,11 +323,12 @@ class TuningSessionTest {
         val live5 = tuning.livePartials.value.first { it.k == 5 }.hz
         assertTrue(abs(predicted5 - live5) > 0.5, "the neighbour's prediction is off by ${live5 - predicted5} Hz")
         assertTrue(TuningSession.matched(live5, target5), "own target $target5, live $live5")
-        for (k in 2..8) {
+        for (k in 2..5) {
             val tk = tuning.targets.value.first { it.k == k }.hz
             val lk = tuning.livePartials.value.first { it.k == k }.hz
             assertTrue(TuningSession.matched(lk, tk), "partial $k: target $tk, live $lk")
         }
+        assertTrue(tuning.targets.value.none { it.k > 5 }, "partials above D#7 are not offered")
     }
 
     @Test

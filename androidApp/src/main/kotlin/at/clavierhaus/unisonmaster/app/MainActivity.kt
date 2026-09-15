@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import at.clavierhaus.unisonmaster.settings.SettingsModel
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -85,6 +86,10 @@ class MainActivity : ComponentActivity() {
 
     private val audioSource by lazy { createAudioSource() }
     private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
+    private val settingsModel by lazy {
+        SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
+    }
+    private var settingsOpen = false
     private val monitor by lazy { PartialMonitor(audioSource, controller) }
 
     private val permissionRequest =
@@ -109,17 +114,36 @@ class MainActivity : ComponentActivity() {
                     onSurface = Color(Brand.WHITE),
                 )
             ) {
-                BasicHub(controller = controller)
+                var showSettings by rememberSaveable { mutableStateOf(false) }
+                val settings by settingsModel.settings.collectAsState()
+                LaunchedEffect(settings) { controller.applySettings(settings) }
+                LaunchedEffect(showSettings) {
+                    // the microphone rests while settings are open: nothing is measured unseen
+                    settingsOpen = showSettings
+                    if (showSettings) controller.stopLive() else if (hasMic()) controller.startLive()
+                }
+                if (showSettings) {
+                    BackHandler { showSettings = false }
+                    TunerSettingsScreen(
+                        controller = controller,
+                        model = settingsModel,
+                        version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
+                        onBack = { showSettings = false },
+                    )
+                } else {
+                    BasicHub(controller = controller, onSettings = { showSettings = true })
+                }
             }
         }
     }
 
+    private fun hasMic(): Boolean = androidx.core.content.ContextCompat.checkSelfPermission(
+        this, Manifest.permission.RECORD_AUDIO,
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
     override fun onResume() {
         super.onResume()
-        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
-            this, Manifest.permission.RECORD_AUDIO,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (granted) controller.startLive()
+        if (hasMic() && !settingsOpen) controller.startLive()
     }
 
     override fun onPause() {

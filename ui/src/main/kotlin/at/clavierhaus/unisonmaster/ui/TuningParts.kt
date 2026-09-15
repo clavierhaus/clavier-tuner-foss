@@ -58,6 +58,7 @@ fun TuningGraph(
     predicted: List<PredictedPartial>,
     livePartials: List<LiveReference.LivePartial>,
     active: Int,
+    matchHz: Double,
     modifier: Modifier = Modifier,
 ) {
     val topLabel = remember {
@@ -93,14 +94,14 @@ fun TuningGraph(
         fun liveOf(k: Int): Double? = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
 
         val height = base * 0.85f
-        val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it)) }
+        val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it), matchHz) }
         bellOutline(xc, height, sigma, base, if (allMatched) green else Color(Brand.TARGET_BLUE))
         val order = shown.sorted().filter { it != active } + listOf(active).filter { it in shown }
         for (k in order) {
             val tk = targetOf(k) ?: continue
             val lk = liveOf(k) ?: continue
             if (!sounding) continue
-            val match = TuningSession.matched(lk, tk)
+            val match = TuningSession.matched(lk, tk, matchHz)
             val x = xOf(lk - tk)
             bellFilled(x, height, sigma, base, if (match) green else Color(Brand.ORANGE))
             if (shown.size > 1) native.drawText("$k", x, base - height - 10f, topLabel)
@@ -134,6 +135,7 @@ fun ReadoutColumn(
     predicted: List<PredictedPartial>,
     livePartials: List<LiveReference.LivePartial>,
     a4Hz: Double,
+    matchHz: Double,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -141,7 +143,7 @@ fun ReadoutColumn(
         for (k in shown.sorted()) {
             val tk = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz ?: continue
             val lk = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
-            val match = TuningSession.matched(lk, tk)
+            val match = TuningSession.matched(lk, tk, matchHz)
             val isActive = k == active
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -116,7 +116,13 @@ object Inharmonicity {
  * on the A4 reference; targets for the partials come from the nearest note
  * already measured, so each Done improves the next prediction.
  */
-class TuningSession(val a4Hz: Double) {
+class TuningSession(a4Hz: Double, lowMidi: Int = MIDI_A3) {
+    /** The A4 reference. Changing it re-targets every note. */
+    var a4Hz: Double = a4Hz
+    /** Lowest note of the session (the temperament octave's foot). */
+    var lowMidi: Int = lowMidi.coerceIn(36, MIDI_A4 - 1)
+    /** The notes of the session, A4 first, downward. */
+    val notes: List<Int> get() = (MIDI_A4 downTo lowMidi).toList()
     companion object {
         const val MIDI_A4 = 69
         const val MIDI_A3 = 57
@@ -134,9 +140,9 @@ class TuningSession(val a4Hz: Double) {
 
         fun centsOff(hz: Double, targetHz: Double): Double = 1200.0 * ln(hz / targetHz) / ln(2.0)
 
-        /** Green: the live frequency lies within [MATCH_HZ] of its target. */
-        fun matched(hz: Double?, targetHz: Double?): Boolean =
-            hz != null && targetHz != null && abs(hz - targetHz) <= MATCH_HZ + 1e-9
+        /** Green: the live frequency lies within [windowHz] of its target. */
+        fun matched(hz: Double?, targetHz: Double?, windowHz: Double = MATCH_HZ): Boolean =
+            hz != null && targetHz != null && abs(hz - targetHz) <= windowHz + 1e-9
 
         /**
          * The partial that gives the finest match: the highest one that is both
@@ -144,10 +150,19 @@ class TuningSession(val a4Hz: Double) {
          * (at least [MIN_SUSTAIN_S]). A detuning Δ shows k times larger in Hz
          * at partial k, so higher is better — if it lasts.
          */
-        fun recommend(vararg sources: List<MeasuredPartial>): Int? =
+        fun recommend(
+            vararg sources: List<MeasuredPartial>,
+            maxLevelDownDb: Double = MAX_LEVEL_DOWN_DB,
+            minSustainS: Double = MIN_SUSTAIN_S,
+            maxK: Int = LiveReference.PARTIALS,
+        ): Int? =
             sources.asList().flatten()
-                .filter { it.k >= 2 && it.levelDb >= -MAX_LEVEL_DOWN_DB && it.sustainS >= MIN_SUSTAIN_S }
+                .filter { it.k in 2..maxK && it.levelDb >= -maxLevelDownDb && it.sustainS >= minSustainS }
                 .maxOfOrNull { it.k }
+
+        /** Highest partial of a note at [f1Hz] that lies at or below [highestPartialHz]. */
+        fun highestUsefulPartial(f1Hz: Double, highestPartialHz: Double): Int =
+            (highestPartialHz / f1Hz).toInt().coerceIn(1, LiveReference.PARTIALS)
     }
 
     private val measured = LinkedHashMap<Int, NoteMeasurement>()
@@ -162,18 +177,18 @@ class TuningSession(val a4Hz: Double) {
     }
 
     fun select(midi: Int) {
-        require(midi in sequence) { "note $midi is outside the session" }
+        require(midi in notes) { "note $midi is outside the session" }
         current = midi
     }
 
     /** Next note down that has no measurement yet, or null when the octave is done. */
-    fun nextUnmeasured(): Int? = sequence.firstOrNull { it !in measured }
+    fun nextUnmeasured(): Int? = notes.firstOrNull { it !in measured }
 
-    /** One semitone down from the current note, or null below A3. */
-    fun below(): Int? = (current - 1).takeIf { it >= MIDI_A3 }
+    /** One semitone down from the current note, or null below the session's foot. */
+    fun below(): Int? = (current - 1).takeIf { it >= lowMidi }
 
-    /** The note [delta] semitones away, kept within G#4..A3 (A4 is the reference). */
-    fun stepped(delta: Int): Int = (current + delta).coerceIn(MIDI_A3, MIDI_A4 - 1)
+    /** The note [delta] semitones away, kept within the session (A4 is the reference). */
+    fun stepped(delta: Int): Int = (current + delta).coerceIn(lowMidi, MIDI_A4 - 1)
 
     fun targetF1(midi: Int = current): Double = targetF1(midi, a4Hz)
 

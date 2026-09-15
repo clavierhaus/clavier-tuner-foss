@@ -316,12 +316,13 @@ fun PartialRow(
     modifier: Modifier = Modifier,
     baseHz: Double = a4Hz,
     pulse: Int? = null,
+    count: Int = LiveReference.PARTIALS,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.horizontalScroll(rememberScrollState()),
     ) {
-        for (k in 1..LiveReference.PARTIALS) {
+        for (k in 1..count.coerceIn(1, LiveReference.PARTIALS)) {
             PartialButton(
                 k = k,
                 note = partialNoteName(k, baseHz, a4Hz),

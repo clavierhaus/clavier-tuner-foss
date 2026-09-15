@@ -12,6 +12,7 @@ import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +83,9 @@ class TuningController(
 
     fun setReference(hz: Double) {
         _referenceA4Hz.value = hz.coerceIn(MIN_REFERENCE_HZ, MAX_REFERENCE_HZ)
+        val s = session ?: return
+        s.a4Hz = _referenceA4Hz.value
+        publish(s, complete = s.nextUnmeasured() == null)
     }
 
     // ---- Live A4: follows one string continuously (hub) ----
@@ -156,6 +160,25 @@ class TuningController(
     val activePartial: StateFlow<Int> = _activePartial.asStateFlow()
 
 
+    // ---- Settings that shape targets and the screen ----
+
+    private val _settings = MutableStateFlow(TunerSettings())
+    /** The settings in force (see [applySettings]). */
+    val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
+
+    /** Called by the app whenever the settings change; re-targets the session if there is one. */
+    fun applySettings(s: TunerSettings) {
+        _settings.value = s
+        val session = session ?: return
+        session.lowMidi = s.temperamentLowMidi
+        if (session.current !in session.notes) session.select(session.notes.last())
+        publish(session, complete = session.nextUnmeasured() == null)
+    }
+
+    /** Highest partial worth offering for the current note (frequency cap from the settings). */
+    fun highestPartial(targetHz: Double): Int =
+        TuningSession.highestUsefulPartial(targetHz, TuningSession.targetF1(_settings.value.highestPartialMidi, _referenceA4Hz.value))
+
     // ---- Tuning session: after A4, the octave down to A3, single strings ----
 
     /** What the tuning screen shows for the current note. */
@@ -206,7 +229,8 @@ class TuningController(
     private fun refreshTargets(t: TuningView, own: NoteMeasurement?) {
         val self = own?.let { Inharmonicity.ownTargets(t.targetHz, it) } ?: emptyList()
         val heard = self.map { it.k }.toSet()
-        _targets.value = (self + t.predicted.filter { it.k !in heard }).sortedBy { it.k }
+        val cap = highestPartial(t.targetHz)
+        _targets.value = (self + t.predicted.filter { it.k !in heard }).filter { it.k <= cap }.sortedBy { it.k }
     }
 
     private val _range = MutableStateFlow(380.0 to 500.0)
@@ -217,7 +241,7 @@ class TuningController(
     /** Tuning screen: tune [midi] next (any note of the session except A4). */
     fun selectNote(midi: Int) {
         val s = session ?: return
-        if (midi == TuningSession.MIDI_A4 || midi !in TuningSession.sequence) return
+        if (midi == TuningSession.MIDI_A4 || midi !in s.notes) return
         s.select(midi)
         publish(s, complete = s.nextUnmeasured() == null)
     }
@@ -238,7 +262,13 @@ class TuningController(
         _activePartial.value = 1
         _fullSpectrum.value = false
         _hiddenPartials.value = emptySet()
-        _suggested.value = TuningSession.recommend(s.basisFor(midi)?.partials ?: emptyList())
+        val cfg = _settings.value
+        _suggested.value = TuningSession.recommend(
+            s.basisFor(midi)?.partials ?: emptyList(),
+            maxLevelDownDb = cfg.suggestLevelDb,
+            minSustainS = cfg.suggestSustainS,
+            maxK = highestPartial(target),
+        )
         _liveSummary.value = null
         val semis = 2.0.pow(3.0 / 12.0)
         _range.value = (target / semis) to (target * semis)
@@ -325,7 +355,7 @@ class TuningController(
         val t = _tuning.value
         if (t == null) {
             setReference(LiveReference.roundToTenth(hz))
-            val s = TuningSession(_referenceA4Hz.value)
+            val s = TuningSession(_referenceA4Hz.value, _settings.value.temperamentLowMidi)
             val m = _liveSummary.value ?: NoteMeasurement(TuningSession.MIDI_A4, hz, 0.0, 0.0, emptyList())
             s.record(m.copy(midi = TuningSession.MIDI_A4, timeMs = clock()))
             session = s
@@ -333,7 +363,7 @@ class TuningController(
             return _referenceA4Hz.value
         }
         val s = session ?: return null
-        if (!TuningSession.matched(hz, t.targetHz)) return null
+        if (!TuningSession.matched(hz, t.targetHz, _settings.value.matchHz)) return null
         val m = _liveSummary.value ?: return null
         s.record(m.copy(midi = t.midi, timeMs = clock()))
         advance(s)

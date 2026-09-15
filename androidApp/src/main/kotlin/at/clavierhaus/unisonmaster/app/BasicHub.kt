@@ -44,7 +44,7 @@ import at.clavierhaus.unisonmaster.ui.partialNoteName
  * single strings: the fundamental first, to green, then partials by choice.
  */
 @Composable
-fun BasicHub(controller: TuningController) {
+fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
     val partials by controller.livePartials.collectAsState()
@@ -57,6 +57,7 @@ fun BasicHub(controller: TuningController) {
     val suggested by controller.suggested.collectAsState()
     val active by controller.activePartial.collectAsState()
     val targets by controller.targets.collectAsState()
+    val cfg by controller.settings.collectAsState()
 
     val t = tuning
     Box(
@@ -79,7 +80,7 @@ fun BasicHub(controller: TuningController) {
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header("Define your A4 here by tuning a single string to the desired pitch.", null) {
+            Header(onSettings, "Define your A4 here by tuning a single string to the desired pitch.", null) {
                 SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
             }
             Row(
@@ -100,7 +101,7 @@ fun BasicHub(controller: TuningController) {
             }
         } else {
             val name = Notes.name(t.midi)
-            val matched = TuningSession.matched(hz, t.targetHz)
+            val matched = TuningSession.matched(hz, t.targetHz, cfg.matchHz)
             val hint = when {
                 t.complete -> "Octave A3–A4 complete."
                 matched -> "$name matches. Tap Done, or refine with a partial."
@@ -119,11 +120,12 @@ fun BasicHub(controller: TuningController) {
                 predicted = targets,
                 livePartials = partials,
                 active = active,
+                matchHz = cfg.matchHz,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header(hint, advice) {
+            Header(onSettings, hint, advice) {
                 SpectrumToggle(
                     fullSpectrum = full,
                     onClick = { controller.toggleFullSpectrum() },
@@ -138,6 +140,7 @@ fun BasicHub(controller: TuningController) {
                 predicted = targets,
                 livePartials = partials,
                 a4Hz = a4,
+                matchHz = cfg.matchHz,
                 onSelect = { k -> controller.activatePartial(k) },
                 modifier = Modifier.align(Alignment.TopEnd),
             )
@@ -158,6 +161,7 @@ fun BasicHub(controller: TuningController) {
                 PartialRow(
                     a4Hz = a4,
                     baseHz = t.targetHz,
+                    count = controller.highestPartial(t.targetHz),
                     shown = shownTuning,
                     tappable = (targets.map { it.k }.toSet() + audible) - 1,
                     onTap = { k -> controller.tapPartial(k) },
@@ -177,6 +181,7 @@ fun BasicHub(controller: TuningController) {
  */
 @Composable
 private fun androidx.compose.foundation.layout.BoxScope.Header(
+    onSettings: () -> Unit,
     hint: String,
     advice: String?,
     toggle: @Composable () -> Unit,
@@ -186,7 +191,7 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
             .align(Alignment.TopStart)
             .width(300.dp),
     ) {
-        SettingsGear(onClick = { })
+        SettingsGear(onClick = onSettings)
         Spacer(Modifier.height(10.dp))
         ClavierhausTitle()
         Spacer(Modifier.height(18.dp))
