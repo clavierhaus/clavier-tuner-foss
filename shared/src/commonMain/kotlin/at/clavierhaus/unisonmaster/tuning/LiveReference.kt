@@ -1,0 +1,109 @@
+package at.clavierhaus.unisonmaster.tuning
+
+import at.clavierhaus.unisonmaster.dsp.PreciseF0
+import at.clavierhaus.unisonmaster.dsp.Yin
+import kotlin.math.ceil
+import kotlin.math.log10
+import kotlin.math.sqrt
+
+/**
+ * Live pitch of one sounding string, for setting the A4 reference.
+ *
+ * Unlike the converging measurement in TuningController, this never stops:
+ * it follows the string while the tuner turns the pin.
+ *
+ *  - A strike (hop energy rising by [ONSET_RATIO] above [ONSET_RMS]) clears
+ *    the recent estimates, so a new note is never averaged with the last.
+ *  - After a strike, [settleHops] hops are skipped: the attack, plus enough
+ *    to flush the pre-strike sound out of the analysis window.
+ *  - Each hop: YIN coarse, phase-refined fine estimate. The value shown is
+ *    the median of the last [recent] estimates — steady, yet it follows a
+ *    turning pin within about half a second.
+ *  - [level] is the bell height: loudness relative to the strike's own peak,
+ *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
+ *    microphone distance, and the bell sinks as the note decays.
+ *  - When the tone dies, the last value is held; [level] falls to zero.
+ */
+class LiveReference(
+    private val sampleRateHz: Int,
+    private val windowSize: Int = 16384,
+    private val hopSize: Int = 4096,
+    private val minHz: Double = 380.0,
+    private val maxHz: Double = 500.0,
+    private val recent: Int = 5,
+) {
+    companion object {
+        const val ONSET_RMS = 0.001      // -60 dBFS: the raw phone input is quiet
+        const val RELEASE_RMS = 0.00025  // -72 dBFS: tone considered ended below this
+        const val ONSET_RATIO = 2.0      // hop energy jump that counts as a strike
+        const val RANGE_DB = 48.0        // bell falls from full height to zero over this
+
+        /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
+        fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0
+    }
+
+    private val settleHops = ceil(windowSize.toDouble() / hopSize).toInt() + 1
+    private val ring = FloatArray(windowSize)
+    private var filled = 0
+    private var prevRms = 0.0
+    private var settle = -1 // -1: waiting for a strike
+    private val estimates = ArrayDeque<Double>()
+    private var peakDb = Double.NEGATIVE_INFINITY // loudest hop of the current strike
+
+    /** Current pitch of the string in Hz, or null before the first reading. */
+    var hz: Double? = null
+        private set
+
+    /** Bell height 0 .. 1: loudness relative to the current strike's peak. */
+    var level: Double = 0.0
+        private set
+
+    fun reset() {
+        ring.fill(0f)
+        filled = 0
+        prevRms = 0.0
+        settle = -1
+        estimates.clear()
+        hz = null
+        level = 0.0
+        peakDb = Double.NEGATIVE_INFINITY
+    }
+
+    fun push(chunk: FloatArray) {
+        require(chunk.size == hopSize) { "expected $hopSize samples, got ${chunk.size}" }
+        ring.copyInto(ring, 0, hopSize, windowSize)
+        chunk.copyInto(ring, windowSize - hopSize)
+        if (filled < windowSize) filled += hopSize
+
+        var sq = 0.0
+        for (x in chunk) sq += x.toDouble() * x
+        val rms = sqrt(sq / chunk.size)
+        val db = 20.0 * log10(maxOf(rms, 1e-12))
+
+        val strike = rms > ONSET_RMS && rms > prevRms * ONSET_RATIO
+        prevRms = rms
+        if (strike) peakDb = db else if (db > peakDb) peakDb = db
+        level = if (rms < RELEASE_RMS || peakDb == Double.NEGATIVE_INFINITY) 0.0
+        else (1.0 + (db - peakDb) / RANGE_DB).coerceIn(0.0, 1.0)
+        if (strike) {
+            settle = settleHops
+            estimates.clear()
+            return
+        }
+        if (settle == -1) return
+        if (settle > 0) { settle--; return }
+        if (rms < RELEASE_RMS) { settle = -1; return }
+        if (filled < windowSize) return
+
+        val sr = sampleRateHz.toDouble()
+        val coarse = Yin.estimateF0(ring, sr, minHz = minHz, maxHz = maxHz) ?: return
+        val fine = PreciseF0.refine(ring, sr, coarse, hopSize)
+        if (fine < minHz || fine > maxHz) return
+
+        estimates.addLast(fine)
+        while (estimates.size > recent) estimates.removeFirst()
+        val sorted = estimates.sorted()
+        val n = sorted.size
+        hz = if (n % 2 == 1) sorted[n / 2] else (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+    }
+}

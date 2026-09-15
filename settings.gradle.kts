@@ -15,5 +15,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "clavierhaus-unisonmaster"
 
-include(":shared")
+// Core modules come from one list, shared with clavier-tuner-pro.
+apply(from = "core-modules.settings.gradle.kts")
 include(":androidApp")

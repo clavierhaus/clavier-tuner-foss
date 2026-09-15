@@ -88,7 +88,9 @@ class MainActivity : ComponentActivity() {
     private val monitor by lazy { PartialMonitor(audioSource, controller) }
 
     private val permissionRequest =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* read lazily */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) controller.startLive()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,32 +109,22 @@ class MainActivity : ComponentActivity() {
                     onSurface = Color(Brand.WHITE),
                 )
             ) {
-                var screen by rememberSaveable { mutableStateOf("hub") }
-                when (screen) {
-                    "hub" -> HubScreen(
-                        controller = controller,
-                        onStart = { screen = "analysis" },
-                        onScope = { screen = "scope" },
-                    )
-                    "scope" -> {
-                        BackHandler { screen = "hub" }
-                        ScopeScreen(monitor = monitor, controller = controller, onBack = { screen = "hub" })
-                    }
-                    "analysis" -> {
-                        BackHandler { screen = "hub" }
-                        AnalysisScreen(
-                            monitor = monitor,
-                            controller = controller,
-                            onBack = { screen = "hub" },
-                        )
-                    }
-                }
+                BasicHub(controller = controller)
             }
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            this, Manifest.permission.RECORD_AUDIO,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) controller.startLive()
+    }
+
     override fun onPause() {
         super.onPause()
+        controller.stopLive()
         controller.stopMeasuring()
         monitor.stop()
     }

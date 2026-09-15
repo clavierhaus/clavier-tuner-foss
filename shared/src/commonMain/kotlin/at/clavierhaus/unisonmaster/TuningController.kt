@@ -5,6 +5,7 @@ import at.clavierhaus.unisonmaster.dsp.PreciseF0
 import at.clavierhaus.unisonmaster.dsp.Yin
 import kotlin.math.abs
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
+import at.clavierhaus.unisonmaster.tuning.LiveReference
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +74,56 @@ class TuningController(
 
     fun setReference(hz: Double) {
         _referenceA4Hz.value = hz.coerceIn(MIN_REFERENCE_HZ, MAX_REFERENCE_HZ)
+    }
+
+    // ---- Live A4: follows one string continuously (hub) ----
+
+    private val _live = MutableStateFlow(false)
+    val live: StateFlow<Boolean> = _live.asStateFlow()
+
+    private val _liveHz = MutableStateFlow<Double?>(null)
+    /** Live pitch of the sounding string; held after the tone dies. */
+    val liveHz: StateFlow<Double?> = _liveHz.asStateFlow()
+
+    private val _liveLevel = MutableStateFlow(0.0)
+    /** Live loudness 0 .. 1. */
+    val liveLevel: StateFlow<Double> = _liveLevel.asStateFlow()
+
+    /**
+     * Starts following the string. Returns false if the input could not be
+     * opened (e.g. microphone permission not yet granted); safe to call again.
+     */
+    fun startLive(hopSize: Int = 4096): Boolean {
+        if (_live.value) return true
+        if (_measuring.value) return false
+        val follower = LiveReference(audioSource.sampleRateHz, hopSize = hopSize)
+        _live.value = true
+        return try {
+            audioSource.start(hopSize) { chunk ->
+                if (!_live.value) return@start
+                follower.push(chunk)
+                _liveHz.value = follower.hz
+                _liveLevel.value = follower.level
+            }
+            true
+        } catch (e: Exception) {
+            _live.value = false
+            false
+        }
+    }
+
+    fun stopLive() {
+        if (!_live.value) return
+        _live.value = false
+        _liveLevel.value = 0.0
+        audioSource.stop()
+    }
+
+    /** "Done": the live reading, to 0.1 Hz, becomes the A4 reference. Returns it, or null. */
+    fun acceptLive(): Double? {
+        val hz = _liveHz.value ?: return null
+        setReference(LiveReference.roundToTenth(hz))
+        return _referenceA4Hz.value
     }
 
     /**

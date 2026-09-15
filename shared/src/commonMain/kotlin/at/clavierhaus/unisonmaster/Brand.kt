@@ -33,6 +33,9 @@ object Brand {
     const val STRING_CENTRE: Long = 0xFFFF9630 // CI orange
     const val STRING_RIGHT: Long = 0xFF3B9EFF  // blue
 
+    /** Confirmation (the "Done" action). Functional, not decorative. */
+    const val GO_GREEN: Long = 0xFF32D74B
+
     const val ALERT_RED: Long = 0xFFE02020
     const val ALERT_RED_DIM: Long = 0xFF7A1414
 }
