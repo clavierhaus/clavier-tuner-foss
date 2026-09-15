@@ -31,7 +31,7 @@ data class PartialReading(
 class PartialTracker(
     private val sampleRateHz: Int,
     private val windowSize: Int = 16384,
-    private val maxPartials: Int = 16,
+    private val maxPartials: Int = 12,
 ) {
     companion object {
         const val SEARCH_SPAN = 0.35     // of f1, either side of the prediction

@@ -23,7 +23,7 @@ import kotlin.math.sqrt
  *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
  *    microphone distance, and the bell sinks as the note decays.
  *  - When the tone dies, the last value is held; [level] falls to zero.
- *  - Each reading also measures partials 1..16 ([partials]); a partial that
+ *  - Each reading also measures partials 1..12 ([partials]); a partial that
  *    stands [AUDIBLE_SNR_DB] above the noise floor at any time during the
  *    current strike is [audible] until the next strike.
  */
@@ -41,7 +41,7 @@ class LiveReference(
         const val ONSET_RATIO = 2.0      // hop energy jump that counts as a strike
         const val RANGE_DB = 48.0        // bell falls from full height to zero over this
         const val AUDIBLE_SNR_DB = 12.0  // a partial this far above the noise floor is audible
-        const val PARTIALS = 16
+        const val PARTIALS = 12
 
         /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
         fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0

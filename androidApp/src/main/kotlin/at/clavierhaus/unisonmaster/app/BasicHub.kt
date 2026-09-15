@@ -50,6 +50,7 @@ fun BasicHub(controller: TuningController) {
     ) {
         ToneGraph(
             hz = hz,
+            centreHz = hz ?: a4,
             level = level.toFloat(),
             fullSpectrum = full,
             partials = partials,

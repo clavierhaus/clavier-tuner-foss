@@ -44,7 +44,9 @@ import at.clavierhaus.unisonmaster.tuning.LiveReference
 import at.clavierhaus.unisonmaster.tuning.Notes
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.exp
+import kotlin.math.floor
 
 /** DejaVu Serif, bundled: the typeface of the clavierhaus title. */
 val DejaVuSerif = FontFamily(Font(R.font.dejavu_serif))
@@ -116,15 +118,21 @@ private fun DrawScope.bell(xc: Float, peak: Float, sigma: Float, base: Float, co
 }
 
 /**
- * The hub graph. The white centre line is the target and the frequency above
- * it the only moving number. Fundamental mode: one bell, apex on the line.
+ * The hub graph. The white centre line is the target and carries the live
+ * frequency above it; a horizontal axis at the foot gives the scale.
+ *
+ * Fundamental mode: one bell, apex always on the line. The axis moves with
+ * the reading: the centre is [centreHz], with a labelled tick at every whole
+ * Hz within ±4 Hz, so the ticks slide under the line as the pin turns.
+ *
  * Full Spectrum: one bell per shown partial, placed by its inharmonic
  * deviation in cents from k × f1 (±100 ct, wider if a partial needs it),
- * numbered above its apex.
+ * numbered above its apex; the axis is then in cents.
  */
 @Composable
 fun ToneGraph(
     hz: Double?,
+    centreHz: Double,
     level: Float,
     fullSpectrum: Boolean,
     partials: List<LiveReference.LivePartial>,
@@ -139,11 +147,11 @@ fun ToneGraph(
             isAntiAlias = true
         }
     }
-    val scalePaint = remember {
+    val axisPaint = remember {
         android.graphics.Paint().apply {
             color = Color(Brand.WHITE_MUTED).toArgb()
             textSize = 24f
-            textAlign = android.graphics.Paint.Align.RIGHT
+            textAlign = android.graphics.Paint.Align.CENTER
             isAntiAlias = true
         }
     }
@@ -161,39 +169,59 @@ fun ToneGraph(
                 .padding(top = 48.dp),
         ) {
             val w = size.width
-            val h = size.height
+            val base = size.height - 36f          // the horizontal axis
             val xc = w / 2f
             val sigma = w / 80f
+            val half = w / 2f - 5f * sigma
             val orange = Color(Brand.ORANGE)
+            val muted = Color(Brand.WHITE_MUTED)
+            val native = drawContext.canvas.nativeCanvas
+
             if (!fullSpectrum) {
-                val peak = h * 0.9f * level.coerceIn(0f, 1f)
-                if (peak > 1f) bell(xc, peak, sigma, h, orange)
+                val peak = base * 0.9f * level.coerceIn(0f, 1f)
+                if (peak > 1f) bell(xc, peak, sigma, base, orange)
+                val first = ceil(centreHz - HZ_SPAN).toInt()
+                val last = floor(centreHz + HZ_SPAN).toInt()
+                for (n in first..last) {
+                    val x = xc + ((n - centreHz) / HZ_SPAN).toFloat() * half
+                    drawLine(muted, Offset(x, base), Offset(x, base + 10f), strokeWidth = 1.5f)
+                    native.drawText("$n", x, base + 34f, axisPaint)
+                }
             } else {
                 val visible = partials.filter { it.k in shown }
                 val widest = visible.maxOfOrNull { abs(it.cents) } ?: 0.0
                 val range = maxOf(100.0, widest * 1.15)
-                val half = w / 2f - 5f * sigma
                 for (p in visible) {
                     val x = xc + (p.cents / range).toFloat() * half
-                    val peak = h * 0.9f * p.level.toFloat()
+                    val peak = base * 0.9f * p.level.toFloat()
                     if (peak > 1f) {
-                        bell(x, peak, sigma, h, orange)
-                        drawContext.canvas.nativeCanvas.drawText("${p.k}", x, h - peak - 8f, labelPaint)
+                        bell(x, peak, sigma, base, orange)
+                        native.drawText("${p.k}", x, base - peak - 8f, labelPaint)
                     }
                 }
-                drawContext.canvas.nativeCanvas.drawText(
-                    "±${range.toInt()} ct", w, h - 6f, scalePaint,
-                )
+                val tick = if (range <= 150.0) 50 else 100
+                val lim = (floor(range / tick) * tick).toInt()
+                for (c in -lim..lim step tick) {
+                    val x = xc + (c / range).toFloat() * half
+                    drawLine(muted, Offset(x, base), Offset(x, base + 10f), strokeWidth = 1.5f)
+                    val label = if (c == 0) "0 ct" else if (c > 0) "+$c" else "$c"
+                    native.drawText(label, x, base + 34f, axisPaint)
+                }
             }
+
+            drawLine(muted, Offset(0f, base), Offset(w, base), strokeWidth = 1f)
             drawLine(
                 color = Color(Brand.WHITE),
                 start = Offset(xc, 0f),
-                end = Offset(xc, h),
+                end = Offset(xc, base),
                 strokeWidth = 1.5f,
             )
         }
     }
 }
+
+/** Half-width of the fundamental axis: ±4 Hz around the reading. */
+const val HZ_SPAN = 4.0
 
 /** One partial button: note name inside, partial number below. */
 @Composable
@@ -225,7 +253,7 @@ fun PartialButton(k: Int, note: String, on: Boolean, tappable: Boolean, onClick:
     }
 }
 
-/** Partials 1..16 of A4. [shown] are orange; only [tappable] ones react. */
+/** Partials 1..12 of A4. [shown] are orange; only [tappable] ones react. */
 @Composable
 fun PartialRow(
     a4Hz: Double,
