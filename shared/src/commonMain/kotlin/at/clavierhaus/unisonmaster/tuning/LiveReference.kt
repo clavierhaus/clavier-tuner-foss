@@ -72,7 +72,12 @@ class LiveReference(
     /** One partial as the hub draws it. */
     data class LivePartial(val k: Int, val hz: Double, val cents: Double, val level: Double)
 
-    /** Partials of the current reading; level 0 .. 1 relative to the strike's loudest partial. */
+    /**
+     * Partials of the current strike; level 0 .. 1 relative to the strike's
+     * loudest partial. A partial that has decayed below audibility keeps its
+     * last reading at level 0 until the next strike, as the fundamental does
+     * after the tone dies — the readout never goes blank mid-note.
+     */
     var partials: List<LivePartial> = emptyList()
         private set
 
@@ -174,9 +179,12 @@ class LiveReference(
             }
         for (r in heard) if (r.db > partialPeakDb) partialPeakDb = r.db
         audible = audible + heard.map { it.k }
-        partials = heard.map { r ->
+        val fresh = heard.map { r ->
             LivePartial(r.k, r.hz, r.cents, (1.0 + (r.db - partialPeakDb) / RANGE_DB).coerceIn(0.0, 1.0))
         }
+        val freshKs = fresh.map { it.k }.toSet()
+        val held = partials.filter { it.k !in freshKs }.map { it.copy(level = 0.0) }
+        partials = (fresh + held).sortedBy { it.k }
         for (r in heard) {
             centsSeen.getOrPut(r.k) { mutableListOf() }.add(r.cents)
             if (r.db > (peakSeen[r.k] ?: Double.NEGATIVE_INFINITY)) peakSeen[r.k] = r.db

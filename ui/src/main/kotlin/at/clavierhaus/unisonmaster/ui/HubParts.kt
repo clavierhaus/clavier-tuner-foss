@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -281,18 +282,22 @@ fun PartialButton(
                 .background(
                     color = when {
                         on -> Color(Brand.ORANGE)
-                        pulse -> Color(Brand.ORANGE).copy(alpha = glow)
                         tappable -> GREY_ON
                         else -> GREY_OFF
                     },
                     shape = RoundedCornerShape(6.dp),
+                )
+                // the suggestion breathes as an orange ring; only a selected partial is solid
+                .then(
+                    if (pulse) Modifier.border(2.dp, Color(Brand.ORANGE).copy(alpha = glow), RoundedCornerShape(6.dp))
+                    else Modifier,
                 )
                 .clickable(enabled = tappable, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 note,
-                color = if (on || pulse) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
+                color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
                 fontFamily = DejaVuSerif,
                 fontSize = 12.sp,
             )

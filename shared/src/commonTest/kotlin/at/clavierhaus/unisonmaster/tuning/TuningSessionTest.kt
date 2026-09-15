@@ -262,16 +262,22 @@ class TuningSessionTest {
         assertEquals(5, tuning.activePartial.value)
         tuning.tapPartial(3)                       // add -> active
         assertEquals(3, tuning.activePartial.value)
-        tuning.tapPartial(5)                       // shown, not active -> active
+        tuning.activatePartial(5)                  // readout line: active, nothing removed
         assertEquals(setOf(1, 3, 5), tuning.shownPartials.value)
         assertEquals(5, tuning.activePartial.value)
-        tuning.tapPartial(5)                       // active -> removed
+        tuning.tapPartial(5)                       // one tap removes, whether active or not
         assertEquals(setOf(1, 3), tuning.shownPartials.value)
         assertEquals(3, tuning.activePartial.value)
         tuning.tapPartial(1)                       // fundamental: active, never removed
         tuning.tapPartial(1)
         assertEquals(setOf(1, 3), tuning.shownPartials.value)
         assertEquals(1, tuning.activePartial.value)
+        tuning.tapPartial(3)                       // not active, still one tap to remove
+        assertEquals(setOf(1), tuning.shownPartials.value)
+        tuning.tapPartial(3)
+        assertEquals(setOf(1, 3), tuning.shownPartials.value)
+        tuning.activatePartial(7)                  // not shown -> ignored
+        assertEquals(3, tuning.activePartial.value)
         tuning.tapPartial(12)                      // not predicted, not heard -> ignored
         assertEquals(setOf(1, 3), tuning.shownPartials.value)
 
@@ -344,5 +350,32 @@ class TuningSessionTest {
         val gap = live5 - target5
         assertTrue(abs(gap - 5 * delta) < 0.03, "partial 5 gap $gap Hz, expected ${5 * delta}")
         assertTrue(!TuningSession.matched(live5, target5), "partial 5 exposes the 0.05 Hz error")
+    }
+
+    @Test
+    fun aDecayedPartialKeepsItsLastReading() {
+        val b = 4.0e-4
+        val live = LiveReference(SR)
+        // partial 6 decays fast (tau 0.25 s) and is inaudible long before the note ends
+        val f0 = f0For(440.0, b)
+        val n = SR * 3
+        val signal = FloatArray(HOP * 2) + FloatArray(n) { i ->
+            val t = i.toDouble() / SR
+            var v = 0.0
+            for (k in 1..4) v += 0.2 / k * sin(2 * PI * k * f0 * sqrt(1 + b * k * k) * t)
+            v += 0.1 * exp(-t / 0.25) * sin(2 * PI * 6 * f0 * sqrt(1 + b * 36) * t)
+            (v * exp(-t / 4.0)).toFloat()
+        }
+        var pos = 0
+        val buf = FloatArray(HOP)
+        var seenAtOneSecond: Double? = null
+        while (pos + HOP <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + HOP); live.push(buf); pos += HOP
+            if (pos == HOP * 2 + SR && seenAtOneSecond == null) seenAtOneSecond = live.partials.firstOrNull { it.k == 6 }?.hz
+        }
+        val p6 = live.partials.firstOrNull { it.k == 6 }
+        assertNotNull(p6, "partial 6 stays in the list after it decayed")
+        assertEquals(0.0, p6.level)
+        assertTrue(abs(p6.hz - 6 * f0 * sqrt(1 + b * 36)) < 0.05, "held ${p6.hz}")
     }
 }

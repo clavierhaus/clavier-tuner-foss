@@ -129,23 +129,26 @@ class TuningController(
         }
         val shown = _shownPartials.value
         when {
-            // the fundamental is always shown; a tap only makes it the active one
+            // the fundamental is always shown; a tap on it only makes it active
             k == 1 -> _activePartial.value = 1
-            // a new partial is added and becomes the one being tuned
+            // one tap adds a partial and makes it the one being tuned ...
             k !in shown -> {
                 val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
                 if (k !in available) return
                 _shownPartials.value = shown + k
                 _activePartial.value = k
             }
-            // a shown partial that is not active becomes active
-            k != _activePartial.value -> _activePartial.value = k
-            // tapping the active partial removes it
+            // ... and one tap removes it again
             else -> {
                 _shownPartials.value = shown - k
-                _activePartial.value = (shown - k).maxOrNull() ?: 1
+                if (_activePartial.value == k) _activePartial.value = (shown - k).maxOrNull() ?: 1
             }
         }
+    }
+
+    /** Readout column: the tapped line's partial becomes the active one. */
+    fun activatePartial(k: Int) {
+        if (k in _shownPartials.value) _activePartial.value = k
     }
 
     private val _activePartial = MutableStateFlow(1)

@@ -138,7 +138,7 @@ fun BasicHub(controller: TuningController) {
                 predicted = targets,
                 livePartials = partials,
                 a4Hz = a4,
-                onSelect = { k -> if (k != active) controller.tapPartial(k) },
+                onSelect = { k -> controller.activatePartial(k) },
                 modifier = Modifier.align(Alignment.TopEnd),
             )
             Row(
