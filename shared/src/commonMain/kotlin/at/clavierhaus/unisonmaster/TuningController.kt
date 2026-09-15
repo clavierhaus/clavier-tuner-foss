@@ -152,13 +152,6 @@ class TuningController(
     /** The partial currently being tuned: the last one added or tapped. */
     val activePartial: StateFlow<Int> = _activePartial.asStateFlow()
 
-    private val _readoutView = MutableStateFlow(true)
-    /** Tuning screen: true = one target bell and a readout column; false = bell pairs. */
-    val readoutView: StateFlow<Boolean> = _readoutView.asStateFlow()
-
-    fun toggleTuningView() {
-        _readoutView.value = !_readoutView.value
-    }
 
     // ---- Tuning session: after A4, the octave down to A3, single strings ----
 

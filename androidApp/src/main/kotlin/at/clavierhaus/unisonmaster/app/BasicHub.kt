@@ -36,7 +36,6 @@ import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
-import at.clavierhaus.unisonmaster.ui.TuningViewToggle
 import at.clavierhaus.unisonmaster.ui.partialNoteName
 
 /**
@@ -57,7 +56,6 @@ fun BasicHub(controller: TuningController) {
     val shownTuning by controller.shownPartials.collectAsState()
     val suggested by controller.suggested.collectAsState()
     val active by controller.activePartial.collectAsState()
-    val readout by controller.readoutView.collectAsState()
     val targets by controller.targets.collectAsState()
 
     val t = tuning
@@ -81,15 +79,15 @@ fun BasicHub(controller: TuningController) {
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header("Define your A4 here by tuning a single string to the desired pitch.", null)
+            Header("Define your A4 here by tuning a single string to the desired pitch.", null) {
+                SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth(),
             ) {
-                SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
-                Spacer(Modifier.width(10.dp))
                 PartialRow(
                     a4Hz = a4,
                     shown = shown,
@@ -120,26 +118,29 @@ fun BasicHub(controller: TuningController) {
                 shown = shownTuning,
                 predicted = targets,
                 livePartials = partials,
-                readout = readout,
                 active = active,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header(hint, advice)
-            if (readout) {
-                ReadoutColumn(
-                    shown = shownTuning,
-                    active = active,
-                    targetHz = t.targetHz,
-                    liveHz = hz,
-                    predicted = targets,
-                    livePartials = partials,
-                    a4Hz = a4,
-                    onSelect = { k -> if (k != active) controller.tapPartial(k) },
-                    modifier = Modifier.align(Alignment.TopEnd),
+            Header(hint, advice) {
+                SpectrumToggle(
+                    fullSpectrum = full,
+                    onClick = { controller.toggleFullSpectrum() },
+                    fundamentalLabel = "Fundamental $name",
                 )
             }
+            ReadoutColumn(
+                shown = shownTuning,
+                active = active,
+                targetHz = t.targetHz,
+                liveHz = hz,
+                predicted = targets,
+                livePartials = partials,
+                a4Hz = a4,
+                onSelect = { k -> if (k != active) controller.tapPartial(k) },
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -153,14 +154,6 @@ fun BasicHub(controller: TuningController) {
                     onDown = { controller.stepNote(-1) },
                     onUp = { controller.stepNote(+1) },
                 )
-                Spacer(Modifier.width(10.dp))
-                SpectrumToggle(
-                    fullSpectrum = full,
-                    onClick = { controller.toggleFullSpectrum() },
-                    fundamentalLabel = "Fundamental $name",
-                )
-                Spacer(Modifier.width(6.dp))
-                TuningViewToggle(readout = readout, onClick = { controller.toggleTuningView() })
                 Spacer(Modifier.width(10.dp))
                 PartialRow(
                     a4Hz = a4,
@@ -178,9 +171,16 @@ fun BasicHub(controller: TuningController) {
     }
 }
 
-/** Gear, title, an empty line, the hint — and an orange piece of advice if there is one. */
+/**
+ * Gear, title, an empty line, the hint, an orange piece of advice if there
+ * is one — and, a line below, the mode toggle.
+ */
 @Composable
-private fun androidx.compose.foundation.layout.BoxScope.Header(hint: String, advice: String?) {
+private fun androidx.compose.foundation.layout.BoxScope.Header(
+    hint: String,
+    advice: String?,
+    toggle: @Composable () -> Unit,
+) {
     Column(
         Modifier
             .align(Alignment.TopStart)
@@ -195,5 +195,7 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(hint: String, adv
             Spacer(Modifier.height(8.dp))
             Text(advice, color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 14.sp)
         }
+        Spacer(Modifier.height(18.dp))
+        toggle()
     }
 }

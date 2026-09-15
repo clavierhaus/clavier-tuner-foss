@@ -278,10 +278,6 @@ class TuningSessionTest {
         tuning.stepNote(-1)                        // a new note starts from the fundamental
         assertEquals(setOf(1), tuning.shownPartials.value)
         assertEquals(1, tuning.activePartial.value)
-
-        assertTrue(tuning.readoutView.value)
-        tuning.toggleTuningView()
-        assertTrue(!tuning.readoutView.value)
     }
 
     @Test
