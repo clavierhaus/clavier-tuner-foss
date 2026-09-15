@@ -8,7 +8,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "at.clavierhaus.unisonmaster"
+        applicationId = "at.clavierhaus.claviertuner"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

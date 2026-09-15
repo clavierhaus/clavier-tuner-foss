@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
 
     <application
-        android:label="UnisonMaster"
+        android:label="Clavier Tuner"
         android:icon="@android:drawable/ic_btn_speak_now"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:supportsRtl="true">

@@ -65,5 +65,5 @@ for DEV in $DEVICES; do
 done
 
 echo ""
-echo "Done. Launch 'UnisonMaster' on the phone."
+echo "Done. Launch 'Clavier Tuner' on the phone."
 echo "Grant the microphone permission on first start."

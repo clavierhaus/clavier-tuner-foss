@@ -1280,4 +1280,19 @@ class PartialMonitorTest {
         )
         assertTrue(beat > 10.0, "beat $beat looks like a fundamental figure, not partial $focus")
     }
+
+    @Test
+    fun attachedTapReceivesEveryBuffer() {
+        val sr = 48_000
+        val signal = FloatArray(sr) { i -> (0.3 * sin(2.0 * PI * 440.0 * i / sr)).toFloat() }
+        val tuning = TuningController(FakeAudioSource(sr, FloatArray(0)))
+        val monitor = PartialMonitor(FakeAudioSource(sr, signal), tuning, hopSize = 4096)
+        var samples = 0
+        var buffers = 0
+        monitor.addTap { b -> samples += b.size; buffers++ }
+        assertTrue(monitor.sampleRateHz == sr, "sample rate not exposed")
+        monitor.start()
+        assertTrue(buffers == sr / 4096, "expected ${sr / 4096} buffers, got $buffers")
+        assertTrue(samples == (sr / 4096) * 4096, "expected every sample, got $samples")
+    }
 }

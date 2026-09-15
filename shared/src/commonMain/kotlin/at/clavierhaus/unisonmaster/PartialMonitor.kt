@@ -52,6 +52,19 @@ class PartialMonitor(
 
     val scope = at.clavierhaus.unisonmaster.dsp.Scope(audioSource.sampleRateHz)
 
+    /** Sample rate of the input, for analysers attached through [addTap]. */
+    val sampleRateHz: Int get() = audioSource.sampleRateHz
+
+    // Raw-buffer taps: further analysers receive every input buffer before the
+    // monitor's own processing. The list is replaced, never mutated, so the
+    // audio thread always iterates a stable snapshot.
+    private var taps: List<(FloatArray) -> Unit> = emptyList()
+
+    /** Attach an analyser that receives every raw input buffer. */
+    fun addTap(tap: (FloatArray) -> Unit) {
+        taps = taps + tap
+    }
+
     private val _listening = MutableStateFlow(false)
     val listening: StateFlow<Boolean> = _listening.asStateFlow()
 
@@ -1012,6 +1025,8 @@ class PartialMonitor(
         filled = 0
         audioSource.start(hopSize) { chunk ->
             scope.push(chunk)
+            val attached = taps
+            for (tap in attached) tap(chunk)
             onHop(chunk)
         }
     }

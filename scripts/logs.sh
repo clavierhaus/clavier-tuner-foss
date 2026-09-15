@@ -11,7 +11,7 @@ SDK_DIR="${ANDROID_HOME:-$HOME/android-sdk}"
 ADB="$SDK_DIR/platform-tools/adb"
 command -v adb >/dev/null 2>&1 && ADB="$(command -v adb)"
 
-PID=$("$ADB" shell pidof at.clavierhaus.unisonmaster | tr -d '\r' || true)
+PID=$("$ADB" shell pidof at.clavierhaus.claviertuner | tr -d '\r' || true)
 if [ -n "$PID" ]; then
   exec "$ADB" logcat --pid="$PID"
 else
