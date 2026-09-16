@@ -8,6 +8,7 @@
   Project Authors (https://github.com/googlefonts/allura), SIL Open Font
   License 1.1 — full text in `licenses/Allura-OFL.txt`.
 - `src/main/res/raw/hub_background.jpg`: the concert grand at clavierhaus,
-  photograph © clavierhaus.at (DSC00010, 7008 × 4672). The original, unaltered:
-  never cropped, retouched or re-encoded. The app decodes it at screen
-  resolution and darkens it on screen for legibility.
+  photograph © clavierhaus.at (DSC00010). The original 7008 × 4672 reduced
+  exactly by half to 3504 × 2336 (Lanczos, JPEG quality 95) — nothing else:
+  never cropped or retouched. The app decodes it at screen resolution and
+  darkens it on screen for legibility.
