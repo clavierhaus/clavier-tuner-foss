@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.tuning
 
+import at.clavierhaus.unisonmaster.settings.OctaveType
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.pow
@@ -116,13 +118,46 @@ object Inharmonicity {
  * on the A4 reference; targets for the partials come from the nearest note
  * already measured, so each Done improves the next prediction.
  */
-class TuningSession(a4Hz: Double, lowMidi: Int = MIDI_A3) {
+class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     /** The A4 reference. Changing it re-targets every note. */
     var a4Hz: Double = a4Hz
-    /** Lowest note of the session (the temperament octave's foot). */
-    var lowMidi: Int = lowMidi.coerceIn(36, MIDI_A4 - 1)
+    /** The settings in force: temperament octave, octave types, plain-wire floor. */
+    var settings: TunerSettings = settings
+    /** Lowest note of the session: the lowest plain string. Wound strings are a later chapter. */
+    val lowMidi: Int get() = settings.lowestUnwoundMidi.coerceIn(21, MIDI_A4 - 1)
     /** The notes of the session, A4 first, downward. */
     val notes: List<Int> get() = (MIDI_A4 downTo lowMidi).toList()
+
+    /**
+     * How a note below the temperament octave gets its target: its partial
+     * [type].low must equal [viaHz], the measured partial [type].high of the
+     * already tuned note [refMidi] an octave (or two) above. This is what an
+     * aural tuner listens for; it needs no inharmonicity model, because the
+     * reference partial was measured, not predicted.
+     */
+    data class OctaveLink(val type: OctaveType, val refMidi: Int, val viaHz: Double)
+
+    /** The octave link for [midi], or null inside the temperament octave or without a measured reference. */
+    fun octaveLink(midi: Int = current): OctaveLink? {
+        if (midi >= settings.temperamentLowMidi) return null
+        val type = settings.octaveTypeFor(midi)
+        val ref = measured[midi + type.semitones] ?: return null
+        val p = ref.partials.firstOrNull { it.k == type.high } ?: return null
+        return OctaveLink(type, ref.midi, type.high * ref.f1Hz * 2.0.pow(p.cents / 1200.0))
+    }
+
+    /**
+     * Target of the first partial. Inside the temperament octave: equal
+     * temperament on A4. Below it: from the octave link and this string's own
+     * ratio f_low / (low · f1) — [ownCentsLow], measured live — or, before the
+     * string has sounded, the ratio predicted from the nearest measured note.
+     */
+    fun target(midi: Int = current, ownCentsLow: Double? = null): Double {
+        val link = octaveLink(midi) ?: return Companion.targetF1(midi, a4Hz)
+        val ratio = ownCentsLow?.let { 2.0.pow(it / 1200.0) }
+            ?: Inharmonicity.ratio(link.type.low, basisFor(midi)?.b ?: 0.0)
+        return link.viaHz / (link.type.low * ratio)
+    }
     companion object {
         const val MIDI_A4 = 69
         const val MIDI_A3 = 57
@@ -190,8 +225,6 @@ class TuningSession(a4Hz: Double, lowMidi: Int = MIDI_A3) {
     /** The note [delta] semitones away, kept within the session (A4 is the reference). */
     fun stepped(delta: Int): Int = (current + delta).coerceIn(lowMidi, MIDI_A4 - 1)
 
-    fun targetF1(midi: Int = current): Double = targetF1(midi, a4Hz)
-
     /**
      * The note whose measurement predicts [midi]: the nearest measured note
      * (ties go to the higher one), skipping notes whose fit was poor; if every
@@ -207,6 +240,6 @@ class TuningSession(a4Hz: Double, lowMidi: Int = MIDI_A3) {
 
     fun predictedPartials(midi: Int = current): List<PredictedPartial> {
         val basis = basisFor(midi) ?: return emptyList()
-        return Inharmonicity.predict(targetF1(midi), basis)
+        return Inharmonicity.predict(target(midi), basis)
     }
 }

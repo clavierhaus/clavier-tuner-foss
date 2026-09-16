@@ -170,7 +170,7 @@ class TuningController(
     fun applySettings(s: TunerSettings) {
         _settings.value = s
         val session = session ?: return
-        session.lowMidi = s.temperamentLowMidi
+        session.settings = s
         if (session.current !in session.notes) session.select(session.notes.last())
         publish(session, complete = session.nextUnmeasured() == null)
     }
@@ -184,8 +184,12 @@ class TuningController(
     /** What the tuning screen shows for the current note. */
     data class TuningView(
         val midi: Int,
-        /** Equal-temperament target of the first partial, Hz. */
+        /** Target of the first partial as the note was opened, Hz; [TuningController.targetHz] follows the string. */
         val targetHz: Double,
+        /** How the target is derived below the temperament octave; null inside it. */
+        val link: TuningSession.OctaveLink?,
+        /** Lowest note of the session. */
+        val lowestMidi: Int,
         /** Target partials, predicted from the nearest measured note. */
         val predicted: List<PredictedPartial>,
         /** The basis note's partials (levels, sustain) for the suggestion. */
@@ -197,6 +201,14 @@ class TuningController(
     )
 
     private var session: TuningSession? = null
+
+    private val _targetHz = MutableStateFlow(DEFAULT_REFERENCE_HZ)
+    /**
+     * The fundamental's target in force. Inside the temperament octave it is
+     * fixed; below it, it follows the string's own measured ratio so that the
+     * octave partial lands on the reference — see [TuningSession.targetF1].
+     */
+    val targetHz: StateFlow<Double> = _targetHz.asStateFlow()
 
     private val _tuning = MutableStateFlow<TuningView?>(null)
     /** Null while A4 is being defined (hub); set once Done has been tapped on A4. */
@@ -227,9 +239,15 @@ class TuningController(
     val targets: StateFlow<List<PredictedPartial>> = _targets.asStateFlow()
 
     private fun refreshTargets(t: TuningView, own: NoteMeasurement?) {
-        val self = own?.let { Inharmonicity.ownTargets(t.targetHz, it) } ?: emptyList()
+        val s = session
+        if (s != null && t.link != null) {
+            val ownCents = own?.partials?.firstOrNull { it.k == t.link.type.low }?.cents
+            _targetHz.value = s.target(t.midi, ownCents)
+        }
+        val target = _targetHz.value
+        val self = own?.let { Inharmonicity.ownTargets(target, it) } ?: emptyList()
         val heard = self.map { it.k }.toSet()
-        val cap = highestPartial(t.targetHz)
+        val cap = highestPartial(target)
         _targets.value = (self + t.predicted.filter { it.k !in heard }).filter { it.k <= cap }.sortedBy { it.k }
     }
 
@@ -248,10 +266,13 @@ class TuningController(
 
     private fun publish(s: TuningSession, complete: Boolean) {
         val midi = s.current
-        val target = s.targetF1(midi)
+        val target = s.target(midi)
+        _targetHz.value = target
         _tuning.value = TuningView(
             midi = midi,
             targetHz = target,
+            link = s.octaveLink(midi),
+            lowestMidi = s.lowMidi,
             predicted = s.predictedPartials(midi),
             basisPartials = s.basisFor(midi)?.partials ?: emptyList(),
             measured = s.measurements.keys.toSet(),
@@ -263,18 +284,20 @@ class TuningController(
         _fullSpectrum.value = false
         _hiddenPartials.value = emptySet()
         val cfg = _settings.value
-        _suggested.value = TuningSession.recommend(
-            s.basisFor(midi)?.partials ?: emptyList(),
-            maxLevelDownDb = cfg.suggestLevelDb,
-            minSustainS = cfg.suggestSustainS,
-            maxK = highestPartial(target),
-        )
+        val link = s.octaveLink(midi)
+        _suggested.value = if (link != null && link.type.low <= highestPartial(target)) link.type.low else
+            TuningSession.recommend(
+                s.basisFor(midi)?.partials ?: emptyList(),
+                maxLevelDownDb = cfg.suggestLevelDb,
+                minSustainS = cfg.suggestSustainS,
+                maxK = highestPartial(target),
+            )
         _liveSummary.value = null
         val semis = 2.0.pow(3.0 / 12.0)
         _range.value = (target / semis) to (target * semis)
     }
 
-    /** Arrows: one semitone down (-1) or up (+1), within G#4..A3. */
+    /** Arrows: one semitone down (-1) or up (+1), within G#4 and the lowest plain string. */
     fun stepNote(delta: Int) {
         val s = session ?: return
         val to = s.stepped(delta)
@@ -283,7 +306,7 @@ class TuningController(
         publish(s, complete = s.nextUnmeasured() == null)
     }
 
-    /** After Done: one semitone down; on A3 the session stays and reports complete. */
+    /** After Done: one semitone down; on the lowest plain string the session stays and reports complete. */
     private fun advance(s: TuningSession) {
         val next = s.below()
         if (next != null) s.select(next)
@@ -355,7 +378,7 @@ class TuningController(
         val t = _tuning.value
         if (t == null) {
             setReference(LiveReference.roundToTenth(hz))
-            val s = TuningSession(_referenceA4Hz.value, _settings.value.temperamentLowMidi)
+            val s = TuningSession(_referenceA4Hz.value, _settings.value)
             val m = _liveSummary.value ?: NoteMeasurement(TuningSession.MIDI_A4, hz, 0.0, 0.0, emptyList())
             s.record(m.copy(midi = TuningSession.MIDI_A4, timeMs = clock()))
             session = s
@@ -363,7 +386,7 @@ class TuningController(
             return _referenceA4Hz.value
         }
         val s = session ?: return null
-        if (!TuningSession.matched(hz, t.targetHz, _settings.value.matchHz)) return null
+        if (!TuningSession.matched(hz, _targetHz.value, _settings.value.matchHz)) return null
         val m = _liveSummary.value ?: return null
         s.record(m.copy(midi = t.midi, timeMs = clock()))
         advance(s)

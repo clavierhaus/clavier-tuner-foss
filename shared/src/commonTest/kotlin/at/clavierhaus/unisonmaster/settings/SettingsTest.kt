@@ -49,12 +49,12 @@ class SettingsTest {
     }
 
     @Test
-    fun theTemperamentOctaveSetsTheSessionsFoot() {
-        val s = TuningSession(440.0, lowMidi = 53)                 // F3
-        assertEquals((69 downTo 53).toList(), s.notes)
-        s.select(54)
-        assertEquals(53, s.below())
-        s.select(53)
+    fun theLowestPlainStringSetsTheSessionsFoot() {
+        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 40))   // E2
+        assertEquals((69 downTo 40).toList(), s.notes)
+        s.select(41)
+        assertEquals(40, s.below())
+        s.select(40)
         assertEquals(null, s.below())
     }
 }

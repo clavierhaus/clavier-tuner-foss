@@ -16,8 +16,15 @@ class MemoryStore : KeyValueStore {
     override fun put(key: String, value: String) { map[key] = value }
 }
 
-/** Octave types a stretch can be built on: which partials of the two notes coincide. */
-enum class OctaveType(val label: String) { O2_1("2:1"), O4_2("4:2"), O6_3("6:3"), O8_4("8:4"), O10_5("10:5"), O4_1("4:1") }
+/**
+ * Octave types a stretch can be built on: partial [low] of the lower note
+ * coincides with partial [high] of the note [semitones] above.
+ */
+enum class OctaveType(val label: String, val low: Int, val high: Int, val semitones: Int = 12) {
+    O2_1("2:1", 2, 1), O4_2("4:2", 4, 2), O6_3("6:3", 6, 3), O8_4("8:4", 8, 4), O10_5("10:5", 10, 5),
+    /** The double octave. */
+    O4_1("4:1", 4, 1, 24),
+}
 
 /**
  * Everything the tuner sets in Settings. Values that determine a target
@@ -38,7 +45,11 @@ data class TunerSettings(
     val weightDoubleOctave: Int = 6,
     val weightFifth: Int = 2,
     // PIANO
-    /** Lowest plain (unwound) string; wound strings below it follow a different physics. */
+    /**
+     * Lowest plain (unwound) string; wound strings below it follow a different
+     * physics. The session runs down to here; the bass octave type takes over
+     * one octave above it.
+     */
     val lowestUnwoundMidi: Int = 43,           // G2
     // PRECISION
     /** A partial matches within this of its target, Hz. */
@@ -58,6 +69,11 @@ data class TunerSettings(
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
     }
+
+    /** Below this note the bass octave type applies: an octave above the lowest plain string. */
+    val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
+
+    fun octaveTypeFor(midi: Int): OctaveType = if (midi <= bassBoundaryMidi) octaveBass else octaveMiddle
 }
 
 /** Holds the settings, persists every change, and exposes them as a flow. */

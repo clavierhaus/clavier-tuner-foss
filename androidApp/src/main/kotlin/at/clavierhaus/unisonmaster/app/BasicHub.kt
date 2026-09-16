@@ -58,6 +58,7 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
     val active by controller.activePartial.collectAsState()
     val targets by controller.targets.collectAsState()
     val cfg by controller.settings.collectAsState()
+    val liveTarget by controller.targetHz.collectAsState()
 
     val t = tuning
     Box(
@@ -101,21 +102,27 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
             }
         } else {
             val name = Notes.name(t.midi)
-            val matched = TuningSession.matched(hz, t.targetHz, cfg.matchHz)
+            val matched = TuningSession.matched(hz, liveTarget, cfg.matchHz)
+            val link = t.link
             val hint = when {
-                t.complete -> "Octave A3–A4 complete."
+                t.complete -> "Plain wire complete, down to ${Notes.name(t.lowestMidi)}."
                 matched -> "$name matches. Tap Done, or refine with a partial."
+                link != null -> "Tune $name, single string: ${link.type.label} octave against ${Notes.name(link.refMidi)}."
+                t.midi < cfg.temperamentLowMidi -> "Tune $name, single string. ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} is not tuned yet, so the target is equal temperament."
                 else -> "Tune $name, single string, until both bells turn green."
             }
             val advice = if (matched) {
                 suggested?.takeIf { it !in shownTuning }?.let { k ->
-                    "Add ${partialNoteName(k, t.targetHz, a4)} (partial $k) for a finer match."
+                    if (link != null && k == link.type.low)
+                        "Add ${partialNoteName(k, liveTarget, a4)} (partial $k): the ${link.type.label} octave turns green there."
+                    else
+                        "Add ${partialNoteName(k, liveTarget, a4)} (partial $k) for a finer match."
                 }
             } else null
             TuningGraph(
                 liveHz = hz,
                 sounding = level > 0.0,
-                targetHz = t.targetHz,
+                targetHz = liveTarget,
                 shown = shownTuning,
                 predicted = targets,
                 livePartials = partials,
@@ -135,7 +142,7 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
             ReadoutColumn(
                 shown = shownTuning,
                 active = active,
-                targetHz = t.targetHz,
+                targetHz = liveTarget,
                 liveHz = hz,
                 predicted = targets,
                 livePartials = partials,
@@ -152,7 +159,7 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
             ) {
                 NoteStepper(
                     name = name,
-                    canDown = t.midi > TuningSession.MIDI_A3,
+                    canDown = t.midi > t.lowestMidi,
                     canUp = t.midi < TuningSession.MIDI_A4 - 1,
                     onDown = { controller.stepNote(-1) },
                     onUp = { controller.stepNote(+1) },
@@ -160,8 +167,8 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
                 Spacer(Modifier.width(10.dp))
                 PartialRow(
                     a4Hz = a4,
-                    baseHz = t.targetHz,
-                    count = controller.highestPartial(t.targetHz),
+                    baseHz = liveTarget,
+                    count = controller.highestPartial(liveTarget),
                     shown = shownTuning,
                     tappable = (targets.map { it.k }.toSet() + audible) - 1,
                     onTap = { k -> controller.tapPartial(k) },

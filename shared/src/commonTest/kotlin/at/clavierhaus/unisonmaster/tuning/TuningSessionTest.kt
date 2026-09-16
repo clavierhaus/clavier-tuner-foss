@@ -204,15 +204,15 @@ class TuningSessionTest {
         s.select(68)
         assertEquals(67, s.stepped(-1))
         assertEquals(68, s.stepped(+1), "A4 is the reference, not a step target")
-        s.select(57)
-        assertEquals(57, s.stepped(-1))
+        s.select(43)                               // the lowest plain string, G2 by default
+        assertEquals(43, s.stepped(-1))
         assertNull(s.below())
-        s.select(60)
-        assertEquals(59, s.below())
+        s.select(57)
+        assertEquals(56, s.below(), "A3 is not the end: the plain wire continues")
     }
 
     @Test
-    fun doneOnA3CompletesTheOctave() {
+    fun doneOnA3ContinuesBelowTheTemperament() {
         val b = 4.0e-4
         val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))
         for (midi in 68 downTo 57) {
@@ -227,8 +227,8 @@ class TuningSessionTest {
             tuning.stopLive()
         }
         val end = assertNotNull(tuning.tuning.value)
-        assertTrue(end.complete)
-        assertEquals(57, end.midi)
+        assertTrue(!end.complete, "the session continues below the temperament octave")
+        assertEquals(56, end.midi)
         assertEquals((57..69).toSet(), end.measured)
     }
 
@@ -378,5 +378,59 @@ class TuningSessionTest {
         assertNotNull(p6, "partial 6 stays in the list after it decayed")
         assertEquals(0.0, p6.level)
         assertTrue(abs(p6.hz - 6 * f0 * sqrt(1 + b * 36)) < 0.05, "held ${p6.hz}")
+    }
+
+    @Test
+    fun belowTheTemperamentTheOctaveSetsTheTarget() {
+        val bRef = 4.0e-4
+        val bLow = 1.5e-4
+        // A4 .. A3 on equal temperament, then G#3
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, bRef), bRef, 8, 3.0))
+        for (midi in 68 downTo 57) {
+            signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(midi, 440.0), bRef), bRef, 8, 3.0))
+        }
+        // the G#3 string, placed exactly where its partial 4 meets G#4's partial 2 (4:2 octave)
+        val gs4 = TuningSession.targetF1(68, 440.0)
+        val via = 2 * gs4 * Inharmonicity.ratio(2, bRef)
+        val gs3 = via / (4 * Inharmonicity.ratio(4, bLow))
+        signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(gs3, bLow), bLow, 8, 3.0))
+        val tuning = TuningController(QueueSource(signals))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        for (midi in 68 downTo 57) { tuning.startLive(); assertNotNull(tuning.acceptLive()); tuning.stopLive() }
+
+        val view = assertNotNull(tuning.tuning.value)
+        assertEquals(56, view.midi)
+        val link = assertNotNull(view.link, "G#3 is linked to a measured reference")
+        assertEquals(68, link.refMidi)
+        assertEquals(4, link.type.low)
+        assertTrue(abs(link.viaHz - via) < 0.05, "reference partial ${link.viaHz}, expected $via")
+        assertEquals(4, tuning.suggested.value, "the octave's own partial is the one to add")
+        assertTrue(tuning.targetHz.value < TuningSession.targetF1(56, 440.0), "the octave is stretched: G#3 sits below equal temperament")
+
+        tuning.startLive()
+        assertTrue(abs(tuning.targetHz.value - gs3) < 0.01, "live target ${tuning.targetHz.value}, expected $gs3")
+        assertTrue(TuningSession.matched(tuning.liveHz.value, tuning.targetHz.value), "fundamental on target")
+        val t4 = tuning.targets.value.first { it.k == 4 }.hz
+        val l4 = tuning.livePartials.value.first { it.k == 4 }.hz
+        assertTrue(abs(t4 - via) < 0.05, "partial 4 target $t4 is the reference partial $via")
+        assertTrue(TuningSession.matched(l4, t4), "the 4:2 octave is beatless: $l4 vs $t4")
+        assertNotNull(tuning.acceptLive())
+        tuning.stopLive()
+
+        val next = assertNotNull(tuning.tuning.value)
+        assertEquals(55, next.midi)
+        assertEquals(at.clavierhaus.unisonmaster.settings.OctaveType.O6_3, assertNotNull(next.link).type, "G3 is at the bass boundary: 6:3")
+        assertEquals(67, next.link!!.refMidi)
+    }
+
+    @Test
+    fun theBassBoundaryIsAnOctaveAboveTheLowestPlainString() {
+        val s = at.clavierhaus.unisonmaster.settings.TunerSettings()
+        assertEquals(55, s.bassBoundaryMidi)                                            // G3 for G2
+        assertEquals(s.octaveMiddle, s.octaveTypeFor(56))
+        assertEquals(s.octaveBass, s.octaveTypeFor(55))
+        val session = TuningSession(440.0, s)
+        assertEquals(27, session.notes.size)                                            // A4 .. G2
+        assertEquals(43, session.notes.last())
     }
 }
