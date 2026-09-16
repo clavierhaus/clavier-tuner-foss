@@ -23,11 +23,10 @@ import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.ui.formatHz
-import at.clavierhaus.unisonmaster.persistence.SessionStore
-import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
+import at.clavierhaus.unisonmaster.ui.BackArrow
 import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
@@ -50,9 +49,7 @@ import at.clavierhaus.unisonmaster.ui.partialNoteName
 fun BasicHub(
     controller: TuningController,
     onSettings: () -> Unit,
-    lastTuning: SessionStore.Load = SessionStore.Load.None,
-    onContinue: (SessionSnapshot) -> Unit = {},
-    onNew: () -> Unit = {},
+    onBack: () -> Unit,
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -90,38 +87,8 @@ fun BasicHub(
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header(onSettings, "Define your A4 here by tuning a single string to the desired pitch.", null) {
-                Column {
-                    when (lastTuning) {
-                        is SessionStore.Load.Ok -> {
-                            val snap = lastTuning.snapshot
-                            Text(
-                                "Last tuning: ${lastUsed(snap.savedAtMs)} — A4 ${formatHz(snap.a4Hz)}, ${snap.measurements.size} notes",
-                                color = Color(Brand.WHITE_MUTED),
-                                fontFamily = DejaVuSerif,
-                                fontSize = 14.sp,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Row {
-                                ContinueButton(onClick = { onContinue(snap) })
-                                Spacer(Modifier.width(10.dp))
-                                NewButton(onClick = onNew)
-                            }
-                            Spacer(Modifier.height(18.dp))
-                        }
-                        SessionStore.Load.Rejected -> {
-                            Text(
-                                "The saved tuning could not be verified and was set aside.",
-                                color = Color(Brand.WHITE_MUTED),
-                                fontFamily = DejaVuSerif,
-                                fontSize = 14.sp,
-                            )
-                            Spacer(Modifier.height(18.dp))
-                        }
-                        SessionStore.Load.None -> Unit
-                    }
-                    SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
-                }
+            Header(onBack, onSettings, "Define your A4 here by tuning a single string to the desired pitch.", null) {
+                SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -171,7 +138,7 @@ fun BasicHub(
                     .fillMaxSize()
                     .padding(bottom = 80.dp),
             )
-            Header(onSettings, hint, advice) {
+            Header(onBack, onSettings, hint, advice) {
                 SpectrumToggle(
                     fullSpectrum = full,
                     onClick = { controller.toggleFullSpectrum() },
@@ -227,6 +194,7 @@ fun BasicHub(
  */
 @Composable
 private fun androidx.compose.foundation.layout.BoxScope.Header(
+    onBack: () -> Unit,
     onSettings: () -> Unit,
     hint: String,
     advice: String?,
@@ -237,7 +205,10 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
             .align(Alignment.TopStart)
             .width(300.dp),
     ) {
-        SettingsGear(onClick = onSettings)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BackArrow(onClick = onBack)
+            SettingsGear(onClick = onSettings)
+        }
         Spacer(Modifier.height(10.dp))
         ClavierhausTitle()
         Spacer(Modifier.height(18.dp))
@@ -248,31 +219,5 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
         }
         Spacer(Modifier.height(18.dp))
         toggle()
-    }
-}
-
-/** "15 Sep 2026, 17:42" in the phone's time zone. */
-private fun lastUsed(ms: Long): String =
-    java.text.SimpleDateFormat("d MMM yyyy, HH:mm", java.util.Locale.ENGLISH).format(java.util.Date(ms))
-
-/** Outlined: discard the saved tuning and define A4 afresh. */
-@Composable
-private fun NewButton(onClick: () -> Unit) {
-    androidx.compose.material3.OutlinedButton(onClick = onClick) {
-        Text("New", color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
-    }
-}
-
-/** Orange: continue the saved tuning where it was left. */
-@Composable
-private fun ContinueButton(onClick: () -> Unit) {
-    androidx.compose.material3.Button(
-        onClick = onClick,
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-            containerColor = Color(Brand.ORANGE),
-            contentColor = Color(Brand.BLACK),
-        ),
-    ) {
-        Text("Continue", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
     }
 }

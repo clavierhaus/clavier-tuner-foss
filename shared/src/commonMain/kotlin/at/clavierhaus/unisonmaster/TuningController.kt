@@ -196,6 +196,19 @@ class TuningController(
         )
     }
 
+    /** "New Tuning": no session; the next Done defines A4 afresh. */
+    fun resetSession() {
+        session = null
+        _tuning.value = null
+        _shownPartials.value = setOf(1)
+        _activePartial.value = 1
+        _fullSpectrum.value = false
+        _hiddenPartials.value = emptySet()
+        _suggested.value = null
+        _liveSummary.value = null
+        _range.value = 380.0 to 500.0
+    }
+
     /** Continues a saved session: A4, every measured note, the note the tuner was on. */
     fun restore(snap: SessionSnapshot) {
         session = null

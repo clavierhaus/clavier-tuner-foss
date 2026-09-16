@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import at.clavierhaus.unisonmaster.ui.OnePicture
+import at.clavierhaus.unisonmaster.ui.HomeHubItem
+import at.clavierhaus.unisonmaster.ui.HomeHub
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
@@ -93,7 +96,8 @@ class MainActivity : ComponentActivity() {
     private val settingsModel by lazy {
         SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
     }
-    private var settingsOpen = false
+    /** The microphone runs only on the tuning screen. */
+    private var micWanted = false
 
     // Continue last tuning: one sealed file in app-private storage, this device only.
     private val sessionStore by lazy {
@@ -104,7 +108,7 @@ class MainActivity : ComponentActivity() {
 
     private val permissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) controller.startLive()
+            if (granted && micWanted) controller.startLive()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,37 +130,65 @@ class MainActivity : ComponentActivity() {
                     onSurface = Color(Brand.WHITE),
                 )
             ) {
-                var showSettings by rememberSaveable { mutableStateOf(false) }
+                var screen by rememberSaveable { mutableStateOf("hub") }
+                var settingsFrom by rememberSaveable { mutableStateOf("hub") }
                 val settings by settingsModel.settings.collectAsState()
                 LaunchedEffect(settings) {
                     // FOSS: the temperament octave is always A3-A4 (selectable in Pro only)
                     controller.applySettings(settings.copy(temperamentLowMidi = TuningSession.MIDI_A3))
                 }
-                LaunchedEffect(showSettings) {
-                    // the microphone rests while settings are open: nothing is measured unseen
-                    settingsOpen = showSettings
-                    if (showSettings) controller.stopLive() else if (hasMic()) controller.startLive()
+                LaunchedEffect(screen) {
+                    // the microphone runs only while tuning: nothing is measured unseen
+                    micWanted = screen == "tune"
+                    if (micWanted && hasMic()) controller.startLive() else controller.stopLive()
                 }
-                if (showSettings) {
-                    BackHandler { showSettings = false }
-                    TunerSettingsScreen(
-                        controller = controller,
-                        model = settingsModel,
-                        version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
-                        onBack = { showSettings = false },
-                    )
-                } else {
-                    val last by lastTuning
-                    BasicHub(
-                        controller = controller,
-                        onSettings = { showSettings = true },
-                        lastTuning = last,
-                        onContinue = { snap -> controller.restore(snap) },
-                        onNew = {
-                            sessionStore.clear()
-                            lastTuning.value = SessionStore.Load.None
-                        },
-                    )
+                fun openSettings() { settingsFrom = screen; screen = "settings" }
+                fun backToHub() {
+                    controller.snapshot()?.let { sessionStore.save(it) }
+                    lastTuning.value = sessionStore.load()
+                    screen = "hub"
+                }
+                OnePicture {
+                    when (screen) {
+                        "settings" -> {
+                            BackHandler { screen = settingsFrom }
+                            TunerSettingsScreen(
+                                controller = controller,
+                                model = settingsModel,
+                                version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
+                                onBack = { screen = settingsFrom },
+                            )
+                        }
+                        "tune" -> {
+                            BackHandler { backToHub() }
+                            BasicHub(controller = controller, onSettings = { openSettings() }, onBack = { backToHub() })
+                        }
+                        else -> {
+                            val last by lastTuning
+                            val entries = buildList {
+                                (last as? SessionStore.Load.Ok)?.snapshot?.let { snap ->
+                                    add(
+                                        HomeHubItem("Continue", " Tuning", "from ${lastUsed(snap.savedAtMs)}, A4 ${at.clavierhaus.unisonmaster.ui.formatHz(snap.a4Hz)}") {
+                                            controller.restore(snap)
+                                            screen = "tune"
+                                        },
+                                    )
+                                }
+                                add(
+                                    HomeHubItem(
+                                        "New", " Tuning",
+                                        if (last is SessionStore.Load.Rejected) "the saved tuning could not be verified" else "starting from A4",
+                                    ) {
+                                        sessionStore.clear()
+                                        lastTuning.value = SessionStore.Load.None
+                                        controller.resetSession()
+                                        screen = "tune"
+                                    },
+                                )
+                            }
+                            HomeHub(entries = entries, onSettings = { openSettings() })
+                        }
+                    }
                 }
             }
         }
@@ -168,7 +200,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (hasMic() && !settingsOpen) controller.startLive()
+        if (hasMic() && micWanted) controller.startLive()
     }
 
     override fun onPause() {
@@ -1245,3 +1277,7 @@ fun ScopeScreen(monitor: PartialMonitor, controller: TuningController, onBack: (
         }
     }
 }
+
+/** "15 Sep" — the day the saved tuning was last used. */
+private fun lastUsed(ms: Long): String =
+    java.text.SimpleDateFormat("d MMM", java.util.Locale.ENGLISH).format(java.util.Date(ms))

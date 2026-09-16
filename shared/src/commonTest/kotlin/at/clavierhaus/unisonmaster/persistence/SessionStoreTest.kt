@@ -161,4 +161,17 @@ class SessionStoreTest {
         assertEquals(before.predicted.map { it.k }, view.predicted.map { it.k })
         for ((p, q) in before.predicted.zip(view.predicted)) assertTrue(abs(p.hz - q.hz) < 1e-9)
     }
+
+    @Test
+    fun newTuningStartsFromAFreshHub() {
+        val tuning = TuningController(Queue(listOf(strike(440.0, 4e-4, 3.0), strike(440.0, 4e-4, 3.0))))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        assertNotNull(tuning.tuning.value)
+        tuning.resetSession()
+        assertEquals(null, tuning.tuning.value)
+        assertEquals(null, tuning.snapshot())
+        tuning.startLive()
+        assertEquals(440.0, tuning.acceptLive(), "A4 is defined again on the hub")
+        assertEquals(68, tuning.tuning.value?.midi)
+    }
 }

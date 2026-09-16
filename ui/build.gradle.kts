@@ -25,6 +25,7 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(libs.kotlinx.coroutines.core)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
