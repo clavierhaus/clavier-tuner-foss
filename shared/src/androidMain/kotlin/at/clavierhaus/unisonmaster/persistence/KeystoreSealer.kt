@@ -73,6 +73,11 @@ class PrivateSaveFile(private val dir: File, private val name: String = "last-tu
         }
     }
 
+    override fun delete() {
+        file.delete()
+        File(dir, "$name.tmp").delete()
+    }
+
     override fun setAside() {
         val f = file
         if (f.isFile) f.renameTo(File(dir, "$name.rejected-${System.currentTimeMillis()}"))

@@ -131,6 +131,9 @@ interface SaveFile {
 
     /** Moves an unverifiable file out of the way, keeping it for inspection. */
     fun setAside()
+
+    /** Removes the file; nothing to continue afterwards. */
+    fun delete()
 }
 
 /** The last tuning: saved sealed, loaded only if it verifies. */
@@ -145,6 +148,14 @@ class SessionStore(private val file: SaveFile, private val sealer: Sealer) {
 
     fun save(s: SessionSnapshot): Boolean = try {
         file.writeAtomic(sealer.seal(SessionCodec.encode(s).encodeToByteArray()))
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    /** "New": the saved tuning is discarded. */
+    fun clear(): Boolean = try {
+        file.delete()
         true
     } catch (e: Exception) {
         false

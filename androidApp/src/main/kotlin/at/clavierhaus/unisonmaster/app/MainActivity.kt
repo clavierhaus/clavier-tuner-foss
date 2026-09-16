@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
@@ -127,7 +128,10 @@ class MainActivity : ComponentActivity() {
             ) {
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 val settings by settingsModel.settings.collectAsState()
-                LaunchedEffect(settings) { controller.applySettings(settings) }
+                LaunchedEffect(settings) {
+                    // FOSS: the temperament octave is always A3-A4 (selectable in Pro only)
+                    controller.applySettings(settings.copy(temperamentLowMidi = TuningSession.MIDI_A3))
+                }
                 LaunchedEffect(showSettings) {
                     // the microphone rests while settings are open: nothing is measured unseen
                     settingsOpen = showSettings
@@ -148,6 +152,10 @@ class MainActivity : ComponentActivity() {
                         onSettings = { showSettings = true },
                         lastTuning = last,
                         onContinue = { snap -> controller.restore(snap) },
+                        onNew = {
+                            sessionStore.clear()
+                            lastTuning.value = SessionStore.Load.None
+                        },
                     )
                 }
             }

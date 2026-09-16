@@ -39,6 +39,7 @@ private class MemoryFile : SaveFile {
     override fun read() = bytes
     override fun writeAtomic(bytes: ByteArray) { this.bytes = bytes.copyOf() }
     override fun setAside() { bytes = null }
+    override fun delete() { bytes = null }
 }
 
 private const val SR = 48_000
@@ -101,6 +102,17 @@ class SessionStoreTest {
         assertIs<SessionStore.Load.None>(store.load())
         assertTrue(store.save(sample))
         assertEquals(SessionStore.Load.Ok(sample), store.load())
+    }
+
+    @Test
+    fun newDiscardsTheSavedTuning() {
+        val file = MemoryFile()
+        val store = SessionStore(file, TestSealer("device-key"))
+        store.save(sample)
+        assertIs<SessionStore.Load.Ok>(store.load())
+        assertTrue(store.clear())
+        assertIs<SessionStore.Load.None>(store.load())
+        assertTrue(store.clear(), "clearing twice is harmless")
     }
 
     @Test

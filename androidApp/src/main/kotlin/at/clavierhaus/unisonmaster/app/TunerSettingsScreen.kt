@@ -64,13 +64,10 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
 
     SettingsSection("Temperament")
     ChoiceRow("Temperament", "Unequal temperaments will be listed here", listOf("Equal"), 0) { }
-    StepperRow(
-        "Temperament octave", "Tuned first, downward from A4; the foundation of the stretch",
-        Notes.name(s.temperamentLowMidi) + "–A4",
-        canDecrease = s.temperamentLowMidi > TunerSettings.MIN_TEMPERAMENT_LOW,
-        canIncrease = s.temperamentLowMidi < TunerSettings.MAX_TEMPERAMENT_LOW,
-        onDecrease = { model.update { it.copy(temperamentLowMidi = it.temperamentLowMidi - 1) } },
-        onIncrease = { model.update { it.copy(temperamentLowMidi = it.temperamentLowMidi + 1) } },
+    ReadOnlyRow(
+        "Temperament octave",
+        "Tuned first, downward from A4: temperament and inharmonicity are taken here",
+        "A3–A4",
     )
 
     SettingsSection("Stretch")

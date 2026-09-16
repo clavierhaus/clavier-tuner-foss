@@ -52,6 +52,7 @@ fun BasicHub(
     onSettings: () -> Unit,
     lastTuning: SessionStore.Load = SessionStore.Load.None,
     onContinue: (SessionSnapshot) -> Unit = {},
+    onNew: () -> Unit = {},
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -101,7 +102,11 @@ fun BasicHub(
                                 fontSize = 14.sp,
                             )
                             Spacer(Modifier.height(8.dp))
-                            ContinueButton(onClick = { onContinue(snap) })
+                            Row {
+                                ContinueButton(onClick = { onContinue(snap) })
+                                Spacer(Modifier.width(10.dp))
+                                NewButton(onClick = onNew)
+                            }
                             Spacer(Modifier.height(18.dp))
                         }
                         SessionStore.Load.Rejected -> {
@@ -250,6 +255,14 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
 private fun lastUsed(ms: Long): String =
     java.text.SimpleDateFormat("d MMM yyyy, HH:mm", java.util.Locale.ENGLISH).format(java.util.Date(ms))
 
+/** Outlined: discard the saved tuning and define A4 afresh. */
+@Composable
+private fun NewButton(onClick: () -> Unit) {
+    androidx.compose.material3.OutlinedButton(onClick = onClick) {
+        Text("New", color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
+    }
+}
+
 /** Orange: continue the saved tuning where it was left. */
 @Composable
 private fun ContinueButton(onClick: () -> Unit) {
@@ -260,6 +273,6 @@ private fun ContinueButton(onClick: () -> Unit) {
             contentColor = Color(Brand.BLACK),
         ),
     ) {
-        Text("Continue last tuning", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
+        Text("Continue", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
     }
 }
