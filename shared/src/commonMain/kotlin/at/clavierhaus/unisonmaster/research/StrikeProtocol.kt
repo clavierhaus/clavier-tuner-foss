@@ -22,8 +22,7 @@ enum class StringPos(val code: String, val label: String, val instruction: Strin
 /** The pianos of the study; [code] goes into file names. */
 enum class Piano(val label: String, val code: String) {
     STEINWAY_D("Steinway D", "D"),
-    BOESENDORFER("Bösendorfer", "Boesendorfer"),
-    STUDIO("Studio", "Studio");
+    BOESENDORFER("Bösendorfer", "Boesendorfer");
 
     companion object {
         fun ofCode(code: String?): Piano = entries.firstOrNull { it.code == code } ?: STEINWAY_D
@@ -69,7 +68,6 @@ object StrikeProtocol {
             midi == C4 -> 8
             else -> 5
         }
-        Piano.STUDIO -> 20
     }
 
     /** "D_A4-C-s2_unproc_20260916-153012.wav" */
