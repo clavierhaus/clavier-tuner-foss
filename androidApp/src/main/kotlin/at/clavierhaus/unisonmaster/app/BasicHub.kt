@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
+import at.clavierhaus.unisonmaster.ui.formatHz
+import at.clavierhaus.unisonmaster.persistence.SessionStore
+import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -44,7 +47,12 @@ import at.clavierhaus.unisonmaster.ui.partialNoteName
  * single strings: the fundamental first, to green, then partials by choice.
  */
 @Composable
-fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
+fun BasicHub(
+    controller: TuningController,
+    onSettings: () -> Unit,
+    lastTuning: SessionStore.Load = SessionStore.Load.None,
+    onContinue: (SessionSnapshot) -> Unit = {},
+) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
     val partials by controller.livePartials.collectAsState()
@@ -82,7 +90,33 @@ fun BasicHub(controller: TuningController, onSettings: () -> Unit) {
                     .padding(bottom = 80.dp),
             )
             Header(onSettings, "Define your A4 here by tuning a single string to the desired pitch.", null) {
-                SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
+                Column {
+                    when (lastTuning) {
+                        is SessionStore.Load.Ok -> {
+                            val snap = lastTuning.snapshot
+                            Text(
+                                "Last tuning: ${lastUsed(snap.savedAtMs)} — A4 ${formatHz(snap.a4Hz)}, ${snap.measurements.size} notes",
+                                color = Color(Brand.WHITE_MUTED),
+                                fontFamily = DejaVuSerif,
+                                fontSize = 14.sp,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            ContinueButton(onClick = { onContinue(snap) })
+                            Spacer(Modifier.height(18.dp))
+                        }
+                        SessionStore.Load.Rejected -> {
+                            Text(
+                                "The saved tuning could not be verified and was set aside.",
+                                color = Color(Brand.WHITE_MUTED),
+                                fontFamily = DejaVuSerif,
+                                fontSize = 14.sp,
+                            )
+                            Spacer(Modifier.height(18.dp))
+                        }
+                        SessionStore.Load.None -> Unit
+                    }
+                    SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -209,5 +243,23 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
         }
         Spacer(Modifier.height(18.dp))
         toggle()
+    }
+}
+
+/** "15 Sep 2026, 17:42" in the phone's time zone. */
+private fun lastUsed(ms: Long): String =
+    java.text.SimpleDateFormat("d MMM yyyy, HH:mm", java.util.Locale.ENGLISH).format(java.util.Date(ms))
+
+/** Orange: continue the saved tuning where it was left. */
+@Composable
+private fun ContinueButton(onClick: () -> Unit) {
+    androidx.compose.material3.Button(
+        onClick = onClick,
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = Color(Brand.ORANGE),
+            contentColor = Color(Brand.BLACK),
+        ),
+    ) {
+        Text("Continue last tuning", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
     }
 }

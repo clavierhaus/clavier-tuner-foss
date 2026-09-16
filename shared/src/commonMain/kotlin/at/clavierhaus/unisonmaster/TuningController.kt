@@ -13,6 +13,7 @@ import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.settings.TunerSettings
+import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -179,6 +180,34 @@ class TuningController(
     fun highestPartial(targetHz: Double): Int =
         TuningSession.highestUsefulPartial(targetHz, TuningSession.targetF1(_settings.value.highestPartialMidi, _referenceA4Hz.value))
 
+    // ---- Continue last tuning ----
+
+    /** Called whenever the session changes (Done, a step, a new A4); the app saves it. */
+    var onSessionChanged: ((SessionSnapshot) -> Unit)? = null
+
+    /** The session as it stands, or null on the hub before A4 is set. */
+    fun snapshot(): SessionSnapshot? {
+        val s = session ?: return null
+        return SessionSnapshot(
+            savedAtMs = clock(),
+            a4Hz = _referenceA4Hz.value,
+            currentMidi = s.current,
+            measurements = s.measurements.values.toList(),
+        )
+    }
+
+    /** Continues a saved session: A4, every measured note, the note the tuner was on. */
+    fun restore(snap: SessionSnapshot) {
+        session = null
+        setReference(snap.a4Hz)
+        val s = TuningSession(_referenceA4Hz.value, _settings.value)
+        for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
+        if (snap.currentMidi in s.notes && snap.currentMidi != TuningSession.MIDI_A4) s.select(snap.currentMidi)
+        else s.select(s.nextUnmeasured()?.takeIf { it != TuningSession.MIDI_A4 } ?: s.notes.last())
+        session = s
+        publish(s, complete = s.nextUnmeasured() == null)
+    }
+
     // ---- Tuning session: after A4, the octave down to A3, single strings ----
 
     /** What the tuning screen shows for the current note. */
@@ -295,6 +324,7 @@ class TuningController(
         _liveSummary.value = null
         val semis = 2.0.pow(3.0 / 12.0)
         _range.value = (target / semis) to (target * semis)
+        onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
 
     /** Arrows: one semitone down (-1) or up (+1), within G#4 and the lowest plain string. */

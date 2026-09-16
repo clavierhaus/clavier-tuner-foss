@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import at.clavierhaus.unisonmaster.persistence.SessionStore
+import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
+import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
 import at.clavierhaus.unisonmaster.settings.SettingsModel
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
@@ -90,6 +93,12 @@ class MainActivity : ComponentActivity() {
         SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
     }
     private var settingsOpen = false
+
+    // Continue last tuning: one sealed file in app-private storage, this device only.
+    private val sessionStore by lazy {
+        SessionStore(PrivateSaveFile(java.io.File(filesDir, "session")), KeystoreSealer())
+    }
+    private val lastTuning = mutableStateOf<SessionStore.Load>(SessionStore.Load.None)
     private val monitor by lazy { PartialMonitor(audioSource, controller) }
 
     private val permissionRequest =
@@ -101,6 +110,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         permissionRequest.launch(Manifest.permission.RECORD_AUDIO)
         hideSystemBars()
+        lastTuning.value = sessionStore.load()
+        controller.onSessionChanged = { snap -> sessionStore.save(snap) }
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -131,7 +142,13 @@ class MainActivity : ComponentActivity() {
                         onBack = { showSettings = false },
                     )
                 } else {
-                    BasicHub(controller = controller, onSettings = { showSettings = true })
+                    val last by lastTuning
+                    BasicHub(
+                        controller = controller,
+                        onSettings = { showSettings = true },
+                        lastTuning = last,
+                        onContinue = { snap -> controller.restore(snap) },
+                    )
                 }
             }
         }
@@ -148,6 +165,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        controller.snapshot()?.let { sessionStore.save(it) }
         controller.stopLive()
         controller.stopMeasuring()
         monitor.stop()
