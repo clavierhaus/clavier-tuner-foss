@@ -8,6 +8,8 @@
 #          ./scripts/deploy.sh --no-test  # skip unit tests (faster)
 # =============================================================================
 set -euo pipefail
+# adb reads standard input; inside a pasted box that would swallow the rest of the box.
+exec </dev/null
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_DIR"
