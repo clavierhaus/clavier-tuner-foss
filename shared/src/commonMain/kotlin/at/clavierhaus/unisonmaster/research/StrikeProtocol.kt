@@ -19,18 +19,37 @@ enum class StringPos(val code: String, val label: String, val instruction: Strin
     RIGHT("R", "right string", "Mute every other string of this note; only the right string sounds."),
 }
 
+/** The pianos of the study; [code] goes into file names. */
+enum class Piano(val label: String, val code: String) {
+    STEINWAY_D("Steinway D", "D"),
+    BOESENDORFER("Bösendorfer", "Boesendorfer"),
+    STUDIO("Studio", "Studio");
+
+    companion object {
+        fun ofCode(code: String?): Piano = entries.firstOrNull { it.code == code } ?: STEINWAY_D
+    }
+}
+
 object StrikeProtocol {
     const val STRIKES = 3
-    const val SECONDS = 20
     const val SAMPLE_RATE = 48_000
     const val DIRECTORY = "Recordings/ClavierTuner"
 
+    private const val C1 = 24
+    private const val C2 = 36
+    private const val C3 = 48
+    private const val C4 = 60
+    private const val C6 = 84
+
     /** The core set across the compass, then the top-stringing comparison (left and right strings). */
-    fun takes(firstPlainMidi: Int = 40): List<Take> {
-        val core = listOf(33, 38, firstPlainMidi, 45, 48, 57, 60, 69, 72, 81, 84, 93, 96).distinct().sorted()
+    fun takes(piano: Piano, firstPlainMidi: Int = 40): List<Take> {
+        val notes = when (piano) {
+            Piano.BOESENDORFER -> listOf(C1, C2, firstPlainMidi, C3, 57, C4, 69, 72, 81, 84, 93, 96)
+            else -> listOf(33, 38, firstPlainMidi, 45, C3, 57, C4, 69, 72, 81, 84, 93, 96)
+        }.distinct().sorted()
         val list = ArrayList<Take>()
-        for (m in core) {
-            // wound bichords below the first plain unison: the left string; plain trichords: the centre string
+        for (m in notes) {
+            // wound strings below the first plain unison: the left string; plain trichords: the centre string
             val s = if (m < firstPlainMidi) StringPos.LEFT else StringPos.CENTRE
             for (k in 1..STRIKES) list += Take(m, s, k)
         }
@@ -40,17 +59,28 @@ object StrikeProtocol {
         return list
     }
 
-    /** "D_A4-C-s2_unproc_20260916-153012.wav" */
-    fun fileName(piano: String, take: Take, unprocessed: Boolean, stamp: String): String {
-        val safe = piano.filter { it.isLetterOrDigit() }.ifEmpty { "piano" }
-        return "${safe}_${take.id}_${if (unprocessed) "unproc" else "mic"}_$stamp.wav"
+    /** Recording length per note, as the operator set it at the instrument. */
+    fun seconds(piano: Piano, midi: Int): Int = when (piano) {
+        Piano.STEINWAY_D -> if (midi >= C6) 5 else 20
+        Piano.BOESENDORFER -> when {
+            midi < C2 -> 10
+            midi < C3 -> 12
+            midi < C4 -> 10
+            midi == C4 -> 8
+            else -> 5
+        }
+        Piano.STUDIO -> 20
     }
+
+    /** "D_A4-C-s2_unproc_20260916-153012.wav" */
+    fun fileName(piano: Piano, take: Take, unprocessed: Boolean, stamp: String): String =
+        "${piano.code}_${take.id}_${if (unprocessed) "unproc" else "mic"}_$stamp.wav"
 
     val setup: List<String> = listOf(
         "Place the phone on the music desk, bottom edge (microphone) towards the strings. Leave it there for the whole session.",
         "Lid fully open, room quiet, no pedal.",
         "Mute every string of the note except the one named on the right.",
-        "Tap Record. When \"Strike now\" appears, play the key mezzo-forte and hold it down until the recording ends (${SECONDS} s).",
+        "Tap Record. When \"Strike now\" appears, play the key mezzo-forte and hold it down until the recording ends.",
         "Same touch for all three strikes. If a strike goes wrong, tap Redo.",
     )
 }

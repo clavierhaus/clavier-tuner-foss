@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.audio.AndroidAudioSource
+import at.clavierhaus.unisonmaster.research.Piano
 import at.clavierhaus.unisonmaster.research.StrikeProtocol
 import at.clavierhaus.unisonmaster.research.Take
 import at.clavierhaus.unisonmaster.research.Wav
@@ -62,7 +63,7 @@ import kotlin.math.sqrt
 
 private sealed class Phase {
     data object Idle : Phase()
-    data class Recording(val seconds: Float, val levelDb: Float) : Phase()
+    data class Recording(val seconds: Float, val of: Int, val levelDb: Float) : Phase()
     data object Saving : Phase()
     data class Saved(val name: String) : Phase()
     data class Failed(val message: String) : Phase()
@@ -77,10 +78,13 @@ private val Panel = Color(0xFF1A1A1A)
 fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("wobble-study", Context.MODE_PRIVATE) }
-    val takes = remember(firstPlainMidi) { StrikeProtocol.takes(firstPlainMidi) }
-    var done by remember { mutableStateOf(prefs.getStringSet("done", emptySet())!!.toSet()) }
-    var piano by remember { mutableStateOf(prefs.getString("piano", "D")!!) }
-    var index by remember { mutableIntStateOf(takes.indexOfFirst { it.id !in done }.let { if (it < 0) 0 else it }) }
+    // progress is kept per piano; the first sessions (Steinway D) stored theirs under "done"
+    fun loadDone(p: Piano): Set<String> =
+        (prefs.getStringSet("done-${p.code}", null) ?: if (p == Piano.STEINWAY_D) prefs.getStringSet("done", emptySet()) else emptySet())!!.toSet()
+    var piano by remember { mutableStateOf(Piano.ofCode(prefs.getString("piano", "D"))) }
+    val takes = remember(piano, firstPlainMidi) { StrikeProtocol.takes(piano, firstPlainMidi) }
+    var done by remember(piano) { mutableStateOf(loadDone(piano)) }
+    var index by remember(piano, takes) { mutableIntStateOf(takes.indexOfFirst { it.id !in done }.let { if (it < 0) 0 else it }) }
     var phase by remember { mutableStateOf<Phase>(Phase.Idle) }
     var lastName by remember { mutableStateOf(prefs.getString("last", null)) }
     val scope = rememberCoroutineScope()
@@ -90,10 +94,11 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
     fun record() {
         if (busy || !micGranted) return
         val source = AndroidAudioSource(StrikeProtocol.SAMPLE_RATE)
-        val total = StrikeProtocol.SAMPLE_RATE * StrikeProtocol.SECONDS
+        val seconds = StrikeProtocol.seconds(piano, take.midi)
+        val total = StrikeProtocol.SAMPLE_RATE * seconds
         val samples = FloatArray(total)
         var filled = 0
-        phase = Phase.Recording(0f, -99f)
+        phase = Phase.Recording(0f, seconds, -99f)
         source.start(2048) { chunk ->
             val n = minOf(chunk.size, total - filled)
             chunk.copyInto(samples, filled, 0, n)
@@ -101,7 +106,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             var sq = 0.0
             for (x in chunk) sq += x.toDouble() * x
             val db = (20 * log10(maxOf(sqrt(sq / chunk.size), 1e-9))).toFloat()
-            phase = Phase.Recording(filled.toFloat() / StrikeProtocol.SAMPLE_RATE, db)
+            phase = Phase.Recording(filled.toFloat() / StrikeProtocol.SAMPLE_RATE, seconds, db)
             if (filled >= total) {
                 source.stop()
                 val unprocessed = source.usedUnprocessed
@@ -116,7 +121,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         onSuccess = {
                             done = done + take.id
                             lastName = name
-                            prefs.edit().putStringSet("done", done).putString("last", name).apply()
+                            prefs.edit().putStringSet("done-${piano.code}", done).putString("last", name).apply()
                             val next = takes.indexOfFirst { it.id !in done }
                             if (next >= 0) index = next
                             Phase.Saved(name)
@@ -156,10 +161,11 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             Spacer(Modifier.height(14.dp))
             Text("PIANO", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                for (p in listOf("D", "Studio")) {
-                    Chip(p, selected = p == piano, enabled = !busy) {
+                for (p in Piano.entries) {
+                    Chip(p.label, selected = p == piano, enabled = !busy) {
                         piano = p
-                        prefs.edit().putString("piano", p).apply()
+                        prefs.edit().putString("piano", p.code).apply()
+                        phase = Phase.Idle
                     }
                 }
             }
@@ -192,7 +198,8 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         fontFamily = DejaVuSerifFamily, fontSize = 30.sp,
                     )
                     Text(
-                        "strike ${take.strike} of ${StrikeProtocol.STRIKES}" + if (take.id in done) "  ·  recorded" else "",
+                        "strike ${take.strike} of ${StrikeProtocol.STRIKES}  ·  ${StrikeProtocol.seconds(piano, take.midi)} s" +
+                            if (take.id in done) "  ·  recorded" else "",
                         color = Muted, fontSize = 16.sp,
                     )
                 }
@@ -205,7 +212,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             val status = when (val p = phase) {
                 Phase.Idle -> if (micGranted) "Ready." else "Microphone permission missing — allow it in Android settings."
                 is Phase.Recording ->
-                    if (p.seconds < 0.5f) "Recording …" else "Strike now — hold the key.  %.1f / %d s".format(p.seconds, StrikeProtocol.SECONDS)
+                    if (p.seconds < 0.5f) "Recording …" else "Strike now — hold the key.  %.1f / %d s".format(p.seconds, p.of)
                 Phase.Saving -> "Saving …"
                 is Phase.Saved -> "Saved ${p.name}"
                 is Phase.Failed -> "Not saved: ${p.message}"
@@ -243,7 +250,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         if (i >= 0) {
                             index = i
                             done = done - takes[i].id
-                            prefs.edit().putStringSet("done", done).apply()
+                            prefs.edit().putStringSet("done-${piano.code}", done).apply()
                         }
                         phase = Phase.Idle
                     }
@@ -251,7 +258,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 Spacer(Modifier.weight(1f))
                 Chip("Start over", selected = false, enabled = !busy && done.isNotEmpty()) {
                     done = emptySet()
-                    prefs.edit().putStringSet("done", emptySet()).apply()
+                    prefs.edit().putStringSet("done-${piano.code}", emptySet()).putStringSet("done", emptySet()).apply()
                     index = 0
                     phase = Phase.Idle
                 }

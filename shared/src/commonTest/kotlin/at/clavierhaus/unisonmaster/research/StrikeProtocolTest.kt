@@ -8,7 +8,7 @@ class StrikeProtocolTest {
 
     @Test
     fun theProtocolCoversTheCompassThreeTimesEach() {
-        val takes = StrikeProtocol.takes(firstPlainMidi = 40)
+        val takes = StrikeProtocol.takes(Piano.STEINWAY_D, firstPlainMidi = 40)
         assertEquals(13 * 3 + 3 * 2 * 3, takes.size)
         assertEquals(takes.size, takes.map { it.id }.toSet().size, "every take is unique")
         assertEquals("A1-L-s1", takes.first().id, "wound bichord: left string")
@@ -19,8 +19,27 @@ class StrikeProtocolTest {
     @Test
     fun fileNamesCarryEverything() {
         val t = Take(69, StringPos.CENTRE, 2)
-        assertEquals("D_A4-C-s2_unproc_20260916-153012.wav", StrikeProtocol.fileName("D", t, true, "20260916-153012"))
-        assertEquals("piano_A4-C-s2_mic_x.wav", StrikeProtocol.fileName("  /", t, false, "x"))
+        assertEquals("D_A4-C-s2_unproc_20260916-153012.wav", StrikeProtocol.fileName(Piano.STEINWAY_D, t, true, "20260916-153012"))
+        assertEquals("Boesendorfer_A4-C-s2_mic_x.wav", StrikeProtocol.fileName(Piano.BOESENDORFER, t, false, "x"))
+    }
+
+    @Test
+    fun durationsAsSetAtTheInstrument() {
+        val d = Piano.STEINWAY_D
+        assertEquals(20, StrikeProtocol.seconds(d, 81))      // A5: already recorded at 20 s
+        assertEquals(5, StrikeProtocol.seconds(d, 84))       // C6 and up: 5 s
+        assertEquals(5, StrikeProtocol.seconds(d, 96))
+        val b = Piano.BOESENDORFER
+        assertEquals(listOf(10, 10, 12, 12, 10, 10, 8, 5, 5, 5),
+            listOf(24, 35, 36, 47, 48, 59, 60, 61, 72, 96).map { StrikeProtocol.seconds(b, it) })
+    }
+
+    @Test
+    fun theBoesendorferStartsAtC1() {
+        val takes = StrikeProtocol.takes(Piano.BOESENDORFER, firstPlainMidi = 43)
+        assertEquals("C1-L-s1", takes.first().id)
+        assertTrue(takes.any { it.id == "G2-C-s1" }, "first plain unison from the settings")
+        assertEquals(takes.size, takes.map { it.id }.toSet().size)
     }
 
     @Test
