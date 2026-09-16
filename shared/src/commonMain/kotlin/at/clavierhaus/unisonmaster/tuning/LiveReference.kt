@@ -16,9 +16,13 @@ import kotlin.math.sqrt
  *    the recent estimates, so a new note is never averaged with the last.
  *  - After a strike, [settleHops] hops are skipped: the attack, plus enough
  *    to flush the pre-strike sound out of the analysis window.
- *  - Each hop: YIN coarse, phase-refined fine estimate, searched within the
- *    range set by [setRange]. The value shown is the median of the last
- *    [recent] estimates — steady, yet it follows a turning pin.
+ *  - Each hop: YIN coarse, phase-refined fine estimate (phase advance over
+ *    [phaseBaseline] samples), searched within the range set by [setRange].
+ *    The value shown is that estimate as measured over the analysis window
+ *    (about a quarter second of sound): readings are not averaged.
+ *    What the string does, the display shows. (A strike's stored record uses
+ *    the median of its last readings — a statistic of the measurement, kept
+ *    apart from what is displayed.)
  *  - [level] is the bell height: loudness relative to the strike's own peak,
  *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
  *    microphone distance, and the bell sinks as the note decays.
@@ -36,7 +40,7 @@ class LiveReference(
     private val hopSize: Int = 4096,
     minHz: Double = 380.0,
     maxHz: Double = 500.0,
-    private val recent: Int = 5,
+    private val phaseBaseline: Int = 4096,
 ) {
     companion object {
         const val ONSET_RMS = 0.001      // -60 dBFS: the raw phone input is quiet
@@ -59,6 +63,8 @@ class LiveReference(
     private var prevRms = 0.0
     private var settle = -1 // -1: waiting for a strike
     private val estimates = ArrayDeque<Double>()
+    /** Readings kept for the strike record: about the last 0.4 s. */
+    private val recordSpan = maxOf(1, (0.43 * sampleRateHz / hopSize).toInt())
     private var peakDb = Double.NEGATIVE_INFINITY // loudest hop of the current strike
     private val tracker = PartialTracker(sampleRateHz, windowSize, PARTIALS)
     private var partialPeakDb = Double.NEGATIVE_INFINITY // loudest partial of the current strike
@@ -160,12 +166,12 @@ class LiveReference(
 
         val sr = sampleRateHz.toDouble()
         val coarse = Yin.estimateF0(ring, sr, minHz = minHz, maxHz = maxHz) ?: return
-        val fine = PreciseF0.refine(ring, sr, coarse, hopSize)
+        val fine = PreciseF0.refine(ring, sr, coarse, phaseBaseline)
         if (fine < minHz || fine > maxHz) return
 
         estimates.addLast(fine)
-        while (estimates.size > recent) estimates.removeFirst()
-        val f1 = median(estimates)
+        while (estimates.size > recordSpan) estimates.removeFirst()
+        val f1 = fine
         hz = f1
 
         val heard = tracker.analyse(ring, f1)
@@ -173,7 +179,7 @@ class LiveReference(
             .map { r ->
                 // the peak locates the partial; the phase reads it to millihertz
                 if (r.k == 1) r.copy(hz = f1, cents = 0.0) else {
-                    val hz = PreciseF0.refine(ring, sr, r.hz, hopSize)
+                    val hz = PreciseF0.refine(ring, sr, r.hz, phaseBaseline)
                     r.copy(hz = hz, cents = 1200.0 * ln(hz / (r.k * f1)) / ln(2.0))
                 }
             }
@@ -199,7 +205,8 @@ class LiveReference(
      * Null before a reading exists.
      */
     fun summary(midi: Int): NoteMeasurement? {
-        val f1 = hz ?: return null
+        if (hz == null || estimates.isEmpty()) return null
+        val f1 = median(estimates)
         val secondsPerHop = hopSize.toDouble() / sampleRateHz
         val measured = centsSeen.keys.sorted().map { k ->
             MeasuredPartial(

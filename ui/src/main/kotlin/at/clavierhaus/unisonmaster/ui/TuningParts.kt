@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -84,16 +85,15 @@ fun TuningGraph(
     fun targetOf(k: Int): Double? = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz
     fun liveOf(k: Int): Double? = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
 
-    // The reading arrives every 85 ms; the bell glides between readings so
-    // the eye follows a movement, not a sequence of jumps. Display only —
-    // the readout column shows the unsmoothed value.
+    // A measured reading arrives every 21 ms; the bell moves to it within one
+    // reading (no averaging, only the step between two readings is drawn).
     val glide = HashMap<Int, Float>()
     for (k in shown.sorted()) {
         val tk = targetOf(k)
         val lk = liveOf(k)
         key(k) {
             val target = if (tk != null && lk != null) (lk - tk).toFloat() else 0f
-            glide[k] = animateFloatAsState(target, tween(110, easing = LinearEasing), label = "bell$k").value
+            glide[k] = animateFloatAsState(target, tween(20, easing = LinearEasing), label = "bell$k").value
         }
     }
 
@@ -158,6 +158,13 @@ fun ReadoutColumn(
     modifier: Modifier = Modifier,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.width(330.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            Spacer(Modifier.width(74.dp))
+            Text("target", color = Color(Brand.TARGET_BLUE).copy(alpha = 0.7f), fontSize = 12.sp,
+                textAlign = TextAlign.End, modifier = Modifier.width(96.dp))
+            Text("measured", color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
+                textAlign = TextAlign.End, modifier = Modifier.width(112.dp))
+        }
         for (k in shown.sorted()) {
             val tk = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz ?: continue
             val lk = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz

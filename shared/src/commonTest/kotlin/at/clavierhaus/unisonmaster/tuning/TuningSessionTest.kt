@@ -433,4 +433,30 @@ class TuningSessionTest {
         assertEquals(27, session.notes.size)                                            // A4 .. G2
         assertEquals(43, session.notes.last())
     }
+
+    @Test
+    fun aWobblingStringIsShownWobbling() {
+        // 415 Hz whose pitch swings +-0.5 Hz twice a second: the display must show that swing
+        val hop = 1024
+        val live = LiveReference(SR, hopSize = hop, minHz = 350.0, maxHz = 500.0)
+        var phase = 0.0
+        val n = SR * 4
+        val signal = FloatArray(HOP * 2) + FloatArray(n) { i ->
+            val t = i.toDouble() / SR
+            phase += 2 * PI * (415.0 + 0.5 * sin(2 * PI * 2.0 * t)) / SR
+            (0.3 * exp(-t / 4.0) * sin(phase)).toFloat()
+        }
+        val readings = ArrayList<Double>()
+        var pos = 0
+        val buf = FloatArray(hop)
+        while (pos + hop <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + hop); live.push(buf); pos += hop
+            val t = (pos - HOP * 2).toDouble() / SR
+            if (t in 1.0..3.5) live.hz?.let { readings += it }
+        }
+        assertTrue(readings.size > 100, "about 47 readings per second: ${readings.size}")
+        val pp = readings.max() - readings.min()
+        assertTrue(pp > 0.4, "the swing is shown: $pp Hz peak to peak")
+        assertTrue(abs(readings.average() - 415.0) < 0.05, "and centred on the string: ${readings.average()}")
+    }
 }

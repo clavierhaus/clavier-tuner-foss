@@ -364,7 +364,8 @@ class TuningController(
      * Starts following the string. Returns false if the input could not be
      * opened (e.g. microphone permission not yet granted); safe to call again.
      */
-    fun startLive(hopSize: Int = 4096): Boolean {
+    /** A new measured reading every [hopSize] samples: 1024 at 48 kHz is 47 readings per second. */
+    fun startLive(hopSize: Int = 1024): Boolean {
         if (_live.value) return true
         if (_measuring.value) return false
         var applied = _range.value
