@@ -148,25 +148,14 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             }
             Text(
                 "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each.",
-                color = Muted, fontSize = 14.sp,
+                color = Muted, fontSize = 13.sp,
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
             Text("SETUP", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
             StrikeProtocol.setup.forEachIndexed { i, line ->
-                Row(Modifier.padding(top = 6.dp)) {
-                    Text("${i + 1}", color = Orange, fontSize = 15.sp, modifier = Modifier.width(22.dp))
-                    Text(line, color = White, fontSize = 15.sp)
-                }
-            }
-            Spacer(Modifier.height(14.dp))
-            Text("PIANO", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                for (p in Piano.entries) {
-                    Chip(p.label, selected = p == piano, enabled = !busy) {
-                        piano = p
-                        prefs.edit().putString("piano", p.code).apply()
-                        phase = Phase.Idle
-                    }
+                Row(Modifier.padding(top = 4.dp)) {
+                    Text("${i + 1}", color = Orange, fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.width(20.dp))
+                    Text(line, color = White, fontSize = 13.sp, lineHeight = 17.sp)
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -186,6 +175,16 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 .background(Panel, RoundedCornerShape(12.dp))
                 .padding(20.dp),
         ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (p in Piano.entries) {
+                    Chip(p.label, selected = p == piano, enabled = !busy) {
+                        piano = p
+                        prefs.edit().putString("piano", p.code).apply()
+                        phase = Phase.Idle
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
             Text("Take ${index + 1} of ${takes.size}  ·  ${done.size} done", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -207,7 +206,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             }
             Spacer(Modifier.height(8.dp))
             Text(take.string.instruction, color = White, fontSize = 15.sp)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
 
             val status = when (val p = phase) {
                 Phase.Idle -> if (micGranted) "Ready." else "Microphone permission missing — allow it in Android settings."
