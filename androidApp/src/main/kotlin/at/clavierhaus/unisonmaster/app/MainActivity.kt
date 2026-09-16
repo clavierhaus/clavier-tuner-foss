@@ -159,6 +159,14 @@ class MainActivity : ComponentActivity() {
                                 onBack = { screen = settingsFrom },
                             )
                         }
+                        "record" -> {
+                            BackHandler { screen = "hub" }
+                            RecordStrikesScreen(
+                                firstPlainMidi = settings.lowestUnwoundMidi,
+                                micGranted = hasMic(),
+                                onBack = { screen = "hub" },
+                            )
+                        }
                         "tune" -> {
                             BackHandler { backToHub() }
                             BasicHub(controller = controller, onSettings = { openSettings() }, onBack = { backToHub() })
@@ -186,7 +194,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                 )
                             }
-                            HomeHub(entries = entries, onSettings = { openSettings() })
+                            // research, for the wobble study; hidden again once the study is done
+                            val withResearch = entries + HomeHubItem("Record", " Strikes", "for the wobble study") { screen = "record" }
+                            HomeHub(entries = withResearch, onSettings = { openSettings() })
                         }
                     }
                 }
