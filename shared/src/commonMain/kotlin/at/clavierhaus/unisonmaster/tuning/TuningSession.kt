@@ -135,6 +135,26 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     val notes: List<Int> get() = (MIDI_A4 downTo lowMidi) + ((MIDI_A4 + 1)..highMidi)
 
+    /** The notes of the temperament octave, A4 down to its low note. */
+    val temperamentNotes: List<Int>
+        get() = (TunerSettings.TEMPERAMENT_HIGH downTo settings.temperamentLowMidi).toList()
+
+    /** True once every note of the temperament octave has been measured. */
+    val temperamentComplete: Boolean get() = temperamentNotes.all { it in measured }
+
+    /** True while the session is held inside the temperament octave. */
+    private val gated: Boolean get() = settings.temperamentFirst && !temperamentComplete
+
+    /** Lowest note the arrows may reach now. */
+    val stepLowMidi: Int get() = if (gated) settings.temperamentLowMidi else lowMidi
+
+    /** Highest note the arrows may reach now. */
+    val stepHighMidi: Int get() = if (gated) TunerSettings.TEMPERAMENT_HIGH else highMidi
+
+    /** Whether [midi] may be tuned at this point in the session. */
+    fun selectable(midi: Int): Boolean =
+        midi in notes && (!gated || midi in temperamentNotes)
+
     /**
      * How a note below the temperament octave gets its target: its partial
      * [type].low must equal [viaHz], the measured partial [type].high of the
@@ -247,6 +267,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
 
     fun select(midi: Int) {
         require(midi in notes) { "note $midi is outside the session" }
+        require(selectable(midi)) { "note $midi is outside the temperament octave, which is not finished" }
         current = midi
     }
 
@@ -261,7 +282,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * runs A4 down to the floor and then up from A#4 to the top. Null at the
      * end of the compass.
      */
-    fun next(): Int? = notes.getOrNull(notes.indexOf(current) + 1)
+    fun next(): Int? {
+        // While the temperament octave is unfinished, Done goes back to the
+        // first note of it that has no measurement, rather than walking on.
+        if (gated) return notes.firstOrNull { it in temperamentNotes && it !in measured }
+        return notes.getOrNull(notes.indexOf(current) + 1)
+    }
 
     /**
      * The note [delta] semitones away, kept within the compass. A4 is the
@@ -269,9 +295,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * than onto it — which is also how the walk crosses into the treble.
      */
     fun stepped(delta: Int): Int {
-        val to = (current + delta).coerceIn(lowMidi, highMidi)
+        val lo = stepLowMidi
+        val hi = stepHighMidi
+        val to = (current + delta).coerceIn(lo, hi)
         if (to != MIDI_A4) return to
-        return (MIDI_A4 + if (delta > 0) 1 else -1).coerceIn(lowMidi, highMidi)
+        val past = MIDI_A4 + if (delta > 0) 1 else -1
+        return if (past in lo..hi) past else current
     }
 
     /**

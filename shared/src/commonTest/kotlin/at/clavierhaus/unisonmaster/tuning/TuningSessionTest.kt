@@ -202,7 +202,7 @@ class TuningSessionTest {
 
     @Test
     fun arrowsStepWithinTheSessionAndDoneGoesDown() {
-        val s = TuningSession(440.0)
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))   // the walk itself, not the gate
         s.select(68)
         assertEquals(67, s.stepped(-1))
         assertEquals(70, s.stepped(+1), "A4 is the reference: the arrows step over it into the treble")
@@ -246,7 +246,7 @@ class TuningSessionTest {
         assertTrue(abs(tuning.tuning.value!!.targetHz - TuningSession.targetF1(67, 440.0)) < 1e-9)
         tuning.stepNote(+1)
         tuning.stepNote(+1)
-        assertEquals(70, tuning.tuning.value?.midi, "the second step crosses A4 into the treble")
+        assertEquals(68, tuning.tuning.value?.midi, "held at G#4: the temperament octave is unfinished, and A4 is the reference")
         assertNotNull(tuning.suggested.value)
     }
 
@@ -477,7 +477,7 @@ class TuningSessionTest {
 
     @Test
     fun doneAtTheFloorTurnsTheWalkUpwardInsteadOfEnding() {
-        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60))
+        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60, temperamentFirst = false))
         s.select(61)
         assertEquals(60, s.next())
         s.select(60)
@@ -537,5 +537,85 @@ class TuningSessionTest {
         assertEquals(OctaveType.O4_2, s.octaveTypeFor(56))   // just above it
         assertEquals(OctaveType.O4_2, s.octaveTypeFor(TunerSettings.TEMPERAMENT_HIGH))
         assertEquals(OctaveType.O4_1, s.octaveTypeFor(TunerSettings.TEMPERAMENT_HIGH + 1))
+    }
+
+    // ---- FOSS: the temperament octave is finished before anything else ----
+
+    private fun measuredNote(midi: Int, hz: Double) =
+        NoteMeasurement(midi, hz, 4e-4, 0.1, exact(4e-4, 1..8))
+
+    @Test
+    fun theOctaveBelowTheTemperamentIsClosedUntilTheTemperamentIsDone() {
+        val s = TuningSession(440.0)
+        assertTrue(s.selectable(60), "inside the temperament octave")
+        assertTrue(!s.selectable(56), "one semitone below it")
+        assertTrue(!s.selectable(80), "and the treble too")
+        assertEquals(TunerSettings().temperamentLowMidi, s.stepLowMidi)
+        assertEquals(TunerSettings.TEMPERAMENT_HIGH, s.stepHighMidi)
+    }
+
+    @Test
+    fun theWholeCompassOpensOnceTheTemperamentOctaveIsMeasured() {
+        val s = TuningSession(440.0)
+        for (midi in s.temperamentNotes) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        assertTrue(s.temperamentComplete)
+        assertTrue(s.selectable(56))
+        assertTrue(s.selectable(80))
+        assertEquals(s.lowMidi, s.stepLowMidi)
+        assertEquals(s.highMidi, s.stepHighMidi)
+    }
+
+    @Test
+    fun theArrowsDoNotLeaveTheTemperamentOctaveWhileItIsUnfinished() {
+        val s = TuningSession(440.0)
+        s.select(57)                                  // A3, the foot of it
+        assertEquals(57, s.stepped(-1), "there is nothing below yet")
+        s.select(68)                                  // G#4
+        assertEquals(68, s.stepped(+1), "and A4 is the reference, not a step")
+    }
+
+    @Test
+    fun doneReturnsToTheGapWhenANoteOfTheOctaveWasSkipped() {
+        val s = TuningSession(440.0)
+        for (midi in 69 downTo 59) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        s.select(58)
+        s.record(measuredNote(58, TuningSession.targetF1(58, 440.0)))
+        // 57 is the one note of the octave still missing
+        assertEquals(57, s.next())
+        s.record(measuredNote(57, TuningSession.targetF1(57, 440.0)))
+        s.select(57)
+        assertEquals(56, s.next(), "and then the compass continues")
+    }
+
+    @Test
+    fun proMaySampleAnywhere() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        assertTrue(s.selectable(56))
+        assertTrue(s.selectable(84))
+        assertEquals(s.lowMidi, s.stepLowMidi)
+        assertEquals(s.highMidi, s.stepHighMidi)
+    }
+
+    @Test
+    fun aSavedTuningOutsideTheGateResumesInsideItInsteadOfCrashing() {
+        val b = 4.0e-4
+        val tuning = TuningController(
+            QueueSource(listOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 10, 3.5))),
+        )
+        // a snapshot from before the gate existed: two notes measured, the
+        // tuner was down at G3, and the temperament octave is not finished
+        val snap = at.clavierhaus.unisonmaster.persistence.SessionSnapshot(
+            a4Hz = 440.0,
+            currentMidi = 55,
+            measurements = listOf(
+                NoteMeasurement(69, 440.0, b, 0.1, exact(b, 1..8)),
+                NoteMeasurement(68, 415.3, b, 0.1, exact(b, 1..8)),
+            ),
+            savedAtMs = 0L,
+        )
+        tuning.restore(snap)
+        val at = tuning.tuning.value?.midi
+        assertNotNull(at)
+        assertTrue(at in 57..68, "resumed inside the temperament octave, was $at")
     }
 }

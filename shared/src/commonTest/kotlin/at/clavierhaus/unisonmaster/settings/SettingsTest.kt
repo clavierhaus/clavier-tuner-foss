@@ -50,7 +50,7 @@ class SettingsTest {
 
     @Test
     fun theLowestPlainStringSetsTheSessionsFoot() {
-        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 40))   // E2
+        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 40, temperamentFirst = false))   // E2
         assertEquals((69 downTo 40).toList() + (70..108).toList(), s.notes)
         s.select(41)
         assertEquals(40, s.below())

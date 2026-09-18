@@ -215,8 +215,15 @@ class TuningController(
         setReference(snap.a4Hz)
         val s = TuningSession(_referenceA4Hz.value, _settings.value)
         for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
-        if (snap.currentMidi in s.notes && snap.currentMidi != TuningSession.MIDI_A4) s.select(snap.currentMidi)
-        else s.select(s.nextUnmeasured()?.takeIf { it != TuningSession.MIDI_A4 } ?: s.notes.last())
+        // A saved note may lie outside what the session allows now — a
+        // tuning saved before the temperament gate existed, say. Then the
+        // session resumes at the first note it will accept, never crashes.
+        val wanted = snap.currentMidi.takeIf { it != TuningSession.MIDI_A4 && s.selectable(it) }
+        val resume = wanted
+            ?: s.next()?.takeIf { it != TuningSession.MIDI_A4 && s.selectable(it) }
+            ?: s.notes.firstOrNull { it != TuningSession.MIDI_A4 && s.selectable(it) }
+            ?: TuningSession.MIDI_A4
+        s.select(resume)
         session = s
         publish(s, complete = s.nextUnmeasured() == null)
     }
@@ -238,6 +245,18 @@ class TuningController(
         val basisPartials: List<MeasuredPartial>,
         /** Notes already measured. */
         val measured: Set<Int>,
+        /**
+         * Every measured note's first partial, as cents from equal
+         * temperament on this session's A4. This is the tuning as executed —
+         * a result, not a target. Nothing is predicted and nothing is fitted:
+         * each point is one measured string.
+         */
+        val deviations: Map<Int, Double>,
+        /** True once the temperament octave is measured throughout. */
+        val temperamentComplete: Boolean,
+        /** Lowest and highest note the arrows may reach at this point. */
+        val stepLowMidi: Int,
+        val stepHighMidi: Int,
         /** True once every note of the session is measured. */
         val complete: Boolean,
     )
@@ -301,7 +320,7 @@ class TuningController(
     /** Tuning screen: tune [midi] next (any note of the session except A4). */
     fun selectNote(midi: Int) {
         val s = session ?: return
-        if (midi == TuningSession.MIDI_A4 || midi !in s.notes) return
+        if (midi == TuningSession.MIDI_A4 || !s.selectable(midi)) return
         s.select(midi)
         publish(s, complete = s.nextUnmeasured() == null)
     }
@@ -318,6 +337,12 @@ class TuningController(
             predicted = s.predictedPartials(midi),
             basisPartials = s.basisFor(midi)?.partials ?: emptyList(),
             measured = s.measurements.keys.toSet(),
+            deviations = s.measurements.mapValues { (midi, m) ->
+                TuningSession.centsOff(m.f1Hz, TuningSession.targetF1(midi, s.a4Hz))
+            },
+            temperamentComplete = s.temperamentComplete,
+            stepLowMidi = s.stepLowMidi,
+            stepHighMidi = s.stepHighMidi,
             complete = complete,
         )
         refreshTargets(_tuning.value!!, null)

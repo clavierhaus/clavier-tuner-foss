@@ -41,6 +41,7 @@ private val WHITE_KEYS = (MIDI_A0..MIDI_C8).count { !isBlack(it) }   // 52
 fun ProgressKeyboard(
     done: Set<Int>,
     current: Int?,
+    deviations: Map<Int, Double> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
     val labelPaint = android.graphics.Paint().apply {
@@ -49,10 +50,18 @@ fun ProgressKeyboard(
         textAlign = android.graphics.Paint.Align.CENTER
         isAntiAlias = true
     }
+    val captionPaint = android.graphics.Paint().apply {
+        color = Color(Brand.WHITE_MUTED).toArgb()
+        textSize = 18f
+        isAntiAlias = true
+    }
     Canvas(modifier) {
+        // the curve stands above the keys, over the same note axis
+        val curveBand = if (deviations.isEmpty()) 0f else size.height * 0.42f
         val labelBand = 26f
         val tickBand = 8f
-        val keyboardHeight = (size.height - labelBand - tickBand).coerceAtLeast(1f)
+        val keyboardTop = curveBand
+        val keyboardHeight = (size.height - curveBand - labelBand - tickBand).coerceAtLeast(1f)
         val w = size.width / WHITE_KEYS
         val blackW = w * 0.62f
         val blackH = keyboardHeight * 0.62f
@@ -63,7 +72,7 @@ fun ProgressKeyboard(
             val x = whitesBelow(midi) * w
             drawRect(
                 color = Color(if (midi in done) Brand.KEY_DONE_WHITE else Brand.KEY_WHITE),
-                topLeft = Offset(x + 0.5f, 0f),
+                topLeft = Offset(x + 0.5f, keyboardTop),
                 size = Size((w - 1f).coerceAtLeast(1f), keyboardHeight),
             )
         }
@@ -72,8 +81,53 @@ fun ProgressKeyboard(
             val x = whitesBelow(midi) * w - blackW / 2f
             drawRect(
                 color = Color(if (midi in done) Brand.KEY_DONE_BLACK else Brand.KEY_BLACK),
-                topLeft = Offset(x, 0f),
+                topLeft = Offset(x, keyboardTop),
                 size = Size(blackW, blackH),
+            )
+        }
+
+
+        // --- the tuning as executed -------------------------------------
+        // One point per measured string: how far its first partial stands
+        // from equal temperament. It is drawn, never followed: the target of
+        // a string is always that string's own measurement.
+        if (deviations.isNotEmpty() && curveBand > 12f) {
+            val span = maxOf(5.0, deviations.values.maxOf { kotlin.math.abs(it) } * 1.15)
+            val mid = curveBand * 0.52f
+            val half = curveBand * 0.36f
+            fun yOf(cents: Double) = mid - (cents / span * half).toFloat()
+            fun xOf(midi: Int) =
+                if (isBlack(midi)) whitesBelow(midi) * w else whitesBelow(midi) * w + w / 2f
+
+            // equal temperament, for reference only
+            drawRect(
+                color = Color(Brand.WHITE_MUTED).copy(alpha = 0.25f),
+                topLeft = Offset(0f, mid),
+                size = Size(size.width, 1f),
+            )
+            val pts = deviations.keys.sorted()
+            for (i in 1 until pts.size) {
+                val a = pts[i - 1]
+                val b = pts[i]
+                drawLine(
+                    color = Color(Brand.WHITE),
+                    start = Offset(xOf(a), yOf(deviations.getValue(a))),
+                    end = Offset(xOf(b), yOf(deviations.getValue(b))),
+                    strokeWidth = 2f,
+                )
+            }
+            for (midi in pts) {
+                drawCircle(
+                    color = Color(Brand.WHITE),
+                    radius = 2.5f,
+                    center = Offset(xOf(midi), yOf(deviations.getValue(midi))),
+                )
+            }
+            drawContext.canvas.nativeCanvas.drawText(
+                "%+.0f c".format(span), 2f, yOf(span) + 14f, captionPaint,
+            )
+            drawContext.canvas.nativeCanvas.drawText(
+                "measured — a result, not a target", 2f, curveBand - 2f, captionPaint,
             )
         }
 
@@ -83,7 +137,7 @@ fun ProgressKeyboard(
             else whitesBelow(current) * w + w / 2f
             drawRect(
                 color = Color(Brand.ORANGE),
-                topLeft = Offset(centre - w * 0.35f, keyboardHeight + 2f),
+                topLeft = Offset(centre - w * 0.35f, keyboardTop + keyboardHeight + 2f),
                 size = Size(w * 0.7f, tickBand - 3f),
             )
         }

@@ -121,6 +121,8 @@ fun BasicHub(
             val link = t.link
             val hint = when {
                 t.complete -> "Compass complete, ${Notes.name(t.lowestMidi)} upward."
+                !t.temperamentComplete && t.midi == t.stepLowMidi && !matched ->
+                    "Tune $name, single string. The temperament octave is finished first; the rest of the compass opens after it."
                 matched -> "$name matches. Tap Done, or refine with a partial."
                 link != null -> "Tune $name, single string: ${link.type.label} octave against ${Notes.name(link.refMidi)}."
                 t.midi < cfg.temperamentLowMidi -> "Tune $name, single string. ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} is not tuned yet, so the target is equal temperament."
@@ -139,11 +141,12 @@ fun BasicHub(
                 ProgressKeyboard(
                     done = t.measured,
                     current = t.midi,
+                    deviations = t.deviations,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 24.dp, bottom = 46.dp)
                         .width(640.dp)
-                        .height(132.dp),
+                        .height(216.dp),
                 )
             } else {
                 TuningGraph(
@@ -195,8 +198,8 @@ fun BasicHub(
             ) {
                 NoteStepper(
                     name = name,
-                    canDown = t.midi > t.lowestMidi,
-                    canUp = t.midi < TuningSession.MIDI_C8,
+                    canDown = t.midi > t.stepLowMidi,
+                    canUp = t.midi < t.stepHighMidi,
                     onDown = { controller.stepNote(-1) },
                     onUp = { controller.stepNote(+1) },
                 )

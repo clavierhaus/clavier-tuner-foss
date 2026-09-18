@@ -35,6 +35,13 @@ data class TunerSettings(
     // TEMPERAMENT
     /** Lowest note of the temperament octave; the session runs from A4 down to here. */
     val temperamentLowMidi: Int = 57,          // A3
+    /**
+     * The temperament octave must be finished before any note outside it can
+     * be tuned. FOSS pins this true — it takes temperament and inharmonicity
+     * from A3–A4 only, and that promise is only kept if A3–A4 is complete.
+     * Pro sets it false and samples where the tuner likes.
+     */
+    val temperamentFirst: Boolean = true,
     // STRETCH
     val octaveBass: OctaveType = OctaveType.O6_3,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
@@ -87,23 +94,34 @@ data class TunerSettings(
     }
 }
 
-/** Holds the settings, persists every change, and exposes them as a flow. */
-class SettingsModel(private val store: KeyValueStore) {
+/**
+ * Holds the settings, persists every change, and exposes them as a flow.
+ *
+ * [edition] carries what the app is rather than what the tuner chose:
+ * FOSS finishes the temperament octave first, Pro samples freely. Those
+ * values are never written to the store, so they cannot be changed from
+ * the settings screen and cannot leak from one edition to the other.
+ */
+class SettingsModel(
+    private val store: KeyValueStore,
+    private val edition: TunerSettings = TunerSettings(),
+) {
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
 
     fun update(change: (TunerSettings) -> TunerSettings) {
-        val s = change(_settings.value)
+        val s = change(_settings.value).copy(temperamentFirst = edition.temperamentFirst)
         _settings.value = s
         save(s)
     }
 
     private fun load(): TunerSettings {
-        val d = TunerSettings()
+        val d = edition
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
+            temperamentFirst = d.temperamentFirst,
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
