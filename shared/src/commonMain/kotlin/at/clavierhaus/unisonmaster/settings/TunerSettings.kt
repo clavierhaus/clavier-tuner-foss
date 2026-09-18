@@ -64,6 +64,8 @@ data class TunerSettings(
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
+        /** Top of the temperament octave: A4, the note the session is defined on. */
+        const val TEMPERAMENT_HIGH = 69        // A4
         const val MIN_UNWOUND = 28             // E1
         const val MAX_UNWOUND = 60             // C4
         const val MIN_HIGHEST_PARTIAL = 84     // C6
@@ -73,7 +75,16 @@ data class TunerSettings(
     /** Below this note the bass octave type applies: an octave above the lowest plain string. */
     val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
 
-    fun octaveTypeFor(midi: Int): OctaveType = if (midi <= bassBoundaryMidi) octaveBass else octaveMiddle
+    /**
+     * Which octave type links [midi] to an already tuned note: bass within an
+     * octave of the plain-wire floor, treble above the temperament octave,
+     * middle in between.
+     */
+    fun octaveTypeFor(midi: Int): OctaveType = when {
+        midi <= bassBoundaryMidi -> octaveBass
+        midi > TEMPERAMENT_HIGH -> octaveTreble
+        else -> octaveMiddle
+    }
 }
 
 /** Holds the settings, persists every change, and exposes them as a flow. */

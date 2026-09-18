@@ -125,8 +125,15 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     var settings: TunerSettings = settings
     /** Lowest note of the session: the lowest plain string. Wound strings are a later chapter. */
     val lowMidi: Int get() = settings.lowestUnwoundMidi.coerceIn(21, MIDI_A4 - 1)
-    /** The notes of the session, A4 first, downward. */
-    val notes: List<Int> get() = (MIDI_A4 downTo lowMidi).toList()
+    /** Highest note of the session: the top of the compass. */
+    val highMidi: Int get() = MIDI_C8
+    /**
+     * The notes of the session in the order they are tuned: A4 first, then
+     * down to the plain-wire floor, then up from A#4 to the top. The treble
+     * follows the bass because a treble note is linked to one below it,
+     * which must already be measured.
+     */
+    val notes: List<Int> get() = (MIDI_A4 downTo lowMidi) + ((MIDI_A4 + 1)..highMidi)
 
     /**
      * How a note below the temperament octave gets its target: its partial
@@ -135,15 +142,40 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * aural tuner listens for; it needs no inharmonicity model, because the
      * reference partial was measured, not predicted.
      */
-    data class OctaveLink(val type: OctaveType, val refMidi: Int, val viaHz: Double)
+    data class OctaveLink(
+        val type: OctaveType,
+        val refMidi: Int,
+        val viaHz: Double,
+        /** The partial of the note being tuned that must land on [viaHz]. */
+        val ownK: Int,
+    )
 
-    /** The octave link for [midi], or null inside the temperament octave or without a measured reference. */
+    /**
+     * The octave link for [midi], or null inside the temperament octave or
+     * without a measured reference.
+     *
+     * Below the temperament octave the reference lies above: partial
+     * [OctaveType.low] of this note must meet the measured partial
+     * [OctaveType.high] of it. Above the temperament octave the same interval
+     * is read the other way round — this note is the upper one, so its partial
+     * [OctaveType.high] must meet the measured partial [OctaveType.low] of the
+     * note below. Either way the reference partial was measured, not predicted.
+     */
     fun octaveLink(midi: Int = current): OctaveLink? {
-        if (midi >= settings.temperamentLowMidi) return null
         val type = settings.octaveTypeFor(midi)
-        val ref = measured[midi + type.semitones] ?: return null
-        val p = ref.partials.firstOrNull { it.k == type.high } ?: return null
-        return OctaveLink(type, ref.midi, type.high * ref.f1Hz * 2.0.pow(p.cents / 1200.0))
+        return when {
+            midi < settings.temperamentLowMidi -> {
+                val ref = measured[midi + type.semitones] ?: return null
+                val p = ref.partials.firstOrNull { it.k == type.high } ?: return null
+                OctaveLink(type, ref.midi, type.high * ref.f1Hz * 2.0.pow(p.cents / 1200.0), type.low)
+            }
+            midi > TunerSettings.TEMPERAMENT_HIGH -> {
+                val ref = measured[midi - type.semitones] ?: return null
+                val p = ref.partials.firstOrNull { it.k == type.low } ?: return null
+                OctaveLink(type, ref.midi, type.low * ref.f1Hz * 2.0.pow(p.cents / 1200.0), type.high)
+            }
+            else -> null
+        }
     }
 
     /**
@@ -155,12 +187,14 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     fun target(midi: Int = current, ownCentsLow: Double? = null): Double {
         val link = octaveLink(midi) ?: return Companion.targetF1(midi, a4Hz)
         val ratio = ownCentsLow?.let { 2.0.pow(it / 1200.0) }
-            ?: Inharmonicity.ratio(link.type.low, basisFor(midi)?.b ?: 0.0)
-        return link.viaHz / (link.type.low * ratio)
+            ?: Inharmonicity.ratio(link.ownK, basisFor(midi)?.b ?: 0.0)
+        return link.viaHz / (link.ownK * ratio)
     }
     companion object {
         const val MIDI_A4 = 69
         const val MIDI_A3 = 57
+        /** Top of the compass. */
+        const val MIDI_C8 = 108
         /** A basis note whose fit is worse than this is skipped for prediction. */
         const val MAX_BASIS_RESIDUAL_CENTS = 1.5
         /** A recommended partial stays within 30 dB of the loudest this long. */
@@ -222,8 +256,23 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     /** One semitone down from the current note, or null below the session's foot. */
     fun below(): Int? = (current - 1).takeIf { it >= lowMidi }
 
-    /** The note [delta] semitones away, kept within the session (A4 is the reference). */
-    fun stepped(delta: Int): Int = (current + delta).coerceIn(lowMidi, MIDI_A4 - 1)
+    /**
+     * The note Done moves to: the next one in the tuning order, so the walk
+     * runs A4 down to the floor and then up from A#4 to the top. Null at the
+     * end of the compass.
+     */
+    fun next(): Int? = notes.getOrNull(notes.indexOf(current) + 1)
+
+    /**
+     * The note [delta] semitones away, kept within the compass. A4 is the
+     * session's reference, set on the hub, so the arrows step over it rather
+     * than onto it — which is also how the walk crosses into the treble.
+     */
+    fun stepped(delta: Int): Int {
+        val to = (current + delta).coerceIn(lowMidi, highMidi)
+        if (to != MIDI_A4) return to
+        return (MIDI_A4 + if (delta > 0) 1 else -1).coerceIn(lowMidi, highMidi)
+    }
 
     /**
      * The note whose measurement predicts [midi]: the nearest measured note

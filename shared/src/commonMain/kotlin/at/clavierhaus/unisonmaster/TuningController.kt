@@ -327,7 +327,7 @@ class TuningController(
         _hiddenPartials.value = emptySet()
         val cfg = _settings.value
         val link = s.octaveLink(midi)
-        _suggested.value = if (link != null && link.type.low <= highestPartial(target)) link.type.low else
+        _suggested.value = if (link != null && link.ownK <= highestPartial(target)) link.ownK else
             TuningSession.recommend(
                 s.basisFor(midi)?.partials ?: emptyList(),
                 maxLevelDownDb = cfg.suggestLevelDb,
@@ -340,7 +340,7 @@ class TuningController(
         onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
 
-    /** Arrows: one semitone down (-1) or up (+1), within G#4 and the lowest plain string. */
+    /** Arrows: one semitone down (-1) or up (+1), within the compass. */
     fun stepNote(delta: Int) {
         val s = session ?: return
         val to = s.stepped(delta)
@@ -349,9 +349,9 @@ class TuningController(
         publish(s, complete = s.nextUnmeasured() == null)
     }
 
-    /** After Done: one semitone down; on the lowest plain string the session stays and reports complete. */
+    /** After Done: the next note of the walk — down to the plain-wire floor, then up to the top. */
     private fun advance(s: TuningSession) {
-        val next = s.below()
+        val next = s.next()
         if (next != null) s.select(next)
         publish(s, complete = next == null || s.nextUnmeasured() == null)
     }

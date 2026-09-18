@@ -71,7 +71,7 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
     )
 
     SettingsSection("Stretch")
-    SettingsNote("Stored now; applied once the stretch is built on the measured partials.")
+    SettingsNote("The octave type sets the target below and above the temperament octave. Stretch inside it follows.")
     ChoiceRow("Octave type, bass", "Which partials of the two notes coincide", octaves.map { it.label }, octaves.indexOf(s.octaveBass)) {
         model.update { c -> c.copy(octaveBass = octaves[it]) }
     }
@@ -81,10 +81,6 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
     ChoiceRow("Octave type, treble", "", octaves.map { it.label }, octaves.indexOf(s.octaveTreble)) {
         model.update { c -> c.copy(octaveTreble = octaves[it]) }
     }
-    WeightRow("Octave", s.weightOctave) { model.update { c -> c.copy(weightOctave = it) } }
-    WeightRow("Twelfth", s.weightTwelfth) { model.update { c -> c.copy(weightTwelfth = it) } }
-    WeightRow("Double octave", s.weightDoubleOctave) { model.update { c -> c.copy(weightDoubleOctave = it) } }
-    WeightRow("Fifth", s.weightFifth) { model.update { c -> c.copy(weightFifth = it) } }
 
     SettingsSection("Piano")
     StepperRow(
@@ -128,17 +124,5 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
         onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
         onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
-    )
-}
-
-@Composable
-private fun WeightRow(interval: String, weight: Int, onChange: (Int) -> Unit) {
-    StepperRow(
-        "Weight: $interval", "",
-        "$weight",
-        canDecrease = weight > 0,
-        canIncrease = weight < 10,
-        onDecrease = { onChange(weight - 1) },
-        onIncrease = { onChange(weight + 1) },
     )
 }

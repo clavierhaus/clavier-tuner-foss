@@ -2,6 +2,8 @@ package at.clavierhaus.unisonmaster.tuning
 
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.audio.AudioSource
+import at.clavierhaus.unisonmaster.settings.OctaveType
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.exp
@@ -203,7 +205,7 @@ class TuningSessionTest {
         val s = TuningSession(440.0)
         s.select(68)
         assertEquals(67, s.stepped(-1))
-        assertEquals(68, s.stepped(+1), "A4 is the reference, not a step target")
+        assertEquals(70, s.stepped(+1), "A4 is the reference: the arrows step over it into the treble")
         s.select(43)                               // the lowest plain string, G2 by default
         assertEquals(43, s.stepped(-1))
         assertNull(s.below())
@@ -244,7 +246,7 @@ class TuningSessionTest {
         assertTrue(abs(tuning.tuning.value!!.targetHz - TuningSession.targetF1(67, 440.0)) < 1e-9)
         tuning.stepNote(+1)
         tuning.stepNote(+1)
-        assertEquals(68, tuning.tuning.value?.midi)
+        assertEquals(70, tuning.tuning.value?.midi, "the second step crosses A4 into the treble")
         assertNotNull(tuning.suggested.value)
     }
 
@@ -430,8 +432,9 @@ class TuningSessionTest {
         assertEquals(s.octaveMiddle, s.octaveTypeFor(56))
         assertEquals(s.octaveBass, s.octaveTypeFor(55))
         val session = TuningSession(440.0, s)
-        assertEquals(27, session.notes.size)                                            // A4 .. G2
-        assertEquals(43, session.notes.last())
+        assertEquals(27 + 39, session.notes.size)                                       // A4 .. G2, then A#4 .. C8
+        assertEquals(43, session.notes[26])                                             // the floor, where the walk turns up
+        assertEquals(TuningSession.MIDI_C8, session.notes.last())
     }
 
     @Test
@@ -458,5 +461,81 @@ class TuningSessionTest {
         val pp = readings.max() - readings.min()
         assertTrue(pp > 0.4, "the swing is shown: $pp Hz peak to peak")
         assertTrue(abs(readings.average() - 415.0) < 0.05, "and centred on the string: ${readings.average()}")
+    }
+
+    // ---- the treble: the walk above A4, and the octave link read upward ----
+
+    @Test
+    fun theWalkRunsDownToThePlainWireFloorAndThenUpToTheTop() {
+        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60))
+        assertEquals(TuningSession.MIDI_A4, s.notes.first())
+        assertEquals(60, s.notes[TuningSession.MIDI_A4 - 60])          // the floor
+        assertEquals(70, s.notes[TuningSession.MIDI_A4 - 60 + 1])      // then A#4
+        assertEquals(TuningSession.MIDI_C8, s.notes.last())
+        assertEquals(s.notes.size, s.notes.distinct().size)
+    }
+
+    @Test
+    fun doneAtTheFloorTurnsTheWalkUpwardInsteadOfEnding() {
+        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60))
+        s.select(61)
+        assertEquals(60, s.next())
+        s.select(60)
+        assertEquals(70, s.next())          // the floor hands over to the treble
+        s.select(TuningSession.MIDI_C8)
+        assertNull(s.next())                // and the top ends the walk
+    }
+
+    @Test
+    fun aTrebleNoteIsLinkedToAMeasuredNoteBelowIt() {
+        val s = TuningSession(440.0, TunerSettings(octaveTreble = OctaveType.O4_1))
+        val b = 4e-4
+        s.record(NoteMeasurement(60, 261.6, b, 0.1, exact(b, 1..8)))   // C4 measured
+        val link = s.octaveLink(84)                                    // C6, two octaves above
+        assertNotNull(link)
+        assertEquals(60, link.refMidi)
+        assertEquals(OctaveType.O4_1, link.type)
+        // the upper note meets the lower one at partial 4 of the lower, partial 1 of the upper
+        assertEquals(1, link.ownK)
+        assertEquals(4 * 261.6 * Inharmonicity.ratio(4, b), link.viaHz, 1e-6)
+    }
+
+    @Test
+    fun theTrebleTargetPutsTheOwnPartialOnTheMeasuredOne() {
+        val s = TuningSession(440.0, TunerSettings(octaveTreble = OctaveType.O4_1))
+        val b = 4e-4
+        s.record(NoteMeasurement(60, 261.6, b, 0.1, exact(b, 1..8)))
+        val link = assertNotNull(s.octaveLink(84))
+        // with the string's own ratio known, target · ownK · ratio == the reference partial
+        val target = s.target(84, ownCentsLow = Inharmonicity.centsOf(link.ownK, b))
+        assertEquals(link.viaHz, target * link.ownK * Inharmonicity.ratio(link.ownK, b), 1e-6)
+    }
+
+    @Test
+    fun insideTheTemperamentOctaveThereIsStillNoLink() {
+        val s = TuningSession(440.0)
+        s.record(NoteMeasurement(60, 261.6, 4e-4, 0.1, exact(4e-4, 1..8)))
+        for (midi in TunerSettings().temperamentLowMidi..TunerSettings.TEMPERAMENT_HIGH) {
+            assertNull(s.octaveLink(midi), "note $midi is inside the temperament octave")
+        }
+    }
+
+    @Test
+    fun aTrebleNoteWithoutItsReferenceFallsBackToEqualTemperament() {
+        val s = TuningSession(440.0, TunerSettings(octaveTreble = OctaveType.O4_1))
+        assertNull(s.octaveLink(84))                       // nothing measured below
+        assertEquals(TuningSession.targetF1(84, 440.0), s.target(84), 1e-9)
+    }
+
+    @Test
+    fun theOctaveTypeIsChosenByRegister() {
+        val s = TunerSettings(
+            lowestUnwoundMidi = 43,
+            octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
+        )
+        assertEquals(OctaveType.O6_3, s.octaveTypeFor(55))   // at the bass boundary
+        assertEquals(OctaveType.O4_2, s.octaveTypeFor(56))   // just above it
+        assertEquals(OctaveType.O4_2, s.octaveTypeFor(TunerSettings.TEMPERAMENT_HIGH))
+        assertEquals(OctaveType.O4_1, s.octaveTypeFor(TunerSettings.TEMPERAMENT_HIGH + 1))
     }
 }

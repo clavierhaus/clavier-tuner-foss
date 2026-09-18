@@ -34,6 +34,7 @@ import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.NoteStepper
 import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.ReadoutColumn
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.ToneGraph
@@ -111,15 +112,16 @@ fun BasicHub(
             val matched = TuningSession.matched(hz, liveTarget, cfg.matchHz)
             val link = t.link
             val hint = when {
-                t.complete -> "Plain wire complete, down to ${Notes.name(t.lowestMidi)}."
+                t.complete -> "Compass complete, ${Notes.name(t.lowestMidi)} upward."
                 matched -> "$name matches. Tap Done, or refine with a partial."
                 link != null -> "Tune $name, single string: ${link.type.label} octave against ${Notes.name(link.refMidi)}."
                 t.midi < cfg.temperamentLowMidi -> "Tune $name, single string. ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} is not tuned yet, so the target is equal temperament."
+                t.midi > TunerSettings.TEMPERAMENT_HIGH -> "Tune $name, single string. ${Notes.name(t.midi - cfg.octaveTypeFor(t.midi).semitones)} is not tuned yet, so the target is equal temperament."
                 else -> "Tune $name, single string, until both bells turn green."
             }
             val advice = if (matched) {
                 suggested?.takeIf { it !in shownTuning }?.let { k ->
-                    if (link != null && k == link.type.low)
+                    if (link != null && k == link.ownK)
                         "Add ${partialNoteName(k, liveTarget, a4)} (partial $k): the ${link.type.label} octave turns green there."
                     else
                         "Add ${partialNoteName(k, liveTarget, a4)} (partial $k) for a finer match."
