@@ -39,6 +39,17 @@ object Brand {
     /** Calculated targets, and nothing else. Functional, not decorative. */
     const val TARGET_BLUE: Long = 0xFF8FD0FF
 
+    /**
+     * The progress keyboard. Green marks a note that is done, which is the
+     * same functional meaning GO_GREEN carries elsewhere: a match. A black
+     * key that is done takes a deeper green, so that it stays readable as a
+     * black key against its lit neighbours instead of merging into them.
+     */
+    const val KEY_WHITE: Long = 0xFFE6E6E6
+    const val KEY_BLACK: Long = 0xFF141414
+    const val KEY_DONE_WHITE: Long = GO_GREEN
+    const val KEY_DONE_BLACK: Long = 0xFF1B7A2C
+
     const val ALERT_RED: Long = 0xFFE02020
     const val ALERT_RED_DIM: Long = 0xFF7A1414
 }

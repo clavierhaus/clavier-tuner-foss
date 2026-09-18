@@ -5,4 +5,5 @@ build/
 *.iml
 local.properties
 androidApp/.cxx/
+.kotlin/
 .DS_Store

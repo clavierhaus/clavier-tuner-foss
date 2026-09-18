@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -41,6 +43,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -90,12 +93,14 @@ fun SettingsGear(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 /** A line of guidance under the title. */
 @Composable
-fun HubHint(text: String, modifier: Modifier = Modifier) {
+fun HubHint(text: String, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
     Text(
         text,
         color = Color(Brand.WHITE_MUTED),
         fontFamily = DejaVuSerif,
         fontSize = 14.sp,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
 }
@@ -353,6 +358,32 @@ fun SpectrumToggle(
     ) {
         Text(
             if (fullSpectrum) fundamentalLabel else "Full Spectrum",
+            fontFamily = DejaVuSerif,
+            fontSize = 16.sp,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * Opens the progress keyboard, and closes it again. Outlined rather than
+ * filled: the spectrum toggle above already carries the orange block, and two
+ * filled blocks in a column read as one control split in half.
+ */
+@Composable
+fun ProgressButton(
+    showingProgress: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        border = BorderStroke(1.dp, Color(Brand.ORANGE)),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.ORANGE)),
+    ) {
+        Text(
+            if (showingProgress) "Tuning" else "Progress",
             fontFamily = DejaVuSerif,
             fontSize = 16.sp,
             maxLines = 1,

@@ -15,14 +15,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.ui.formatHz
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -33,12 +37,14 @@ import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.NoteStepper
 import at.clavierhaus.unisonmaster.ui.PartialRow
+import at.clavierhaus.unisonmaster.ui.ProgressButton
+import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
 import at.clavierhaus.unisonmaster.ui.ReadoutColumn
-import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
+import at.clavierhaus.unisonmaster.ui.formatHz
 import at.clavierhaus.unisonmaster.ui.partialNoteName
 
 /**
@@ -57,6 +63,8 @@ fun BasicHub(
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
     val full by controller.fullSpectrum.collectAsState()
+    // which of the two views the screen is showing; a view, not a setting
+    var showProgress by remember { mutableStateOf(false) }
     val hidden by controller.hiddenPartials.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
     val tuning by controller.tuning.collectAsState()
@@ -127,27 +135,47 @@ fun BasicHub(
                         "Add ${partialNoteName(k, liveTarget, a4)} (partial $k) for a finer match."
                 }
             } else null
-            TuningGraph(
-                liveHz = hz,
-                sounding = level > 0.0,
-                targetHz = liveTarget,
-                shown = shownTuning,
-                predicted = targets,
-                livePartials = partials,
-                active = active,
-                matchHz = cfg.matchHz,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 80.dp),
-            )
-            Header(onBack, onSettings, hint, advice) {
+            if (showProgress) {
+                ProgressKeyboard(
+                    done = t.measured,
+                    current = t.midi,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 24.dp, bottom = 46.dp)
+                        .width(640.dp)
+                        .height(132.dp),
+                )
+            } else {
+                TuningGraph(
+                    liveHz = hz,
+                    sounding = level > 0.0,
+                    targetHz = liveTarget,
+                    shown = shownTuning,
+                    predicted = targets,
+                    livePartials = partials,
+                    active = active,
+                    matchHz = cfg.matchHz,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 80.dp),
+                )
+            }
+            Header(
+                onBack, onSettings, hint, advice,
+                below = {
+                    ProgressButton(
+                        showingProgress = showProgress,
+                        onClick = { showProgress = !showProgress },
+                    )
+                },
+            ) {
                 SpectrumToggle(
                     fullSpectrum = full,
                     onClick = { controller.toggleFullSpectrum() },
                     fundamentalLabel = "Fundamental $name",
                 )
             }
-            ReadoutColumn(
+            if (!showProgress) ReadoutColumn(
                 shown = shownTuning,
                 active = active,
                 targetHz = liveTarget,
@@ -159,7 +187,7 @@ fun BasicHub(
                 onSelect = { k -> controller.activatePartial(k) },
                 modifier = Modifier.align(Alignment.TopEnd),
             )
-            Row(
+            if (!showProgress) Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -168,7 +196,7 @@ fun BasicHub(
                 NoteStepper(
                     name = name,
                     canDown = t.midi > t.lowestMidi,
-                    canUp = t.midi < TuningSession.MIDI_A4 - 1,
+                    canUp = t.midi < TuningSession.MIDI_C8,
                     onDown = { controller.stepNote(-1) },
                     onUp = { controller.stepNote(+1) },
                 )
@@ -200,6 +228,7 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
     onSettings: () -> Unit,
     hint: String,
     advice: String?,
+    below: @Composable () -> Unit = {},
     toggle: @Composable () -> Unit,
 ) {
     Column(
@@ -214,12 +243,32 @@ private fun androidx.compose.foundation.layout.BoxScope.Header(
         Spacer(Modifier.height(10.dp))
         ClavierhausTitle()
         Spacer(Modifier.height(18.dp))
-        HubHint(hint)
-        if (advice != null) {
-            Spacer(Modifier.height(8.dp))
-            Text(advice, color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 14.sp)
+        // The hint runs to one, two or three lines and the advice comes and
+        // goes. The block is given the height of its worst case so that the
+        // controls under it keep one fixed position on the screen: a button
+        // that moves while the tuner is reaching for it is a button missed.
+        Box(Modifier.height(HINT_BLOCK).fillMaxWidth()) {
+            Column {
+                HubHint(hint, maxLines = 3)
+                if (advice != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        advice,
+                        color = Color(Brand.ORANGE),
+                        fontFamily = DejaVuSerif,
+                        fontSize = 14.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(18.dp))
         toggle()
+        Spacer(Modifier.height(10.dp))
+        below()
     }
 }
+
+/** Height reserved for hint and advice: three lines plus two, at 14.sp. */
+private val HINT_BLOCK = 108.dp
