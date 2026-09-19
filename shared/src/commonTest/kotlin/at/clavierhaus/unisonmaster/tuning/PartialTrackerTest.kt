@@ -82,4 +82,36 @@ class PartialTrackerTest {
         assertEquals(emptySet(), PartialSelection.tap(4, true, audible, emptySet()), "inaudible partial ignored")
         assertEquals(emptySet(), PartialSelection.tap(2, false, audible, emptySet()), "no taps in fundamental mode")
     }
+
+    /**
+     * The note just tuned is still ringing a semitone above the one being
+     * measured, and louder. Until 19 September the search band for partial k
+     * was ±0.35·f1 — wide enough to hold the neighbour's partial k from k = 2
+     * upward — and the loudest bin won, so this string's third partial was
+     * reported a hundred cents flat. That reading, stored, made every 6:3
+     * octave link built on it a semitone wrong.
+     */
+    @Test
+    fun aLouderNeighbourASemitoneAwayDoesNotBecomeThisStringsPartial() {
+        val f0 = 311.0                       // D#4
+        val neighbour = 329.6                // E4, the note tuned just before, still ringing
+        val f1 = partialHz(f0, 1)
+        val own = stiffString(f0, 8, N, amp = 0.10)
+        val other = stiffString(neighbour, 8, N, amp = 0.25)
+        val mix = FloatArray(N) { own[it] + other[it] }
+        val readings = PartialTracker(SR, N).analyse(mix, f1)
+        for (k in 2..6) {
+            val r = readings.firstOrNull { it.k == k } ?: continue
+            assertTrue(abs(r.cents - cents(partialHz(f0, k), k * f1)) < 12.0,
+                "partial $k read at ${"%.1f".format(r.cents)} c: that is the neighbour, not this string")
+        }
+        // and the other way: the neighbour a semitone BELOW
+        val below = stiffString(293.7, 8, N, amp = 0.25)
+        val mix2 = FloatArray(N) { own[it] + below[it] }
+        val readings2 = PartialTracker(SR, N).analyse(mix2, f1)
+        for (k in 2..6) {
+            val r = readings2.firstOrNull { it.k == k } ?: continue
+            assertTrue(r.cents > -25.0, "partial $k read ${"%.1f".format(r.cents)} c flat: the neighbour below")
+        }
+    }
 }

@@ -35,6 +35,26 @@ class PartialTracker(
 ) {
     companion object {
         const val SEARCH_SPAN = 0.35     // of f1, either side of the prediction
+        /**
+         * The band around partial k must not reach the same partial of the
+         * neighbouring semitone, which stands 5.9 % away: with ±35 % of f1
+         * it did, from k = 2 upward, and a louder neighbour — the note just
+         * tuned, still ringing — was taken for this string's partial. Its
+         * stored cents then went into every octave link that read it, and
+         * the target of the next note came out a semitone wrong.
+         * ±3 % of the partial is half a semitone: room for the prediction's
+         * error, none for the neighbour.
+         */
+        const val NEIGHBOUR_GUARD = 0.03 // of k·f1, either side of the prediction
+        /** No search narrower than this, so the parabola has something to stand on. */
+        const val MIN_HALF_BINS = 2
+        /**
+         * A plain-wire partial is sharp of k·f1 by an amount that grows with
+         * k², and never flat by more than measurement noise. A reading outside
+         * that is another string's partial, or nothing, and is not returned.
+         */
+        fun plausibleCents(k: Int, cents: Double): Boolean =
+            cents >= -25.0 && cents <= 20.0 + 1.6 * k * k
         const val FLOOR_MIN_HZ = 50.0
         const val FLOOR_MAX_HZ = 12000.0
     }
@@ -65,9 +85,10 @@ class PartialTracker(
         val nyquist = sampleRateHz / 2.0
         for (k in 1..maxPartials) {
             val predicted = k * f1 * sqrt((1 + b * k * k) / (1 + b))
-            if (predicted + SEARCH_SPAN * f1 >= nyquist - binHz) break
-            val from = floor((predicted - SEARCH_SPAN * f1) / binHz).toInt().coerceAtLeast(1)
-            val to = floor((predicted + SEARCH_SPAN * f1) / binHz).toInt().coerceAtMost(mag.size - 2)
+            val halfHz = maxOf(minOf(SEARCH_SPAN * f1, NEIGHBOUR_GUARD * k * f1), MIN_HALF_BINS * binHz)
+            if (predicted + halfHz >= nyquist - binHz) break
+            val from = floor((predicted - halfHz) / binHz).toInt().coerceAtLeast(1)
+            val to = floor((predicted + halfHz) / binHz).toInt().coerceAtMost(mag.size - 2)
             var best = from
             for (i in from..to) if (mag[i] > mag[best]) best = i
             // parabolic refinement on the log magnitude
@@ -77,6 +98,7 @@ class PartialTracker(
             val hz = (best + delta) * binHz
             val peakDb = c - 0.25 * (a - d) * delta
             val cents = 1200.0 * ln(hz / (k * f1)) / ln(2.0)
+            if (k >= 2 && !plausibleCents(k, cents)) continue
             val reading = PartialReading(k, hz, if (k == 1) 0.0 else cents, peakDb, peakDb - floorDb)
             out.add(reading)
             if (k >= 2 && reading.snrDb >= LiveReference.AUDIBLE_SNR_DB) {
