@@ -67,14 +67,47 @@ class PartialTracker(
     private val re = DoubleArray(windowSize)
     private val im = DoubleArray(windowSize)
     private val mag = DoubleArray(windowSize / 2)
-    private val binHz = sampleRateHz.toDouble() / windowSize
+    val binHz = sampleRateHz.toDouble() / windowSize
 
-    fun analyse(samples: FloatArray, f1: Double): List<PartialReading> {
+    /** The Hann-windowed magnitude spectrum of [samples]; [strongestPeak] and [partials] read it. */
+    fun spectrum(samples: FloatArray) {
         require(samples.size == windowSize) { "expected $windowSize samples" }
         for (i in 0 until windowSize) { re[i] = samples[i] * hann[i]; im[i] = 0.0 }
         Fft.transform(re, im)
         for (i in mag.indices) mag[i] = sqrt(re[i] * re[i] + im[i] * im[i])
+    }
 
+    /**
+     * The strongest component between [minHz] and [maxHz] in the last
+     * [spectrum], refined between bins, or null when nothing stands out
+     * there. This locates the fundamental: the loudest thing in the range is
+     * what the tuner hears as the note, and a time-domain estimate that
+     * disagrees with it has been pulled by a neighbour or a partial.
+     */
+    fun strongestPeak(minHz: Double, maxHz: Double, minSnrDb: Double = LiveReference.AUDIBLE_SNR_DB): Double? {
+        val from = floor(minHz / binHz).toInt().coerceAtLeast(1)
+        val to = floor(maxHz / binHz).toInt().coerceAtMost(mag.size - 2)
+        if (to <= from) return null
+        var best = from
+        for (i in from..to) if (mag[i] > mag[best]) best = i
+        if (mag[best] <= 0.0) return null
+        // nothing sounding in the range: the loudest bin is noise, not a note
+        val lo = (FLOOR_MIN_HZ / binHz).toInt().coerceAtLeast(1)
+        val hi = (FLOOR_MAX_HZ / binHz).toInt().coerceAtMost(mag.size - 1)
+        if (db(mag[best]) - db(median(mag, lo, hi)) < minSnrDb) return null
+        val a = db(mag[best - 1]); val c = db(mag[best]); val d = db(mag[best + 1])
+        val den = a - 2 * c + d
+        val delta = if (den < 0) (0.5 * (a - d) / den).coerceIn(-0.5, 0.5) else 0.0
+        return (best + delta) * binHz
+    }
+
+    fun analyse(samples: FloatArray, f1: Double): List<PartialReading> {
+        spectrum(samples)
+        return partials(f1)
+    }
+
+    /** Partials 1..maxPartials of the string whose first partial is [f1], in the last [spectrum]. */
+    fun partials(f1: Double): List<PartialReading> {
         val lo = (FLOOR_MIN_HZ / binHz).toInt().coerceAtLeast(1)
         val hi = (FLOOR_MAX_HZ / binHz).toInt().coerceAtMost(mag.size - 1)
         val floorDb = db(median(mag, lo, hi))

@@ -120,4 +120,67 @@ class LiveReferenceTest {
         assertEquals(441.8, tuning.referenceA4Hz.value)
         tuning.stopLive()
     }
+
+    // ---- the fundamental with a neighbour in the range ----
+
+    /** A stiff string struck at [startS]: ten partials, slow decay, a little noise. */
+    private fun stiff(f1: Double, seconds: Double, amp: Double, startS: Double, b: Double = 3.0e-4): FloatArray {
+        val f0 = f1 / kotlin.math.sqrt(1 + b)
+        val rnd = kotlin.random.Random((f1 * 100).toInt())
+        return FloatArray((seconds * SR).toInt()) { i ->
+            val t = i.toDouble() / SR - startS
+            if (t < 0) 0f else {
+                var v = 0.0
+                for (k in 1..10) v += amp / k * sin(2 * PI * k * f0 * kotlin.math.sqrt(1 + b * k * k) * t + k)
+                (v * exp(-t / 4.0) + 1e-4 * (rnd.nextDouble() * 2 - 1)).toFloat()
+            }
+        }
+    }
+
+    /** Every reading of the app's live pipeline (hop 1024, range ±3 semitones on [targetHz]). */
+    private fun readings(signal: FloatArray, targetHz: Double, fromS: Double): List<Double> {
+        val semis = Math.pow(2.0, 3.0 / 12.0)
+        val live = LiveReference(SR, hopSize = 1024, minHz = targetHz / semis, maxHz = targetHz * semis)
+        val out = ArrayList<Double>()
+        val buf = FloatArray(1024)
+        var pos = 0
+        while (pos + 1024 <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + 1024)
+            live.push(buf)
+            pos += 1024
+            if (pos >= fromS * SR) live.hz?.let(out::add)
+        }
+        return out
+    }
+
+    @Test
+    fun aNeighbourStillRingingDoesNotPullTheFundamentalOffTheString() {
+        val dSharp3 = 155.56; val e3 = 164.81
+        val sig = stiff(e3, 4.0, 0.2, 0.0)                 // E3 rings from the start ...
+        val struck = stiff(dSharp3, 4.0, 0.2, 0.5)          // ... D#3 is struck half a second later
+        val mix = FloatArray(sig.size) { sig[it] + struck[it] }
+        val rs = readings(mix, dSharp3, fromS = 1.2)
+        assertTrue(rs.size > 50)
+        val worst = rs.maxOf { abs(it - dSharp3) }
+        assertTrue(worst < 0.5, "readings strayed up to %.2f Hz from D#3 with E3 ringing".format(worst))
+    }
+
+    @Test
+    fun twoNotesSoundingReadAsOneOrTheOtherNeverAsAPitchBetween() {
+        val dSharp3 = 155.56; val d3 = 146.83
+        val a = stiff(dSharp3, 4.0, 0.2, 0.5)
+        val c = stiff(d3, 4.0, 0.2, 0.5)
+        val mix = FloatArray(a.size) { a[it] + c[it] }
+        val rs = readings(mix, dSharp3, fromS = 1.2)
+        assertTrue(rs.size > 50)
+        val between = rs.filter { abs(it - dSharp3) > 0.5 && abs(it - d3) > 0.5 }
+        assertTrue(between.isEmpty(), "read a pitch that is neither note: ${between.take(5)}")
+    }
+
+    @Test
+    fun theOctaveAboveSoundingAloneIsNotReadAsThisNote() {
+        val dSharp3 = 155.56; val dSharp4 = 311.13
+        val rs = readings(stiff(dSharp4, 3.0, 0.2, 0.0), dSharp3, fromS = 0.0)
+        assertTrue(rs.isEmpty(), "read ${rs.take(3)} with nothing but D#4 sounding: a phantom at half its pitch")
+    }
 }

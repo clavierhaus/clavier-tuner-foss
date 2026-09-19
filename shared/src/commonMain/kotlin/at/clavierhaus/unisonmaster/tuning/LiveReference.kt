@@ -1,7 +1,7 @@
 package at.clavierhaus.unisonmaster.tuning
 
 import at.clavierhaus.unisonmaster.dsp.PreciseF0
-import at.clavierhaus.unisonmaster.dsp.Yin
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.ln
 import kotlin.math.log10
@@ -16,8 +16,9 @@ import kotlin.math.sqrt
  *    the recent estimates, so a new note is never averaged with the last.
  *  - After a strike, [settleHops] hops are skipped: the attack, plus enough
  *    to flush the pre-strike sound out of the analysis window.
- *  - Each hop: YIN coarse, phase-refined fine estimate (phase advance over
- *    [phaseBaseline] samples), searched within the range set by [setRange].
+ *  - Each hop: the strongest spectral component of the range set by
+ *    [setRange] locates the fundamental; a two-stage phase reading (phase
+ *    advance over [phaseBaseline] samples) refines it.
  *    The value shown is that estimate as measured over the analysis window
  *    (about a quarter second of sound): readings are not averaged.
  *    What the string does, the display shows. (A strike's stored record uses
@@ -165,8 +166,22 @@ class LiveReference(
         if (filled < windowSize) return
 
         val sr = sampleRateHz.toDouble()
-        val coarse = Yin.estimateF0(ring, sr, minHz = minHz, maxHz = maxHz) ?: return
-        val fine = PreciseF0.refine(ring, sr, coarse, phaseBaseline)
+        // The fundamental is located in the spectrum: the strongest component
+        // of the range, standing clear of the noise floor and refined between
+        // bins, is what the tuner hears as the note. When the range holds no
+        // such component nothing is read — YIN used to be asked instead, and
+        // with only the octave above sounding its difference function has a
+        // zero at twice that period too, so it reported a phantom note an
+        // octave below whatever rang. The phase reading then sharpens the
+        // peak to millihertz, in two stages so a coarse position half a
+        // capture off cannot wrap onto the wrong side; and a phase result
+        // that has moved off the peak by more than a bin was pulled by a
+        // second component in the range — a neighbour still ringing — and
+        // the peak is kept instead.
+        tracker.spectrum(ring)
+        val coarse = tracker.strongestPeak(minHz, maxHz) ?: return
+        val phased = PreciseF0.refineTwoStage(ring, sr, coarse, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
+        val fine = if (abs(phased - coarse) <= tracker.binHz) phased else coarse
         if (fine < minHz || fine > maxHz) return
 
         estimates.addLast(fine)
@@ -174,7 +189,7 @@ class LiveReference(
         val f1 = fine
         hz = f1
 
-        val heard = tracker.analyse(ring, f1)
+        val heard = tracker.partials(f1)
             .filter { it.snrDb >= AUDIBLE_SNR_DB }
             .map { r ->
                 // the peak locates the partial; the phase reads it to millihertz
