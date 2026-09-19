@@ -183,4 +183,25 @@ class LiveReferenceTest {
         val rs = readings(stiff(dSharp4, 3.0, 0.2, 0.0), dSharp3, fromS = 0.0)
         assertTrue(rs.isEmpty(), "read ${rs.take(3)} with nothing but D#4 sounding: a phantom at half its pitch")
     }
+
+    @Test
+    fun detectionNamesTheFundamentalEvenWhereTheSecondPartialIsLouder() {
+        // an E2 string as the microphone hears it: partial 2 ten dB above partial 1
+        val f1 = 82.41; val b = 1.8e-4
+        val f0 = f1 / kotlin.math.sqrt(1 + b)
+        val sig = FloatArray(3 * SR) { i ->
+            val t = i.toDouble() / SR
+            var v = 0.0
+            for (k in 1..8) v += (if (k == 2) 0.3 else 0.1 / k) * sin(2 * PI * k * f0 * kotlin.math.sqrt(1 + b * k * k) * t + k)
+            (v * exp(-t / 4.0)).toFloat()
+        }
+        val live = LiveReference(SR, hopSize = 1024, minHz = 400.0, maxHz = 500.0)   // the screen is on A4
+        val buf = FloatArray(1024)
+        var pos = 0
+        val seen = ArrayList<Double>()
+        while (pos + 1024 <= sig.size) { sig.copyInto(buf, 0, pos, pos + 1024); live.push(buf); pos += 1024; live.detectedHz?.let(seen::add) }
+        assertTrue(seen.isNotEmpty(), "nothing detected")
+        val bad = seen.filter { abs(it - f1) > 1.5 }
+        assertTrue(bad.isEmpty(), "detected ${bad.take(3)} for an E2 string")
+    }
 }

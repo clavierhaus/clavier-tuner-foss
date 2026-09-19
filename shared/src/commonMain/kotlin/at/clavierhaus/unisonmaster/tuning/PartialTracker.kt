@@ -101,6 +101,27 @@ class PartialTracker(
         return (best + delta) * binHz
     }
 
+    /**
+     * The fundamental of the loudest thing sounding between [minHz] and
+     * [maxHz]: the strongest peak, unless a peak within [subharmonicDb] of it
+     * stands at that frequency divided by 2, 3 or 4 (within 3 %) — then the
+     * lowest such peak, because a bass string's upper partials outweigh its
+     * first. Null when the strongest peak does not clear the noise floor.
+     */
+    fun fundamentalOfStrongest(minHz: Double, maxHz: Double, subharmonicDb: Double): Double? {
+        val top = strongestPeak(minHz, maxHz) ?: return null
+        val topDb = db(mag[(top / binHz).toInt().coerceIn(1, mag.size - 2)])
+        var best = top
+        for (k in 4 downTo 2) {
+            val f = top / k
+            if (f < minHz) continue
+            val sub = strongestPeak(f * 0.97, f * 1.03, minSnrDb = 0.0) ?: continue
+            val subDb = db(mag[(sub / binHz).toInt().coerceIn(1, mag.size - 2)])
+            if (topDb - subDb <= subharmonicDb) { best = sub; break }
+        }
+        return best
+    }
+
     fun analyse(samples: FloatArray, f1: Double): List<PartialReading> {
         spectrum(samples)
         return partials(f1)

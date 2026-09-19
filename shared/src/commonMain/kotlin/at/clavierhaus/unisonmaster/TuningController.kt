@@ -31,6 +31,8 @@ class TuningController(
     private val clock: () -> Long = { 0L },
 ) {
     companion object {
+        /** Readings in a row (hop 1024 at 48 kHz: 21 ms each) before the screen follows a key. */
+        const val AUTO_HOPS = 8
         const val MIN_REFERENCE_HZ = 415.0
         const val MAX_REFERENCE_HZ = 450.0
         const val DEFAULT_REFERENCE_HZ = 440.0
@@ -219,10 +221,10 @@ class TuningController(
         // A saved note may lie outside what the session allows now — a
         // tuning saved before the temperament gate existed, say. Then the
         // session resumes at the first note it will accept, never crashes.
-        val wanted = snap.currentMidi.takeIf { it != TuningSession.MIDI_A4 && s.selectable(it) }
+        val wanted = snap.currentMidi.takeIf { s.selectable(it) }
         val resume = wanted
-            ?: s.next()?.takeIf { it != TuningSession.MIDI_A4 && s.selectable(it) }
-            ?: s.notes.firstOrNull { it != TuningSession.MIDI_A4 && s.selectable(it) }
+            ?: s.next()?.takeIf { s.selectable(it) }
+            ?: s.notes.firstOrNull { s.selectable(it) }
             ?: TuningSession.MIDI_A4
         s.select(resume)
         session = s
@@ -325,24 +327,24 @@ class TuningController(
      * measurement, where the session allows that (see
      * [TuningSession.recordsOnLeaving]). A note that was never struck has no
      * measurement and records nothing: passing it by does not tune it. A4
-     * is the reference, set on the hub, and is never re-recorded this way.
+     * is recorded like any other note; the reference set on the hub is
+     * untouched by it.
      */
     private fun leaveCurrent(s: TuningSession) {
         if (!s.recordsOnLeaving) return
         val t = _tuning.value ?: return
-        if (t.midi == TuningSession.MIDI_A4) return
-        val m = _liveSummary.value ?: return
-        // A reading nearer another key than this one is another note — the
-        // neighbour still ringing, or the wrong key struck — and does not
-        // become this note's value.
-        if (Notes.nearestMidi(m.f1Hz, s.a4Hz) != t.midi) return
+        // The last reading that was this note's own (see heldSummary): a
+        // neighbour still ringing, the wrong key struck, or the next note
+        // already sounding when the screen follows it, is never this note's
+        // value — and does not cost it the value it had.
+        val m = heldSummary ?: return
         s.record(m.copy(midi = t.midi, timeMs = clock()))
     }
 
-    /** Tuning screen: tune [midi] next (any note of the session except A4). */
+    /** Tuning screen: tune [midi] next (any note of the session, A4 included). */
     fun selectNote(midi: Int) {
         val s = session ?: return
-        if (midi == TuningSession.MIDI_A4 || !s.selectable(midi)) return
+        if (!s.selectable(midi)) return
         if (midi == s.current) return
         leaveCurrent(s)
         s.select(midi)
@@ -385,6 +387,8 @@ class TuningController(
                 maxK = highestPartial(target),
             )
         _liveSummary.value = null
+        heldSummary = null
+        autoMidi = -1; autoHops = 0
         val semis = 2.0.pow(3.0 / 12.0)
         _range.value = (target / semis) to (target * semis)
         onSessionChanged?.let { save -> snapshot()?.let(save) }
@@ -441,7 +445,11 @@ class TuningController(
                 val t = _tuning.value
                 val summary = follower.summary(t?.midi ?: TuningSession.MIDI_A4)
                 _liveSummary.value = summary
+                // held only while it is this note's reading: a neighbour in
+                // the range must not overwrite what was heard of the note itself
+                if (summary != null && t != null && Notes.nearestMidi(summary.f1Hz, _referenceA4Hz.value) == t.midi) heldSummary = summary
                 if (t != null) refreshTargets(t, summary)
+                if (t != null) followKey(t, follower.detectedHz)
             }
             true
         } catch (e: Exception) {
@@ -449,6 +457,30 @@ class TuningController(
             false
         }
     }
+
+    /** The last complete summary heard on the current note, kept across the next note's strike. */
+    private var heldSummary: NoteMeasurement? = null
+    private var autoMidi = -1
+    private var autoHops = 0
+
+    /**
+     * Automatic note switching: when the key struck is another note of the
+     * session, and it has sounded as that note for [AUTO_HOPS] readings in a
+     * row, the screen moves to it — registering the note left, as any move
+     * does. Off by the setting, and never while the temperament octave is
+     * unfinished: that octave is walked with Done.
+     */
+    private fun followKey(t: TuningView, detectedHz: Double?) {
+        val s = session ?: return
+        if (!_settings.value.autoNote || s.gated) { autoMidi = -1; autoHops = 0; return }
+        val midi = detectedHz?.let { Notes.nearestMidi(it, s.a4Hz) }
+        if (midi == null || midi == t.midi || !s.selectable(midi)) { autoMidi = -1; autoHops = 0; return }
+        if (midi == autoMidi) autoHops++ else { autoMidi = midi; autoHops = 1 }
+        if (autoHops >= AUTO_HOPS) selectNote(midi)
+    }
+
+    /** The audio source, for tests that queue strikes. */
+    fun audioSourceForTest(): AudioSource = audioSource
 
     fun stopLive() {
         if (!_live.value) return

@@ -143,7 +143,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     val temperamentComplete: Boolean get() = temperamentNotes.all { it in measured }
 
     /** True while the session is held inside the temperament octave. */
-    private val gated: Boolean get() = settings.temperamentFirst && !temperamentComplete
+    val gated: Boolean get() = settings.temperamentFirst && !temperamentComplete
 
     /**
      * True when leaving a note registers it as done with its last
@@ -311,18 +311,11 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     }
 
     /**
-     * The note [delta] semitones away, kept within the compass. A4 is the
-     * session's reference, set on the hub, so the arrows step over it rather
-     * than onto it — which is also how the walk crosses into the treble.
+     * The note [delta] semitones away, kept within the compass. A4 is a
+     * note like any other here: its reference was set on the hub, and it
+     * can be returned to — a pin settles — without changing that reference.
      */
-    fun stepped(delta: Int): Int {
-        val lo = stepLowMidi
-        val hi = stepHighMidi
-        val to = (current + delta).coerceIn(lo, hi)
-        if (to != MIDI_A4) return to
-        val past = MIDI_A4 + if (delta > 0) 1 else -1
-        return if (past in lo..hi) past else current
-    }
+    fun stepped(delta: Int): Int = (current + delta).coerceIn(stepLowMidi, stepHighMidi)
 
     /**
      * The note whose measurement predicts [midi]: the nearest measured note

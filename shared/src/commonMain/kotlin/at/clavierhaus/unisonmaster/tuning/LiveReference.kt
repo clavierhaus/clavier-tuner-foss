@@ -51,6 +51,9 @@ class LiveReference(
         const val AUDIBLE_SNR_DB = 12.0  // a partial this far above the noise floor is audible
         const val PARTIALS = 12
         const val SUSTAIN_WINDOW_DB = 30.0 // a partial counts as sounding within this of the loudest
+        const val DETECT_MIN_HZ = 26.0     // A0 and below
+        const val DETECT_MAX_HZ = 4300.0   // above C8
+        const val DETECT_SUBHARMONIC_DB = 18.0
 
         /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
         fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0
@@ -96,16 +99,41 @@ class LiveReference(
     var hz: Double? = null
         private set
 
+    /**
+     * The fundamental of whatever sounds, searched over the whole compass
+     * ([DETECT_MIN_HZ]..[DETECT_MAX_HZ]) rather than the note's range: the
+     * strongest peak, or the lowest peak below it at an integer fraction of
+     * its frequency that stands within [DETECT_SUBHARMONIC_DB] of it — a bass
+     * string's second or third partial is louder than its first. Null when
+     * nothing sounds. What the tuning screen switches notes on.
+     */
+    var detectedHz: Double? = null
+        private set
+
     /** Bell height 0 .. 1: loudness relative to the current strike's peak. */
     var level: Double = 0.0
         private set
 
-    /** Where the fundamental is searched. Changing it starts afresh. */
+    /**
+     * Where the fundamental is searched. Changing it clears the readings and
+     * the strike's statistics, but keeps the sound already in the window: a
+     * note that is sounding when the screen switches to it is read on the
+     * next hop, without a second strike. Only the part of the settle still
+     * owed to the last strike is waited out.
+     */
     fun setRange(minHz: Double, maxHz: Double) {
         require(minHz > 0 && maxHz > minHz)
         this.minHz = minHz
         this.maxHz = maxHz
-        reset()
+        estimates.clear()
+        hz = null
+        partials = emptyList()
+        audible = emptySet()
+        partialPeakDb = Double.NEGATIVE_INFINITY
+        val sinceStrike = hopsSinceStrike
+        clearStrikeStats()
+        hopsSinceStrike = sinceStrike
+        if (settle != -1) settle = maxOf(0, settleHops - sinceStrike)
     }
 
     fun reset() {
@@ -161,6 +189,7 @@ class LiveReference(
         if (rms < RELEASE_RMS) {
             settle = -1
             partials = partials.map { it.copy(level = 0.0) }
+            detectedHz = null
             return
         }
         if (filled < windowSize) return
@@ -179,6 +208,7 @@ class LiveReference(
         // second component in the range — a neighbour still ringing — and
         // the peak is kept instead.
         tracker.spectrum(ring)
+        detectedHz = tracker.fundamentalOfStrongest(DETECT_MIN_HZ, DETECT_MAX_HZ, DETECT_SUBHARMONIC_DB)
         val coarse = tracker.strongestPeak(minHz, maxHz) ?: return
         val phased = PreciseF0.refineTwoStage(ring, sr, coarse, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
         val fine = if (abs(phased - coarse) <= tracker.binHz) phased else coarse

@@ -194,9 +194,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                 )
                             }
-                            // research, for the wobble study; hidden again once the study is done
-                            val withResearch = entries + HomeHubItem("Record", " Strikes", "for the wobble study") { screen = "record" }
-                            HomeHub(entries = withResearch, onSettings = { openSettings() })
+                            // Record Strikes lives in Pro only: the wobble study continues
+                            // there, and the FOSS hub carries nothing research-only.
+                            HomeHub(entries = entries, onSettings = { openSettings() })
                         }
                     }
                 }

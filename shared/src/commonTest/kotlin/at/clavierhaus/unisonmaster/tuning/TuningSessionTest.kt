@@ -41,9 +41,12 @@ private fun exact(b: Double, ks: IntRange, noise: Double = 0.0): List<MeasuredPa
 }
 
 /** Plays one prepared signal per start(), in order. */
-private class QueueSource(private val signals: List<FloatArray>) : AudioSource {
+private class QueueSource(initial: List<FloatArray>) : AudioSource {
+    private val signals = initial.toMutableList()
     override val sampleRateHz: Int = SR
     private var next = 0
+    fun add(signal: FloatArray) { signals.add(signal) }
+    fun clear() { signals.clear(); next = 0 }
     override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {
         val signal = signals[next++]
         var pos = 0
@@ -205,7 +208,7 @@ class TuningSessionTest {
         val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))   // the walk itself, not the gate
         s.select(68)
         assertEquals(67, s.stepped(-1))
-        assertEquals(70, s.stepped(+1), "A4 is the reference: the arrows step over it into the treble")
+        assertEquals(69, s.stepped(+1), "A4 is a note like any other: the arrows reach it")
         s.select(43)                               // the lowest plain string, G2 by default
         assertEquals(43, s.stepped(-1))
         assertNull(s.below())
@@ -245,9 +248,11 @@ class TuningSessionTest {
         assertEquals(67, tuning.tuning.value?.midi)
         assertTrue(abs(tuning.tuning.value!!.targetHz - TuningSession.targetF1(67, 440.0)) < 1e-9)
         tuning.stepNote(+1)
-        tuning.stepNote(+1)
-        assertEquals(68, tuning.tuning.value?.midi, "held at G#4: the temperament octave is unfinished, and A4 is the reference")
+        assertEquals(68, tuning.tuning.value?.midi)
         assertNotNull(tuning.suggested.value)
+        tuning.stepNote(+1)
+        tuning.stepNote(+1)
+        assertEquals(69, tuning.tuning.value?.midi, "held at A4: the temperament octave is unfinished, and A4 is its top")
     }
 
     @Test
@@ -571,7 +576,7 @@ class TuningSessionTest {
         s.select(57)                                  // A3, the foot of it
         assertEquals(57, s.stepped(-1), "there is nothing below yet")
         s.select(68)                                  // G#4
-        assertEquals(68, s.stepped(+1), "and A4 is the reference, not a step")
+        assertEquals(69, s.stepped(+1), "and A4, the top of the octave, is reachable")
     }
 
     @Test
@@ -736,5 +741,67 @@ class TuningSessionTest {
         val et = TuningSession.targetF1(51, 440.0)
         assertTrue(abs(TuningSession.centsOff(target, et)) < 10.0,
             "D#3's target must stay D#3, was %.1f Hz (%.0f cents off)".format(target, TuningSession.centsOff(target, et)))
+    }
+
+    @Test
+    fun a4CanBeReturnedToAndReRecordedWithoutMovingTheReference() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))
+        signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(440.04, b), b, 8, 3.0))   // A4 again, the pin has settled a little
+        val tuning = TuningController(QueueSource(signals))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()                 // the hub sets A4
+        assertEquals(68, tuning.tuning.value?.midi)
+        tuning.stepNote(+1)
+        assertEquals(69, tuning.tuning.value?.midi, "A4 is reachable from G#4")
+        tuning.startLive()
+        assertNotNull(tuning.acceptLive(), "Done on A4 is accepted")
+        tuning.stopLive()
+        assertEquals(440.0, tuning.referenceA4Hz.value, 1e-9, "the reference set on the hub is untouched")
+        val a4 = assertNotNull(tuning.measurements()[69])
+        assertTrue(abs(a4.f1Hz - 440.04) < 0.02, "A4's measurement is the new reading, was ${a4.f1Hz}")
+    }
+
+    // ---- automatic note switching ----
+
+    @Test
+    fun afterTheTemperamentOctaveTheScreenFollowsTheKeyStruck() {
+        val tuning = walker(temperamentDone = true)          // stands on G#3, one G#3 strike queued
+        assertEquals(56, tuning.tuning.value?.midi)
+        tuning.startLive(); assertNotNull(tuning.liveHz.value); tuning.stopLive()   // G#3 sounds and is read
+        // now F#3 is struck, two semitones down, with the screen still on G#3
+        val b = 4.0e-4
+        val fSharp3 = TuningSession.targetF1(54, 440.0)
+        (tuning.audioSourceForTest() as QueueSource).add(FloatArray(HOP * 2) + stiffStrike(f0For(fSharp3, b), b, 8, 3.0))
+        val before = tuning.liveHz.value; val sb = tuning.measurements()[56]
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(54, tuning.tuning.value?.midi, "the screen followed the key")
+        assertTrue(56 in tuning.tuning.value!!.measured, "and G#3, left behind, was registered (live before: $before, stored before: ${sb?.f1Hz}, now: ${tuning.measurements().keys.sorted()})")
+        val read = assertNotNull(tuning.liveHz.value)
+        assertTrue(abs(read - fSharp3) < 0.1, "F#3 is read without a second strike, was $read")
+    }
+
+    @Test
+    fun insideTheUnfinishedTemperamentOctaveTheScreenDoesNotFollowTheKey() {
+        val tuning = walker(temperamentDone = false)         // on G#4, gate closed
+        val b = 4.0e-4
+        (tuning.audioSourceForTest() as QueueSource).let { q ->
+            q.clear()
+            q.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(64, 440.0), b), b, 8, 3.0))   // E4 struck
+        }
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(68, tuning.tuning.value?.midi, "the octave is walked with Done, not by ear")
+    }
+
+    @Test
+    fun theSettingTurnsFollowingOff() {
+        val tuning = walker(temperamentDone = true)
+        tuning.applySettings(TunerSettings(autoNote = false))
+        val b = 4.0e-4
+        (tuning.audioSourceForTest() as QueueSource).let { q ->
+            q.clear()
+            q.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(54, 440.0), b), b, 8, 3.0))
+        }
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(56, tuning.tuning.value?.midi)
     }
 }

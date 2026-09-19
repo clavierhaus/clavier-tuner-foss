@@ -67,6 +67,13 @@ data class TunerSettings(
     val suggestSustainS: Double = 1.0,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
+    // WORKFLOW
+    /**
+     * The tuning screen follows the key struck: the note nearest the sounding
+     * fundamental is selected, and the note left is registered. Never inside
+     * an unfinished temperament octave, which is walked with Done.
+     */
+    val autoNote: Boolean = true,
 ) {
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
@@ -119,6 +126,7 @@ class SettingsModel(
         val d = edition
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
+        fun b(k: String, v: Boolean) = store.get(k)?.toBooleanStrictOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
             temperamentFirst = d.temperamentFirst,
@@ -135,6 +143,7 @@ class SettingsModel(
             suggestLevelDb = f("suggestLevelDb", d.suggestLevelDb),
             suggestSustainS = f("suggestSustainS", d.suggestSustainS),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
+            autoNote = b("autoNote", d.autoNote),
         )
     }
 
@@ -152,5 +161,6 @@ class SettingsModel(
         store.put("suggestLevelDb", s.suggestLevelDb.toString())
         store.put("suggestSustainS", s.suggestSustainS.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
+        store.put("autoNote", s.autoNote.toString())
     }
 }

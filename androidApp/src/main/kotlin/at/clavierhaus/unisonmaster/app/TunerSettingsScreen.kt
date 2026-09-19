@@ -15,6 +15,7 @@ import at.clavierhaus.unisonmaster.ui.SettingsScreen
 import at.clavierhaus.unisonmaster.ui.SettingsSection
 import at.clavierhaus.unisonmaster.ui.SettingsTab
 import at.clavierhaus.unisonmaster.ui.StepperRow
+import at.clavierhaus.unisonmaster.ui.SwitchRow
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
 import kotlin.math.round
@@ -91,6 +92,14 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onDecrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi - 1) } },
         onIncrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi + 1) } },
     )
+
+    SettingsSection("Workflow")
+    SwitchRow(
+        "Follow the key struck",
+        if (s.temperamentFirst) "The screen moves to the note played, once the temperament octave is finished; the note left is registered"
+        else "The screen moves to the note played; the note left is registered",
+        s.autoNote,
+    ) { on -> model.update { it.copy(autoNote = on) } }
 
     SettingsSection("Precision")
     StepperRow(
