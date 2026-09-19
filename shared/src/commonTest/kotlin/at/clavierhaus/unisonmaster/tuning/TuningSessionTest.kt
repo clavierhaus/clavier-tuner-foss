@@ -684,4 +684,43 @@ class TuningSessionTest {
         tuning.stepNote(-1)
         assertTrue(68 in tuning.tuning.value!!.measured, "Pro: G#4 registers on leaving, no Done needed")
     }
+
+    // ---- what a stored partial may be, and what a reading on leaving may be ----
+
+    @Test
+    fun aStoredPartialNoPlainWireStringCanProduceIsNotUsedByAnOctaveLink() {
+        val s = TuningSession(440.0)
+        for (midi in s.temperamentNotes) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        // D#4 as an older tracker saved it: partial 3 was the ringing D4's,
+        // 90 cents flat of D#4's own third partial
+        val dSharp4 = TuningSession.targetF1(63, 440.0)
+        s.record(NoteMeasurement(63, dSharp4, 4.0e-4, 0.1, listOf(
+            MeasuredPartial(1, 0.0, 0.0, 3.0),
+            MeasuredPartial(3, -90.0, -6.0, 3.0),
+        )))
+        val target = s.target(51)                                  // D#3, 6:3 against D#4
+        val et = TuningSession.targetF1(51, 440.0)
+        assertTrue(abs(TuningSession.centsOff(target, et)) < 10.0,
+            "D#3's target must stay D#3, was %.1f Hz (%.0f cents off)".format(target, TuningSession.centsOff(target, et)))
+    }
+
+    @Test
+    fun aReadingNearerAnotherKeyIsNotRegisteredOnLeaving() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))
+        for (midi in 68 downTo 57) signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(midi, 440.0), b), b, 8, 3.0))
+        // standing on G#3, what sounds is G3 — the neighbour, a semitone down
+        signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(55, 440.0), b), b, 8, 3.0))
+        val tuning = TuningController(QueueSource(signals))
+        tuning.applySettings(TunerSettings(temperamentFirst = true))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        for (midi in 68 downTo 57) { tuning.startLive(); assertNotNull(tuning.acceptLive(), "Done refused on $midi"); tuning.stopLive() }
+        assertEquals(56, tuning.tuning.value?.midi)
+        tuning.startLive()
+        val heard = assertNotNull(tuning.liveHz.value)
+        tuning.stopLive()
+        assertEquals(55, Notes.nearestMidi(heard, 440.0), "the test needs G3 to be what sounded")
+        tuning.stepNote(-1)
+        assertTrue(56 !in tuning.tuning.value!!.measured, "G3's reading must not become G#3's value")
+    }
 }

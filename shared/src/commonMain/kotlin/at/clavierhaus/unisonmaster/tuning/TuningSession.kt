@@ -270,8 +270,16 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     var current: Int = MIDI_A4
         private set
 
+    /**
+     * Keeps [m] as the note's measurement. A partial no plain-wire string
+     * can produce — flat of its harmonic position, or sharper than
+     * stiffness allows ([PartialTracker.plausibleCents]) — is another
+     * string's, whatever measured it, and is dropped here: every octave link
+     * reads the stored partials, so one such partial in a saved tuning made
+     * the target of the note an octave below come out a semitone wrong.
+     */
     fun record(m: NoteMeasurement) {
-        measured[m.midi] = m
+        measured[m.midi] = m.copy(partials = m.partials.filter { it.k == 1 || PartialTracker.plausibleCents(it.k, it.cents) })
     }
 
     fun select(midi: Int) {

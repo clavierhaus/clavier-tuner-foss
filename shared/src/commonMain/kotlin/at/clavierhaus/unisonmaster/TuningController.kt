@@ -10,6 +10,7 @@ import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.LiveReference
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
+import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.settings.TunerSettings
@@ -331,6 +332,10 @@ class TuningController(
         val t = _tuning.value ?: return
         if (t.midi == TuningSession.MIDI_A4) return
         val m = _liveSummary.value ?: return
+        // A reading nearer another key than this one is another note — the
+        // neighbour still ringing, or the wrong key struck — and does not
+        // become this note's value.
+        if (Notes.nearestMidi(m.f1Hz, s.a4Hz) != t.midi) return
         s.record(m.copy(midi = t.midi, timeMs = clock()))
     }
 
