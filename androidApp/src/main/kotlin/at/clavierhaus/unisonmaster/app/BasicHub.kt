@@ -123,6 +123,7 @@ fun BasicHub(
                 t.complete -> "Compass complete, ${Notes.name(t.lowestMidi)} upward."
                 !t.temperamentComplete && t.midi == t.stepLowMidi && !matched ->
                     "Tune $name, single string. The temperament octave is finished first; the rest of the compass opens after it."
+                matched && t.recordsOnLeaving -> "$name matches. Move on, or refine with a partial: leaving a note registers it."
                 matched -> "$name matches. Tap Done, or refine with a partial."
                 link != null -> "Tune $name, single string: ${link.type.label} octave against ${Notes.name(link.refMidi)}."
                 t.midi < cfg.temperamentLowMidi -> "Tune $name, single string. ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} is not tuned yet, so the target is equal temperament."

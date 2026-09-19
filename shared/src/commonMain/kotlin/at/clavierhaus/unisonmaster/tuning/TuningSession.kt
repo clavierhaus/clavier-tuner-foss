@@ -145,6 +145,15 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     /** True while the session is held inside the temperament octave. */
     private val gated: Boolean get() = settings.temperamentFirst && !temperamentComplete
 
+    /**
+     * True when leaving a note registers it as done with its last
+     * measurement, so that the walk needs no Done: everywhere in Pro, and in
+     * FOSS once the temperament octave is complete. Inside that octave FOSS
+     * asks for Done on every note, because the octave is what everything
+     * else is built on.
+     */
+    val recordsOnLeaving: Boolean get() = !gated
+
     /** Lowest note the arrows may reach now. */
     val stepLowMidi: Int get() = if (gated) settings.temperamentLowMidi else lowMidi
 

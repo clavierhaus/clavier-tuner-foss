@@ -618,4 +618,70 @@ class TuningSessionTest {
         assertNotNull(at)
         assertTrue(at in 57..68, "resumed inside the temperament octave, was $at")
     }
+
+    // ---- leaving a note registers it, once the session allows that ----
+
+    /** A controller with A4 set and, on request, the temperament octave finished. */
+    private fun walker(temperamentDone: Boolean, temperamentFirst: Boolean = true): TuningController {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))
+        val notes = if (temperamentDone) (68 downTo 57).toList() else emptyList()
+        for (midi in notes) signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(midi, 440.0), b), b, 8, 3.0))
+        // one more strike, for the note the session stands on after the walk
+        val next = if (temperamentDone) 56 else 68
+        signals.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(next, 440.0), b), b, 8, 3.0))
+        val tuning = TuningController(QueueSource(signals))
+        tuning.applySettings(TunerSettings(temperamentFirst = temperamentFirst))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        for (midi in notes) { tuning.startLive(); assertNotNull(tuning.acceptLive(), "Done refused on $midi"); tuning.stopLive() }
+        return tuning
+    }
+
+    @Test
+    fun insideTheTemperamentOctaveLeavingANoteDoesNotRegisterIt() {
+        val tuning = walker(temperamentDone = false)
+        assertEquals(68, tuning.tuning.value?.midi)
+        assertTrue(!tuning.tuning.value!!.recordsOnLeaving)
+        tuning.startLive()                          // G#4 sounds and is measured
+        assertNotNull(tuning.liveHz.value)
+        tuning.stopLive()
+        tuning.stepNote(-1)                         // moving on without Done
+        assertEquals(67, tuning.tuning.value?.midi)
+        assertTrue(68 !in tuning.tuning.value!!.measured, "G#4 needs Done inside the temperament octave")
+    }
+
+    @Test
+    fun afterTheTemperamentOctaveLeavingAMeasuredNoteRegistersIt() {
+        val tuning = walker(temperamentDone = true)
+        assertEquals(56, tuning.tuning.value?.midi)
+        assertTrue(tuning.tuning.value!!.recordsOnLeaving)
+        tuning.startLive()                          // G#3 sounds
+        assertNotNull(tuning.liveHz.value)
+        tuning.stopLive()
+        tuning.stepNote(-1)                         // no Done: just move on
+        assertEquals(55, tuning.tuning.value?.midi)
+        assertTrue(56 in tuning.tuning.value!!.measured, "G#3 registers on leaving")
+        assertTrue(56 in tuning.tuning.value!!.deviations, "and its value is on the curve")
+    }
+
+    @Test
+    fun leavingANoteThatWasNeverStruckRegistersNothing() {
+        val tuning = walker(temperamentDone = true)
+        assertEquals(56, tuning.tuning.value?.midi)
+        tuning.stepNote(-1)                         // G#3 was never played
+        tuning.stepNote(-1)
+        assertEquals(54, tuning.tuning.value?.midi)
+        assertTrue(56 !in tuning.tuning.value!!.measured)
+        assertTrue(55 !in tuning.tuning.value!!.measured)
+    }
+
+    @Test
+    fun proRegistersOnLeavingFromTheStart() {
+        val tuning = walker(temperamentDone = false, temperamentFirst = false)
+        assertEquals(68, tuning.tuning.value?.midi)
+        assertTrue(tuning.tuning.value!!.recordsOnLeaving)
+        tuning.startLive(); assertNotNull(tuning.liveHz.value); tuning.stopLive()
+        tuning.stepNote(-1)
+        assertTrue(68 in tuning.tuning.value!!.measured, "Pro: G#4 registers on leaving, no Done needed")
+    }
 }

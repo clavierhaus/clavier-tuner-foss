@@ -254,6 +254,8 @@ class TuningController(
         val deviations: Map<Int, Double>,
         /** True once the temperament octave is measured throughout. */
         val temperamentComplete: Boolean,
+        /** True when moving to another note registers this one as done. */
+        val recordsOnLeaving: Boolean,
         /** Lowest and highest note the arrows may reach at this point. */
         val stepLowMidi: Int,
         val stepHighMidi: Int,
@@ -302,7 +304,7 @@ class TuningController(
     private fun refreshTargets(t: TuningView, own: NoteMeasurement?) {
         val s = session
         if (s != null && t.link != null) {
-            val ownCents = own?.partials?.firstOrNull { it.k == t.link.type.low }?.cents
+            val ownCents = own?.partials?.firstOrNull { it.k == t.link.ownK }?.cents
             _targetHz.value = s.target(t.midi, ownCents)
         }
         val target = _targetHz.value
@@ -317,10 +319,27 @@ class TuningController(
     /** The session's measurements so far (A4 first). */
     fun measurements(): Map<Int, NoteMeasurement> = session?.measurements ?: emptyMap()
 
+    /**
+     * Leaving the current note registers it as done with its last
+     * measurement, where the session allows that (see
+     * [TuningSession.recordsOnLeaving]). A note that was never struck has no
+     * measurement and records nothing: passing it by does not tune it. A4
+     * is the reference, set on the hub, and is never re-recorded this way.
+     */
+    private fun leaveCurrent(s: TuningSession) {
+        if (!s.recordsOnLeaving) return
+        val t = _tuning.value ?: return
+        if (t.midi == TuningSession.MIDI_A4) return
+        val m = _liveSummary.value ?: return
+        s.record(m.copy(midi = t.midi, timeMs = clock()))
+    }
+
     /** Tuning screen: tune [midi] next (any note of the session except A4). */
     fun selectNote(midi: Int) {
         val s = session ?: return
         if (midi == TuningSession.MIDI_A4 || !s.selectable(midi)) return
+        if (midi == s.current) return
+        leaveCurrent(s)
         s.select(midi)
         publish(s, complete = s.nextUnmeasured() == null)
     }
@@ -341,6 +360,7 @@ class TuningController(
                 TuningSession.centsOff(m.f1Hz, TuningSession.targetF1(midi, s.a4Hz))
             },
             temperamentComplete = s.temperamentComplete,
+            recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,
             complete = complete,
@@ -370,6 +390,7 @@ class TuningController(
         val s = session ?: return
         val to = s.stepped(delta)
         if (to == s.current) return
+        leaveCurrent(s)
         s.select(to)
         publish(s, complete = s.nextUnmeasured() == null)
     }
