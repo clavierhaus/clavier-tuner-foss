@@ -82,4 +82,11 @@ class PrivateSaveFile(private val dir: File, private val name: String = "last-tu
         val f = file
         if (f.isFile) f.renameTo(File(dir, "$name.rejected-${System.currentTimeMillis()}"))
     }
+
+    private fun setAsideFiles(): List<File> =
+        dir.listFiles { f -> f.isFile && f.name.startsWith("$name.rejected-") }?.sortedBy { it.name } ?: emptyList()
+
+    override fun readSetAside(): ByteArray? = setAsideFiles().lastOrNull()?.readBytes()
+
+    override fun clearSetAside() { for (f in setAsideFiles()) f.delete() }
 }

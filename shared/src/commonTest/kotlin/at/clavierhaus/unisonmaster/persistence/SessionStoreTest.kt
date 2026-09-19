@@ -36,10 +36,13 @@ private class TestSealer(key: String) : Sealer {
 
 private class MemoryFile : SaveFile {
     var bytes: ByteArray? = null
+    var aside: ByteArray? = null
     override fun read() = bytes
     override fun writeAtomic(bytes: ByteArray) { this.bytes = bytes.copyOf() }
-    override fun setAside() { bytes = null }
+    override fun setAside() { aside = bytes; bytes = null }
     override fun delete() { bytes = null }
+    override fun readSetAside() = aside
+    override fun clearSetAside() { aside = null }
 }
 
 private const val SR = 48_000
@@ -173,5 +176,88 @@ class SessionStoreTest {
         tuning.startLive()
         assertEquals(440.0, tuning.acceptLive(), "A4 is defined again on the hub")
         assertEquals(68, tuning.tuning.value?.midi)
+    }
+
+    // ---- one bad number must not cost the tuner the session ----
+
+    private fun sessionText(vararg noteLines: String): String = buildString {
+        append("clavierhaustuner-session 1\n")
+        append("saved 1000\n")
+        append("a4 440.0\n")
+        append("current 68\n")
+        for (l in noteLines) append(l)
+        append("end\n")
+    }
+
+    @Test
+    fun aPartialOutOfRangeIsDroppedAndTheRestOfTheSessionKept() {
+        // partial 2 of G#4 stored 333 cents flat — another string's, as the
+        // tracker could do before 19 September — and everything else fine
+        val text = sessionText(
+            "note 69 440.0 0.0004 0.1 1 2\np 2 3.0 -6.0 2.0\np 3 7.0 -9.0 1.5\n",
+            "note 68 415.3 0.0004 0.1 2 2\np 2 -333.0 -6.0 2.0\np 3 7.0 -9.0 1.5\n",
+        )
+        val s = SessionCodec.decode(text)
+        assertEquals(setOf(69, 68), s.measurements.map { it.midi }.toSet(), "both notes kept")
+        val g = s.measurements.first { it.midi == 68 }
+        assertEquals(listOf(3), g.partials.map { it.k }, "only the bad partial is gone")
+    }
+
+    @Test
+    fun aNoteOutOfRangeIsDroppedAndTheOthersKept() {
+        val text = sessionText(
+            "note 69 440.0 0.0004 0.1 1 0\n",
+            "note 68 415.3 -0.5 0.1 2 1\np 2 3.0 -6.0 2.0\n",      // B negative: not a measurement
+        )
+        val s = SessionCodec.decode(text)
+        assertEquals(listOf(69), s.measurements.map { it.midi })
+    }
+
+    @Test
+    fun aFileThatIsNotASessionIsStillRefused() {
+        var thrown = false
+        try { SessionCodec.decode("something else 1\nsaved 1\n") } catch (e: SessionCodec.FormatException) { thrown = true }
+        assertTrue(thrown, "a wrong header is not a session")
+        thrown = false
+        try { SessionCodec.decode(sessionText("note 69 440.0 0.0004 0.1 1 0\n").removeSuffix("end\n")) }
+        catch (e: SessionCodec.FormatException) { thrown = true }
+        assertTrue(thrown, "a truncated file is refused")
+    }
+
+    @Test
+    fun theWriterNeverWritesWhatTheReaderRefuses() {
+        val bad = SessionSnapshot(
+            savedAtMs = 1, a4Hz = 440.0, currentMidi = 68,
+            measurements = listOf(
+                NoteMeasurement(68, 415.3, 4e-4, 0.1,
+                    listOf(MeasuredPartial(2, -333.0, -6.0, 2.0), MeasuredPartial(3, 7.0, -9.0, 1.5)), 2),
+            ),
+        )
+        val back = SessionCodec.decode(SessionCodec.encode(bad))
+        assertEquals(listOf(3), back.measurements.single().partials.map { it.k })
+    }
+
+    @Test
+    fun aSessionSetAsideByAnEarlierReaderComesBack() {
+        val sealer = TestSealer("k")
+        val file = MemoryFile()
+        // the file as the old reader left it: set aside, nothing current
+        file.aside = sealer.seal(sessionText(
+            "note 69 440.0 0.0004 0.1 1 1\np 2 -333.0 -6.0 2.0\n",
+        ).encodeToByteArray())
+        val store = SessionStore(file, sealer)
+        val load = store.load()
+        assertTrue(load is SessionStore.Load.Ok, "recovered, was $load")
+        assertEquals(listOf(69), (load as SessionStore.Load.Ok).snapshot.measurements.map { it.midi })
+        assertTrue(file.bytes != null, "and saved again as the current file")
+        assertTrue(file.aside == null, "and the set-aside copy is gone")
+    }
+
+    @Test
+    fun aTamperedFileSetAsideStaysUnread() {
+        val file = MemoryFile()
+        file.aside = TestSealer("other key").seal(sessionText("note 69 440.0 0.0004 0.1 1 0\n").encodeToByteArray())
+        val load = SessionStore(file, TestSealer("k")).load()
+        assertTrue(load is SessionStore.Load.None, "the seal still decides: $load")
     }
 }
