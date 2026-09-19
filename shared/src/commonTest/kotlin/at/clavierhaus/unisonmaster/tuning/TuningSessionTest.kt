@@ -723,4 +723,18 @@ class TuningSessionTest {
         tuning.stepNote(-1)
         assertTrue(56 !in tuning.tuning.value!!.measured, "G3's reading must not become G#3's value")
     }
+
+
+    @Test
+    fun aStoredFundamentalNearerAnotherKeyIsNotThisNotesMeasurement() {
+        val s = TuningSession(440.0)
+        for (midi in s.temperamentNotes) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        // D#4 as a saved tuning from an earlier reader had it: its "fundamental" is D4's
+        s.record(NoteMeasurement(63, 296.9, 4.0e-4, 0.1, listOf(MeasuredPartial(1, 0.0, 0.0, 3.0), MeasuredPartial(3, 5.0, -6.0, 3.0))))
+        assertTrue(63 !in s.measurements, "a reading nearer D4 is not D#4's")
+        val target = s.target(51)                                  // D#3, 6:3 against D#4
+        val et = TuningSession.targetF1(51, 440.0)
+        assertTrue(abs(TuningSession.centsOff(target, et)) < 10.0,
+            "D#3's target must stay D#3, was %.1f Hz (%.0f cents off)".format(target, TuningSession.centsOff(target, et)))
+    }
 }
