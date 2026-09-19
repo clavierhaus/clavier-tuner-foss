@@ -27,14 +27,29 @@ object Yin {
     ): Double? {
         val maxLag = (sampleRateHz / minHz).toInt()
         val minLag = (sampleRateHz / maxHz).toInt().coerceAtLeast(2)
-        if (samples.size < maxLag * 2) return null
 
-        // Step 1+2: difference function over the lag range
+        // The integration window W is independent of the lag, several periods
+        // long, and taken from the NEWEST samples: a caller hands in a ring
+        // with the newest at the end. Until 19 September it was maxLag
+        // samples from index 0 — about 1.2 periods, 330 ms stale — and that
+        // is why the bass was lost (see step 3 as well). 4·maxLag keeps the
+        // cost bounded: about 2 M multiply-adds per hop at E2.
+        val w = minOf(samples.size - maxLag, 4 * maxLag)
+        if (w < maxLag) return null
+        val start = samples.size - (w + maxLag)
+
+        // Step 1+2: difference function for EVERY lag from 1. The lags below
+        // minLag are never candidates, but the normalisation in step 3 needs
+        // them: computing d only from minLag left the running sum holding
+        // zeros, so at the true period it held a sixth of what it should and
+        // the normalised dip was inflated six times — enough to miss the
+        // threshold on any string that is not cleanly periodic, which is
+        // every bass string.
         val d = DoubleArray(maxLag + 1)
-        for (lag in minLag..maxLag) {
+        for (lag in 1..maxLag) {
             var sum = 0.0
-            for (i in 0 until maxLag) {
-                val delta = (samples[i] - samples[i + lag]).toDouble()
+            for (i in 0 until w) {
+                val delta = (samples[start + i] - samples[start + i + lag]).toDouble()
                 sum += delta * delta
             }
             d[lag] = sum

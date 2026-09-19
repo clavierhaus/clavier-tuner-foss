@@ -74,4 +74,36 @@ class DspTest {
         assertTrue(result[1].levelDb > result[2].levelDb)
         assertTrue(result[2].levelDb > result[3].levelDb) // partial 4 absent -> floor-ish
     }
+
+    /**
+     * A bass string as the microphone hears it walking down chromatically:
+     * E2 with eight partials on a stiff-string comb, the third and sixth
+     * louder than the fundamental (the Boesendorfer E2 of 2026-09-16) — and
+     * the semitone above still ringing at 0.4 of its level, because bass
+     * strings sustain for ten seconds and the walk does not wait for them.
+     * Searched three semitones either side, as LiveReference does.
+     *
+     * Until 19 September the normalised dip at the period came out at 0.55
+     * here against a threshold of 0.15, so YIN returned null and the tuner
+     * saw no reading at all. The published normalisation puts it at 0.06.
+     */
+    @Test
+    fun yinFindsTheFundamentalOfABassStringWhileItsNeighbourStillRings() {
+        val f1 = 82.6
+        val b = 1.8e-4
+        val ring = FloatArray(16384)
+        fun comb(f: Double, level: Double, gains: DoubleArray) {
+            for (k in 1 until gains.size) {
+                val fk = k * f * kotlin.math.sqrt((1 + b * k * k) / (1 + b))
+                val part = sine(fk, level * gains[k], ring.size)
+                for (i in ring.indices) ring[i] += part[i]
+            }
+        }
+        comb(f1, 0.05, doubleArrayOf(0.0, 1.0, 1.0, 1.5, 0.1, 0.4, 1.7, 1.2, 0.3))
+        comb(69.2, 0.05 * 0.4, doubleArrayOf(0.0, 1.0, 0.8, 1.0, 0.5))   // F2, the semitone above, ringing on
+        val semis = Math.pow(2.0, 3.0 / 12.0)
+        val f0 = Yin.estimateF0(ring, sr, minHz = f1 / semis, maxHz = f1 * semis)
+        assertNotNull(f0, "no coarse estimate on a bass string with its neighbour ringing")
+        assertTrue(abs(f0 - f1) < 1.0, "coarse at $f0, expected near $f1")
+    }
 }
