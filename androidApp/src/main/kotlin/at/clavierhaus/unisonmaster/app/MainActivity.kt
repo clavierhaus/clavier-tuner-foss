@@ -169,7 +169,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "tune" -> {
                             BackHandler { backToHub() }
-                            BasicHub(controller = controller, onSettings = { openSettings() }, onBack = { backToHub() })
+                            BasicHub(controller = controller, model = settingsModel, onSettings = { openSettings() }, onBack = { backToHub() })
                         }
                         else -> {
                             val last by lastTuning

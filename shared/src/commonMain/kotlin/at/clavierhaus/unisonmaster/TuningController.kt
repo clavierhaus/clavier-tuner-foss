@@ -470,10 +470,15 @@ class TuningController(
      * does. Off by the setting, and never while the temperament octave is
      * unfinished: that octave is walked with Done.
      */
+    private val _heardMidi = MutableStateFlow<Int?>(null)
+    /** The note nearest to whatever sounds, over the whole compass; null in silence. What the screen names when it is not the note being tuned. */
+    val heardMidi: StateFlow<Int?> = _heardMidi.asStateFlow()
+
     private fun followKey(t: TuningView, detectedHz: Double?) {
         val s = session ?: return
-        if (!_settings.value.autoNote || s.gated) { autoMidi = -1; autoHops = 0; return }
         val midi = detectedHz?.let { Notes.nearestMidi(it, s.a4Hz) }
+        _heardMidi.value = midi
+        if (!_settings.value.autoNote || s.gated) { autoMidi = -1; autoHops = 0; return }
         if (midi == null || midi == t.midi || !s.selectable(midi)) { autoMidi = -1; autoHops = 0; return }
         if (midi == autoMidi) autoHops++ else { autoMidi = midi; autoHops = 1 }
         if (autoHops >= AUTO_HOPS) selectNote(midi)
