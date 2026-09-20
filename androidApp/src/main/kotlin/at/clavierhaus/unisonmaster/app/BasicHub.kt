@@ -152,8 +152,10 @@ fun BasicHub(
         val sounding = level > 0.0
         val matched = TuningSession.matched(f, liveTarget, cfg.matchHz)
         val link = t.link
+        val curve = t.curve
         val origin = when {
             t.midi == TuningSession.MIDI_A4 -> "the reference, set on the hub"
+            link != null && link.calculated -> "${link.type.label} octave against ${Notes.name(link.refMidi)}, calculated stretch"
             link != null -> "${link.type.label} octave against ${Notes.name(link.refMidi)}, measured"
             t.midi < cfg.temperamentLowMidi ->
                 "equal temperament — ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} not tuned yet"
@@ -163,6 +165,9 @@ fun BasicHub(
         }
         val heardElsewhere = heard?.takeIf { it != t.midi && sounding }
         val state: Pair<String, Color> = when {
+            t.calibrating && heardElsewhere != null -> "heard ${Notes.name(heardElsewhere)}" to Color(Brand.WHITE_MUTED)
+            t.calibrating && sounding && f != null -> "sampling" to Color(Brand.ORANGE)
+            t.calibrating -> "listening" to Color(Brand.WHITE_MUTED)
             t.complete -> "complete" to Color(Brand.GO_GREEN)
             heardElsewhere != null && !(cfg.autoNote && t.temperamentComplete) ->
                 "that's ${Notes.name(heardElsewhere)}" to Color(Brand.ORANGE)
@@ -171,12 +176,13 @@ fun BasicHub(
             f > liveTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
-        val curve = t.curve
         val status = buildString {
             append(if (cfg.autoNote && t.temperamentComplete) "follows the key" else "arrows")
             append(" · ")
             if (cfg.temperamentFirst) {
                 append(if (t.temperamentComplete) "A3–A4 done" else "A3–A4 first")
+            } else if (t.calibrating) {
+                append("Stretch Definition: ${t.anchors} of ${t.anchorsWanted} single strings")
             } else {
                 // Pro: the sampling report of docs/INHARMONICITY.md
                 append(
@@ -242,6 +248,45 @@ fun BasicHub(
                     onSelect = { k -> controller.activatePartial(k) },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp),
                 )
+            }
+            t.calibrating -> {
+                // Pro, Stretch Definition: single strings across the range, no target yet
+                Column(
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxSize()
+                        .padding(top = 52.dp, bottom = 84.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Column {
+                            Text("Stretch Definition", color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "Play single strings across the whole range — the lowest plain wire, every major third up to C5, and either side of each break or strut. Leaving a note keeps it.",
+                                color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 3,
+                                modifier = Modifier.width(520.dp),
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        MeasuredBlock(f)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                        Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 64.sp, maxLines = 1)
+                        Spacer(Modifier.width(28.dp))
+                        Text(
+                            "${t.anchors} of ${t.anchorsWanted}",
+                            color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 64.sp, maxLines = 1,
+                        )
+                        Spacer(Modifier.width(18.dp))
+                        Text(
+                            if (curve.worstCents != null) String.format(Locale.ROOT, "anchors · curve ±%.1f c", curve.worstCents) else "anchors",
+                            color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 18.sp, maxLines = 1,
+                            modifier = Modifier.padding(bottom = 14.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
             else -> {
                 // Fundamental: one note, one motion, one colour
@@ -353,6 +398,14 @@ fun BasicHub(
                     }
                 }
                 SwitchRow("Follow the key struck", "after the temperament octave", s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
+                if (!s.temperamentFirst) StepperRow(
+                    "Stretch Definition", "single strings sampled before tuning begins: 8 quick, 12 or 16 closer, your own number at the transitions",
+                    "${s.calibrationNotes}",
+                    canDecrease = s.calibrationNotes > TunerSettings.MIN_CALIBRATION_NOTES,
+                    canIncrease = s.calibrationNotes < TunerSettings.MAX_CALIBRATION_NOTES,
+                    onDecrease = { model.update { it.copy(calibrationNotes = it.calibrationNotes - 1) } },
+                    onIncrease = { model.update { it.copy(calibrationNotes = it.calibrationNotes + 1) } },
+                )
             }
         }
     }

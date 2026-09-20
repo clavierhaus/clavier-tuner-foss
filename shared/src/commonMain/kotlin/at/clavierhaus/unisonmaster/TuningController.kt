@@ -260,6 +260,11 @@ class TuningController(
         val temperamentComplete: Boolean,
         /** How far the inharmonicity sampling has come (see [TuningSession.curve]). */
         val curve: CurveReport = CurveReport(0, null, null, false),
+        /** Pro: in Stretch Definition, sampling single strings before tuning begins. */
+        val calibrating: Boolean = false,
+        /** Anchors in so far, and the number Stretch Definition asks for. */
+        val anchors: Int = 0,
+        val anchorsWanted: Int = 0,
         /** True when moving to another note registers this one as done. */
         val recordsOnLeaving: Boolean,
         /** Lowest and highest note the arrows may reach at this point. */
@@ -371,6 +376,9 @@ class TuningController(
             },
             temperamentComplete = s.temperamentComplete,
             curve = s.curve(),
+            calibrating = s.calibrating,
+            anchors = s.anchors().size,
+            anchorsWanted = s.settings.calibrationNotes,
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,

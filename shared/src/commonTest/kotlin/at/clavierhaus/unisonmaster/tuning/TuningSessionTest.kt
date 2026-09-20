@@ -811,8 +811,8 @@ class TuningSessionTest {
     private fun anchor(midi: Int, b: Double) =
         NoteMeasurement(midi, TuningSession.targetF1(midi, 440.0), b, 0.1, exact(b, 1..8))
 
-    /** ln B linear in note number: B doubles about every seven semitones, like a real plain-wire scale. */
-    private fun lawB(midi: Int): Double = 1.0e-4 * Math.pow(2.0, (midi - 40) / 7.0)
+    /** ln B linear in note number: B doubles about every ten semitones, roughly a real plain-wire scale (1e-4 at E2, 1e-2 at C8). */
+    private fun lawB(midi: Int): Double = 1.0e-4 * Math.pow(2.0, (midi - 40) / 10.0)
 
     @Test
     fun fewerThanThreeAnchorsIsNoCurveYet() {
@@ -881,5 +881,52 @@ class TuningSessionTest {
         s.record(anchor(40, lawB(40)))
         s.record(anchor(52, lawB(52)))
         assertEquals(lawB(52), s.predictedB(58), 1e-12, "the nearest measured note")
+    }
+
+    // ---- Stretch Definition (Pro) ----
+
+    @Test
+    fun proSamplesUntilTheChosenNumberOfAnchorsThenTunesToTheCalculatedStretch() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, calibrationNotes = 3))
+        assertTrue(s.calibrating); assertTrue(!s.calibrated)
+        s.record(anchor(40, lawB(40))); s.record(anchor(52, lawB(52)))
+        assertTrue(s.calibrating, "two of three")
+        assertEquals(TuningSession.targetF1(46, 440.0), s.target(46), 1e-9, "no reference measured: equal temperament, as before")
+        s.record(anchor(64, lawB(64)))
+        assertTrue(!s.calibrating); assertTrue(s.calibrated)
+        // the bass is stretched flat of equal temperament, the treble sharp, by the calculated curve
+        val bass = s.target(40); val bassEt = TuningSession.targetF1(40, 440.0)
+        val treble = s.target(88); val trebleEt = TuningSession.targetF1(88, 440.0)
+        assertTrue(bass < bassEt, "E2 %.3f must lie below ET %.3f".format(bass, bassEt))
+        assertTrue(treble > trebleEt, "E6 %.3f must lie above ET %.3f".format(treble, trebleEt))
+        assertTrue(TuningSession.centsOff(bass, bassEt) > -40 && TuningSession.centsOff(treble, trebleEt) < 40, "and by a plausible amount")
+        // the target is the calculation, not the string: a live partial does not move it
+        assertEquals(s.target(40), s.target(40, ownCentsLow = 30.0), 1e-9)
+        // the link says so
+        val link = assertNotNull(s.octaveLink(40))
+        assertTrue(link.calculated)
+        assertEquals(40 + link.type.semitones, link.refMidi)
+        // inside the temperament octave the temperament stands
+        assertEquals(TuningSession.targetF1(60, 440.0), s.target(60), 1e-9)
+    }
+
+    @Test
+    fun theCalculatedStretchIsContinuousAcrossTheChain() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, calibrationNotes = 3))
+        for (midi in listOf(40, 52, 64)) s.record(anchor(midi, lawB(midi)))
+        var prev = TuningSession.centsOff(s.target(28), TuningSession.targetF1(28, 440.0))
+        for (midi in 29..108) {
+            val c = TuningSession.centsOff(s.target(midi), TuningSession.targetF1(midi, 440.0))
+            assertTrue(abs(c - prev) < 6.0, "jump of %.1f c between %d and %d".format(c - prev, midi - 1, midi))
+            prev = c
+        }
+    }
+
+    @Test
+    fun fossNeverCalibrates() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = true, calibrationNotes = 3))
+        for (midi in listOf(40, 52, 64)) s.record(anchor(midi, lawB(midi)))
+        assertTrue(!s.calibrating); assertTrue(!s.calibrated)
+        assertNull(s.octaveLink(46)?.takeIf { it.calculated })
     }
 }

@@ -13,9 +13,10 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, lowestUnwoundMidi = 40, suggestSustainS = 1.5, autoNote = false) }
+        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, lowestUnwoundMidi = 40, suggestSustainS = 1.5, autoNote = false, calibrationNotes = 16) }
         val b = SettingsModel(store)
         assertEquals(false, b.settings.value.autoNote)
+        assertEquals(16, b.settings.value.calibrationNotes)
         assertEquals(0.2, b.settings.value.matchHz)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)

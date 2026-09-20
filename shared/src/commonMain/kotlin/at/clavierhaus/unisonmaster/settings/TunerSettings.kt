@@ -74,6 +74,12 @@ data class TunerSettings(
      * an unfinished temperament octave, which is walked with Done.
      */
     val autoNote: Boolean = true,
+    /**
+     * Pro, Stretch Definition: how many single strings across the range are
+     * sampled before tuning begins. 8 is quick, 12 and 16 closer; the
+     * tuner's own number, placed at the transitions he knows, is the best.
+     */
+    val calibrationNotes: Int = 12,
 ) {
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
@@ -84,6 +90,8 @@ data class TunerSettings(
         const val MAX_UNWOUND = 60             // C4
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
+        const val MIN_CALIBRATION_NOTES = 3
+        const val MAX_CALIBRATION_NOTES = 40
     }
 
     /** Below this note the bass octave type applies: an octave above the lowest plain string. */
@@ -144,6 +152,7 @@ class SettingsModel(
             suggestSustainS = f("suggestSustainS", d.suggestSustainS),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             autoNote = b("autoNote", d.autoNote),
+            calibrationNotes = i("calibrationNotes", d.calibrationNotes).coerceIn(TunerSettings.MIN_CALIBRATION_NOTES, TunerSettings.MAX_CALIBRATION_NOTES),
         )
     }
 
@@ -162,5 +171,6 @@ class SettingsModel(
         store.put("suggestSustainS", s.suggestSustainS.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("autoNote", s.autoNote.toString())
+        store.put("calibrationNotes", s.calibrationNotes.toString())
     }
 }

@@ -178,6 +178,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         val viaHz: Double,
         /** The partial of the note being tuned that must land on [viaHz]. */
         val ownK: Int,
+        /** True when [viaHz] comes from the calculated stretch (Pro, after Stretch Definition), not from a measured string. */
+        val calculated: Boolean = false,
     )
 
     /**
@@ -193,6 +195,17 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     fun octaveLink(midi: Int = current): OctaveLink? {
         val type = settings.octaveTypeFor(midi)
+        if (calibrated) return when {
+            midi < settings.temperamentLowMidi -> {
+                val ref = midi + type.semitones
+                OctaveLink(type, ref, type.high * stretchTargetF1(ref) * Inharmonicity.ratio(type.high, predictedB(ref)), type.low, calculated = true)
+            }
+            midi > TunerSettings.TEMPERAMENT_HIGH -> {
+                val ref = midi - type.semitones
+                OctaveLink(type, ref, type.low * stretchTargetF1(ref) * Inharmonicity.ratio(type.low, predictedB(ref)), type.high, calculated = true)
+            }
+            else -> null
+        }
         return when {
             midi < settings.temperamentLowMidi -> {
                 val ref = measured[midi + type.semitones] ?: return null
@@ -215,10 +228,46 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * string has sounded, the ratio predicted from the nearest measured note.
      */
     fun target(midi: Int = current, ownCentsLow: Double? = null): Double {
+        // Pro after Stretch Definition: the target is the calculated stretch,
+        // fixed, whatever the string does — the tuner asked for that pitch.
+        if (calibrated) return stretchTargetF1(midi)
         val link = octaveLink(midi) ?: return Companion.targetF1(midi, a4Hz)
         val ratio = ownCentsLow?.let { 2.0.pow(it / 1200.0) }
             ?: Inharmonicity.ratio(link.ownK, predictedB(midi))
         return link.viaHz / (link.ownK * ratio)
+    }
+
+    // ---- Stretch Definition (Pro): the calibration that precedes tuning ----
+
+    /**
+     * Pro's second step after A4: single strings across the range until
+     * [TunerSettings.calibrationNotes] anchors are in (docs/INHARMONICITY.md).
+     * FOSS has no such phase — its temperament octave is its sample.
+     */
+    val calibrating: Boolean get() = !settings.temperamentFirst && anchors().size < settings.calibrationNotes
+
+    /** Pro with Stretch Definition finished: targets come from the calculated stretch. */
+    val calibrated: Boolean get() = !settings.temperamentFirst && !calibrating
+
+    /**
+     * The calculated stretch: the pitch of [midi]'s first partial such that
+     * the octave type's partials coincide with those of the reference an
+     * octave (or two) away, both strings' inharmonicity taken from the
+     * fitted curve, chained from the temperament octave outward. Inside the
+     * temperament octave: the temperament on A4.
+     */
+    fun stretchTargetF1(midi: Int): Double {
+        if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) return Companion.targetF1(midi, a4Hz)
+        val type = settings.octaveTypeFor(midi)
+        return if (midi < settings.temperamentLowMidi) {
+            val ref = midi + type.semitones
+            val via = type.high * stretchTargetF1(ref) * Inharmonicity.ratio(type.high, predictedB(ref))
+            via / (type.low * Inharmonicity.ratio(type.low, predictedB(midi)))
+        } else {
+            val ref = midi - type.semitones
+            val via = type.low * stretchTargetF1(ref) * Inharmonicity.ratio(type.low, predictedB(ref))
+            via / (type.high * Inharmonicity.ratio(type.high, predictedB(midi)))
+        }
     }
     companion object {
         const val MIDI_A4 = 69
@@ -350,10 +399,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     fun predictedB(midi: Int = current): Double {
         val report = curve()
-        if (report.representative) {
-            val anchors = measured.values
-                .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
-            val (slope, intercept) = fitLogB(anchors)
+        if (report.representative || (calibrated && report.anchors >= 2)) {
+            val (slope, intercept) = fitLogB(anchors())
             return exp(intercept + slope * midi)
         }
         return basisFor(midi)?.b ?: 0.0
@@ -370,10 +417,13 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * [CURVE_MIN_ANCHORS] anchors span at least [CURVE_MIN_SPAN] semitones and
      * the worst held-out prediction is within [CURVE_TOLERANCE_CENTS].
      */
+    /** The measured notes that qualify as anchors of the inharmonicity curve, lowest first. */
+    fun anchors(): List<NoteMeasurement> = measured.values
+        .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
+        .sortedBy { it.midi }
+
     fun curve(): CurveReport {
-        val anchors = measured.values
-            .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
-            .sortedBy { it.midi }
+        val anchors = anchors()
         val n = anchors.size
         if (n == 0) return CurveReport(0, null, null, false)
         val span = anchors.last().midi - anchors.first().midi
