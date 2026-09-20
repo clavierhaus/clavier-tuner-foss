@@ -439,6 +439,7 @@ class TuningController(
         val follower = LiveReference(
             audioSource.sampleRateHz, hopSize = hopSize, minHz = applied.first, maxHz = applied.second,
         )
+        follower.a4Hz = _referenceA4Hz.value
         _live.value = true
         return try {
             audioSource.start(hopSize) { chunk ->
@@ -461,7 +462,7 @@ class TuningController(
                 // the range must not overwrite what was heard of the note itself
                 if (summary != null && t != null && Notes.nearestMidi(summary.f1Hz, _referenceA4Hz.value) == t.midi) heldSummary = summary
                 if (t != null) refreshTargets(t, summary)
-                if (t != null) followKey(t, follower.detectedHz)
+                if (t != null) followKey(t, follower.detectedMidi)
             }
             true
         } catch (e: Exception) {
@@ -486,9 +487,8 @@ class TuningController(
     /** The note nearest to whatever sounds, over the whole compass; null in silence. What the screen names when it is not the note being tuned. */
     val heardMidi: StateFlow<Int?> = _heardMidi.asStateFlow()
 
-    private fun followKey(t: TuningView, detectedHz: Double?) {
+    private fun followKey(t: TuningView, midi: Int?) {
         val s = session ?: return
-        val midi = detectedHz?.let { Notes.nearestMidi(it, s.a4Hz) }
         _heardMidi.value = midi
         if (!_settings.value.autoNote || s.gated) { autoMidi = -1; autoHops = 0; return }
         if (midi == null || midi == t.midi || !s.selectable(midi)) { autoMidi = -1; autoHops = 0; return }

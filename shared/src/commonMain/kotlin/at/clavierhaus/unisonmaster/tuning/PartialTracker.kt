@@ -130,6 +130,13 @@ class PartialTracker(
         return partials(f1)
     }
 
+    /** The key struck, from the last [spectrum], by [detector]; null when nothing sounds. */
+    fun detectKey(detector: NoteDetector, a4Hz: Double): Int? {
+        val lo = (FLOOR_MIN_HZ / binHz).toInt().coerceAtLeast(1)
+        val hi = (FLOOR_MAX_HZ / binHz).toInt().coerceAtMost(mag.size - 1)
+        return detector.detect(mag, db(median(mag, lo, hi)), a4Hz)
+    }
+
     /** Partials 1..maxPartials of the string whose first partial is [f1], in the last [spectrum]. */
     fun partials(f1: Double): List<PartialReading> {
         val lo = (FLOOR_MIN_HZ / binHz).toInt().coerceAtLeast(1)

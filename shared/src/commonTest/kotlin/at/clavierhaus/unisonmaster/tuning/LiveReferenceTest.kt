@@ -198,10 +198,10 @@ class LiveReferenceTest {
         val live = LiveReference(SR, hopSize = 1024, minHz = 400.0, maxHz = 500.0)   // the screen is on A4
         val buf = FloatArray(1024)
         var pos = 0
-        val seen = ArrayList<Double>()
-        while (pos + 1024 <= sig.size) { sig.copyInto(buf, 0, pos, pos + 1024); live.push(buf); pos += 1024; live.detectedHz?.let(seen::add) }
+        val seen = ArrayList<Int>()
+        while (pos + 1024 <= sig.size) { sig.copyInto(buf, 0, pos, pos + 1024); live.push(buf); pos += 1024; live.detectedMidi?.let(seen::add) }
         assertTrue(seen.isNotEmpty(), "nothing detected")
-        val bad = seen.filter { abs(it - f1) > 1.5 }
+        val bad = seen.filter { it != 40 }
         assertTrue(bad.isEmpty(), "detected ${bad.take(3)} for an E2 string")
     }
 }

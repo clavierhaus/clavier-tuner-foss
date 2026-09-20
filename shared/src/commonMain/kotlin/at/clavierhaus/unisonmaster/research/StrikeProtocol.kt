@@ -17,6 +17,19 @@ enum class StringPos(val code: String, val label: String, val instruction: Strin
     CENTRE("C", "centre string", "Mute the left and right strings; only the centre string sounds."),
     LEFT("L", "left string", "Mute every other string of this note; only the left string sounds."),
     RIGHT("R", "right string", "Mute every other string of this note; only the right string sounds."),
+    ALL("U", "all strings", "Nothing muted: the whole unison sounds, as it is."),
+}
+
+/** What is being recorded. */
+enum class Study(val label: String, val code: String) {
+    /** Single strings, three strikes, for the pitch-modulation study. */
+    WOBBLE("Wobble", "wobble"),
+    /** Every key of the instrument, unmuted, once: the corpus the key detector is tested against. */
+    COMPASS("Compass", "compass");
+
+    companion object {
+        fun ofCode(code: String?): Study = entries.firstOrNull { it.code == code } ?: WOBBLE
+    }
 }
 
 /** The pianos of the study; [code] goes into file names. */
@@ -40,8 +53,27 @@ object StrikeProtocol {
     private const val C4 = 60
     private const val C6 = 84
 
+    /** The lowest key of the instrument: the Bösendorfer 225 goes down to F0. */
+    fun lowestMidi(piano: Piano): Int = when (piano) { Piano.BOESENDORFER -> 17; else -> 21 }
+
+    fun takes(piano: Piano, firstPlainMidi: Int = 40, study: Study = Study.WOBBLE): List<Take> = when (study) {
+        Study.WOBBLE -> wobbleTakes(piano, firstPlainMidi)
+        Study.COMPASS -> (lowestMidi(piano)..108).map { Take(it, StringPos.ALL, 1) }
+    }
+
+    /** Recording length per take: the compass wants only the strike and a few seconds of tone. */
+    fun seconds(piano: Piano, midi: Int, study: Study): Int =
+        if (study == Study.COMPASS) (if (midi < 48) 5 else 4) else seconds(piano, midi)
+
+    val compassSetup: List<String> = listOf(
+        "Place the phone on the music desk, bottom edge (microphone) towards the strings. Leave it there for the whole session.",
+        "Lid fully open, room quiet, no pedal. Nothing muted.",
+        "Every key from the lowest to C8, once. Tap Record; when \"Strike now\" appears, play the key mezzo-forte and hold it until the recording ends.",
+        "The piano as it is: unisons need not be clean. If a strike goes wrong, tap Redo.",
+    )
+
     /** The core set across the compass, then the top-stringing comparison (left and right strings). */
-    fun takes(piano: Piano, firstPlainMidi: Int = 40): List<Take> {
+    fun wobbleTakes(piano: Piano, firstPlainMidi: Int = 40): List<Take> {
         val notes = when (piano) {
             Piano.BOESENDORFER -> listOf(C1, C2, firstPlainMidi, C3, 57, C4, 69, 72, 81, 84, 93, 96)
             else -> listOf(33, 38, firstPlainMidi, 45, C3, 57, C4, 69, 72, 81, 84, 93, 96)

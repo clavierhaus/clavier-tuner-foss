@@ -49,11 +49,10 @@ class LiveReference(
         const val ONSET_RATIO = 2.0      // hop energy jump that counts as a strike
         const val RANGE_DB = 48.0        // bell falls from full height to zero over this
         const val AUDIBLE_SNR_DB = 12.0  // a partial this far above the noise floor is audible
+        const val DETECT_RUN = 6         // readings in a row that make a key the note (126 ms at hop 1024)
+        const val DETECT_SETTLE_S = 1.5  // after this much of a strike the note is held
         const val PARTIALS = 12
         const val SUSTAIN_WINDOW_DB = 30.0 // a partial counts as sounding within this of the loudest
-        const val DETECT_MIN_HZ = 26.0     // A0 and below
-        const val DETECT_MAX_HZ = 4300.0   // above C8
-        const val DETECT_SUBHARMONIC_DB = 18.0
 
         /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
         fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0
@@ -71,6 +70,7 @@ class LiveReference(
     private val recordSpan = maxOf(1, (0.43 * sampleRateHz / hopSize).toInt())
     private var peakDb = Double.NEGATIVE_INFINITY // loudest hop of the current strike
     private val tracker = PartialTracker(sampleRateHz, windowSize, PARTIALS)
+    private val detector = NoteDetector(sampleRateHz, windowSize)
     private var partialPeakDb = Double.NEGATIVE_INFINITY // loudest partial of the current strike
 
     // per-strike statistics
@@ -100,15 +100,26 @@ class LiveReference(
         private set
 
     /**
-     * The fundamental of whatever sounds, searched over the whole compass
-     * ([DETECT_MIN_HZ]..[DETECT_MAX_HZ]) rather than the note's range: the
-     * strongest peak, or the lowest peak below it at an integer fraction of
-     * its frequency that stands within [DETECT_SUBHARMONIC_DB] of it — a bass
-     * string's second or third partial is louder than its first. Null when
-     * nothing sounds. What the tuning screen switches notes on.
+     * The key struck, over the whole compass, unmuted — by [NoteDetector],
+     * the comb of partials scored for every key, named on [a4Hz]. Null
+     * before a strike has been read and after the tone has died. What the
+     * tuning screen switches notes on.
+     *
+     * Latched per strike: the first key read [DETECT_RUN] hops in a row
+     * after the strike is the note, and within [DETECT_SETTLE_S] of the
+     * strike a different key read as long replaces it (the attack of a
+     * bass string can read an octave high before its fundamental has
+     * come); after that the note is held until release or the next strike,
+     * because a decaying tone reads its own upper partials as another note
+     * and the tuner did not strike one.
      */
-    var detectedHz: Double? = null
+    var detectedMidi: Int? = null
         private set
+    private var detectCandidate: Int? = null
+    private var detectRun = 0
+
+    /** The reference the detected key is named on; the controller keeps it current. */
+    var a4Hz: Double = 440.0
 
     /** Bell height 0 .. 1: loudness relative to the current strike's peak. */
     var level: Double = 0.0
@@ -176,6 +187,7 @@ class LiveReference(
         else (1.0 + (db - peakDb) / RANGE_DB).coerceIn(0.0, 1.0)
         if (strike) {
             settle = settleHops
+            detectedMidi = null; detectCandidate = null; detectRun = 0
             estimates.clear()
             partials = emptyList()
             audible = emptySet()
@@ -189,7 +201,7 @@ class LiveReference(
         if (rms < RELEASE_RMS) {
             settle = -1
             partials = partials.map { it.copy(level = 0.0) }
-            detectedHz = null
+            detectedMidi = null; detectCandidate = null; detectRun = 0
             return
         }
         if (filled < windowSize) return
@@ -208,7 +220,12 @@ class LiveReference(
         // second component in the range — a neighbour still ringing — and
         // the peak is kept instead.
         tracker.spectrum(ring)
-        detectedHz = tracker.fundamentalOfStrongest(DETECT_MIN_HZ, DETECT_MAX_HZ, DETECT_SUBHARMONIC_DB)
+        val key = tracker.detectKey(detector, a4Hz)
+        if (key != null && key == detectCandidate) detectRun++ else { detectCandidate = key; detectRun = if (key != null) 1 else 0 }
+        if (key != null && detectRun >= DETECT_RUN) {
+            val fresh = hopsSinceStrike * hopSize < DETECT_SETTLE_S * sampleRateHz
+            if (detectedMidi == null || fresh) detectedMidi = key
+        }
         val coarse = tracker.strongestPeak(minHz, maxHz) ?: return
         val phased = PreciseF0.refineTwoStage(ring, sr, coarse, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
         val fine = if (abs(phased - coarse) <= tracker.binHz) phased else coarse
