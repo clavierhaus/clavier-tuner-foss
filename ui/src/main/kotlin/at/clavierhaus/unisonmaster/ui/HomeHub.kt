@@ -141,13 +141,16 @@ fun HomeHub(
         )
 
         // The menu. padding, not offset: the slot itself moves, so every line stays tappable.
+        // Drawn for three entries; a fourth (Pro's Record Strikes) closes the gaps and
+        // lifts the column so the last note stays on the reference screen.
+        val crowded = entries.size > 3
         Column(
             Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 112.dp, top = 72.dp),
+                .padding(start = 112.dp, top = if (crowded) 40.dp else 72.dp),
         ) {
             entries.forEachIndexed { i, e ->
-                if (i > 0) Spacer(Modifier.height(18.dp))
+                if (i > 0) Spacer(Modifier.height(if (crowded) 2.dp else 18.dp))
                 HubEntry(e)
             }
         }
