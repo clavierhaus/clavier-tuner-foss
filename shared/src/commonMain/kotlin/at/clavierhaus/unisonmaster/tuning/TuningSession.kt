@@ -3,6 +3,7 @@ package at.clavierhaus.unisonmaster.tuning
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -106,9 +107,9 @@ object Inharmonicity {
         }
 
     /** Partials of a note tuned to [targetF1] whose string behaves like [basis]. */
-    fun predict(targetF1: Double, basis: NoteMeasurement, maxPartials: Int = LiveReference.PARTIALS): List<PredictedPartial> =
+    fun predict(targetF1: Double, basis: NoteMeasurement, maxPartials: Int = LiveReference.PARTIALS, b: Double = basis.b): List<PredictedPartial> =
         basis.partials.filter { it.k <= maxPartials }.map { p ->
-            PredictedPartial(p.k, p.k * targetF1 * ratio(p.k, basis.b), p.levelDb, p.sustainS)
+            PredictedPartial(p.k, p.k * targetF1 * ratio(p.k, b), p.levelDb, p.sustainS)
         }
 }
 
@@ -216,7 +217,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     fun target(midi: Int = current, ownCentsLow: Double? = null): Double {
         val link = octaveLink(midi) ?: return Companion.targetF1(midi, a4Hz)
         val ratio = ownCentsLow?.let { 2.0.pow(it / 1200.0) }
-            ?: Inharmonicity.ratio(link.ownK, basisFor(midi)?.b ?: 0.0)
+            ?: Inharmonicity.ratio(link.ownK, predictedB(midi))
         return link.viaHz / (link.ownK * ratio)
     }
     companion object {
@@ -231,6 +232,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         const val MAX_LEVEL_DOWN_DB = 30.0
         /** A partial is matched when it is this close to its target, Hz (the display resolution). */
         const val MATCH_HZ = 0.1
+        /** Inharmonicity is sampled up to here; above it B is extrapolated (CURVE.md §3). */
+        const val CURVE_TOP_MIDI = 72             // C5
+        const val CURVE_MIN_ANCHORS = 3
+        const val CURVE_MIN_SPAN = 24             // two octaves
+        /** The worst held-out prediction a representative curve may show, cents at partial 4. */
+        const val CURVE_TOLERANCE_CENTS = 1.5
 
         val sequence: List<Int> = (MIDI_A4 downTo MIDI_A3).toList()
 
@@ -332,6 +339,78 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
 
     fun predictedPartials(midi: Int = current): List<PredictedPartial> {
         val basis = basisFor(midi) ?: return emptyList()
-        return Inharmonicity.predict(target(midi), basis)
+        return Inharmonicity.predict(target(midi), basis, b = predictedB(midi))
+    }
+
+    /**
+     * The inharmonicity expected of [midi] before its string has sounded:
+     * from the fitted curve once it is representative, otherwise from the
+     * nearest measured note. Only ever a proposal — a string's own partials
+     * replace it the moment they are heard.
+     */
+    fun predictedB(midi: Int = current): Double {
+        val report = curve()
+        if (report.representative) {
+            val anchors = measured.values
+                .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
+            val (slope, intercept) = fitLogB(anchors)
+            return exp(intercept + slope * midi)
+        }
+        return basisFor(midi)?.b ?: 0.0
+    }
+
+    /**
+     * How well the notes sampled so far stand for the instrument's
+     * inharmonicity (docs/CURVE.md §4, docs/INHARMONICITY.md). The anchors
+     * are the measured plain-wire notes up to C5 whose partials fit the
+     * stiff-string model; log B is fitted against note number, linear, and
+     * each anchor is held out in turn and predicted from the rest. The worst
+     * of those predictions, as cents at partial 4 — the partial an octave
+     * link reads — is the report's error. Representative when at least
+     * [CURVE_MIN_ANCHORS] anchors span at least [CURVE_MIN_SPAN] semitones and
+     * the worst held-out prediction is within [CURVE_TOLERANCE_CENTS].
+     */
+    fun curve(): CurveReport {
+        val anchors = measured.values
+            .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
+            .sortedBy { it.midi }
+        val n = anchors.size
+        if (n == 0) return CurveReport(0, null, null, false)
+        val span = anchors.last().midi - anchors.first().midi
+        if (n < CURVE_MIN_ANCHORS) return CurveReport(n, span, null, false)
+        var worst = 0.0
+        for (held in anchors) {
+            val rest = anchors.filter { it !== held }
+            val (slope, intercept) = fitLogB(rest)
+            val predictedB = exp(intercept + slope * held.midi)
+            val err = abs(Inharmonicity.centsOf(4, predictedB) - Inharmonicity.centsOf(4, held.b))
+            if (err > worst) worst = err
+        }
+        val ok = span >= CURVE_MIN_SPAN && worst <= CURVE_TOLERANCE_CENTS
+        return CurveReport(n, span, worst, ok)
+    }
+
+    /** Least squares of ln B against note number: (slope, intercept). */
+    private fun fitLogB(notes: List<NoteMeasurement>): Pair<Double, Double> {
+        val xs = notes.map { it.midi.toDouble() }
+        val ys = notes.map { ln(it.b) }
+        val mx = xs.average(); val my = ys.average()
+        var sxx = 0.0; var sxy = 0.0
+        for (i in xs.indices) { sxx += (xs[i] - mx) * (xs[i] - mx); sxy += (xs[i] - mx) * (ys[i] - my) }
+        val slope = if (sxx > 0) sxy / sxx else 0.0
+        return slope to (my - slope * mx)
     }
 }
+
+/**
+ * The state of the inharmonicity sampling: how many anchors, how far apart
+ * the lowest and highest are (semitones), the worst held-out prediction
+ * (cents at partial 4; null below three anchors), and whether that is
+ * enough to call the curve representative.
+ */
+data class CurveReport(
+    val anchors: Int,
+    val spanSemitones: Int?,
+    val worstCents: Double?,
+    val representative: Boolean,
+)

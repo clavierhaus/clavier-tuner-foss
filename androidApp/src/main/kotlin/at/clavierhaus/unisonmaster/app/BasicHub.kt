@@ -171,10 +171,23 @@ fun BasicHub(
             f > liveTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
+        val curve = t.curve
         val status = buildString {
             append(if (cfg.autoNote && t.temperamentComplete) "follows the key" else "arrows")
             append(" · ")
-            append(if (t.temperamentComplete) "A3–A4 done" else "A3–A4 first")
+            if (cfg.temperamentFirst) {
+                append(if (t.temperamentComplete) "A3–A4 done" else "A3–A4 first")
+            } else {
+                // Pro: the sampling report of docs/INHARMONICITY.md
+                append(
+                    when {
+                        curve.anchors == 0 -> "no anchors yet"
+                        curve.worstCents == null -> "${curve.anchors} anchors, need 3 across two octaves"
+                        curve.representative -> String.format(Locale.ROOT, "curve representative: %d anchors, ±%.1f c", curve.anchors, curve.worstCents)
+                        else -> String.format(Locale.ROOT, "curve: %d anchors, worst ±%.1f c", curve.anchors, curve.worstCents)
+                    },
+                )
+            }
         }
 
         // header: back and gear only; the title lives on the hub

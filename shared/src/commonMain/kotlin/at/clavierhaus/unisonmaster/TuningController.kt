@@ -5,6 +5,7 @@ import at.clavierhaus.unisonmaster.dsp.PreciseF0
 import at.clavierhaus.unisonmaster.dsp.Yin
 import kotlin.math.abs
 import kotlin.math.pow
+import at.clavierhaus.unisonmaster.tuning.CurveReport
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.LiveReference
@@ -257,6 +258,8 @@ class TuningController(
         val deviations: Map<Int, Double>,
         /** True once the temperament octave is measured throughout. */
         val temperamentComplete: Boolean,
+        /** How far the inharmonicity sampling has come (see [TuningSession.curve]). */
+        val curve: CurveReport = CurveReport(0, null, null, false),
         /** True when moving to another note registers this one as done. */
         val recordsOnLeaving: Boolean,
         /** Lowest and highest note the arrows may reach at this point. */
@@ -367,6 +370,7 @@ class TuningController(
                 TuningSession.centsOff(m.f1Hz, TuningSession.targetF1(midi, s.a4Hz))
             },
             temperamentComplete = s.temperamentComplete,
+            curve = s.curve(),
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,

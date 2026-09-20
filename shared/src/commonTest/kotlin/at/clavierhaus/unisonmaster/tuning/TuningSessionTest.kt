@@ -804,4 +804,82 @@ class TuningSessionTest {
         tuning.startLive(); tuning.stopLive()
         assertEquals(56, tuning.tuning.value?.midi)
     }
+
+    // ---- the inharmonicity sampling report ----
+
+    /** A stiff-string note measured exactly, with B following the instrument's law. */
+    private fun anchor(midi: Int, b: Double) =
+        NoteMeasurement(midi, TuningSession.targetF1(midi, 440.0), b, 0.1, exact(b, 1..8))
+
+    /** ln B linear in note number: B doubles about every seven semitones, like a real plain-wire scale. */
+    private fun lawB(midi: Int): Double = 1.0e-4 * Math.pow(2.0, (midi - 40) / 7.0)
+
+    @Test
+    fun fewerThanThreeAnchorsIsNoCurveYet() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        s.record(anchor(40, lawB(40)))
+        s.record(anchor(60, lawB(60)))
+        val r = s.curve()
+        assertEquals(2, r.anchors)
+        assertNull(r.worstCents)
+        assertTrue(!r.representative)
+    }
+
+    @Test
+    fun threeAnchorsAcrossTwoOctavesOnAWellBehavedScaleAreRepresentative() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        for (midi in listOf(40, 52, 64)) s.record(anchor(midi, lawB(midi)))   // E2, E3, E4
+        val r = s.curve()
+        assertEquals(3, r.anchors)
+        assertEquals(24, r.spanSemitones)
+        val worst = assertNotNull(r.worstCents)
+        assertTrue(worst < 0.2, "exact law, worst held-out %.2f c".format(worst))
+        assertTrue(r.representative)
+    }
+
+    @Test
+    fun anchorsCrowdedInOneOctaveAreNotRepresentativeHoweverManyThereAre() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        for (midi in 57..69) s.record(anchor(midi, lawB(midi)))                // A3–A4 only
+        val r = s.curve()
+        assertEquals(13, r.anchors)
+        assertTrue(!r.representative, "an octave does not stand for the compass")
+    }
+
+    @Test
+    fun aNoteThatBreaksTheLawKeepsTheCurveFromBeingRepresentative() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        for (midi in listOf(40, 46, 52, 58, 64)) s.record(anchor(midi, lawB(midi)))
+        s.record(anchor(49, lawB(49) * 2.5))                                    // a strut, a break: B off by 2.5×
+        val r = s.curve()
+        val worst = assertNotNull(r.worstCents)
+        assertTrue(worst > TuningSession.CURVE_TOLERANCE_CENTS, "held-out error %.2f c must show the break".format(worst))
+        assertTrue(!r.representative)
+    }
+
+    @Test
+    fun notesAboveC5AreNotAnchors() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        for (midi in listOf(40, 52, 64, 76, 88)) s.record(anchor(midi, lawB(midi)))
+        assertEquals(3, s.curve().anchors, "E5 and E6 are extrapolated, not sampled")
+    }
+
+    @Test
+    fun aRepresentativeCurvePredictsBForANoteNotYetSampled() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        for (midi in listOf(40, 46, 52, 58, 64)) s.record(anchor(midi, lawB(midi)))
+        assertTrue(s.curve().representative)
+        val predicted = s.predictedB(49)                                         // C#3, between anchors
+        assertTrue(abs(predicted / lawB(49) - 1.0) < 0.05, "predicted %.3e, law %.3e".format(predicted, lawB(49)))
+        val treble = s.predictedB(84)                                            // C6, above the sampled range: extrapolated
+        assertTrue(abs(treble / lawB(84) - 1.0) < 0.1, "extrapolated %.3e, law %.3e".format(treble, lawB(84)))
+    }
+
+    @Test
+    fun withoutARepresentativeCurveTheNearestNoteStandsIn() {
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        s.record(anchor(40, lawB(40)))
+        s.record(anchor(52, lawB(52)))
+        assertEquals(lawB(52), s.predictedB(58), 1e-12, "the nearest measured note")
+    }
 }

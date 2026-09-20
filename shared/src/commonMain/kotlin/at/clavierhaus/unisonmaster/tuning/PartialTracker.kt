@@ -115,7 +115,10 @@ class PartialTracker(
         for (k in 4 downTo 2) {
             val f = top / k
             if (f < minHz) continue
-            val sub = strongestPeak(f * 0.97, f * 1.03, minSnrDb = 0.0) ?: continue
+            // the candidate must itself stand clear of the noise floor: late in a
+            // quiet decay the floor lies within a few dB of the top peak, and a
+            // noise bin at half its frequency would name a note an octave low
+            val sub = strongestPeak(f * 0.97, f * 1.03, minSnrDb = LiveReference.AUDIBLE_SNR_DB) ?: continue
             val subDb = db(mag[(sub / binHz).toInt().coerceIn(1, mag.size - 2)])
             if (topDb - subDb <= subharmonicDb) { best = sub; break }
         }
