@@ -244,7 +244,14 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * [TunerSettings.calibrationNotes] anchors are in (docs/INHARMONICITY.md).
      * FOSS has no such phase — its temperament octave is its sample.
      */
-    val calibrating: Boolean get() = !settings.temperamentFirst && anchors().size < settings.calibrationNotes
+    val calibrating: Boolean get() = !settings.temperamentFirst && sampled().size < settings.calibrationNotes
+
+    /**
+     * The notes Stretch Definition counts: every registered note whose
+     * partial spectrum was recorded — identified and measured, nothing
+     * more asked. The stricter [anchors] are what the curve is fitted on.
+     */
+    fun sampled(): List<NoteMeasurement> = measured.values.filter { it.partials.size >= 2 }
 
     /** Pro with Stretch Definition finished: targets come from the calculated stretch. */
     val calibrated: Boolean get() = !settings.temperamentFirst && !calibrating

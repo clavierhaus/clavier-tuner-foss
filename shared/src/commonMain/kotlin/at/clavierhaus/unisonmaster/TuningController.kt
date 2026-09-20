@@ -377,7 +377,7 @@ class TuningController(
             temperamentComplete = s.temperamentComplete,
             curve = s.curve(),
             calibrating = s.calibrating,
-            anchors = s.anchors().size,
+            anchors = s.sampled().size,
             anchorsWanted = s.settings.calibrationNotes,
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
@@ -460,7 +460,10 @@ class TuningController(
                 _liveSummary.value = summary
                 // held only while it is this note's reading: a neighbour in
                 // the range must not overwrite what was heard of the note itself
-                if (summary != null && t != null && Notes.nearestMidi(summary.f1Hz, _referenceA4Hz.value) == t.midi) heldSummary = summary
+                // ... and only while the key detector hears this note: a partial
+                // of another string inside the range is not this note's reading
+                if (summary != null && t != null && follower.detectedMidi == t.midi &&
+                    Notes.nearestMidi(summary.f1Hz, _referenceA4Hz.value) == t.midi) heldSummary = summary
                 if (t != null) refreshTargets(t, summary)
                 if (t != null) followKey(t, follower.detectedMidi)
             }

@@ -5,6 +5,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.ln
 import kotlin.math.log10
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 /**
@@ -226,9 +227,17 @@ class LiveReference(
             val fresh = hopsSinceStrike * hopSize < DETECT_SETTLE_S * sampleRateHz
             if (detectedMidi == null || fresh) detectedMidi = key
         }
-        val coarse = tracker.strongestPeak(minHz, maxHz) ?: return
-        val phased = PreciseF0.refineTwoStage(ring, sr, coarse, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
-        val fine = if (abs(phased - coarse) <= tracker.binHz) phased else coarse
+        // The fundamental: the strongest component in the note's range, read
+        // by phase — or, where no such component stands (a wound bass
+        // string's fundamental is faint), the fundamental the string's own
+        // partials imply, which is how a bass note is measured anyway.
+        val peak = tracker.strongestPeak(minHz, maxHz)
+        val fine = if (peak != null) {
+            val phased = PreciseF0.refineTwoStage(ring, sr, peak, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
+            if (abs(phased - peak) <= tracker.binHz) phased else peak
+        } else {
+            fundamentalFromPartials() ?: return
+        }
         if (fine < minHz || fine > maxHz) return
 
         estimates.addLast(fine)
@@ -258,6 +267,29 @@ class LiveReference(
             if (r.db > (peakSeen[r.k] ?: Double.NEGATIVE_INFINITY)) peakSeen[r.k] = r.db
             if (r.db >= partialPeakDb - SUSTAIN_WINDOW_DB) lastSounding[r.k] = hopsSinceStrike
         }
+    }
+
+    /**
+     * The fundamental implied by the partials of the key detected, for a
+     * string whose fundamental itself does not stand out: the partials are
+     * found from the key's nominal pitch, the stiff-string model fitted to
+     * them, and each partial k at hz_k puts the fundamental at
+     * hz_k / (k · ratio(k, B)); the level-weighted mean of those is the
+     * reading. Null when no key is detected or too few partials are heard.
+     */
+    private fun fundamentalFromPartials(): Double? {
+        val midi = detectedMidi ?: return null
+        val nominal = a4Hz * 2.0.pow((midi - 69) / 12.0)
+        if (nominal < minHz || nominal > maxHz) return null
+        val heard = tracker.partials(nominal).filter { it.k >= 2 && it.snrDb >= AUDIBLE_SNR_DB }
+        if (heard.size < 2) return null
+        val fit = Inharmonicity.fit(heard.map { MeasuredPartial(it.k, it.cents, it.db, 0.0) })
+        var num = 0.0; var den = 0.0
+        for (r in heard) {
+            val w = 10.0.pow(r.db / 20.0)
+            num += w * r.hz / (r.k * Inharmonicity.ratio(r.k, fit.b)); den += w
+        }
+        return if (den > 0) num / den else null
     }
 
     /**

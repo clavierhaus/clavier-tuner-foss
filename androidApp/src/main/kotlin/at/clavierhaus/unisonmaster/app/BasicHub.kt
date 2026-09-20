@@ -165,6 +165,8 @@ fun BasicHub(
         }
         val heardElsewhere = heard?.takeIf { it != t.midi && sounding }
         val state: Pair<String, Color> = when {
+            t.calibrating && heardElsewhere != null && (heardElsewhere < t.stepLowMidi || heardElsewhere > t.stepHighMidi) ->
+                "${Notes.name(heardElsewhere)}: outside ${Notes.name(t.stepLowMidi)}–${Notes.name(t.stepHighMidi)}" to Color(Brand.ORANGE)
             t.calibrating && heardElsewhere != null -> "heard ${Notes.name(heardElsewhere)}" to Color(Brand.WHITE_MUTED)
             t.calibrating && sounding && f != null -> "sampling" to Color(Brand.ORANGE)
             t.calibrating -> "listening" to Color(Brand.WHITE_MUTED)

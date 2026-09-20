@@ -929,4 +929,43 @@ class TuningSessionTest {
         assertTrue(!s.calibrating); assertTrue(!s.calibrated)
         assertNull(s.octaveLink(46)?.takeIf { it.calculated })
     }
+
+    /** A wound bass string as heard: partial 1 twenty dB under partial 2, thirty partials. */
+    private fun bassStrike(f1: Double, b: Double, seconds: Double): FloatArray {
+        val f0 = f1 / sqrt(1 + b)
+        val rnd = Random(7)
+        return FloatArray((seconds * SR).toInt()) { i ->
+            val t = i.toDouble() / SR
+            var v = 0.0
+            for (k in 1..30) { val f = k * f0 * sqrt(1 + b * k * k); if (f < SR / 2.2) v += (if (k == 1) 0.03 else 0.25 / sqrt(k.toDouble())) * sin(2 * PI * f * t + k) * exp(-t * (0.3 + 0.1 * k)) }
+            (v + 1e-4 * (rnd.nextDouble() * 2 - 1)).toFloat()
+        }
+    }
+
+    @Test
+    fun stretchDefinitionRegistersEveryKeyStruckAcrossTheRangeWithoutDone() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))    // A4 on the hub
+        val tuning = TuningController(QueueSource(signals))
+        tuning.applySettings(TunerSettings(temperamentFirst = false, calibrationNotes = 3, lowestUnwoundMidi = 40))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        assertTrue(tuning.tuning.value!!.calibrating)
+        val q = tuning.audioSourceForTest() as QueueSource
+        // E2 — the lowest plain string, its fundamental faint — then E3, then C5, then G4: each struck, nothing pressed
+        val played = listOf(40 to bassStrike(TuningSession.targetF1(40, 440.0), 1.8e-4, 3.0),
+            52 to stiffStrike(f0For(TuningSession.targetF1(52, 440.0), 3.0e-4), 3.0e-4, 10, 3.0),
+            72 to stiffStrike(f0For(TuningSession.targetF1(72, 440.0), 7.0e-4), 7.0e-4, 8, 3.0),
+            67 to stiffStrike(f0For(TuningSession.targetF1(67, 440.0), 4.0e-4), 4.0e-4, 8, 3.0))
+        for ((midi, sig) in played) {
+            q.add(FloatArray(HOP * 2) + sig)
+            tuning.startLive(); tuning.stopLive()
+            assertEquals(midi, tuning.tuning.value?.midi, "the screen followed ${Notes.name(midi)}")
+        }
+        val m = tuning.measurements()
+        for (midi in listOf(40, 52, 72)) assertTrue(midi in m && m.getValue(midi).partials.size >= 2, "${Notes.name(midi)} registered with its partials on leaving: ${m.keys.sorted()}")
+        assertEquals(4, tuning.tuning.value?.anchors, "A4 from the hub and the three struck; G#4, never struck, not among them: ${m.keys.sorted()}")
+        assertTrue(!tuning.tuning.value!!.calibrating, "Stretch Definition complete at three")
+        val e2 = m.getValue(40)
+        assertTrue(abs(TuningSession.centsOff(e2.f1Hz, TuningSession.targetF1(40, 440.0))) < 10.0, "E2's fundamental from its partials: %.2f Hz".format(e2.f1Hz))
+    }
 }
