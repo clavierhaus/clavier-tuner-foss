@@ -67,6 +67,13 @@ data class TunerSettings(
     val suggestSustainS: Double = 1.0,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
+    /**
+     * The reading shown is the mean of the readings since the strike, over at
+     * most this long. Short follows the string hop by hop and shows a beating
+     * unison as a swing; long stands still on it, as the ear does, and
+     * follows a pin turned mid-note more slowly.
+     */
+    val readingS: Double = 2.0,
     // WORKFLOW
     /**
      * The tuning screen follows the key struck: the note nearest the sounding
@@ -100,6 +107,7 @@ data class TunerSettings(
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MIN_CALIBRATION_NOTES = 3
+        val READING_CHOICES_S = listOf(0.25, 0.5, 1.0, 2.0, 4.0)
         const val MAX_CALIBRATION_NOTES = 40
     }
 
@@ -160,6 +168,7 @@ class SettingsModel(
             suggestLevelDb = f("suggestLevelDb", d.suggestLevelDb),
             suggestSustainS = f("suggestSustainS", d.suggestSustainS),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
+            readingS = f("readingS", d.readingS).coerceIn(TunerSettings.READING_CHOICES_S.first(), TunerSettings.READING_CHOICES_S.last()),
             autoNote = b("autoNote", d.autoNote),
             calibrationNotes = i("calibrationNotes", d.calibrationNotes).coerceIn(TunerSettings.MIN_CALIBRATION_NOTES, TunerSettings.MAX_CALIBRATION_NOTES),
             recordPcm = b("recordPcm", d.recordPcm),
@@ -180,6 +189,7 @@ class SettingsModel(
         store.put("suggestLevelDb", s.suggestLevelDb.toString())
         store.put("suggestSustainS", s.suggestSustainS.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
+        store.put("readingS", s.readingS.toString())
         store.put("autoNote", s.autoNote.toString())
         store.put("calibrationNotes", s.calibrationNotes.toString())
         store.put("recordPcm", s.recordPcm.toString())

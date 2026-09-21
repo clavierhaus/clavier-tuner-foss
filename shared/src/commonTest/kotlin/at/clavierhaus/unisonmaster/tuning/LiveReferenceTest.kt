@@ -204,4 +204,43 @@ class LiveReferenceTest {
         val bad = seen.filter { it != 40 }
         assertTrue(bad.isEmpty(), "detected ${bad.take(3)} for an E2 string")
     }
+
+    /**
+     * Two strings of a unison 0.15 Hz apart (0.8 cents at D#4 — the
+     * recording of 21 September): the reading of any single hop is pulled
+     * back and forth at the beat rate by more than the match window; the
+     * shown reading, the mean over the strike's last seconds, is evened out
+     * as far as a window shorter than the beat's period can — by half at
+     * two seconds. A pin turned and struck again is read afresh.
+     */
+    @Test
+    fun aBeatingUnisonReadsStillOverTheStrike() {
+        val n = (5.0 * SR).toInt()
+        val sig = FloatArray(HOP * 2) + FloatArray(n) { i ->
+            val t = i.toDouble() / SR
+            val env = 0.3 * exp(-t / 3.0)
+            (env * (sin(2 * PI * 313.0 * t) + 0.7 * sin(2 * PI * 313.15 * t + 1.0) +
+                0.5 * sin(2 * PI * 626.3 * t + 0.3) + 0.35 * sin(2 * PI * 626.6 * t + 2.0))).toFloat()
+        }
+        fun swing(readingS: Double): Double {
+            val live = LiveReference(SR, hopSize = 1024, minHz = 290.0, maxHz = 340.0)
+            live.readingSeconds = readingS
+            val seen = mutableListOf<Double>()
+            var pos = 0
+            val buf = FloatArray(1024)
+            while (pos + 1024 <= sig.size) {
+                sig.copyInto(buf, 0, pos, pos + 1024); live.push(buf); pos += 1024
+                val t = (pos - HOP * 2).toDouble() / SR
+                if (t > 1.5 && t < 5.0) live.hz?.let { seen.add(it) }
+            }
+            assertTrue(seen.size > 100, "readings: ${seen.size}")
+            return seen.max() - seen.min()
+        }
+        val hopByHop = swing(0.02)
+        val overOneSecond = swing(1.0)
+        val overTheStrike = swing(LiveReference.DEFAULT_READING_S)
+        assertTrue(hopByHop > 0.2, "a single hop's reading swings with the beat: %.2f Hz".format(hopByHop))
+        assertTrue(overOneSecond < hopByHop * 0.8, "one second evens part of it: %.2f Hz".format(overOneSecond))
+        assertTrue(overTheStrike < hopByHop * 0.5, "the mean over the strike stands: %.2f Hz (hop by hop %.2f, one second %.2f)".format(overTheStrike, hopByHop, overOneSecond))
+    }
 }

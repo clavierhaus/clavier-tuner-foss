@@ -117,6 +117,10 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onDecrease = { model.update { it.copy(matchHz = round((it.matchHz - 0.05) * 100) / 100) } },
         onIncrease = { model.update { it.copy(matchHz = round((it.matchHz + 0.05) * 100) / 100) } },
     )
+    ChoiceRow(
+        "Reading", "The mean of the readings since the strike, over at most this long: short follows the string hop by hop, long stands still on a beating unison",
+        listOf("¼ s", "½ s", "1 s", "2 s", "4 s"), TunerSettings.READING_CHOICES_S.indexOf(s.readingS).coerceAtLeast(0),
+    ) { i -> model.update { it.copy(readingS = TunerSettings.READING_CHOICES_S[i]) } }
     StepperRow(
         "Suggested partial: level", "Within this of the note's loudest partial",
         String.format(Locale.ROOT, "%.0f dB", s.suggestLevelDb),

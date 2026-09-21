@@ -174,6 +174,7 @@ class TuningController(
     /** Called by the app whenever the settings change; re-targets the session if there is one. */
     fun applySettings(s: TunerSettings) {
         _settings.value = s
+        follower?.readingSeconds = s.readingS
         val session = session ?: return
         session.settings = s
         if (session.current !in session.notes) session.select(session.notes.last())
@@ -440,6 +441,8 @@ class TuningController(
             audioSource.sampleRateHz, hopSize = hopSize, minHz = applied.first, maxHz = applied.second,
         )
         follower.a4Hz = _referenceA4Hz.value
+        follower.readingSeconds = _settings.value.readingS
+        this.follower = follower
         _live.value = true
         return try {
             audioSource.start(hopSize) { chunk ->
@@ -483,6 +486,9 @@ class TuningController(
      */
     @Volatile
     var tap: ((FloatArray) -> Unit)? = null
+
+    /** The live reader while the screen is live; its reading window follows the settings. */
+    private var follower: LiveReference? = null
 
     /** The last complete summary heard on the current note, kept across the next note's strike. */
     private var heldSummary: NoteMeasurement? = null

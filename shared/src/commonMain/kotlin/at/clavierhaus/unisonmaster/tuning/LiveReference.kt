@@ -20,11 +20,14 @@ import kotlin.math.sqrt
  *  - Each hop: the strongest spectral component of the range set by
  *    [setRange] locates the fundamental; a two-stage phase reading (phase
  *    advance over [phaseBaseline] samples) refines it.
- *    The value shown is that estimate as measured over the analysis window
- *    (about a quarter second of sound): readings are not averaged.
- *    What the string does, the display shows. (A strike's stored record uses
- *    the median of its last readings — a statistic of the measurement, kept
- *    apart from what is displayed.)
+ *    The value shown ([hz]) is the mean of those readings since the strike,
+ *    over at most [readingSeconds] — a unison's strings a cent apart, or a
+ *    string with a false beat, pull the reading of any single hop back and
+ *    forth at the beat rate (0.4 Hz on a D#4 of the 225, with a 0.1 Hz
+ *    match window), and a tuner's ear averages the beat as this does. A
+ *    strike starts the mean afresh, so a pin turned and struck again is
+ *    read at once. (The stored record uses the median of the same
+ *    readings.)
  *  - [level] is the bell height: loudness relative to the strike's own peak,
  *    in dB over [RANGE_DB]. Every strike reaches full height whatever the
  *    microphone distance, and the bell sinks as the note decays.
@@ -54,6 +57,9 @@ class LiveReference(
         const val DETECT_SETTLE_S = 1.5  // after this much of a strike the note is held
         const val PARTIALS = 12
         const val SUSTAIN_WINDOW_DB = 30.0 // a partial counts as sounding within this of the loudest
+        const val DEFAULT_READING_S = 2.0  // the shown reading is the mean over at most this much of the strike
+        const val JUMP_HZ = 1.0            // a reading this far from the mean starts it afresh ...
+        const val JUMP_RATIO = 0.003       // ... or 5 cents, where that is more
 
         /** Display and reference precision: 0.1 Hz. Finer digits are noise. */
         fun roundToTenth(hz: Double): Double = kotlin.math.round(hz * 10.0) / 10.0
@@ -67,8 +73,15 @@ class LiveReference(
     private var prevRms = 0.0
     private var settle = -1 // -1: waiting for a strike
     private val estimates = ArrayDeque<Double>()
-    /** Readings kept for the strike record: about the last 0.4 s. */
-    private val recordSpan = maxOf(1, (0.43 * sampleRateHz / hopSize).toInt())
+    private val partialEstimates = HashMap<Int, ArrayDeque<Double>>()
+
+    /**
+     * How long the shown reading looks back, at most: the fundamental and
+     * every partial are the mean of the readings of the last this many
+     * seconds of the current strike. Set from the settings.
+     */
+    var readingSeconds: Double = DEFAULT_READING_S
+    private val readingSpan get() = maxOf(1, (readingSeconds * sampleRateHz / hopSize).toInt())
     private var peakDb = Double.NEGATIVE_INFINITY // loudest hop of the current strike
     private val tracker = PartialTracker(sampleRateHz, windowSize, PARTIALS)
     private val detector = NoteDetector(sampleRateHz, windowSize)
@@ -137,7 +150,7 @@ class LiveReference(
         require(minHz > 0 && maxHz > minHz)
         this.minHz = minHz
         this.maxHz = maxHz
-        estimates.clear()
+        estimates.clear(); partialEstimates.clear()
         hz = null
         partials = emptyList()
         audible = emptySet()
@@ -153,7 +166,7 @@ class LiveReference(
         filled = 0
         prevRms = 0.0
         settle = -1
-        estimates.clear()
+        estimates.clear(); partialEstimates.clear()
         hz = null
         level = 0.0
         peakDb = Double.NEGATIVE_INFINITY
@@ -189,7 +202,7 @@ class LiveReference(
         if (strike) {
             settle = settleHops
             detectedMidi = null; detectCandidate = null; detectRun = 0
-            estimates.clear()
+            estimates.clear(); partialEstimates.clear()
             partials = emptyList()
             audible = emptySet()
             partialPeakDb = Double.NEGATIVE_INFINITY
@@ -240,17 +253,26 @@ class LiveReference(
         }
         if (fine < minHz || fine > maxHz) return
 
+        // a reading that jumps from the mean is a new thing — another string
+        // taking over the range, a pin turned — not a beat to average out
+        if (estimates.isNotEmpty() && abs(fine - estimates.average()) > jumpHz(fine)) { estimates.clear(); partialEstimates.clear() }
         estimates.addLast(fine)
-        while (estimates.size > recordSpan) estimates.removeFirst()
-        val f1 = fine
+        while (estimates.size > readingSpan) estimates.removeFirst()
+        val f1 = estimates.average()
         hz = f1
 
         val heard = tracker.partials(f1)
             .filter { it.snrDb >= AUDIBLE_SNR_DB }
             .map { r ->
-                // the peak locates the partial; the phase reads it to millihertz
+                // the peak locates the partial; the phase reads it to millihertz;
+                // shown, like the fundamental, as the mean over the strike's last readings
                 if (r.k == 1) r.copy(hz = f1, cents = 0.0) else {
-                    val hz = PreciseF0.refine(ring, sr, r.hz, phaseBaseline)
+                    val seen = partialEstimates.getOrPut(r.k) { ArrayDeque() }
+                    val read = PreciseF0.refine(ring, sr, r.hz, phaseBaseline)
+                    if (seen.isNotEmpty() && abs(read - seen.average()) > jumpHz(read)) seen.clear()
+                    seen.addLast(read)
+                    while (seen.size > readingSpan) seen.removeFirst()
+                    val hz = seen.average()
                     r.copy(hz = hz, cents = 1200.0 * ln(hz / (r.k * f1)) / ln(2.0))
                 }
             }
@@ -260,6 +282,7 @@ class LiveReference(
             LivePartial(r.k, r.hz, r.cents, (1.0 + (r.db - partialPeakDb) / RANGE_DB).coerceIn(0.0, 1.0))
         }
         val freshKs = fresh.map { it.k }.toSet()
+        partialEstimates.keys.retainAll(freshKs)   // a partial gone quiet starts its mean afresh when it returns
         val held = partials.filter { it.k !in freshKs }.map { it.copy(level = 0.0) }
         partials = (fresh + held).sortedBy { it.k }
         for (r in heard) {
@@ -277,6 +300,9 @@ class LiveReference(
      * hz_k / (k · ratio(k, B)); the level-weighted mean of those is the
      * reading. Null when no key is detected or too few partials are heard.
      */
+    /** A change larger than this between a reading and the mean it would join starts the mean afresh: 1 Hz, or 5 cents where that is more. */
+    private fun jumpHz(hz: Double) = maxOf(JUMP_HZ, JUMP_RATIO * hz)
+
     private fun fundamentalFromPartials(): Double? {
         val midi = detectedMidi ?: return null
         val nominal = a4Hz * 2.0.pow((midi - 69) / 12.0)

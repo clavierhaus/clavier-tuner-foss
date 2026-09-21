@@ -443,10 +443,13 @@ class TuningSessionTest {
     }
 
     @Test
-    fun aWobblingStringIsShownWobbling() {
-        // 415 Hz whose pitch swings +-0.5 Hz twice a second: the display must show that swing
+    fun aWobblingStringIsShownWobblingOnTheShortReading() {
+        // 415 Hz whose pitch swings +-0.5 Hz twice a second: the quarter-second
+        // reading shows that swing; the default reading, the mean over the
+        // strike's last seconds, stands on its centre (the beating-unison case)
         val hop = 1024
         val live = LiveReference(SR, hopSize = hop, minHz = 350.0, maxHz = 500.0)
+        live.readingSeconds = 0.25
         var phase = 0.0
         val n = SR * 4
         val signal = FloatArray(HOP * 2) + FloatArray(n) { i ->
@@ -466,6 +469,17 @@ class TuningSessionTest {
         val pp = readings.max() - readings.min()
         assertTrue(pp > 0.4, "the swing is shown: $pp Hz peak to peak")
         assertTrue(abs(readings.average() - 415.0) < 0.05, "and centred on the string: ${readings.average()}")
+        val still = LiveReference(SR, hopSize = hop, minHz = 350.0, maxHz = 500.0)
+        val stood = ArrayList<Double>()
+        pos = 0
+        while (pos + hop <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + hop); still.push(buf); pos += hop
+            val t = (pos - HOP * 2).toDouble() / SR
+            if (t in 2.0..3.5) still.hz?.let { stood += it }
+        }
+        val ppStill = stood.max() - stood.min()
+        assertTrue(ppStill < 0.1, "the default reading stands on the centre: $ppStill Hz peak to peak")
+        assertTrue(abs(stood.average() - 415.0) < 0.05, "centred: ${stood.average()}")
     }
 
     // ---- the treble: the walk above A4, and the octave link read upward ----
