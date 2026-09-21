@@ -107,10 +107,18 @@ fun ProgressKeyboard(
                 }
                 num / den
             }
-            val span = maxOf(5.0, smooth.values.maxOf { kotlin.math.abs(it) } * 1.15)
-            val mid = curveBand * 0.52f
-            val half = curveBand * 0.36f
-            fun yOf(cents: Double) = mid - (cents / span * half).toFloat()
+            // Equal temperament sits in the upper part of the band: a tuned
+            // piano's curve falls away below it in the bass, by tens of
+            // cents on a small instrument, and rises less in the treble.
+            // One scale for both directions, chosen so that the whole curve
+            // fits its room above and below.
+            val mid = curveBand * CURVE_ZERO
+            val roomUp = curveBand * (CURVE_ZERO - 0.08f)
+            val roomDown = curveBand * (1f - CURVE_ZERO - 0.10f)
+            val up = maxOf(5.0, smooth.values.maxOf { it } * 1.15)
+            val down = maxOf(5.0, -smooth.values.minOf { it } * 1.15)
+            val pxPerCent = minOf(roomUp / up, roomDown / down).toFloat()
+            fun yOf(cents: Double) = mid - (cents * pxPerCent).toFloat()
             fun xOf(midi: Int) =
                 if (isBlack(midi)) whitesBelow(midi) * w else whitesBelow(midi) * w + w / 2f
 
@@ -132,7 +140,10 @@ fun ProgressKeyboard(
                 )
             }
             drawContext.canvas.nativeCanvas.drawText(
-                "%+.0f c".format(span), 2f, yOf(span) + 14f, captionPaint,
+                "%+.0f c".format(roomUp / pxPerCent), 2f, mid - roomUp + 14f, captionPaint,
+            )
+            drawContext.canvas.nativeCanvas.drawText(
+                "%+.0f c".format(-roomDown / pxPerCent), 2f, mid + roomDown, captionPaint,
             )
             drawContext.canvas.nativeCanvas.drawText(
                 "measured — a result, not a target", 2f, curveBand - 2f, captionPaint,
@@ -160,6 +171,9 @@ fun ProgressKeyboard(
         }
     }
 }
+
+/** Where equal temperament sits in the curve band, as a fraction of its height from the top. */
+private const val CURVE_ZERO = 0.36f
 
 /** Semitones either side of a note that its drawn value is smoothed over. */
 private const val CURVE_REACH = 3
