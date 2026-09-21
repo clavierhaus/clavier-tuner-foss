@@ -86,6 +86,7 @@ fun BasicHub(
     val targets by controller.targets.collectAsState()
     val cfg by controller.settings.collectAsState()
     val liveTarget by controller.targetHz.collectAsState()
+    val linkReading by controller.linkReading.collectAsState()
     val heard by controller.heardMidi.collectAsState()
 
     val t = tuning
@@ -145,7 +146,13 @@ fun BasicHub(
         val name = Notes.name(t.midi)
         val f = hz                                  // a local: delegated state cannot be smart-cast
         val sounding = level > 0.0
-        val matched = TuningSession.matched(f, liveTarget, cfg.matchHz)
+        // What is tuned by: below and above the temperament octave the string's
+        // own link partial against the reference partial — the beat the ear
+        // hears — inside it the fundamental against the temperament.
+        val read = linkReading
+        val shownHz = read?.hz ?: f
+        val shownTarget = read?.targetHz ?: liveTarget
+        val matched = TuningSession.matched(shownHz, shownTarget, cfg.matchHz)
         val link = t.link
         val curve = t.curve
         val origin = when {
@@ -168,9 +175,9 @@ fun BasicHub(
             t.complete -> "complete" to Color(Brand.GO_GREEN)
             heardElsewhere != null && !(cfg.autoNote && t.temperamentComplete) ->
                 "that's ${Notes.name(heardElsewhere)}" to Color(Brand.ORANGE)
-            !sounding || f == null -> "listening" to Color(Brand.WHITE_MUTED)
+            !sounding || shownHz == null -> "listening" to Color(Brand.WHITE_MUTED)
             matched -> "matches" to Color(Brand.GO_GREEN)
-            f > liveTarget -> "sharp" to Color(Brand.ORANGE)
+            shownHz > shownTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
         val status = buildString {
@@ -307,26 +314,27 @@ fun BasicHub(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                         NoteBlock(
                             name = name,
-                            targetHz = liveTarget,
+                            targetHz = shownTarget,
+                            partial = read?.k?.takeIf { it > 1 },
                             origin = origin,
                             onSemitone = { d -> controller.stepNote(d) },
                             onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
                         )
                         Spacer(Modifier.weight(1f))
-                        MeasuredBlock(hz)
+                        MeasuredBlock(shownHz, partial = read?.k?.takeIf { it > 1 })
                     }
                     Spacer(Modifier.weight(1f))
                     BeatBand(
-                        measuredHz = hz,
-                        targetHz = liveTarget,
+                        measuredHz = shownHz,
+                        targetHz = shownTarget,
                         sounding = sounding,
                         matched = matched,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                     )
                     Spacer(Modifier.height(6.dp))
                     TargetScale(
-                        measuredHz = hz,
-                        targetHz = liveTarget,
+                        measuredHz = shownHz,
+                        targetHz = shownTarget,
                         matchHz = cfg.matchHz,
                         sounding = sounding,
                         matched = matched,

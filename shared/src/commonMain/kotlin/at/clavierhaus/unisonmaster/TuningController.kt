@@ -285,6 +285,28 @@ class TuningController(
      */
     val targetHz: StateFlow<Double> = _targetHz.asStateFlow()
 
+    /**
+     * What the screen tunes by when the note has an octave link: the
+     * string's own partial [k], as read, against the reference partial it
+     * must meet, [targetHz] — the beat the ear hears. The fundamental of a
+     * bass string is faint and its reading drifts (the B1 of the 225: half
+     * a hertz over a strike, the partials steady to 0.05 Hz), and the
+     * fundamental's target, derived from the same link, moves with it: the
+     * band ran at a sixth of the audible beat. Null inside the temperament
+     * octave and until the partial has been heard.
+     */
+    data class LinkReading(val k: Int, val hz: Double, val targetHz: Double)
+
+    private val _linkReading = MutableStateFlow<LinkReading?>(null)
+    val linkReading: StateFlow<LinkReading?> = _linkReading.asStateFlow()
+
+    /** The reading the match is judged on: the link partial where there is one, else the fundamental. */
+    fun matchedNow(): Boolean {
+        val r = _linkReading.value
+        val w = _settings.value.matchHz
+        return if (r != null) TuningSession.matched(r.hz, r.targetHz, w) else TuningSession.matched(_liveHz.value, _targetHz.value, w)
+    }
+
     private val _tuning = MutableStateFlow<TuningView?>(null)
     /** Null while A4 is being defined (hub); set once Done has been tapped on A4. */
     val tuning: StateFlow<TuningView?> = _tuning.asStateFlow()
@@ -364,6 +386,7 @@ class TuningController(
         val midi = s.current
         val target = s.target(midi)
         _targetHz.value = target
+        if (midi != _tuning.value?.midi) _linkReading.value = null
         _tuning.value = TuningView(
             midi = midi,
             targetHz = target,
@@ -469,6 +492,9 @@ class TuningController(
                 if (summary != null && t != null && follower.detectedMidi == t.midi &&
                     Notes.nearestMidi(summary.f1Hz, _referenceA4Hz.value) == t.midi) heldSummary = summary
                 if (t != null) refreshTargets(t, summary)
+                _linkReading.value = t?.link?.let { l ->
+                    follower.partials.firstOrNull { it.k == l.ownK }?.let { LinkReading(l.ownK, it.hz, l.viaHz) }
+                }
                 if (t != null) followKey(t, follower.detectedMidi)
             }
             true
@@ -549,7 +575,7 @@ class TuningController(
             return _referenceA4Hz.value
         }
         val s = session ?: return null
-        if (!TuningSession.matched(hz, _targetHz.value, _settings.value.matchHz)) return null
+        if (!matchedNow()) return null
         val m = _liveSummary.value ?: return null
         s.record(m.copy(midi = t.midi, timeMs = clock()))
         advance(s)

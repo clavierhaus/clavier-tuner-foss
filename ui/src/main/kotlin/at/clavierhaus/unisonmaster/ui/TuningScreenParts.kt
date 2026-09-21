@@ -81,6 +81,7 @@ fun NoteBlock(
     name: String,
     targetHz: Double,
     origin: String,
+    partial: Int? = null,
     onSemitone: (Int) -> Unit,
     onOctave: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -115,7 +116,7 @@ fun NoteBlock(
             )
         }
         Text(
-            "target " + String.format(Locale.ROOT, "%.2f Hz", targetHz),
+            "target " + String.format(Locale.ROOT, "%.2f Hz", targetHz) + (if (partial != null) ", partial $partial" else ""),
             color = Color(Brand.TARGET_BLUE),
             fontFamily = DejaVuSerif,
             fontSize = 18.sp,
@@ -133,10 +134,10 @@ fun NoteBlock(
 
 /** The measured fundamental, one number, one decimal; "—" before the first reading. */
 @Composable
-fun MeasuredBlock(hz: Double?, modifier: Modifier = Modifier) {
+fun MeasuredBlock(hz: Double?, partial: Int? = null, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.End) {
         Text(
-            hz?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "—",
+            hz?.let { String.format(Locale.ROOT, if (partial != null) "%.2f" else "%.1f", it) } ?: "—",
             color = Color(Brand.WHITE),
             fontFamily = DejaVuSerif,
             fontSize = 66.sp,
@@ -144,7 +145,7 @@ fun MeasuredBlock(hz: Double?, modifier: Modifier = Modifier) {
             maxLines = 1,
         )
         Text(
-            "measured, fundamental",
+            if (partial != null) "measured, partial $partial" else "measured, fundamental",
             color = Color(Brand.WHITE_MUTED),
             fontFamily = DejaVuSerif,
             fontSize = 15.sp,

@@ -243,4 +243,38 @@ class LiveReferenceTest {
         assertTrue(overOneSecond < hopByHop * 0.8, "one second evens part of it: %.2f Hz".format(overOneSecond))
         assertTrue(overTheStrike < hopByHop * 0.5, "the mean over the strike stands: %.2f Hz (hop by hop %.2f, one second %.2f)".format(overTheStrike, hopByHop, overOneSecond))
     }
+
+    /**
+     * A wound bass string, its first partial 30 dB under its second and
+     * beating at 3 Hz (the B1 of the 225, 21 September): read by phase the
+     * fundamental drifted half a hertz over the strike; read from the
+     * partials it stands.
+     */
+    @Test
+    fun aFaintFundamentalIsReadFromThePartials() {
+        val f1 = 61.74; val b = 1.7e-4
+        val f0 = f1 / kotlin.math.sqrt(1 + b)
+        val n = (4.0 * SR).toInt()
+        val sig = FloatArray(HOP * 2) + FloatArray(n) { i ->
+            val t = i.toDouble() / SR
+            var v = 0.0
+            for (k in 2..24) { val f = k * f0 * kotlin.math.sqrt(1 + b * k * k); v += 0.25 / kotlin.math.sqrt(k.toDouble()) * sin(2 * PI * f * t + k) * exp(-t * (0.2 + 0.08 * k)) }
+            v += 0.008 * (1 + 0.8 * sin(2 * PI * 3.0 * t)) * sin(2 * PI * f1 * t) * exp(-t * 0.2)   // the fundamental, faint and beating
+            (v + 1e-4 * sin(t * 7919.0)).toFloat()
+        }
+        val live = LiveReference(SR, hopSize = 1024, minHz = f1 / 1.2, maxHz = f1 * 1.2)
+        live.readingSeconds = 0.25
+        val seen = mutableListOf<Double>()
+        var pos = 0
+        val buf = FloatArray(1024)
+        while (pos + 1024 <= sig.size) {
+            sig.copyInto(buf, 0, pos, pos + 1024); live.push(buf); pos += 1024
+            val t = (pos - HOP * 2).toDouble() / SR
+            if (t > 1.0 && t < 4.0) live.hz?.let { seen.add(it) }
+        }
+        assertTrue(seen.size > 100, "readings: ${seen.size}")
+        assertEquals(35, live.detectedMidi, "B1 identified")
+        val worst = seen.maxOf { abs(it - f1) }
+        assertTrue(worst < 0.06, "the fundamental read from the partials stands on %.2f: worst %.2f off".format(f1, worst))
+    }
 }

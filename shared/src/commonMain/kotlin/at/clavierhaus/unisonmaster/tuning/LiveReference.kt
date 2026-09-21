@@ -58,6 +58,8 @@ class LiveReference(
         const val DETECT_SETTLE_S = 1.5  // after this much of a strike the note is held
         const val PARTIALS = 12
         const val SUSTAIN_WINDOW_DB = 30.0 // a partial counts as sounding within this of the loudest
+        const val FUNDAMENTAL_FROM_PARTIALS = 4 // the lowest audible partials above the first that place a faint fundamental
+        const val FAINT_FUNDAMENTAL_DB = 24.0 // a first partial this far under the string's loudest is read from the partials instead
         const val DEFAULT_READING_S = 2.0  // the shown reading is the mean over at most this much of the strike
         const val JUMP_HZ = 1.0            // a reading this far from the mean starts it afresh ...
         const val JUMP_RATIO = 0.003       // ... or 5 cents, where that is more
@@ -253,13 +255,20 @@ class LiveReference(
             if (detectedMidi == null || fresh) detectedMidi = key
         }
         // The fundamental: the strongest component in the note's range, read
-        // by phase — or, where no such component stands (a wound bass
-        // string's fundamental is faint), the fundamental the string's own
-        // partials imply, which is how a bass note is measured anyway.
+        // by phase — or, where no such component stands, or where it stands
+        // far under the string's own partials (a wound bass string: on the
+        // B1 of the 225 the first partial is 30 dB under the second, and its
+        // phase reading drifted half a hertz over a strike while every other
+        // partial held to 0.05 Hz), the fundamental the string's partials
+        // imply, which is how a bass note is heard anyway.
         val peak = tracker.strongestPeak(minHz, maxHz)
         val fine = if (peak != null) {
             val phased = PreciseF0.refineTwoStage(ring, sr, peak, fineHop = phaseBaseline, coarseHop = hopSize.coerceAtMost(phaseBaseline))
-            if (abs(phased - peak) <= tracker.binHz) phased else peak
+            val direct = if (abs(phased - peak) <= tracker.binHz) phased else peak
+            val around = tracker.partials(direct)
+            val first = around.firstOrNull { it.k == 1 }?.db ?: Double.NEGATIVE_INFINITY
+            val loudest = around.filter { it.k >= 2 }.maxOfOrNull { it.db } ?: Double.NEGATIVE_INFINITY
+            if (first < loudest - FAINT_FUNDAMENTAL_DB) fundamentalFromPartials() ?: direct else direct
         } else {
             fundamentalFromPartials() ?: return
         }
@@ -321,11 +330,38 @@ class LiveReference(
         if (nominal < minHz || nominal > maxHz) return null
         val heard = tracker.partials(nominal).filter { it.k >= 2 && it.snrDb >= AUDIBLE_SNR_DB }
         if (heard.size < 2) return null
-        val fit = Inharmonicity.fit(heard.map { MeasuredPartial(it.k, it.cents, it.db, 0.0) })
+        // The partials are found from the key's nominal pitch, which the
+        // string may be a dozen cents from: the fit must carry an offset as
+        // well as B, or the offset is taken for inharmonicity (B was driven
+        // to zero on a B1 twelve cents under its nominal). Linear in
+        // (k² − 1): cents = c0 + K·B·(k² − 1); the offset moves the estimate
+        // of the fundamental, and the fit is repeated on the moved estimate.
+        val centsPerLn = 1200.0 / ln(2.0)
+        var f1 = nominal
+        var b = 0.0
+        repeat(3) {
+            var sw = 0.0; var sx = 0.0; var sy = 0.0; var sxx = 0.0; var sxy = 0.0
+            for (r in heard) {
+                val w = 10.0.pow(r.db / 20.0)
+                val x = (r.k * r.k - 1).toDouble()
+                val y = 1200.0 * ln(r.hz / (r.k * f1)) / ln(2.0)
+                sw += w; sx += w * x; sy += w * y; sxx += w * x * x; sxy += w * x * y
+            }
+            val det = sw * sxx - sx * sx
+            if (det <= 0) return null
+            val slope = (sw * sxy - sx * sy) / det
+            val c0 = (sy - slope * sx) / sw
+            b = (slope / centsPerLn).coerceIn(0.0, 0.05)
+            f1 *= 2.0.pow(c0 / 1200.0)
+        }
+        // the lowest partials place the fundamental: a wound string's upper
+        // partials do not follow the stiff-string law closely (on the B1 of
+        // the 225 their cents grow nearly linearly with k, not with k²), and
+        // read through the fitted B they put the fundamental cents high
         var num = 0.0; var den = 0.0
-        for (r in heard) {
+        for (r in heard.sortedBy { it.k }.take(FUNDAMENTAL_FROM_PARTIALS)) {
             val w = 10.0.pow(r.db / 20.0)
-            num += w * r.hz / (r.k * Inharmonicity.ratio(r.k, fit.b)); den += w
+            num += w * r.hz / (r.k * Inharmonicity.ratio(r.k, b)); den += w
         }
         return if (den > 0) num / den else null
     }

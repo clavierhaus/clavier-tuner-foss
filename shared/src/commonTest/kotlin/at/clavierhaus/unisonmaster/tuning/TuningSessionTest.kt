@@ -1045,4 +1045,40 @@ class TuningSessionTest {
         assertTrue(a0.partials.size >= 2, "with its partials")
         assertTrue(abs(TuningSession.centsOff(a0.f1Hz, TuningSession.targetF1(21, 440.0))) < 10.0, "A0's fundamental from its partials: %.2f Hz".format(a0.f1Hz))
     }
+
+    /**
+     * Below the temperament octave the screen tunes by the link partial: the
+     * string's own partial that must meet the reference partial an octave
+     * up — the beat the ear hears — not by the faint, drifting fundamental.
+     */
+    @Test
+    fun belowTheOctaveTheLinkPartialIsWhatIsTunedBy() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))    // A4 on the hub
+        val tuning = TuningController(QueueSource(signals))
+        tuning.applySettings(TunerSettings(temperamentFirst = false, calibrationNotes = 3, lowestUnwoundMidi = 40, lowestKeyMidi = 21))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        val q = tuning.audioSourceForTest() as QueueSource
+        for ((midi, bb) in listOf(40 to 3.0e-4, 52 to 3.0e-4, 72 to 7.0e-4)) {                        // Stretch Definition: three single strings
+            q.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(midi, 440.0), bb), bb, 10, 3.0))
+            tuning.startLive(); tuning.stopLive()
+        }
+        q.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(66, 440.0), b), b, 8, 3.0))  // leave C5 on a plain note; the screen follows
+        tuning.startLive(); tuning.stopLive()
+        assertTrue(!tuning.tuning.value!!.calibrating, "calibrated: ${tuning.tuning.value?.anchors}")
+        assertNull(tuning.linkReading.value, "inside the octave nothing but the fundamental")
+        tuning.selectNote(35)                                                                          // B1, wound
+        val t = assertNotNull(tuning.tuning.value)
+        val link = assertNotNull(t.link, "B1 is linked an octave up")
+        assertEquals(TunerSettings().octaveBass.low, link.ownK)
+        q.add(FloatArray(HOP * 2) + bassStrike(TuningSession.targetF1(35, 440.0), 1.7e-4, 3.0))
+        tuning.startLive()
+        val r = assertNotNull(tuning.linkReading.value, "the link partial is read")
+        assertEquals(link.ownK, r.k)
+        assertEquals(link.viaHz, r.targetHz, 1e-9)
+        val p = tuning.livePartials.value.first { it.k == link.ownK }
+        assertEquals(p.hz, r.hz, 1e-9, "the reading is the partial as read")
+        assertEquals(TuningSession.matched(r.hz, r.targetHz, TunerSettings().matchHz), tuning.matchedNow(), "and the match is judged on it")
+        tuning.stopLive()
+    }
 }
