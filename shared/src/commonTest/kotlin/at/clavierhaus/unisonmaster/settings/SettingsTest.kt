@@ -13,12 +13,13 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, lowestUnwoundMidi = 40, suggestSustainS = 1.5, autoNote = false, calibrationNotes = 16, recordPcm = true, readingS = 2.0) }
+        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, lowestUnwoundMidi = 40, suggestSustainS = 1.5, autoNote = false, calibrationNotes = 16, recordPcm = true, readingS = 2.0, lowestKeyMidi = 17) }
         val b = SettingsModel(store)
         assertEquals(false, b.settings.value.autoNote)
         assertEquals(16, b.settings.value.calibrationNotes)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(2.0, b.settings.value.readingS)
+        assertEquals(17, b.settings.value.lowestKeyMidi)
         assertEquals(0.2, b.settings.value.matchHz)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)
@@ -53,8 +54,8 @@ class SettingsTest {
     }
 
     @Test
-    fun theLowestPlainStringSetsTheSessionsFoot() {
-        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 40, temperamentFirst = false))   // E2
+    fun theLowestKeySetsTheSessionsFoot() {
+        val s = TuningSession(440.0, TunerSettings(lowestKeyMidi = 40, lowestUnwoundMidi = 40, temperamentFirst = false))   // a session cut short at E2
         assertEquals((69 downTo 40).toList() + (70..108).toList(), s.notes)
         s.select(41)
         assertEquals(40, s.below())

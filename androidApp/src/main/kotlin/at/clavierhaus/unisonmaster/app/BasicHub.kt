@@ -216,6 +216,7 @@ fun BasicHub(
                     done = t.measured,
                     current = t.midi,
                     deviations = t.deviations,
+                    lowestMidi = t.lowestMidi,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(top = 40.dp)

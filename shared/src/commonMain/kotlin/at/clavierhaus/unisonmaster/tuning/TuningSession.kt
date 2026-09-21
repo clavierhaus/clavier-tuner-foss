@@ -124,8 +124,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     var a4Hz: Double = a4Hz
     /** The settings in force: temperament octave, octave types, plain-wire floor. */
     var settings: TunerSettings = settings
-    /** Lowest note of the session: the lowest plain string. Wound strings are a later chapter. */
-    val lowMidi: Int get() = settings.lowestUnwoundMidi.coerceIn(21, MIDI_A4 - 1)
+    /** Lowest note of the session: the instrument's lowest key (never above its lowest plain string). */
+    val lowMidi: Int get() = minOf(settings.lowestKeyMidi, settings.lowestUnwoundMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, MIDI_A4 - 1)
     /** Highest note of the session: the top of the compass. */
     val highMidi: Int get() = MIDI_C8
     /**
@@ -408,6 +408,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * replace it the moment they are heard.
      */
     fun predictedB(midi: Int = current): Double {
+        // a wound string's inharmonicity is its own physics: the nearest
+        // measured wound string stands for it, never the plain-wire curve
+        if (settings.isWound(midi)) {
+            val wound = measured.values.filter { settings.isWound(it.midi) && it.midi != midi && it.b > 0.0 }
+            wound.minByOrNull { abs(it.midi - midi) }?.let { return it.b }
+        }
         val report = curve()
         if (report.representative || (calibrated && report.anchors >= 2)) {
             val (slope, intercept) = fitLogB(anchors())
@@ -429,7 +435,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     /** The measured notes that qualify as anchors of the inharmonicity curve, lowest first. */
     fun anchors(): List<NoteMeasurement> = measured.values
-        .filter { it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
+        .filter { !settings.isWound(it.midi) && it.midi <= CURVE_TOP_MIDI && it.b > 0.0 && it.partials.size >= 3 && it.residualCents <= MAX_BASIS_RESIDUAL_CENTS }
         .sortedBy { it.midi }
 
     fun curve(): CurveReport {

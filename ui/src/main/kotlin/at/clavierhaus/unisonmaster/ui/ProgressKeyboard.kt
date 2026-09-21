@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import at.clavierhaus.unisonmaster.Brand
 
-/** The 88 keys of a piano: A0 at the bottom, C8 at the top. */
+/** The keys of a piano: A0 at the bottom of most, F0 or C0 on the large Bösendorfers, C8 at the top. */
 private const val MIDI_A0 = 21
 private const val MIDI_C8 = 108
 
@@ -19,10 +19,8 @@ private fun isBlack(midi: Int): Boolean = when ((midi % 12 + 12) % 12) {
     else -> false
 }
 
-/** How many white keys lie below [midi], counting from A0. */
-private fun whitesBelow(midi: Int): Int = (MIDI_A0 until midi).count { !isBlack(it) }
-
-private val WHITE_KEYS = (MIDI_A0..MIDI_C8).count { !isBlack(it) }   // 52
+/** How many white keys lie between [lowest] and [midi]. */
+private fun whitesFrom(lowest: Int, midi: Int): Int = (lowest until midi).count { !isBlack(it) }
 
 /**
  * The whole compass at a glance: every key that has been tuned is green.
@@ -42,8 +40,12 @@ fun ProgressKeyboard(
     done: Set<Int>,
     current: Int?,
     deviations: Map<Int, Double> = emptyMap(),
+    lowestMidi: Int = MIDI_A0,
     modifier: Modifier = Modifier,
 ) {
+    val lowest = lowestMidi.coerceIn(0, MIDI_A0)
+    val whiteKeys = (lowest..MIDI_C8).count { !isBlack(it) }
+    fun whitesBelow(midi: Int) = whitesFrom(lowest, midi)
     val labelPaint = android.graphics.Paint().apply {
         color = Color(Brand.WHITE_MUTED).toArgb()
         textSize = 20f
@@ -62,12 +64,12 @@ fun ProgressKeyboard(
         val tickBand = 8f
         val keyboardTop = curveBand
         val keyboardHeight = (size.height - curveBand - labelBand - tickBand).coerceAtLeast(1f)
-        val w = size.width / WHITE_KEYS
+        val w = size.width / whiteKeys
         val blackW = w * 0.62f
         val blackH = keyboardHeight * 0.62f
 
         // white keys first, the black ones over them, exactly as on the instrument
-        for (midi in MIDI_A0..MIDI_C8) {
+        for (midi in lowest..MIDI_C8) {
             if (isBlack(midi)) continue
             val x = whitesBelow(midi) * w
             drawRect(
@@ -76,7 +78,7 @@ fun ProgressKeyboard(
                 size = Size((w - 1f).coerceAtLeast(1f), keyboardHeight),
             )
         }
-        for (midi in MIDI_A0..MIDI_C8) {
+        for (midi in lowest..MIDI_C8) {
             if (!isBlack(midi)) continue
             val x = whitesBelow(midi) * w - blackW / 2f
             drawRect(
@@ -151,7 +153,7 @@ fun ProgressKeyboard(
         }
 
         // where the session stands
-        if (current != null && current in MIDI_A0..MIDI_C8) {
+        if (current != null && current in lowest..MIDI_C8) {
             val centre = if (isBlack(current)) whitesBelow(current) * w
             else whitesBelow(current) * w + w / 2f
             drawRect(
@@ -163,7 +165,7 @@ fun ProgressKeyboard(
 
         // one landmark per octave
         drawContext.canvas.nativeCanvas.let { canvas ->
-            for (midi in MIDI_A0..MIDI_C8) {
+            for (midi in lowest..MIDI_C8) {
                 if (midi % 12 != 0) continue          // every C
                 val x = whitesBelow(midi) * w + w / 2f
                 canvas.drawText("C${midi / 12 - 1}", x, size.height - 6f, labelPaint)

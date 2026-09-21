@@ -205,7 +205,7 @@ class TuningSessionTest {
 
     @Test
     fun arrowsStepWithinTheSessionAndDoneGoesDown() {
-        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))   // the walk itself, not the gate
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, lowestKeyMidi = 43))   // the walk itself, not the gate
         s.select(68)
         assertEquals(67, s.stepped(-1))
         assertEquals(69, s.stepped(+1), "A4 is a note like any other: the arrows reach it")
@@ -437,8 +437,9 @@ class TuningSessionTest {
         assertEquals(s.octaveMiddle, s.octaveTypeFor(56))
         assertEquals(s.octaveBass, s.octaveTypeFor(55))
         val session = TuningSession(440.0, s)
-        assertEquals(27 + 39, session.notes.size)                                       // A4 .. G2, then A#4 .. C8
-        assertEquals(43, session.notes[26])                                             // the floor, where the walk turns up
+        assertEquals(49 + 39, session.notes.size)                                       // A4 .. A0, then A#4 .. C8: 88 keys
+        assertEquals(21, session.notes[48])                                             // the lowest key, where the walk turns up
+        assertTrue(s.isWound(42) && !s.isWound(43))                                     // wound below the plain-wire floor, still tuned
         assertEquals(TuningSession.MIDI_C8, session.notes.last())
     }
 
@@ -486,7 +487,7 @@ class TuningSessionTest {
 
     @Test
     fun theWalkRunsDownToThePlainWireFloorAndThenUpToTheTop() {
-        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60))
+        val s = TuningSession(440.0, TunerSettings(lowestKeyMidi = 60, lowestUnwoundMidi = 60))
         assertEquals(TuningSession.MIDI_A4, s.notes.first())
         assertEquals(60, s.notes[TuningSession.MIDI_A4 - 60])          // the floor
         assertEquals(70, s.notes[TuningSession.MIDI_A4 - 60 + 1])      // then A#4
@@ -496,7 +497,7 @@ class TuningSessionTest {
 
     @Test
     fun doneAtTheFloorTurnsTheWalkUpwardInsteadOfEnding() {
-        val s = TuningSession(440.0, TunerSettings(lowestUnwoundMidi = 60, temperamentFirst = false))
+        val s = TuningSession(440.0, TunerSettings(lowestKeyMidi = 60, lowestUnwoundMidi = 60, temperamentFirst = false))
         s.select(61)
         assertEquals(60, s.next())
         s.select(60)
@@ -832,7 +833,7 @@ class TuningSessionTest {
 
     @Test
     fun fewerThanThreeAnchorsIsNoCurveYet() {
-        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, lowestUnwoundMidi = 40))
         s.record(anchor(40, lawB(40)))
         s.record(anchor(60, lawB(60)))
         val r = s.curve()
@@ -843,7 +844,7 @@ class TuningSessionTest {
 
     @Test
     fun threeAnchorsAcrossTwoOctavesOnAWellBehavedScaleAreRepresentative() {
-        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, lowestUnwoundMidi = 40))
         for (midi in listOf(40, 52, 64)) s.record(anchor(midi, lawB(midi)))   // E2, E3, E4
         val r = s.curve()
         assertEquals(3, r.anchors)
@@ -875,14 +876,14 @@ class TuningSessionTest {
 
     @Test
     fun notesAboveC5AreNotAnchors() {
-        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, lowestUnwoundMidi = 40))
         for (midi in listOf(40, 52, 64, 76, 88)) s.record(anchor(midi, lawB(midi)))
         assertEquals(3, s.curve().anchors, "E5 and E6 are extrapolated, not sampled")
     }
 
     @Test
     fun aRepresentativeCurvePredictsBForANoteNotYetSampled() {
-        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false))
+        val s = TuningSession(440.0, TunerSettings(temperamentFirst = false, lowestUnwoundMidi = 40))
         for (midi in listOf(40, 46, 52, 58, 64)) s.record(anchor(midi, lawB(midi)))
         assertTrue(s.curve().representative)
         val predicted = s.predictedB(49)                                         // C#3, between anchors
@@ -1002,5 +1003,46 @@ class TuningSessionTest {
         assertTrue(!tuning.tuning.value!!.calibrating, "Stretch Definition complete at three")
         val e2 = m.getValue(40)
         assertTrue(abs(TuningSession.centsOff(e2.f1Hz, TuningSession.targetF1(40, 440.0))) < 10.0, "E2's fundamental from its partials: %.2f Hz".format(e2.f1Hz))
+    }
+
+    @Test
+    fun theSessionRunsDownToTheLowestKeyAndWoundStringsStayOutOfTheCurve() {
+        val cfg = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40)          // the 225: F0, plain wire from E2
+        val s = TuningSession(440.0, cfg)
+        assertEquals(17, s.lowMidi)
+        assertEquals(17, s.notes[69 - 17])                                          // A4 down to F0 ...
+        assertEquals(TuningSession.MIDI_C8, s.notes.last())                        // ... then up
+        assertTrue(s.settings.isWound(39) && !s.settings.isWound(40))
+        for (midi in s.temperamentNotes) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        for (midi in 56 downTo 40) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
+        // a wound string with a wound string's inharmonicity: not an anchor of the plain-wire curve
+        s.record(NoteMeasurement(33, TuningSession.targetF1(33, 440.0), 3.0e-4, 0.1, exact(3.0e-4, 1..8)))
+        assertTrue(s.anchors().none { it.midi == 33 }, "A1 is wound and no anchor")
+        assertTrue(abs(s.predictedB(30) - 3.0e-4) < 1e-9, "a wound string is predicted from the nearest wound string measured")
+        assertTrue(abs(s.predictedB(45) - 3.0e-4) > 1e-9, "a plain string never from a wound one")
+        // its target: the bass octave type against the note an octave above, as any note below the octave
+        assertNotNull(s.octaveLink(21), "A0 is linked to A1")
+        assertEquals(33, s.octaveLink(21)?.refMidi)
+        assertEquals(TunerSettings(), TunerSettings(lowestKeyMidi = 21))
+    }
+
+    @Test
+    fun aWoundBassKeyStruckIsFollowedAndRegisteredLikeAnyOther() {
+        val b = 4.0e-4
+        val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))    // A4 on the hub
+        val tuning = TuningController(QueueSource(signals))
+        tuning.applySettings(TunerSettings(temperamentFirst = false, calibrationNotes = 3, lowestUnwoundMidi = 40, lowestKeyMidi = 17))
+        tuning.startLive(); tuning.acceptLive(); tuning.stopLive()
+        val q = tuning.audioSourceForTest() as QueueSource
+        // A0, wound, its fundamental faint under its partials — struck, nothing pressed
+        q.add(FloatArray(HOP * 2) + bassStrike(TuningSession.targetF1(21, 440.0), 1.5e-4, 3.0))
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(21, tuning.tuning.value?.midi, "the screen followed A0")
+        q.add(FloatArray(HOP * 2) + stiffStrike(f0For(TuningSession.targetF1(52, 440.0), 3.0e-4), 3.0e-4, 10, 3.0))
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(52, tuning.tuning.value?.midi, "and E3 after it")
+        val a0 = assertNotNull(tuning.measurements()[21], "A0 registered on leaving: ${tuning.measurements().keys.sorted()}")
+        assertTrue(a0.partials.size >= 2, "with its partials")
+        assertTrue(abs(TuningSession.centsOff(a0.f1Hz, TuningSession.targetF1(21, 440.0))) < 10.0, "A0's fundamental from its partials: %.2f Hz".format(a0.f1Hz))
     }
 }

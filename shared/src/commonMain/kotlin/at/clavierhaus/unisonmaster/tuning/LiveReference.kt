@@ -51,6 +51,7 @@ class LiveReference(
         const val ONSET_RMS = 0.001      // -60 dBFS: the raw phone input is quiet
         const val RELEASE_RMS = 0.00025  // -72 dBFS: tone considered ended below this
         const val ONSET_RATIO = 2.0      // hop energy jump that counts as a strike
+        const val ONSET_MEMORY_HOPS = 4  // ... above the loudest of this many hops (85 ms at hop 1024: longer than C0's period)
         const val RANGE_DB = 48.0        // bell falls from full height to zero over this
         const val AUDIBLE_SNR_DB = 12.0  // a partial this far above the noise floor is audible
         const val DETECT_RUN = 6         // readings in a row that make a key the note (126 ms at hop 1024)
@@ -70,7 +71,9 @@ class LiveReference(
     private val settleHops = ceil(windowSize.toDouble() / hopSize).toInt() + 1
     private val ring = FloatArray(windowSize)
     private var filled = 0
-    private var prevRms = 0.0
+    /** Loudness of the last [ONSET_MEMORY_HOPS] hops: a strike is a rise above all of them. */
+    private val recentRms = DoubleArray(ONSET_MEMORY_HOPS)
+    private var recentAt = 0
     private var settle = -1 // -1: waiting for a strike
     private val estimates = ArrayDeque<Double>()
     private val partialEstimates = HashMap<Int, ArrayDeque<Double>>()
@@ -164,7 +167,7 @@ class LiveReference(
     fun reset() {
         ring.fill(0f)
         filled = 0
-        prevRms = 0.0
+        recentRms.fill(0.0)
         settle = -1
         estimates.clear(); partialEstimates.clear()
         hz = null
@@ -194,8 +197,17 @@ class LiveReference(
         val rms = sqrt(sq / chunk.size)
         val db = 20.0 * log10(maxOf(rms, 1e-12))
 
-        val strike = rms > ONSET_RMS && rms > prevRms * ONSET_RATIO
-        prevRms = rms
+        // A strike is a rise by ONSET_RATIO above the loudest of the last few
+        // hops, not above the last hop alone: a hop is 21 ms and the lowest
+        // strings' periods are longer (A0 36 ms, C0 61 ms), so from hop to
+        // hop their loudness swings with the phase of the cycle, and against
+        // the last hop alone A0 read as a new strike every few hops and was
+        // never measured — the settle after each "strike" never ran out.
+        var loudest = 0.0
+        for (v in recentRms) if (v > loudest) loudest = v
+        val strike = rms > ONSET_RMS && rms > loudest * ONSET_RATIO
+        recentRms[recentAt] = rms
+        recentAt = (recentAt + 1) % ONSET_MEMORY_HOPS
         if (strike) peakDb = db else if (db > peakDb) peakDb = db
         level = if (rms < RELEASE_RMS || peakDb == Double.NEGATIVE_INFINITY) 0.0
         else (1.0 + (db - peakDb) / RANGE_DB).coerceIn(0.0, 1.0)

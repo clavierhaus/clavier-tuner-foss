@@ -85,6 +85,14 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
 
     SettingsSection("Piano")
     StepperRow(
+        "Lowest key", "A0 on the 88-key piano; F0 on the Bösendorfer 225, C0 on the 290. The tuning runs down to here",
+        Notes.name(s.lowestKeyMidi),
+        canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
+        canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
+        onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
+        onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
+    )
+    StepperRow(
         "Lowest unwound string", "Wound strings below it follow a different physics and are modelled separately",
         Notes.name(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,

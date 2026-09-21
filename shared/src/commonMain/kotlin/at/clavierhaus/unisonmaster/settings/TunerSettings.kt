@@ -58,6 +58,14 @@ data class TunerSettings(
      * one octave above it.
      */
     val lowestUnwoundMidi: Int = 43,           // G2
+    /**
+     * The instrument's lowest key: A0 on the 88-key piano, F0 on the
+     * Bösendorfer 225, C0 on the 290. The session runs down to here; the
+     * wound strings between it and the lowest plain string are tuned like
+     * any other, each against the note an octave above, and are kept out of
+     * the plain-wire inharmonicity curve.
+     */
+    val lowestKeyMidi: Int = 21,               // A0
     // PRECISION
     /** A partial matches within this of its target, Hz. */
     val matchHz: Double = 0.1,
@@ -102,6 +110,8 @@ data class TunerSettings(
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave: A4, the note the session is defined on. */
         const val TEMPERAMENT_HIGH = 69        // A4
+        const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
+        const val MAX_LOWEST_KEY = 40          // E2: never above the lowest plain string in practice
         const val MIN_UNWOUND = 28             // E1
         const val MAX_UNWOUND = 60             // C4
         const val MIN_HIGHEST_PARTIAL = 84     // C6
@@ -110,6 +120,9 @@ data class TunerSettings(
         val READING_CHOICES_S = listOf(0.25, 0.5, 1.0, 2.0, 4.0)
         const val MAX_CALIBRATION_NOTES = 40
     }
+
+    /** True for a wound string: below the lowest plain one. */
+    fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi
 
     /** Below this note the bass octave type applies: an octave above the lowest plain string. */
     val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
@@ -164,6 +177,7 @@ class SettingsModel(
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
             weightFifth = i("weightFifth", d.weightFifth),
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
+            lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             matchHz = f("matchHz", d.matchHz),
             suggestLevelDb = f("suggestLevelDb", d.suggestLevelDb),
             suggestSustainS = f("suggestSustainS", d.suggestSustainS),
@@ -185,6 +199,7 @@ class SettingsModel(
         store.put("weightDoubleOctave", s.weightDoubleOctave.toString())
         store.put("weightFifth", s.weightFifth.toString())
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
+        store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("matchHz", s.matchHz.toString())
         store.put("suggestLevelDb", s.suggestLevelDb.toString())
         store.put("suggestSustainS", s.suggestSustainS.toString())
