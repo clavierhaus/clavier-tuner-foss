@@ -444,6 +444,7 @@ class TuningController(
         return try {
             audioSource.start(hopSize) { chunk ->
                 if (!_live.value) return@start
+                tap?.invoke(chunk)
                 val want = _range.value
                 if (want != applied) {
                     follower.setRange(want.first, want.second)
@@ -473,6 +474,15 @@ class TuningController(
             false
         }
     }
+
+    /**
+     * Every buffer the microphone delivers while the screen is live, as it
+     * arrives and before anything is read from it: for a recorder that keeps
+     * the session. The array is the source's and is reused; copy or write it
+     * before returning. Null when nobody listens.
+     */
+    @Volatile
+    var tap: ((FloatArray) -> Unit)? = null
 
     /** The last complete summary heard on the current note, kept across the next note's strike. */
     private var heldSummary: NoteMeasurement? = null

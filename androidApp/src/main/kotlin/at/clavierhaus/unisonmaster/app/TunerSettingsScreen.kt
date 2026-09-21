@@ -101,6 +101,13 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         s.autoNote,
     ) { on -> model.update { it.copy(autoNote = on) } }
 
+    SettingsSection("Recording")
+    SwitchRow(
+        "Recording button",
+        "A red button on the tuning screen records what the microphone hears, uncompressed PCM at 48 kHz, to Recordings/ClavierTuner. About 6 MB a minute",
+        s.recordPcm,
+    ) { on -> model.update { it.copy(recordPcm = on) } }
+
     SettingsSection("Precision")
     StepperRow(
         "Match window", "A partial turns green within this of its target",

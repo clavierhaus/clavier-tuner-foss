@@ -25,15 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.settings.OctaveType
-import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.BackArrow
 import at.clavierhaus.unisonmaster.ui.BeatBand
-import at.clavierhaus.unisonmaster.ui.ChoiceRow
 import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
@@ -45,13 +42,11 @@ import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.PartialsButton
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
-import at.clavierhaus.unisonmaster.ui.QuickSettingsPanel
 import at.clavierhaus.unisonmaster.ui.ReadoutColumn
+import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.StateWord
-import at.clavierhaus.unisonmaster.ui.StepperRow
-import at.clavierhaus.unisonmaster.ui.SwitchRow
 import at.clavierhaus.unisonmaster.ui.TargetScale
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
@@ -65,13 +60,14 @@ import kotlin.math.round
  * its target and where the target comes from, the measured fundamental,
  * the beat as motion, a scale magnified at the match window, one state
  * word — and Done. "Partials" opens Full Spectrum (the bells, the readout
- * column and the partial row); "Progress" the keyboard. The gear opens a
- * compact panel of the settings that change during a tuning.
+ * column and the partial row); "Progress" the keyboard. The gear is the
+ * settings screen, and back. Top right, beside the state word, the red
+ * recording button when recording is switched on in the settings.
  */
 @Composable
 fun BasicHub(
     controller: TuningController,
-    model: SettingsModel,
+    recorder: SessionRecorder?,
     onSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -81,7 +77,6 @@ fun BasicHub(
     val audible by controller.liveAudible.collectAsState()
     val full by controller.fullSpectrum.collectAsState()
     var showProgress by remember { mutableStateOf(false) }
-    var quick by remember { mutableStateOf(false) }
     val hidden by controller.hiddenPartials.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
     val tuning by controller.tuning.collectAsState()
@@ -201,9 +196,19 @@ fun BasicHub(
         // header: back and gear only; the title lives on the hub
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart)) {
             BackArrow(onClick = onBack)
-            SettingsGear(onClick = { quick = true })
+            SettingsGear(onClick = onSettings)
         }
-        StateWord(state.first, state.second, Modifier.align(Alignment.TopEnd).padding(top = 6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp)) {
+            StateWord(state.first, state.second)
+            if (recorder != null) {
+                val recording by recorder.recording.collectAsState()
+                val seconds by recorder.seconds.collectAsState()
+                Spacer(Modifier.width(18.dp))
+                RecordButton(recording = recording, seconds = seconds, onToggle = {
+                    if (recording) recorder.stop() else recorder.start()
+                })
+            }
+        }
 
         when {
             showProgress -> {
@@ -370,45 +375,6 @@ fun BasicHub(
             }
             Spacer(Modifier.width(10.dp))
             DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
-        }
-
-        if (quick) {
-            val s by model.settings.collectAsState()
-            val octaves = OctaveType.entries
-            val section = when {
-                t.midi <= s.bassBoundaryMidi -> "bass"
-                t.midi > TunerSettings.TEMPERAMENT_HIGH -> "treble"
-                else -> "middle"
-            }
-            val sectionType = s.octaveTypeFor(t.midi)
-            QuickSettingsPanel(onClose = { quick = false }, onAllSettings = { quick = false; onSettings() }) {
-                StepperRow(
-                    "Match window", "green within this of the target",
-                    String.format(Locale.ROOT, "±%.2f Hz", s.matchHz),
-                    canDecrease = s.matchHz > 0.051,
-                    canIncrease = s.matchHz < 0.499,
-                    onDecrease = { model.update { it.copy(matchHz = round((it.matchHz - 0.05) * 100) / 100) } },
-                    onIncrease = { model.update { it.copy(matchHz = round((it.matchHz + 0.05) * 100) / 100) } },
-                )
-                ChoiceRow("Octave type, $section", "for the section $name is in", octaves.map { it.label }, octaves.indexOf(sectionType)) { i ->
-                    model.update { c ->
-                        when (section) {
-                            "bass" -> c.copy(octaveBass = octaves[i])
-                            "treble" -> c.copy(octaveTreble = octaves[i])
-                            else -> c.copy(octaveMiddle = octaves[i])
-                        }
-                    }
-                }
-                SwitchRow("Follow the key struck", "after the temperament octave", s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
-                if (!s.temperamentFirst) StepperRow(
-                    "Stretch Definition", "single strings sampled before tuning begins: 8 quick, 12 or 16 closer, your own number at the transitions",
-                    "${s.calibrationNotes}",
-                    canDecrease = s.calibrationNotes > TunerSettings.MIN_CALIBRATION_NOTES,
-                    canIncrease = s.calibrationNotes < TunerSettings.MAX_CALIBRATION_NOTES,
-                    onDecrease = { model.update { it.copy(calibrationNotes = it.calibrationNotes - 1) } },
-                    onIncrease = { model.update { it.copy(calibrationNotes = it.calibrationNotes + 1) } },
-                )
-            }
         }
     }
 }

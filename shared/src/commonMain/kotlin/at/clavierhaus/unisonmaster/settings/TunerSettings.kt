@@ -80,6 +80,15 @@ data class TunerSettings(
      * tuner's own number, placed at the transitions he knows, is the best.
      */
     val calibrationNotes: Int = 12,
+    // RECORDING
+    /**
+     * A red button on the tuning screen that records what the microphone
+     * hears, from tap to tap: uncompressed PCM, the unprocessed source,
+     * 48 kHz, 16 bit, one WAV per recording in the phone's Recordings. For
+     * the workshop's corpus and for hearing again what the app read. Off by
+     * default: about 6 MB a minute.
+     */
+    val recordPcm: Boolean = false,
 ) {
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
@@ -153,6 +162,7 @@ class SettingsModel(
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             autoNote = b("autoNote", d.autoNote),
             calibrationNotes = i("calibrationNotes", d.calibrationNotes).coerceIn(TunerSettings.MIN_CALIBRATION_NOTES, TunerSettings.MAX_CALIBRATION_NOTES),
+            recordPcm = b("recordPcm", d.recordPcm),
         )
     }
 
@@ -172,5 +182,6 @@ class SettingsModel(
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("autoNote", s.autoNote.toString())
         store.put("calibrationNotes", s.calibrationNotes.toString())
+        store.put("recordPcm", s.recordPcm.toString())
     }
 }

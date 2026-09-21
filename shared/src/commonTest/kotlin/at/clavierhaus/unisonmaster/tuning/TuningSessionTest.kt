@@ -943,6 +943,25 @@ class TuningSessionTest {
     }
 
     @Test
+    fun theTapHearsEveryBufferOfTheLiveScreenAsItArrives() {
+        val b = 4.0e-4
+        val signal = FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 1.0)
+        val tuning = TuningController(QueueSource(listOf(signal)))
+        var heard = 0
+        var sum = 0.0
+        tuning.tap = { chunk -> heard += chunk.size; for (x in chunk) sum += x.toDouble() }
+        tuning.startLive(); tuning.stopLive()
+        val whole = signal.size / 1024 * 1024    // startLive reads in hops of 1024
+        assertEquals(whole, heard, "every whole buffer, before any reading")
+        assertTrue(abs(sum - signal.take(whole).sumOf { it.toDouble() }) < 1e-3, "the samples as delivered")
+        tuning.tap = null
+        val q = tuning.audioSourceForTest() as QueueSource
+        q.add(signal)
+        tuning.startLive(); tuning.stopLive()
+        assertEquals(whole, heard, "nothing once nobody listens")
+    }
+
+    @Test
     fun stretchDefinitionRegistersEveryKeyStruckAcrossTheRangeWithoutDone() {
         val b = 4.0e-4
         val signals = mutableListOf(FloatArray(HOP * 2) + stiffStrike(f0For(440.0, b), b, 8, 3.0))    // A4 on the hub

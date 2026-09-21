@@ -2,6 +2,7 @@ package at.clavierhaus.unisonmaster.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -9,10 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
@@ -29,6 +31,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -297,48 +300,36 @@ fun PartialsButton(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifie
 }
 
 /**
- * The gear's panel: a compact card of the settings that change during a
- * tuning, one tap away and one tap gone. The scrim closes it. The rows are
- * given by the caller; the card only frames them and offers the way to the
- * full settings screen.
+ * The recording button, top right: a red ring while idle, a red disc with
+ * the duration as mm:ss while the session is being written. Shown only when
+ * recording is switched on in the settings.
  */
 @Composable
-fun QuickSettingsPanel(
-    onClose: () -> Unit,
-    onAllSettings: () -> Unit,
-    rows: @Composable () -> Unit,
-) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.55f))
-            .clickable(onClick = onClose),
+fun RecordButton(recording: Boolean, seconds: Int, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
-        Column(
-            Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 56.dp)
-                .width(440.dp)
-                .background(Color(Brand.NEAR_BLACK), RoundedCornerShape(12.dp))
-                .pointerInput(Unit) { detectTapGestures { } }   // a tap on the card stays on the card
-                .padding(horizontal = 18.dp, vertical = 8.dp),
-        ) {
-            rows()
-            Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(
-                    onClick = onAllSettings,
-                    border = BorderStroke(1.dp, Color(Brand.WHITE_MUTED)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.WHITE)),
-                ) { Text("All settings", fontFamily = DejaVuSerif, fontSize = 15.sp) }
-                Spacer(Modifier.width(12.dp))
-                OutlinedButton(
-                    onClick = onClose,
-                    border = BorderStroke(1.dp, Color(Brand.ORANGE)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.ORANGE)),
-                ) { Text("Close", fontFamily = DejaVuSerif, fontSize = 15.sp) }
-            }
-            Spacer(Modifier.height(4.dp))
+        if (recording) {
+            Text(
+                String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60),
+                color = Color(Brand.ALERT_RED),
+                fontFamily = DejaVuSerif,
+                fontSize = 22.sp,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(10.dp))
         }
+        Box(
+            Modifier
+                .size(RECORD_DOT)
+                .background(if (recording) Color(Brand.ALERT_RED) else Color.Transparent, CircleShape)
+                .border(3.dp, Color(Brand.ALERT_RED), CircleShape),
+        )
     }
 }
+
+private val RECORD_DOT = 26.dp

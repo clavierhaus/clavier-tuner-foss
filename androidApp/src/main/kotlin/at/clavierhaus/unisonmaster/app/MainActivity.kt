@@ -83,6 +83,7 @@ import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.PartialMonitor
 import at.clavierhaus.unisonmaster.model.StringSlot
 import at.clavierhaus.unisonmaster.TuningController
+import at.clavierhaus.unisonmaster.audio.AndroidAudioSource
 import at.clavierhaus.unisonmaster.audio.createAudioSource
 import at.clavierhaus.unisonmaster.tuning.Notes
 import kotlin.math.abs
@@ -105,6 +106,16 @@ class MainActivity : ComponentActivity() {
     }
     private val lastTuning = mutableStateOf<SessionStore.Load>(SessionStore.Load.None)
     private val monitor by lazy { PartialMonitor(audioSource, controller) }
+    /** The red button's recorder: hears every buffer of the live screen, writes only between its taps. */
+    private val recorder by lazy {
+        SessionRecorder(this, audioSource.sampleRateHz) { (audioSource as? AndroidAudioSource)?.usedUnprocessed ?: false }
+    }
+
+    /** The microphone off, and with it any recording. */
+    private fun stopListening() {
+        recorder.stop()
+        controller.stopLive()
+    }
 
     private val permissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -117,6 +128,7 @@ class MainActivity : ComponentActivity() {
         hideSystemBars()
         lastTuning.value = sessionStore.load()
         controller.onSessionChanged = { snap -> sessionStore.save(snap) }
+        controller.tap = { chunk -> recorder.push(chunk) }
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -140,7 +152,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(screen) {
                     // the microphone runs only while tuning: nothing is measured unseen
                     micWanted = screen == "tune"
-                    if (micWanted && hasMic()) controller.startLive() else controller.stopLive()
+                    if (micWanted && hasMic()) controller.startLive() else stopListening()
                 }
                 fun openSettings() { settingsFrom = screen; screen = "settings" }
                 fun backToHub() {
@@ -169,7 +181,12 @@ class MainActivity : ComponentActivity() {
                         }
                         "tune" -> {
                             BackHandler { backToHub() }
-                            BasicHub(controller = controller, model = settingsModel, onSettings = { openSettings() }, onBack = { backToHub() })
+                            BasicHub(
+                                controller = controller,
+                                recorder = if (settings.recordPcm) recorder else null,
+                                onSettings = { openSettings() },
+                                onBack = { backToHub() },
+                            )
                         }
                         else -> {
                             val last by lastTuning
@@ -216,7 +233,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         controller.snapshot()?.let { sessionStore.save(it) }
-        controller.stopLive()
+        stopListening()
         controller.stopMeasuring()
         monitor.stop()
     }
