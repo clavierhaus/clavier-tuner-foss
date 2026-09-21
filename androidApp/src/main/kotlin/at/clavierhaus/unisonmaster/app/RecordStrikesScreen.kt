@@ -332,7 +332,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
 }
 
 @Composable
-private fun Chip(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun Chip(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .height(40.dp)
