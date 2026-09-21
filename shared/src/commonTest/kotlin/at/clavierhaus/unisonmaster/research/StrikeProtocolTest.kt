@@ -55,4 +55,28 @@ class StrikeProtocolTest {
         assertEquals(8, u32(40))
         assertEquals(listOf(0, 32767, -32767, 16384), listOf(s16(44), s16(46), s16(48), s16(50)).map { it.toShort().toInt() })
     }
+
+    @Test
+    fun theReferenceStudyCoversTheInstrumentTwiceAndItsCornerCasesOnce() {
+        val takes = StrikeProtocol.takes(Piano.BOESENDORFER, 40, Study.REFERENCE)
+        val keys = 108 - 17 + 1                                                    // F0 .. C8 on the 225
+        val single = takes.filter { it.variant.isEmpty() && it.string != StringPos.ALL }
+        val whole = takes.filter { it.variant.isEmpty() && it.string == StringPos.ALL }
+        assertEquals(keys, single.size, "every key, one string")
+        assertEquals(keys, whole.size, "every key as it is")
+        assertTrue(single.filter { it.midi < 40 }.all { it.string == StringPos.LEFT }, "wound bichords: the left string")
+        assertTrue(single.filter { it.midi >= 40 }.all { it.string == StringPos.CENTRE }, "trichords: the centre string")
+        val corners = StrikeProtocol.cornerNotes(Piano.BOESENDORFER, 40)
+        assertEquals(listOf(17, 39, 40, 45, 69, 84, 96), corners)
+        val cases = takes.filter { it.variant.isNotEmpty() }
+        assertEquals(corners.size * 7 - 1, cases.size, "seven cases per corner note, F0 has no octave below")
+        assertEquals(takes.size, takes.map { it.id }.toSet().size, "every take has its own file name")
+        assertTrue(cases.all { it.note.isNotEmpty() }, "every corner case carries its instruction")
+        assertTrue(single.all { it.part == StrikeProtocol.PART_A } && whole.all { it.part == StrikeProtocol.PART_B } && cases.all { it.part == StrikeProtocol.PART_C })
+        assertTrue(StrikeProtocol.partSetup(StrikeProtocol.PART_A).contains("felt strip"))
+        assertEquals(corners.size * 2, cases.count { StrikeProtocol.wantsReading(it) }, "the two detuned takes per note ask for the reading")
+        assertEquals(8, StrikeProtocol.seconds(Piano.BOESENDORFER, 21, Study.REFERENCE))
+        assertEquals(4, StrikeProtocol.seconds(Piano.BOESENDORFER, 96, Study.REFERENCE))
+        assertTrue(takes.size < 260, "an afternoon: ${takes.size} takes")
+    }
 }

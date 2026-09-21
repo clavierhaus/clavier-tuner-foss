@@ -8,9 +8,15 @@ import at.clavierhaus.unisonmaster.tuning.Notes
  * tested. Research tooling; hidden from the interface once the study is done.
  */
 
-/** One recording to make: [strike] of three on [string] of [midi]. */
-data class Take(val midi: Int, val string: StringPos, val strike: Int) {
-    val id: String get() = "${Notes.name(midi)}-${string.code}-s$strike"
+/**
+ * One recording to make: [strike] of three on [string] of [midi]. A
+ * [variant] names a special case of the Reference study (its code goes into
+ * the file name) and [note] is the instruction for it, shown on the screen.
+ */
+data class Take(val midi: Int, val string: StringPos, val strike: Int, val variant: String = "", val note: String = "", val part: String = "") {
+    val id: String get() = "${Notes.name(midi)}-${string.code}-s$strike" + (if (variant.isEmpty()) "" else "-$variant")
+    /** What to do for this take: the variant's own instruction, or the string position's. */
+    val instruction: String get() = note.ifEmpty { string.instruction }
 }
 
 enum class StringPos(val code: String, val label: String, val instruction: String) {
@@ -25,7 +31,14 @@ enum class Study(val label: String, val code: String) {
     /** Single strings, three strikes, for the pitch-modulation study. */
     WOBBLE("Wobble", "wobble"),
     /** Every key of the instrument, unmuted, once: the corpus the key detector is tested against. */
-    COMPASS("Compass", "compass");
+    COMPASS("Compass", "compass"),
+    /**
+     * The reference: the whole instrument, every key one string and every
+     * key as it is, and the corner cases at six notes — the recordings the
+     * measurement layer is built and judged on while the piano is out of
+     * reach (docs/REFERENCE-RECORDING.md).
+     */
+    REFERENCE("Reference", "reference");
 
     companion object {
         fun ofCode(code: String?): Study = entries.firstOrNull { it.code == code } ?: WOBBLE
@@ -59,11 +72,85 @@ object StrikeProtocol {
     fun takes(piano: Piano, firstPlainMidi: Int = 40, study: Study = Study.WOBBLE): List<Take> = when (study) {
         Study.WOBBLE -> wobbleTakes(piano, firstPlainMidi)
         Study.COMPASS -> (lowestMidi(piano)..108).map { Take(it, StringPos.ALL, 1) }
+        Study.REFERENCE -> referenceTakes(piano, firstPlainMidi)
     }
 
     /** Recording length per take: the compass wants only the strike and a few seconds of tone. */
-    fun seconds(piano: Piano, midi: Int, study: Study): Int =
-        if (study == Study.COMPASS) (if (midi < 48) 5 else 4) else seconds(piano, midi)
+    fun seconds(piano: Piano, midi: Int, study: Study): Int = when (study) {
+        Study.COMPASS -> if (midi < 48) 5 else 4
+        Study.REFERENCE -> if (midi < C2) 8 else if (midi < C4) 6 else 4
+        Study.WOBBLE -> seconds(piano, midi)
+    }
+
+    /** The six notes of the Reference study's corner cases: the lowest key, both sides of the break, and A2, A4, C6, C7. */
+    fun cornerNotes(piano: Piano, firstPlainMidi: Int): List<Int> =
+        listOf(lowestMidi(piano), firstPlainMidi - 1, firstPlainMidi, 45, 69, 84, 96).distinct().sorted()
+
+    /**
+     * The Reference study, in the order it is recorded:
+     *  A. every key, one string (centre of a trichord, left of a bichord, the
+     *     monochord as it is), one strike — the inharmonicity of the
+     *     instrument and the single-string reading;
+     *  B. every key as it is, nothing muted, one strike — the coupled unison
+     *     the FOSS tuner hears;
+     *  C. at the corner notes: three strikes on one string, soft, medium
+     *     and hard; the unison with one string set 3 cents sharp, then that
+     *     string alone; the note struck while the semitone above still
+     *     rings; the octave below it struck first and held.
+     * File names carry the variant: "Boesendorfer_A4-U-s1-det3_unproc_…".
+     */
+    fun referenceTakes(piano: Piano, firstPlainMidi: Int = 40): List<Take> {
+        val keys = lowestMidi(piano)..108
+        val list = ArrayList<Take>()
+        for (m in keys) list += Take(m, if (m < firstPlainMidi) StringPos.LEFT else StringPos.CENTRE, 1, part = PART_A)
+        for (m in keys) list += Take(m, StringPos.ALL, 1, part = PART_B)
+        for (m in cornerNotes(piano, firstPlainMidi)) {
+            val one = if (m < firstPlainMidi) StringPos.LEFT else StringPos.CENTRE
+            list += Take(m, one, 1, "soft", "${one.instruction} Strike piano: as softly as the note still speaks.", PART_C)
+            list += Take(m, one, 2, "medium", "${one.instruction} Strike mezzo-forte, the usual touch.", PART_C)
+            list += Take(m, one, 3, "hard", "${one.instruction} Strike forte, as hard as you would in a pitch raise.", PART_C)
+            list += Take(
+                m, StringPos.ALL, 1, "det3",
+                "With another tuner (PianoMeter), set the RIGHT string of this note 3 cents sharp of its partners. Nothing muted: the detuned unison sounds. Type the tuner's reading below.",
+                PART_C,
+            )
+            list += Take(m, StringPos.RIGHT, 1, "det3", "The same right string, still 3 cents sharp, alone: mute the others. Type the reading below. Afterwards tune it back.", PART_C)
+            list += Take(
+                m, one, 1, "ring",
+                "Strike the semitone ABOVE this note (nothing muted) and, while it rings, one second later this note's ${one.label}. Hold both.",
+                PART_C,
+            )
+            if (m - 12 >= keys.first) list += Take(
+                m, one, 1, "octave",
+                "Strike the octave BELOW this note (its ${one.label}, others muted), hold it, and one second later this note's ${one.label}: the octave as the ear hears it.",
+                PART_C,
+            )
+        }
+        return list
+    }
+
+    const val PART_A = "A · one string"
+    const val PART_B = "B · as it is"
+    const val PART_C = "C · corner cases"
+
+    /** What to do before the first take of a part: the mutes. */
+    fun partSetup(part: String): String = when (part) {
+        PART_A -> "Mutes in: a felt strip through every section so that only the centre string of each trichord sounds; a wedge on the right string of every bichord. They stay in for the whole part."
+        PART_B -> "Mutes out, all of them. The piano as it is."
+        PART_C -> "Each take says what to mute and what to detune. Have the second tuner app ready."
+        else -> ""
+    }
+
+    /** True for a take whose instruction asks for a reading from the second tuner. */
+    fun wantsReading(take: Take): Boolean = take.variant == "det3"
+
+    val referenceSetup: List<String> = listOf(
+        "Place the phone on the music desk, bottom edge (microphone) towards the strings, and leave it there for the whole session; the same place for every take.",
+        "Lid fully open, room quiet, no pedal. Level: a mezzo-forte strike should reach at least a third of full scale on the meter, never red.",
+        "Part A, one string per key: run a felt strip through each section so only the centre string of a trichord sounds; on the bichords mute the right string. Part B: take the mutes out. Part C says per take what to mute.",
+        "Tap Record; when \"Strike now\" appears, play the key and hold it until the recording ends. If a strike goes wrong, tap Redo.",
+        "Corner cases (Part C) need a second tuner app to set 3 cents: type its reading into the field under the take; every take saved is listed in Documents/ClavierTuner/<piano>_manifest.csv.",
+    )
 
     val compassSetup: List<String> = listOf(
         "Place the phone on the music desk, bottom edge (microphone) towards the strings. Leave it there for the whole session.",

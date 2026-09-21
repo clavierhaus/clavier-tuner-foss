@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +42,7 @@ import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.audio.AndroidAudioSource
 import at.clavierhaus.unisonmaster.research.Piano
 import at.clavierhaus.unisonmaster.research.StrikeProtocol
+import at.clavierhaus.unisonmaster.research.Study
 import at.clavierhaus.unisonmaster.research.Take
 import at.clavierhaus.unisonmaster.research.Wav
 import at.clavierhaus.unisonmaster.tuning.Notes
@@ -51,6 +54,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.File
 import kotlin.math.log10
 import kotlin.math.sqrt
 
@@ -82,7 +86,8 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
     fun loadDone(p: Piano): Set<String> =
         (prefs.getStringSet("done-${p.code}", null) ?: if (p == Piano.STEINWAY_D) prefs.getStringSet("done", emptySet()) else emptySet())!!.toSet()
     var piano by remember { mutableStateOf(Piano.ofCode(prefs.getString("piano", "D"))) }
-    val takes = remember(piano, firstPlainMidi) { StrikeProtocol.takes(piano, firstPlainMidi) }
+    var study by remember { mutableStateOf(Study.ofCode(prefs.getString("study", "wobble"))) }
+    val takes = remember(piano, firstPlainMidi, study) { StrikeProtocol.takes(piano, firstPlainMidi, study) }
     var done by remember(piano) { mutableStateOf(loadDone(piano)) }
     var index by remember(piano, takes) { mutableIntStateOf(takes.indexOfFirst { it.id !in done }.let { if (it < 0) 0 else it }) }
     var phase by remember { mutableStateOf<Phase>(Phase.Idle) }
@@ -90,21 +95,27 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
     val scope = rememberCoroutineScope()
     val take = takes[index]
     val busy = phase is Phase.Recording || phase is Phase.Saving
+    // the second tuner's reading, typed for the detuned takes; kept per take
+    var reading by remember(take.id) { mutableStateOf(prefs.getString("reading-${piano.code}-${take.id}", "") ?: "") }
+    // the first take of a part shows the part's setup — the mutes — before anything else
+    val partStarts = index == 0 || takes[index - 1].part != take.part
 
     fun record() {
         if (busy || !micGranted) return
         val source = AndroidAudioSource(StrikeProtocol.SAMPLE_RATE)
-        val seconds = StrikeProtocol.seconds(piano, take.midi)
+        val seconds = StrikeProtocol.seconds(piano, take.midi, study)
         val total = StrikeProtocol.SAMPLE_RATE * seconds
         val samples = FloatArray(total)
         var filled = 0
+        var peak = 0f
+        val readingNow = reading
         phase = Phase.Recording(0f, seconds, -99f)
         source.start(2048) { chunk ->
             val n = minOf(chunk.size, total - filled)
             chunk.copyInto(samples, filled, 0, n)
             filled += n
             var sq = 0.0
-            for (x in chunk) sq += x.toDouble() * x
+            for (x in chunk) { sq += x.toDouble() * x; val a = if (x < 0) -x else x; if (a > peak) peak = a }
             val db = (20 * log10(maxOf(sqrt(sq / chunk.size), 1e-9))).toFloat()
             phase = Phase.Recording(filled.toFloat() / StrikeProtocol.SAMPLE_RATE, seconds, db)
             if (filled >= total) {
@@ -114,8 +125,17 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 scope.launch {
                     val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(Date())
                     val name = StrikeProtocol.fileName(piano, take, unprocessed, stamp)
+                    val peakDb = 20 * log10(maxOf(peak, 1e-6f))
                     val result = withContext(Dispatchers.IO) {
-                        runCatching { saveRecording(context, name, Wav.pcm16(samples, StrikeProtocol.SAMPLE_RATE)) }
+                        runCatching {
+                            saveRecording(context, name, Wav.pcm16(samples, StrikeProtocol.SAMPLE_RATE))
+                            // the manifest: one line per take kept, so the set reads itself
+                            appendManifest(
+                                context, prefs, piano,
+                                listOf(stamp, take.id, name, take.part, "${seconds}", "%.1f".format(Locale.ROOT, peakDb),
+                                    if (unprocessed) "unproc" else "mic", "$firstPlainMidi", readingNow.replace(',', ';')).joinToString(","),
+                            )
+                        }
                     }
                     phase = result.fold(
                         onSuccess = {
@@ -147,12 +167,20 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 Text("Record Strikes", color = White, fontFamily = DejaVuSerifFamily, fontSize = 26.sp)
             }
             Text(
-                "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each.",
+                when (study) {
+                    Study.COMPASS -> "Compass: every key of the instrument, unmuted, once — ${takes.size} recordings."
+                    Study.REFERENCE -> "Reference: every key one string, every key as it is, and the corner cases — ${takes.size} recordings."
+                    Study.WOBBLE -> "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each."
+                },
                 color = Muted, fontSize = 13.sp,
             )
             Spacer(Modifier.height(10.dp))
             Text("SETUP", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
-            StrikeProtocol.setup.forEachIndexed { i, line ->
+            when (study) {
+                Study.COMPASS -> StrikeProtocol.compassSetup
+                Study.REFERENCE -> StrikeProtocol.referenceSetup
+                Study.WOBBLE -> StrikeProtocol.setup
+            }.forEachIndexed { i, line ->
                 Row(Modifier.padding(top = 4.dp)) {
                     Text("${i + 1}", color = Orange, fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.width(20.dp))
                     Text(line, color = White, fontSize = 13.sp, lineHeight = 17.sp)
@@ -183,6 +211,14 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         phase = Phase.Idle
                     }
                 }
+                Spacer(Modifier.width(8.dp))
+                for (st in Study.entries) {
+                    Chip(st.label, selected = st == study, enabled = !busy) {
+                        study = st
+                        prefs.edit().putString("study", st.code).apply()
+                        phase = Phase.Idle
+                    }
+                }
             }
             Spacer(Modifier.height(10.dp))
             Text("Take ${index + 1} of ${takes.size}  ·  ${done.size} done", color = Muted, fontSize = 14.sp)
@@ -197,7 +233,12 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         fontFamily = DejaVuSerifFamily, fontSize = 30.sp,
                     )
                     Text(
-                        "strike ${take.strike} of ${StrikeProtocol.STRIKES}  ·  ${StrikeProtocol.seconds(piano, take.midi)} s" +
+                        (when {
+                            take.variant.isNotEmpty() -> take.variant
+                            study == Study.WOBBLE -> "strike ${take.strike} of ${StrikeProtocol.STRIKES}"
+                            else -> "one strike"
+                        }) +
+                            "  ·  ${StrikeProtocol.seconds(piano, take.midi, study)} s" +
                             if (take.id in done) "  ·  recorded" else "",
                         color = Muted, fontSize = 16.sp,
                     )
@@ -205,7 +246,27 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 Chip("▶", selected = false, enabled = !busy && index < takes.size - 1) { index++; phase = Phase.Idle }
             }
             Spacer(Modifier.height(8.dp))
-            Text(take.string.instruction, color = White, fontSize = 15.sp)
+            if (take.part.isNotEmpty()) {
+                Text(take.part, color = Orange, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                if (partStarts) Text(StrikeProtocol.partSetup(take.part), color = Orange, fontSize = 15.sp, lineHeight = 19.sp)
+                Spacer(Modifier.height(4.dp))
+            }
+            Text(take.instruction, color = White, fontSize = 15.sp)
+            if (StrikeProtocol.wantsReading(take)) {
+                Spacer(Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = reading,
+                    onValueChange = { v -> reading = v; prefs.edit().putString("reading-${piano.code}-${take.id}", v).apply() },
+                    singleLine = true,
+                    label = { Text("second tuner's reading, cents", fontSize = 12.sp) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = White, unfocusedTextColor = White,
+                        focusedBorderColor = Orange, unfocusedBorderColor = Muted,
+                        focusedLabelColor = Orange, unfocusedLabelColor = Muted,
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                )
+            }
             Spacer(Modifier.height(10.dp))
 
             val status = when (val p = phase) {
@@ -299,6 +360,31 @@ private fun LevelBar(db: Float) {
                 .background(if (db > -3f) Color(Brand.ALERT_RED) else Color(Brand.GO_GREEN), RoundedCornerShape(5.dp)),
         )
     }
+}
+
+/**
+ * The manifest of a piano's recordings: one CSV line per take saved —
+ * stamp, take, file, part, seconds, peak dBFS, source, first plain string,
+ * the second tuner's reading — appended in app storage and exported whole
+ * to Documents/ClavierTuner/<piano>_manifest.csv after every take (the
+ * previous export is replaced), so the set carries its own description.
+ */
+private fun appendManifest(context: Context, prefs: android.content.SharedPreferences, piano: Piano, line: String) {
+    val f = File(context.filesDir, "manifest-${piano.code}.csv")
+    if (!f.exists()) f.writeText("stamp,take,file,part,seconds,peak_dbfs,source,first_plain_midi,reading\n")
+    f.appendText(line + "\n")
+    if (Build.VERSION.SDK_INT < 29) return
+    val resolver = context.contentResolver
+    prefs.getString("manifest-uri-${piano.code}", null)?.let { runCatching { resolver.delete(android.net.Uri.parse(it), null, null) } }
+    val values = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, "${piano.code}_manifest.csv")
+        put(MediaStore.MediaColumns.MIME_TYPE, "text/csv")
+        put(MediaStore.MediaColumns.RELATIVE_PATH, "Documents/ClavierTuner/")
+    }
+    val uri = resolver.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: return
+    runCatching { resolver.openOutputStream(uri)!!.use { it.write(f.readBytes()) } }
+        .onSuccess { prefs.edit().putString("manifest-uri-${piano.code}", uri.toString()).apply() }
+        .onFailure { resolver.delete(uri, null, null) }
 }
 
 /** Writes into shared storage: /sdcard/Recordings/ClavierTuner (Android 12+), else /sdcard/Music/ClavierTuner. */
