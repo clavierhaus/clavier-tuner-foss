@@ -20,6 +20,13 @@ object Notes {
         return NAMES[midi % 12] + octave
     }
 
+    /** The MIDI note of a name in scientific pitch notation ("A4", "D#2", "F0"), or null. */
+    fun midi(name: String): Int? {
+        val m = Regex("^([A-G]#?)(-?\\d)$").find(name) ?: return null
+        val i = NAMES.indexOf(m.groupValues[1]).takeIf { it >= 0 } ?: return null
+        return (m.groupValues[2].toInt() + 1) * 12 + i
+    }
+
     /** Nearest MIDI note to [frequencyHz] under 12-TET with [referenceA4Hz]. */
     fun nearestMidi(frequencyHz: Double, referenceA4Hz: Double): Int =
         (MIDI_A4 + 12.0 * ln(frequencyHz / referenceA4Hz) / ln(2.0)).roundToInt()
