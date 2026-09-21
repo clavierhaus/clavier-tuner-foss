@@ -96,7 +96,8 @@ object StrikeProtocol {
      *  C. at the corner notes: three strikes on one string, soft, medium
      *     and hard; the unison with one string set 3 cents sharp, then that
      *     string alone; the note struck while the semitone above still
-     *     rings; the octave below it struck first and held.
+     *     rings; the octave below it struck first and held; and every string
+     *     of the unison alone, for the beats that are the string's own.
      * File names carry the variant: "Boesendorfer_A4-U-s1-det3_unproc_…".
      */
     fun referenceTakes(piano: Piano, firstPlainMidi: Int = 40): List<Take> {
@@ -125,9 +126,19 @@ object StrikeProtocol {
                 "Strike the octave BELOW this note (its ${one.label}, others muted), hold it, and one second later this note's ${one.label}: the octave as the ear hears it.",
                 PART_C,
             )
+            // every string of the unison alone: which partials of which string
+            // beat by themselves — a false beat is the string's, not the unison's
+            if (m >= firstPlainMidi) {
+                for (pos in listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT)) list += Take(m, pos, 1, "alone", "${pos.instruction} One strike, mezzo-forte: this string by itself, for its own beats.", PART_C)
+            } else if (m >= BICHORD_FROM) {
+                for (pos in listOf(StringPos.LEFT, StringPos.RIGHT)) list += Take(m, pos, 1, "alone", "${pos.instruction} One strike, mezzo-forte: this string by itself, for its own beats.", PART_C)
+            }
         }
         return list
     }
+
+    /** Below this the 225's bass is monochord; from here to the plain-wire floor, bichords. Set per instrument later. */
+    const val BICHORD_FROM = 28   // E1
 
     const val PART_A = "A · one string"
     const val PART_B = "B · as it is"

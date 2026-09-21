@@ -69,7 +69,12 @@ class StrikeProtocolTest {
         val corners = StrikeProtocol.cornerNotes(Piano.BOESENDORFER, 40)
         assertEquals(listOf(17, 39, 40, 45, 69, 84, 96), corners)
         val cases = takes.filter { it.variant.isNotEmpty() }
-        assertEquals(corners.size * 7 - 1, cases.size, "seven cases per corner note, F0 has no octave below")
+        // seven cases per corner note (F0 has no octave below), and every string alone: three on the plain
+        // trichords (E2, A2, A4, C6, C7), two on the bichord D#2, none on the monochord F0
+        assertEquals(corners.size * 7 - 1 + 5 * 3 + 2, cases.size, "the cases: ${cases.map { it.id }}")
+        assertEquals(3, cases.count { it.midi == 69 && it.variant == "alone" })
+        assertEquals(2, cases.count { it.midi == 39 && it.variant == "alone" })
+        assertEquals(0, cases.count { it.midi == 17 && it.variant == "alone" })
         assertEquals(takes.size, takes.map { it.id }.toSet().size, "every take has its own file name")
         assertTrue(cases.all { it.note.isNotEmpty() }, "every corner case carries its instruction")
         assertTrue(single.all { it.part == StrikeProtocol.PART_A } && whole.all { it.part == StrikeProtocol.PART_B } && cases.all { it.part == StrikeProtocol.PART_C })
@@ -77,6 +82,6 @@ class StrikeProtocolTest {
         assertEquals(corners.size * 2, cases.count { StrikeProtocol.wantsReading(it) }, "the two detuned takes per note ask for the reading")
         assertEquals(8, StrikeProtocol.seconds(Piano.BOESENDORFER, 21, Study.REFERENCE))
         assertEquals(4, StrikeProtocol.seconds(Piano.BOESENDORFER, 96, Study.REFERENCE))
-        assertTrue(takes.size < 260, "an afternoon: ${takes.size} takes")
+        assertTrue(takes.size < 280, "an afternoon: ${takes.size} takes")
     }
 }
