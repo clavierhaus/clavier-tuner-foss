@@ -749,8 +749,10 @@ class TuningSessionTest {
         val s = TuningSession(440.0)
         for (midi in s.temperamentNotes) s.record(measuredNote(midi, TuningSession.targetF1(midi, 440.0)))
         // D#4 as a saved tuning from an earlier reader had it: its "fundamental" is D4's
+        val good = s.measurements.getValue(63)
         s.record(NoteMeasurement(63, 296.9, 4.0e-4, 0.1, listOf(MeasuredPartial(1, 0.0, 0.0, 3.0), MeasuredPartial(3, 5.0, -6.0, 3.0))))
-        assertTrue(63 !in s.measurements, "a reading nearer D4 is not D#4's")
+        assertEquals(good, s.measurements[63], "a reading nearer D4 is not D#4's; what D#4 had stays")
+        assertTrue(s.temperamentComplete, "and the finished temperament octave stays finished")
         val target = s.target(51)                                  // D#3, 6:3 against D#4
         val et = TuningSession.targetF1(51, 440.0)
         assertTrue(abs(TuningSession.centsOff(target, et)) < 10.0,

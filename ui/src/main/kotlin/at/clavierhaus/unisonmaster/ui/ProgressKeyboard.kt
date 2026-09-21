@@ -88,11 +88,26 @@ fun ProgressKeyboard(
 
 
         // --- the tuning as executed -------------------------------------
-        // One point per measured string: how far its first partial stands
-        // from equal temperament. It is drawn, never followed: the target of
-        // a string is always that string's own measurement.
+        // How far the tuning stands from equal temperament across the
+        // compass: the measured first partials, smoothed over the neighbouring
+        // notes (a triangular window, ±3 semitones) and drawn as one line, no
+        // point per note. It is a result, never followed — the target of a
+        // string is its own measurement — and it is drawn so that no single
+        // note stands out to be "corrected" from here: one note's reading
+        // apart from its neighbours is not a wrong note, it is the octave
+        // links doing their work, or a reading to be struck again.
         if (deviations.isNotEmpty() && curveBand > 12f) {
-            val span = maxOf(5.0, deviations.values.maxOf { kotlin.math.abs(it) } * 1.15)
+            val pts = deviations.keys.sorted()
+            val smooth = pts.associateWith { midi ->
+                var num = 0.0; var den = 0.0
+                for (d in -CURVE_REACH..CURVE_REACH) {
+                    val v = deviations[midi + d] ?: continue
+                    val wgt = (CURVE_REACH + 1 - kotlin.math.abs(d)).toDouble()
+                    num += wgt * v; den += wgt
+                }
+                num / den
+            }
+            val span = maxOf(5.0, smooth.values.maxOf { kotlin.math.abs(it) } * 1.15)
             val mid = curveBand * 0.52f
             val half = curveBand * 0.36f
             fun yOf(cents: Double) = mid - (cents / span * half).toFloat()
@@ -105,22 +120,15 @@ fun ProgressKeyboard(
                 topLeft = Offset(0f, mid),
                 size = Size(size.width, 1f),
             )
-            val pts = deviations.keys.sorted()
             for (i in 1 until pts.size) {
                 val a = pts[i - 1]
                 val b = pts[i]
+                if (b - a > CURVE_REACH) continue   // a gap in the measurements is left as a gap
                 drawLine(
                     color = Color(Brand.WHITE),
-                    start = Offset(xOf(a), yOf(deviations.getValue(a))),
-                    end = Offset(xOf(b), yOf(deviations.getValue(b))),
+                    start = Offset(xOf(a), yOf(smooth.getValue(a))),
+                    end = Offset(xOf(b), yOf(smooth.getValue(b))),
                     strokeWidth = 2f,
-                )
-            }
-            for (midi in pts) {
-                drawCircle(
-                    color = Color(Brand.WHITE),
-                    radius = 2.5f,
-                    center = Offset(xOf(midi), yOf(deviations.getValue(midi))),
                 )
             }
             drawContext.canvas.nativeCanvas.drawText(
@@ -152,3 +160,6 @@ fun ProgressKeyboard(
         }
     }
 }
+
+/** Semitones either side of a note that its drawn value is smoothed over. */
+private const val CURVE_REACH = 3

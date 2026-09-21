@@ -343,9 +343,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     fun record(m: NoteMeasurement) {
         // A fundamental nearer another key than this one is another note's
-        // reading — a saved tuning can carry one from an earlier reader —
-        // and cannot stand as this note's measurement at all.
-        if (Notes.nearestMidi(m.f1Hz, a4Hz) != m.midi) { measured.remove(m.midi); return }
+        // reading — a neighbour still ringing when the note was left — and
+        // cannot stand as this note's measurement; what the note already has
+        // stays. (Until the 21st it was removed as well, and one such reading
+        // on leaving a note of the finished temperament octave closed the
+        // octave again: arrows only, no following, on a piano tuned to A4.)
+        if (Notes.nearestMidi(m.f1Hz, a4Hz) != m.midi) return
         measured[m.midi] = m.copy(partials = m.partials.filter { it.k == 1 || PartialTracker.plausibleCents(it.k, it.cents) })
     }
 
