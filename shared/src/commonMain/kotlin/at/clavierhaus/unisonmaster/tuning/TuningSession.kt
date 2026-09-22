@@ -155,15 +155,26 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     val recordsOnLeaving: Boolean get() = !gated
 
-    /** Lowest note the arrows may reach now. */
-    val stepLowMidi: Int get() = if (gated) settings.temperamentLowMidi else lowMidi
+    /**
+     * Lowest note the arrows may reach now: the foot of the session,
+     * whether or not the temperament octave is finished (docs — the gap
+     * analysis of the 22nd: a tuner may want to hear a bass string before
+     * the octave above it is settled, and a note reached early gets the
+     * honest "not tuned yet" target, never a wrong one).
+     */
+    val stepLowMidi: Int get() = lowMidi
 
-    /** Highest note the arrows may reach now. */
-    val stepHighMidi: Int get() = if (gated) TunerSettings.TEMPERAMENT_HIGH else highMidi
+    /** Highest note the arrows may reach now: the top of the compass, always. */
+    val stepHighMidi: Int get() = highMidi
 
-    /** Whether [midi] may be tuned at this point in the session. */
-    fun selectable(midi: Int): Boolean =
-        midi in notes && (!gated || midi in temperamentNotes)
+    /**
+     * Whether [midi] may be tuned at this point in the session: any note
+     * of it, at any time. The temperament octave is still the *suggested*
+     * order — [next] walks it first, and [recordsOnLeaving] still asks for
+     * Done inside it — but nothing stops the tuner going elsewhere and
+     * back.
+     */
+    fun selectable(midi: Int): Boolean = midi in notes
 
     /**
      * How a note below the temperament octave gets its target: its partial
@@ -354,7 +365,6 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
 
     fun select(midi: Int) {
         require(midi in notes) { "note $midi is outside the session" }
-        require(selectable(midi)) { "note $midi is outside the temperament octave, which is not finished" }
         current = midi
     }
 
