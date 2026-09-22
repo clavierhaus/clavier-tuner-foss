@@ -19,21 +19,35 @@ import kotlin.math.sqrt
  *
  * How: the input is mixed with a synthesised reference at [targetHz]
  * (multiplied by e^(−iωt)), which moves the target partial to zero
- * frequency, and low-passed to ±[bandCents] around it — the bandpass of the
- * hardware (Sanderson Q > 10, Reyburn 50–200 cents) as a low-pass on the
- * baseband. What remains is the partial alone, as a slowly rotating
- * vector: its angle is the phase against the reference, its rate of
- * rotation the frequency error, its length the partial's level. The rate
- * is read over blocks short enough that a full band-width error cannot
- * wrap (±π per block).
+ * frequency, and low-passed to ±[bandCents] around it. What remains is the
+ * partial alone, as a slowly rotating vector: its angle is the phase
+ * against the reference, its rate of rotation the frequency error, its
+ * length the partial's level. The rate is read over blocks short enough
+ * that a full band-width error cannot wrap (±π per block).
  *
  * The reading is the rate with an exponential memory of [memoryS]
- * (Verituner's ~150 ms), the only smoothing there is, and a [Reading.quality]
- * from how steadily the blocks of the last hop agreed and how far the
- * partial stands above the floor: the display goes dark on a low quality
- * as the SAT's lamps go dark beyond the capture range. Nothing here finds
- * a note, chooses a partial, or averages over a window: the note and the
- * partial are inputs, the reading is the phase.
+ * (Verituner's ~150 ms), the only smoothing there is. Two things about a
+ * piano string are handled, both measured on the tuning recordings of
+ * 22 September (docs/ENGINE.md):
+ *
+ * - **A strike.** When the broadband level jumps ([ONSET_DB] above the
+ *   loudest of the last five hops) the memory starts afresh and the block
+ *   rates of the next [SETTLE_TIME_CONSTANTS] time constants of the filter
+ *   are skipped: the old tone's phase and the filter's own step response
+ *   are not the string. Meanwhile the last reading is held and marked
+ *   [Reading.settling]. The skip follows from the band, so it is longer in
+ *   the bass (narrow band) than in the treble — on the recordings the
+ *   first reading after a strike came 190 ms later (median) and stood
+ *   within 1.8 cents (median) of where the string settled.
+ * - **Whether the partial is there.** The same band is demodulated
+ *   [NEIGHBOUR_CENTS] either side of the target, where no string of the
+ *   note sounds: that is the noise the reading stands in. The reading is
+ *   shown when the partial stands [SHOWN_ABOVE_NEIGHBOURS_DB] above it
+ *   ([Reading.quality] ≥ 0.5). On the recordings 92 % of shown readings
+ *   agreed with their neighbours within a cent, of hidden ones 57 %.
+ *
+ * Nothing here finds a note, chooses a partial, or averages over a window:
+ * the note and the partial are inputs, the reading is the phase.
  */
 class PhaseReader(
     private val sampleRate: Int,
@@ -41,29 +55,89 @@ class PhaseReader(
     private val bandCents: Double = DEFAULT_BAND_CENTS,
     private val memoryS: Double = DEFAULT_MEMORY_S,
 ) {
-    /** One hop's reading. [hz] is the partial's measured frequency, [cents] its distance from the target. */
-    data class Reading(val hz: Double, val cents: Double, val levelDbfs: Double, val quality: Double, val phase: Double)
+    /**
+     * One hop's reading. [hz] is the partial's measured frequency, [cents]
+     * its distance from the target, [levelDbfs] the partial's level and
+     * [noiseDbfs] the level beside it. [quality] is 0..1, ≥ 0.5 when the
+     * reading is to be shown. [settling]: a strike was heard and the
+     * reading is the last one from before it.
+     */
+    data class Reading(
+        val hz: Double,
+        val cents: Double,
+        val levelDbfs: Double,
+        val quality: Double,
+        val phase: Double,
+        val settling: Boolean = false,
+        val noiseDbfs: Double = -200.0,
+    ) {
+        val shown: Boolean get() = quality >= 0.5 && !settling
+    }
 
     var targetHz: Double = targetHz
         private set
 
-    // the reference oscillator, as a phase accumulator (exact over hours)
-    private var refPhase = 0.0
-    private var refStep = 2 * PI * targetHz / sampleRate
-    // the low-pass: four cascaded one-pole stages on the baseband (I and Q),
-    // 24 dB per octave — a semitone away is some 50 dB down
+    /** One demodulator: a reference oscillator by rotation, and the cascaded low-pass. */
+    private inner class Band {
+        var re = 1.0; var im = 0.0            // e^(−iωt), advanced by rotation
+        var stepRe = 1.0; var stepIm = 0.0
+        var phase = 0.0                        // exact phase, to renormalise the rotation
+        var step = 0.0
+        val li = DoubleArray(STAGES); val lq = DoubleArray(STAGES)
+        fun tune(hz: Double) {
+            step = 2 * PI * hz / sampleRate
+            stepRe = cos(step); stepIm = -sin(step)
+            phase = 0.0; re = 1.0; im = 0.0
+            li.fill(0.0); lq.fill(0.0)
+        }
+        fun push(x: Double, a: Double) {
+            var i = x * re; var q = x * im
+            for (st in 0 until STAGES) {
+                li[st] += a * (i - li[st]); lq[st] += a * (q - lq[st])
+                i = li[st]; q = lq[st]
+            }
+            val r = re * stepRe - im * stepIm
+            im = re * stepIm + im * stepRe
+            re = r
+        }
+        /** Exact again from the accumulated phase: rotation drifts over millions of samples. */
+        fun renormalise(samples: Int) {
+            phase = (phase + step * samples) % (2 * PI)
+            re = cos(phase); im = -sin(phase)
+        }
+        val i get() = li[STAGES - 1]
+        val q get() = lq[STAGES - 1]
+        val amplitude get() = sqrt(i * i + q * q) * 2
+    }
+
+    private val main = Band()
+    private val below = Band()
+    private val above = Band()
     private var alpha = 0.0
-    private val li = DoubleArray(STAGES); private val lq = DoubleArray(STAGES)
-    // the rate is read over blocks of [block] samples: short enough that ±band cannot wrap
+    private var bandHz = 1.0
     private var block = 1
+    private var settleSamples = 0L
+
     private var lastAngle = 0.0
     private var haveAngle = false
     private var inBlock = 0
-    private val rates = DoubleArray(64)
-    private var rateCount = 0
+    private var sinceRenorm = 0
+    private var sample = 0L
+    private var skipUntil = -1L
+
+    private val rates = DoubleArray(RATES_PER_HOP)
     private var memory = 0.0
+    private var mainPower = 0.0
+    private var noisePower = 0.0
+    private var powerFilled = false
     private var memoryFilled = false
-    private var memoryAlpha = 0.0
+    private var last: Reading? = null
+    private val recentDb = DoubleArray(ONSET_LOOKBACK) { -200.0 }
+    private var hops = 0
+
+    /** Hops in which a strike was heard, since this reader was made. */
+    var strikes: Int = 0
+        private set
 
     init { retarget(targetHz) }
 
@@ -71,88 +145,112 @@ class PhaseReader(
     fun retarget(hz: Double) {
         require(hz > 0)
         targetHz = hz
-        refStep = 2 * PI * hz / sampleRate
-        val bandHz = hz * (2.0.pow(bandCents / 1200.0) - 1)
+        bandHz = hz * (2.0.pow(bandCents / 1200.0) - 1)
         // four identical one-pole stages with their corner at the band's edge:
-        // the cascade is 3 dB down at 0.44 of it and 54 dB down a semitone away
+        // 54 dB down a semitone away
         alpha = 1 - exp(-2 * PI * bandHz / sampleRate)
-        // a full-band error of bandHz must turn less than half a cycle per block,
-        // and a block is never longer than a hop, so every hop yields a reading
+        // a full-band error must turn less than half a cycle per block, and a
+        // block is never longer than a hop, so every hop yields a reading
         block = (sampleRate / (2.5 * bandHz)).toInt().coerceIn(8, MAX_BLOCK)
-        li.fill(0.0); lq.fill(0.0)
-        haveAngle = false; inBlock = 0; rateCount = 0
-        memoryFilled = false
+        val tau = 1.0 / (2 * PI * bandHz)
+        settleSamples = (SETTLE_TIME_CONSTANTS * tau * STAGES * sampleRate).toLong()
+        main.tune(hz)
+        below.tune(hz * 2.0.pow(-NEIGHBOUR_CENTS / 1200.0))
+        above.tune(hz * 2.0.pow(NEIGHBOUR_CENTS / 1200.0))
+        haveAngle = false; inBlock = 0; sinceRenorm = 0
+        memoryFilled = false; last = null; powerFilled = false
     }
 
     /**
      * One hop of samples in; the reading at its end, or null before the
-     * first block has completed.
+     * first rate has been read (or right after a retarget).
      */
     fun push(chunk: FloatArray): Reading? {
-        rateCount = 0
+        // a strike: the broadband level jumps above the loudest of the last hops
+        var ss = 0.0
+        for (x in chunk) ss += x.toDouble() * x
+        val db = 10 * log10(maxOf(ss / chunk.size, 1e-24))
+        var recentMax = -200.0
+        for (v in recentDb) if (v > recentMax) recentMax = v
+        val onset = hops >= ONSET_LOOKBACK && db - recentMax >= ONSET_DB
+        recentDb[hops % ONSET_LOOKBACK] = db
+        hops++
+        if (onset) {
+            strikes++
+            memoryFilled = false
+            skipUntil = sample + settleSamples
+        }
+
+        var n = 0
         for (x in chunk) {
-            // mix down: the target partial lands at zero frequency
-            val c = cos(refPhase); val s = sin(refPhase)
-            refPhase += refStep
-            if (refPhase > 2 * PI) refPhase -= 2 * PI
-            var i = x * c; var q = -x * s
-            for (st in 0 until STAGES) {
-                li[st] += alpha * (i - li[st]); lq[st] += alpha * (q - lq[st])
-                i = li[st]; q = lq[st]
+            val xd = x.toDouble()
+            main.push(xd, alpha); below.push(xd, alpha); above.push(xd, alpha)
+            sample++
+            if (++sinceRenorm >= RENORMALISE_EVERY) {
+                main.renormalise(sinceRenorm); below.renormalise(sinceRenorm); above.renormalise(sinceRenorm)
+                sinceRenorm = 0
             }
             if (++inBlock >= block) {
                 inBlock = 0
-                val angle = atan2(lq[STAGES - 1], li[STAGES - 1])
-                if (haveAngle) {
+                val angle = atan2(main.q, main.i)
+                if (haveAngle && sample >= skipUntil) {
                     var d = angle - lastAngle
                     while (d > PI) d -= 2 * PI
                     while (d < -PI) d += 2 * PI
-                    val hzError = d * sampleRate / (2 * PI * block)
-                    if (rateCount < rates.size) rates[rateCount++] = hzError
+                    if (n < rates.size) rates[n++] = d * sampleRate / (2 * PI * block)
                 }
                 lastAngle = angle
                 haveAngle = true
             }
         }
-        if (rateCount == 0) return null
-        // the rate over this hop, and its steadiness
+
+        // the partial's and the neighbours' power, with the reading's own memory:
+        // noise alone stands 10 dB above its neighbours in one hop of twenty,
+        // over a memory's worth of hops almost never
+        val memoryAlpha = 1 - exp(-(chunk.size.toDouble() / sampleRate) / memoryS)
+        val pMain = main.amplitude * main.amplitude
+        val pNoise = 0.5 * (below.amplitude * below.amplitude + above.amplitude * above.amplitude)
+        if (powerFilled && !onset) {
+            mainPower += memoryAlpha * (pMain - mainPower)
+            noisePower += memoryAlpha * (pNoise - noisePower)
+        } else { mainPower = pMain; noisePower = pNoise; powerFilled = true }
+        val levelDbfs = 10 * log10(maxOf(mainPower, 1e-24))
+        val noiseDbfs = 10 * log10(maxOf(noisePower, 1e-24))
+        val quality = ((levelDbfs - noiseDbfs) / (2 * SHOWN_ABOVE_NEIGHBOURS_DB)).coerceIn(0.0, 1.0)
+        if (n == 0) {
+            // no fresh rate this hop: settling after a strike, or before the first block
+            val held = last ?: return null
+            return held.copy(levelDbfs = levelDbfs, noiseDbfs = noiseDbfs, quality = quality, settling = sample < skipUntil)
+        }
         var sum = 0.0
-        for (k in 0 until rateCount) sum += rates[k]
-        val mean = sum / rateCount
-        var ss = 0.0
-        for (k in 0 until rateCount) { val r = rates[k] - mean; ss += r * r }
-        val spread = sqrt(ss / rateCount)
-        // the memory: exponential over memoryS, restarted on retarget
-        val hopS = chunk.size.toDouble() / sampleRate
-        memoryAlpha = 1 - exp(-hopS / memoryS)
+        for (k in 0 until n) sum += rates[k]
+        val mean = sum / n
         memory = if (memoryFilled) memory + memoryAlpha * (mean - memory) else mean
         memoryFilled = true
         val hz = targetHz + memory
         val cents = 1200.0 * ln(hz / targetHz) / ln(2.0)
-        val iOut = li[STAGES - 1]; val qOut = lq[STAGES - 1]
-        val amplitude = sqrt(iOut * iOut + qOut * qOut) * 2  // the partial's amplitude, full scale = 1
-        val levelDbfs = 20 * log10(maxOf(amplitude, 1e-9))
-        // steadiness: the blocks of this hop agree to within a tenth of the band
-        val bandHz = targetHz * (2.0.pow(bandCents / 1200.0) - 1)
-        val steady = (1 - spread / (bandHz * 0.1)).coerceIn(0.0, 1.0)
-        val loud = ((levelDbfs - FLOOR_DBFS) / 15.0).coerceIn(0.0, 1.0)
-        return Reading(hz, cents, levelDbfs, steady * loud, atan2(qOut, iOut))
+        return Reading(hz, cents, levelDbfs, quality, atan2(main.q, main.i), settling = false, noiseDbfs = noiseDbfs)
+            .also { last = it }
     }
 
     companion object {
-        /** Half-width of the band around the target: 50 cents wide in all, Reyburn's narrowest; a semitone away is 49 dB down. */
+        /** Half-width of the band around the target: 50 cents wide in all, Reyburn's narrowest; a semitone away is 54 dB down. */
         const val DEFAULT_BAND_CENTS = 25.0
         /** The longest block the rate is read over: 1024 samples, one hop at 48 kHz. */
         const val MAX_BLOCK = 1024
         /** Verituner's exponential memory. */
         const val DEFAULT_MEMORY_S = 0.15
-        /**
-         * A partial at this level or below is not read: the quality falls to
-         * zero. The band is narrow, so the noise in it is far under the
-         * phone's broadband floor: on the takes of 16 September the fourth
-         * partial of A4 read steadily at −76 dBFS.
-         */
-        const val FLOOR_DBFS = -95.0
         const val STAGES = 4
+        /** A strike: the hop's level this far above the loudest of the last [ONSET_LOOKBACK] hops. */
+        const val ONSET_DB = 6.0
+        const val ONSET_LOOKBACK = 5
+        /** After a strike, rates are skipped for this many time constants of each filter stage, times the stages. */
+        const val SETTLE_TIME_CONSTANTS = 5.0
+        /** Where the noise is read: either side of the target, clear of the string, inside the semitone. */
+        const val NEIGHBOUR_CENTS = 60.0
+        /** A reading is shown when the partial stands this far above the noise beside it. */
+        const val SHOWN_ABOVE_NEIGHBOURS_DB = 10.0
+        private const val RATES_PER_HOP = 256
+        private const val RENORMALISE_EVERY = 4096
     }
 }

@@ -18,7 +18,10 @@ class MemoryStore : KeyValueStore {
 
 /**
  * Octave types a stretch can be built on: partial [low] of the lower note
- * coincides with partial [high] of the note [semitones] above.
+ * coincides with partial [high] of the note [semitones] above. The note
+ * being tuned is read on its own partial of the pair — [low] when it is the
+ * lower note, [high] when it is the upper one — against the measured
+ * partial of the note already tuned (docs/ENGINE.md).
  */
 enum class OctaveType(val label: String, val low: Int, val high: Int, val semitones: Int = 12) {
     O2_1("2:1", 2, 1), O4_2("4:2", 4, 2), O6_3("6:3", 6, 3), O8_4("8:4", 8, 4), O10_5("10:5", 10, 5),
@@ -28,24 +31,39 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
 
 /**
  * Everything the tuner sets in Settings. Values that determine a target
- * frequency live in the Temperament tab. Stretch and interval weights are
- * stored now and applied when stretch lands.
+ * frequency live in the Temperament tab. The stretch is the tuner's: an
+ * octave type and an octave width for each of four regions — the wound
+ * strings, the plain-wire bass, the middle, the treble. Interval weights
+ * are stored for a later stretch calculation and apply to nothing yet.
  */
 data class TunerSettings(
     // TEMPERAMENT
     /** Lowest note of the temperament octave; the session runs from A4 down to here. */
     val temperamentLowMidi: Int = 57,          // A3
     /**
-     * The temperament octave must be finished before any note outside it can
-     * be tuned. FOSS pins this true — it takes temperament and inharmonicity
-     * from A3–A4 only, and that promise is only kept if A3–A4 is complete.
-     * Pro sets it false and samples where the tuner likes.
+     * The temperament octave is walked first and each of its notes asks for
+     * Done (leaving one does not register it): FOSS pins this true. Pro sets
+     * it false: leaving any note registers it. Neither restricts where the
+     * tuner may go.
      */
     val temperamentFirst: Boolean = true,
     // STRETCH
+    /** The wound strings, below the lowest plain one. */
+    val octaveWound: OctaveType = OctaveType.O6_3,
+    /** The plain-wire bass: from the lowest plain string to an octave above it. */
     val octaveBass: OctaveType = OctaveType.O6_3,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
     val octaveTreble: OctaveType = OctaveType.O4_1,
+    /**
+     * How wide the octave is tuned beyond the partials' coincidence, cents
+     * at the partial read (0 = beatless). Wide means the lower note flatter,
+     * the upper sharper. On the 225 as its tuner left it, the wound bass
+     * stood some 8–12 cents wide of 6:3; that is his choice, not a default.
+     */
+    val widthWound: Double = 0.0,
+    val widthBass: Double = 0.0,
+    val widthMiddle: Double = 0.0,
+    val widthTreble: Double = 0.0,
     /** Interval weights 0..10 for the stretch calculation. */
     val weightOctave: Int = 10,
     val weightTwelfth: Int = 4,
@@ -67,34 +85,10 @@ data class TunerSettings(
      */
     val lowestKeyMidi: Int = 21,               // A0
     // PRECISION
-    /** A partial matches within this of its target, Hz. */
+    /** The partial read matches within this of its target, Hz: the beat rate the tuner accepts as gone. */
     val matchHz: Double = 0.1,
-    /** Suggestion: a partial must peak within this of the loudest, dB ... */
-    val suggestLevelDb: Double = 30.0,
-    /** ... and stay there this long, s. */
-    val suggestSustainS: Double = 1.0,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
-    /**
-     * The reading shown is the mean of the readings since the strike, over at
-     * most this long. Short follows the string hop by hop and shows a beating
-     * unison as a swing; long stands still on it, as the ear does, and
-     * follows a pin turned mid-note more slowly.
-     */
-    val readingS: Double = 2.0,
-    // WORKFLOW
-    /**
-     * The tuning screen follows the key struck: the note nearest the sounding
-     * fundamental is selected, and the note left is registered. Never inside
-     * an unfinished temperament octave, which is walked with Done.
-     */
-    val autoNote: Boolean = true,
-    /**
-     * Pro, Stretch Definition: how many single strings across the range are
-     * sampled before tuning begins. 8 is quick, 12 and 16 closer; the
-     * tuner's own number, placed at the transitions he knows, is the best.
-     */
-    val calibrationNotes: Int = 12,
     // RECORDING
     /**
      * A red button on the tuning screen that records what the microphone
@@ -116,9 +110,7 @@ data class TunerSettings(
         const val MAX_UNWOUND = 60             // C4
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
-        const val MIN_CALIBRATION_NOTES = 3
-        val READING_CHOICES_S = listOf(0.25, 0.5, 1.0, 2.0, 4.0)
-        const val MAX_CALIBRATION_NOTES = 40
+        const val MAX_WIDTH_CENTS = 20.0
     }
 
     /** True for a wound string: below the lowest plain one. */
@@ -128,14 +120,23 @@ data class TunerSettings(
     val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
 
     /**
-     * Which octave type links [midi] to an already tuned note: bass within an
-     * octave of the plain-wire floor, treble above the temperament octave,
-     * middle in between.
+     * Which octave type links [midi] to an already tuned note: the wound
+     * strings, the bass within an octave of the plain-wire floor, the treble
+     * above the temperament octave, the middle in between.
      */
     fun octaveTypeFor(midi: Int): OctaveType = when {
+        isWound(midi) -> octaveWound
         midi <= bassBoundaryMidi -> octaveBass
         midi > TEMPERAMENT_HIGH -> octaveTreble
         else -> octaveMiddle
+    }
+
+    /** The octave width for [midi]'s region, cents; see [widthWound]. */
+    fun widthFor(midi: Int): Double = when {
+        isWound(midi) -> widthWound
+        midi <= bassBoundaryMidi -> widthBass
+        midi > TEMPERAMENT_HIGH -> widthTreble
+        else -> widthMiddle
     }
 }
 
@@ -169,9 +170,14 @@ class SettingsModel(
         return TunerSettings(
             temperamentFirst = d.temperamentFirst,
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
+            octaveWound = o("octaveWound", d.octaveWound),
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
             octaveTreble = o("octaveTreble", d.octaveTreble),
+            widthWound = f("widthWound", d.widthWound).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
+            widthBass = f("widthBass", d.widthBass).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
+            widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
+            widthTreble = f("widthTreble", d.widthTreble).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -179,21 +185,21 @@ class SettingsModel(
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             matchHz = f("matchHz", d.matchHz),
-            suggestLevelDb = f("suggestLevelDb", d.suggestLevelDb),
-            suggestSustainS = f("suggestSustainS", d.suggestSustainS),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
-            readingS = f("readingS", d.readingS).coerceIn(TunerSettings.READING_CHOICES_S.first(), TunerSettings.READING_CHOICES_S.last()),
-            autoNote = b("autoNote", d.autoNote),
-            calibrationNotes = i("calibrationNotes", d.calibrationNotes).coerceIn(TunerSettings.MIN_CALIBRATION_NOTES, TunerSettings.MAX_CALIBRATION_NOTES),
             recordPcm = b("recordPcm", d.recordPcm),
         )
     }
 
     private fun save(s: TunerSettings) {
         store.put("temperamentLowMidi", s.temperamentLowMidi.toString())
+        store.put("octaveWound", s.octaveWound.name)
         store.put("octaveBass", s.octaveBass.name)
         store.put("octaveMiddle", s.octaveMiddle.name)
         store.put("octaveTreble", s.octaveTreble.name)
+        store.put("widthWound", s.widthWound.toString())
+        store.put("widthBass", s.widthBass.toString())
+        store.put("widthMiddle", s.widthMiddle.toString())
+        store.put("widthTreble", s.widthTreble.toString())
         store.put("weightOctave", s.weightOctave.toString())
         store.put("weightTwelfth", s.weightTwelfth.toString())
         store.put("weightDoubleOctave", s.weightDoubleOctave.toString())
@@ -201,12 +207,7 @@ class SettingsModel(
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("matchHz", s.matchHz.toString())
-        store.put("suggestLevelDb", s.suggestLevelDb.toString())
-        store.put("suggestSustainS", s.suggestSustainS.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
-        store.put("readingS", s.readingS.toString())
-        store.put("autoNote", s.autoNote.toString())
-        store.put("calibrationNotes", s.calibrationNotes.toString())
         store.put("recordPcm", s.recordPcm.toString())
     }
 }

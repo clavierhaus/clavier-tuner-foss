@@ -32,7 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
-import at.clavierhaus.unisonmaster.tuning.LiveReference
+import at.clavierhaus.unisonmaster.measure.LivePartial
+import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -61,7 +62,7 @@ fun TuningGraph(
     targetHz: Double,
     shown: Set<Int>,
     predicted: List<PredictedPartial>,
-    livePartials: List<LiveReference.LivePartial>,
+    livePartials: List<LivePartial>,
     active: Int,
     matchHz: Double,
     modifier: Modifier = Modifier,
@@ -151,7 +152,7 @@ fun ReadoutColumn(
     targetHz: Double,
     liveHz: Double?,
     predicted: List<PredictedPartial>,
-    livePartials: List<LiveReference.LivePartial>,
+    livePartials: List<LivePartial>,
     a4Hz: Double,
     matchHz: Double,
     onSelect: (Int) -> Unit,

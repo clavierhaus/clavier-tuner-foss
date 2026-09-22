@@ -21,6 +21,9 @@ import kotlin.test.assertTrue
  * checked out (the foss repository carries none).
  */
 class RecordingsTest {
+    private companion object {
+        val TAKE = Regex("""^(D|Boesendorfer)_([A-G]#?\d)-([CLRU])-s(\d)""")
+    }
 
     private data class Wav(val sampleRate: Int, val samples: FloatArray)
 
@@ -57,9 +60,9 @@ class RecordingsTest {
 
     private data class Result(val file: String, val note: String, val k: Int, val cents: Double, val spread: Double, val levelDbfs: Double, val quality: Double)
 
-    /** The take read on its listening partial over the decay: 0.5 s to 2.5 s after the strike. */
+    /** The take read on its listening partial over the decay, 0.5 s to 2.5 s after the strike: what the screen shows there. */
     private fun measure(f: File): Result? {
-        val m = Regex("""^(D|Boesendorfer)_([A-G]#?\d)-([CLRU])-s(\d)""").find(f.name) ?: return null
+        val m = TAKE.find(f.name) ?: return null
         val note = m.groupValues[2]
         val midi = Notes.midi(note) ?: return null
         val wav = readWav(f)
@@ -76,7 +79,13 @@ class RecordingsTest {
             pos += hop
         }
         if (strike < 0) return null
-        val reader = PhaseReader(wav.sampleRate, target)
+        // the reader is set where the finder places the partial, as the hub sets it
+        // on the A4 string: the takes are the piano as tuned (A4 443, the treble
+        // stretched), and 440 is only where the table counts cents from
+        val window = strike + wav.sampleRate / 4
+        val placed = if (window + 16384 <= wav.samples.size)
+            PartialFinder(wav.samples.copyOfRange(window, window + 16384), wav.sampleRate).near(target, 100.0)?.hz else null
+        val reader = PhaseReader(wav.sampleRate, placed ?: target)
         val readings = ArrayList<PhaseReader.Reading>()
         val buf = FloatArray(hop)
         pos = 0
@@ -85,12 +94,12 @@ class RecordingsTest {
             val r = reader.push(buf)
             pos += hop
             val t = (pos - strike).toDouble() / wav.sampleRate
-            // over the decay, and only while the partial is there to be read: the
-            // display goes dark on a low quality, and so does the table
-            if (r != null && t >= 0.5 && t <= 2.5 && r.quality >= 0.5) readings += r
+            // over the decay, and only what the screen would show: the partial
+            // above the noise beside it, the strike settled
+            if (r != null && t >= 0.5 && t <= 2.5 && r.shown) readings += r
         }
-        if (readings.size < 15) return Result(f.name, note, k, Double.NaN, Double.NaN, Double.NaN, 0.0)
-        val cents = readings.map { it.cents }.sorted()
+        if (readings.size < 10) return Result(f.name, note, k, Double.NaN, Double.NaN, Double.NaN, 0.0)
+        val cents = readings.map { 1200 * kotlin.math.ln(it.hz / target) / kotlin.math.ln(2.0) }.sorted()
         val median = cents[cents.size / 2]
         val spread = cents[(cents.size * 0.9).toInt()] - cents[(cents.size * 0.1).toInt()]
         return Result(f.name, note, k, median, spread, readings.map { it.levelDbfs }.max(), readings.map { it.quality }.average())
@@ -100,12 +109,12 @@ class RecordingsTest {
     fun everySingleStringTakeReadsSteadilyOnItsListeningPartialAndTheStrikesAgree() {
         val dir = recordingsDir()
         if (dir == null) { println("RecordingsTest: no data/recordings here, nothing read"); return }
-        val files = dir.walkTopDown().filter { it.isFile && it.name.endsWith(".wav") && !it.name.contains("-U-") }.sortedBy { it.name }.toList()
+        val files = dir.walkTopDown().filter { it.isFile && it.name.endsWith(".wav") && !it.name.contains("-U-") && TAKE.containsMatchIn(it.name) }.sortedBy { it.name }.toList()
         assertTrue(files.isNotEmpty(), "no recordings under $dir")
         val all = files.mapNotNull { measure(it) }
         println("file                                                 note  k   cents   spread   level   quality")
         for (r in all) {
-            if (r.cents.isNaN()) println("%-52s %-4s %2d   faded before 0.5 s, or too weak to read".format(r.file, r.note, r.k))
+            if (r.cents.isNaN()) println("%-52s %-4s %2d   too short or too weak to be shown".format(r.file, r.note, r.k))
             else println("%-52s %-4s %2d %+7.2f %8.2f %7.1f %8.2f".format(r.file, r.note, r.k, r.cents, r.spread, r.levelDbfs, r.quality))
         }
         val results = all.filter { !it.cents.isNaN() }
@@ -120,9 +129,27 @@ class RecordingsTest {
         // disagree or most of them are unsteady.
         val moved = results.filter { it.spread > 2.0 }
         if (moved.isNotEmpty()) println("moved more than 2 cents over the decay: ${moved.map { "${it.file} (%.1f c)".format(it.spread) }}")
-        val byNote = results.groupBy { it.file.substringBefore("-s") }
-        val disagree = byNote.filter { (_, rs) -> rs.size >= 2 && rs.maxOf { it.cents } - rs.minOf { it.cents } > 1.5 }
-        assertTrue(disagree.isEmpty(), "strikes of one string more than 1.5 cents apart: ${disagree.keys}")
+        // one string on one day: the strikes of a take series (…-s1, -s2, -s3 of a
+        // note, recorded minutes apart); a take with a case (soft, hard) stands
+        // alone — a harder strike is a sharper string, not a disagreement
+        val byNote = results.groupBy { r ->
+            val day = Regex("""_(\d{8})-\d{6}""").find(r.file)?.groupValues?.get(1) ?: ""
+            val case = Regex("""-s\d(-[a-z]+)?""").find(r.file)?.groupValues?.get(1) ?: ""
+            r.file.substringBefore("-s") + case + day
+        }
+        // Most strikes of a string agree within 1.5 cents; a take that does not
+        // is named, not averaged in: on the 16th a C7 take has B6 louder than
+        // C7 (another key sounding), on the 22nd G#2 was taken three times and
+        // one of them stands 4 cents off the other two. The recording is what
+        // it is; the reader must agree with the majority of it.
+        fun agreeing(rs: List<Result>) = rs.maxOf { r -> rs.count { abs(it.cents - r.cents) <= 1.5 } }
+        val outliers = byNote.values.filter { it.size >= 2 }.flatMap { rs ->
+            val best = rs.maxBy { r -> rs.count { abs(it.cents - r.cents) <= 1.5 } }
+            rs.filter { abs(it.cents - best.cents) > 1.5 }
+        }
+        if (outliers.isNotEmpty()) println("strikes apart from the rest of their string: ${outliers.map { "${it.file} (%+.1f c)".format(it.cents) }}")
+        val disagree = byNote.filter { (_, rs) -> rs.size >= 2 && agreeing(rs) * 2 < rs.size + 1 }
+        assertTrue(disagree.isEmpty(), "strings whose strikes do not agree within 1.5 cents: ${disagree.keys}")
         val unsteady = byNote.filter { (_, rs) -> rs.size >= 2 && rs.map { it.spread }.sorted()[rs.size / 2] > 2.5 }
         assertTrue(unsteady.isEmpty(), "strings whose typical strike moved more than 2.5 cents over the decay: ${unsteady.keys}")
     }

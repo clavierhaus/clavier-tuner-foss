@@ -81,3 +81,54 @@ class PhaseReaderTest {
         assertEquals(1, PartialMap.listening(108))
     }
 }
+
+class PhaseReaderStrikeTest {
+    @Test
+    fun aStrikeRestartsTheMemoryAndTheReadingSettlesOnTheNewString() {
+        // one string, then a second strike of the same string pulled 3 cents sharp:
+        // after the strike the reader holds (settling), then reads the new pitch
+        // without dragging the old one through its memory
+        val a = SyntheticString.strike(220.0, 0.0, 2.0, partials = 1, decayS = 0.6)
+        val b = SyntheticString.strike(220.38, 0.0, 2.0, partials = 1, strikeS = 0.0, amplitude = 0.3)
+        val sig = a + b
+        val reader = PhaseReader(SR, 220.0)
+        val rs = readAll(reader, sig)
+        // a strike may straddle two hops and be heard in both
+        assertTrue(reader.strikes in 2..3, "two strikes heard: ${reader.strikes}")
+        val afterSecond = rs.drop((2.0 * SR / 1024).toInt())
+        assertTrue(afterSecond.take(3).all { it.settling }, "settling right after the strike")
+        val firstShown = afterSecond.indexOfFirst { it.shown }
+        // the skip is five time constants of the four stages: a second at 220 Hz
+        // (the band is ±25 cents, 3.2 Hz), a quarter of that two octaves up
+        assertTrue(firstShown in 30..50, "shown again after $firstShown hops")
+        assertTrue(abs(afterSecond[firstShown].hz - 220.38) < 0.05, "the first reading is the new string: %.3f".format(afterSecond[firstShown].hz))
+    }
+
+    @Test
+    fun noiseAloneIsNotShownAndAPartialAboveItIs() {
+        val rng = kotlin.random.Random(3)
+        val noise = FloatArray(SR * 2) { (0.02 * (rng.nextDouble() * 2 - 1)).toFloat() }
+        assertTrue(readAll(PhaseReader(SR, 440.0), noise, fromS = 0.5).none { it.shown }, "noise is never shown")
+        val tone = FloatArray(SR * 2) { i -> (noise[i] + 0.05 * sin(2 * PI * 440.2 * i / SR)).toFloat() }
+        val rs = readAll(PhaseReader(SR, 440.0), tone, fromS = 0.5)
+        assertTrue(rs.all { it.shown }, "a partial standing above the noise is shown")
+        assertTrue(abs(rs.last().hz - 440.2) < 0.05)
+    }
+
+    @Test
+    fun theReaderFollowsAMovingPin() {
+        // the tuner turns the pin: partial 1 rises 1 Hz over two seconds
+        val sig = SyntheticString.strike(220.0, 0.0, 3.0, partials = 1, strikeS = 0.0, decayS = 10.0, driftHzPerS = 0.5)
+        val rs = readAll(PhaseReader(SR, 220.5), sig, fromS = 1.0)
+        // the reading lags a moving string by the filter's delay and the memory,
+        // together a few tenths of a second at this band, and by nothing more:
+        // it rises as the string does, at the same rate
+        for ((i, r) in rs.withIndex()) {
+            val t = 1.0 + i * 1024.0 / SR
+            val lag = t - (r.hz - 220.0) / 0.5
+            assertTrue(lag in 0.15..0.45, "at %.2f s read %.3f: %.2f s behind".format(t, r.hz, lag))
+        }
+        val rate = (rs.last().hz - rs.first().hz) / ((rs.size - 1) * 1024.0 / SR)
+        assertEquals(0.5, rate, 0.02)
+    }
+}

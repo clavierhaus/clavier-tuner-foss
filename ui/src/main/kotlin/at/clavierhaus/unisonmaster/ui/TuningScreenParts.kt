@@ -287,7 +287,7 @@ fun TargetScale(
     }
 }
 
-/** "Partials" opens Full Spectrum; "Fundamental" returns. Outlined, like Progress. */
+/** "Partials" opens Full Spectrum; "One partial" returns to the partial listened to. Outlined, like Progress. */
 @Composable
 fun PartialsButton(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     OutlinedButton(
@@ -296,7 +296,7 @@ fun PartialsButton(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifie
         border = BorderStroke(1.dp, Color(Brand.WHITE_MUTED)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.WHITE)),
     ) {
-        Text(if (fullSpectrum) "Fundamental" else "Partials", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
+        Text(if (fullSpectrum) "One partial" else "Partials", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
     }
 }
 

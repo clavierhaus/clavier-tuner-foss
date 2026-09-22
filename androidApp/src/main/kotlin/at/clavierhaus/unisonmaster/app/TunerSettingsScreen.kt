@@ -70,21 +70,20 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
     ChoiceRow("Temperament", "Unequal temperaments will be listed here", listOf("Equal"), 0) { }
     ReadOnlyRow(
         "Temperament octave",
-        "Tuned first, downward from A4: temperament and inharmonicity are taken here",
+        "Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here",
         "A3–A4",
     )
 
     SettingsSection("Stretch")
-    SettingsNote("The octave type sets the target below and above the temperament octave. Stretch inside it follows.")
-    ChoiceRow("Octave type, bass", "Which partials of the two notes coincide", octaves.map { it.label }, octaves.indexOf(s.octaveBass)) {
-        model.update { c -> c.copy(octaveBass = octaves[it]) }
-    }
-    ChoiceRow("Octave type, middle", "", octaves.map { it.label }, octaves.indexOf(s.octaveMiddle)) {
-        model.update { c -> c.copy(octaveMiddle = octaves[it]) }
-    }
-    ChoiceRow("Octave type, treble", "", octaves.map { it.label }, octaves.indexOf(s.octaveTreble)) {
-        model.update { c -> c.copy(octaveTreble = octaves[it]) }
-    }
+    SettingsNote("Every note outside the temperament octave is tuned by an octave to a note already tuned: its partial meets the partner's measured partial. The octave type says which partials; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.")
+    RegionRows("Wound strings", "Below the lowest unwound string", octaves, s.octaveWound, s.widthWound,
+        { t -> model.update { it.copy(octaveWound = t) } }, { w -> model.update { it.copy(widthWound = w) } })
+    RegionRows("Bass", "From the lowest unwound string, one octave up", octaves, s.octaveBass, s.widthBass,
+        { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } })
+    RegionRows("Middle", "Up to the temperament octave", octaves, s.octaveMiddle, s.widthMiddle,
+        { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } })
+    RegionRows("Treble", "Above A4", octaves, s.octaveTreble, s.widthTreble,
+        { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } })
 
     SettingsSection("Piano")
     StepperRow(
@@ -104,14 +103,6 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onIncrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi + 1) } },
     )
 
-    SettingsSection("Workflow")
-    SwitchRow(
-        "Follow the key struck",
-        if (s.temperamentFirst) "The screen moves to the note played, once the temperament octave is finished; the note left is registered"
-        else "The screen moves to the note played; the note left is registered",
-        s.autoNote,
-    ) { on -> model.update { it.copy(autoNote = on) } }
-
     SettingsSection("Recording")
     SwitchRow(
         "Recording button",
@@ -128,26 +119,6 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onDecrease = { model.update { it.copy(matchHz = round((it.matchHz - 0.05) * 100) / 100) } },
         onIncrease = { model.update { it.copy(matchHz = round((it.matchHz + 0.05) * 100) / 100) } },
     )
-    ChoiceRow(
-        "Reading", "The mean of the readings since the strike, over at most this long: short follows the string hop by hop, long stands still on a beating unison",
-        listOf("¼ s", "½ s", "1 s", "2 s", "4 s"), TunerSettings.READING_CHOICES_S.indexOf(s.readingS).coerceAtLeast(0),
-    ) { i -> model.update { it.copy(readingS = TunerSettings.READING_CHOICES_S[i]) } }
-    StepperRow(
-        "Suggested partial: level", "Within this of the note's loudest partial",
-        String.format(Locale.ROOT, "%.0f dB", s.suggestLevelDb),
-        canDecrease = s.suggestLevelDb > 10.1,
-        canIncrease = s.suggestLevelDb < 39.9,
-        onDecrease = { model.update { it.copy(suggestLevelDb = it.suggestLevelDb - 5) } },
-        onIncrease = { model.update { it.copy(suggestLevelDb = it.suggestLevelDb + 5) } },
-    )
-    StepperRow(
-        "Suggested partial: sustain", "How long it must stay that strong after the strike",
-        String.format(Locale.ROOT, "%.1f s", s.suggestSustainS),
-        canDecrease = s.suggestSustainS > 0.51,
-        canIncrease = s.suggestSustainS < 3.99,
-        onDecrease = { model.update { it.copy(suggestSustainS = tenths(it.suggestSustainS - 0.5)) } },
-        onIncrease = { model.update { it.copy(suggestSustainS = tenths(it.suggestSustainS + 0.5)) } },
-    )
     StepperRow(
         "Highest partial", "Partials above this note are not offered; nothing up there helps a tuning",
         Notes.name(s.highestPartialMidi),
@@ -157,3 +128,26 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
     )
 }
+
+@Composable
+private fun RegionRows(
+    region: String,
+    where: String,
+    octaves: List<OctaveType>,
+    type: OctaveType,
+    width: Double,
+    onType: (OctaveType) -> Unit,
+    onWidth: (Double) -> Unit,
+) {
+    ChoiceRow("Octave type, ${region.lowercase()}", where, octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
+    StepperRow(
+        "Octave width, ${region.lowercase()}", "",
+        if (width == 0.0) "beatless" else String.format(Locale.ROOT, "%.1f c wide", width),
+        canDecrease = width > 0.0,
+        canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
+        onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
+        onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
+    )
+}
+
+private const val WIDTH_STEP = 0.5

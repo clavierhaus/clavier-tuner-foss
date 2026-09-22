@@ -49,7 +49,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
-import at.clavierhaus.unisonmaster.tuning.LiveReference
+import at.clavierhaus.unisonmaster.measure.LivePartial
+import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.Notes
 import java.util.Locale
 import kotlin.math.abs
@@ -172,7 +173,7 @@ fun ToneGraph(
     centreHz: Double,
     level: Float,
     fullSpectrum: Boolean,
-    partials: List<LiveReference.LivePartial>,
+    partials: List<LivePartial>,
     shown: Set<Int>,
     modifier: Modifier = Modifier,
 ) {
@@ -321,13 +322,13 @@ fun PartialRow(
     modifier: Modifier = Modifier,
     baseHz: Double = a4Hz,
     pulse: Int? = null,
-    count: Int = LiveReference.PARTIALS,
+    count: Int = Partials.MAX,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.horizontalScroll(rememberScrollState()),
     ) {
-        for (k in 1..count.coerceIn(1, LiveReference.PARTIALS)) {
+        for (k in 1..count.coerceIn(1, Partials.MAX)) {
             PartialButton(
                 k = k,
                 note = partialNoteName(k, baseHz, a4Hz),

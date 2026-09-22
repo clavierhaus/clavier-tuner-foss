@@ -1,6 +1,5 @@
 package at.clavierhaus.unisonmaster.settings
 
-import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,36 +12,40 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, lowestUnwoundMidi = 40, suggestSustainS = 1.5, autoNote = false, calibrationNotes = 16, recordPcm = true, readingS = 2.0, lowestKeyMidi = 17) }
+        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, octaveWound = OctaveType.O8_4, lowestUnwoundMidi = 40, widthWound = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17) }
         val b = SettingsModel(store)
-        assertEquals(false, b.settings.value.autoNote)
-        assertEquals(16, b.settings.value.calibrationNotes)
         assertEquals(true, b.settings.value.recordPcm)
-        assertEquals(2.0, b.settings.value.readingS)
         assertEquals(17, b.settings.value.lowestKeyMidi)
         assertEquals(0.2, b.settings.value.matchHz)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
+        assertEquals(OctaveType.O8_4, b.settings.value.octaveWound)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)
-        assertEquals(1.5, b.settings.value.suggestSustainS)
+        assertEquals(9.5, b.settings.value.widthWound)
+        assertEquals(2.0, b.settings.value.widthTreble)
+        assertEquals(0.0, b.settings.value.widthMiddle)
+    }
+
+    @Test
+    fun aWidthBeyondTheLimitIsKeptAtTheLimit() {
+        val store = MemoryStore()
+        store.put("widthBass", "55")
+        assertEquals(TunerSettings.MAX_WIDTH_CENTS, SettingsModel(store).settings.value.widthBass)
+    }
+
+    @Test
+    fun theRegionsAreTheWoundStringsTheBassTheMiddleAndTheTreble() {
+        val s = TunerSettings(lowestUnwoundMidi = 40, octaveWound = OctaveType.O8_4, octaveBass = OctaveType.O6_3,
+            octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1, widthWound = 8.0, widthBass = 4.0, widthMiddle = 1.0, widthTreble = 2.0)
+        assertEquals(OctaveType.O8_4, s.octaveTypeFor(39)); assertEquals(8.0, s.widthFor(39))
+        assertEquals(OctaveType.O6_3, s.octaveTypeFor(40)); assertEquals(4.0, s.widthFor(52))
+        assertEquals(OctaveType.O4_2, s.octaveTypeFor(53)); assertEquals(1.0, s.widthFor(69))
+        assertEquals(OctaveType.O4_1, s.octaveTypeFor(70)); assertEquals(2.0, s.widthFor(108))
     }
 
     @Test
     fun theMatchWindowIsASetting() {
         assertTrue(!TuningSession.matched(415.45, 415.30))
         assertTrue(TuningSession.matched(415.45, 415.30, windowHz = 0.2))
-    }
-
-    @Test
-    fun theSuggestionFollowsTheSettings() {
-        val partials = listOf(
-            MeasuredPartial(3, 1.0, -6.0, 4.0),
-            MeasuredPartial(5, 2.0, -10.0, 1.2),
-            MeasuredPartial(7, 3.0, -20.0, 0.8),
-        )
-        assertEquals(3, TuningSession.recommend(partials, minSustainS = 2.0))
-        assertEquals(5, TuningSession.recommend(partials, minSustainS = 1.0))
-        assertEquals(7, TuningSession.recommend(partials, minSustainS = 0.5))
-        assertEquals(5, TuningSession.recommend(partials, minSustainS = 0.5, maxK = 6), "capped by the highest useful partial")
     }
 
     @Test
@@ -58,8 +61,8 @@ class SettingsTest {
         val s = TuningSession(440.0, TunerSettings(lowestKeyMidi = 40, lowestUnwoundMidi = 40, temperamentFirst = false))   // a session cut short at E2
         assertEquals((69 downTo 40).toList() + (70..108).toList(), s.notes)
         s.select(41)
-        assertEquals(40, s.below())
+        assertEquals(40, s.stepped(-1))
         s.select(40)
-        assertEquals(null, s.below())
+        assertEquals(40, s.stepped(-1))
     }
 }

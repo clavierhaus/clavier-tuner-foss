@@ -1,6 +1,6 @@
 package at.clavierhaus.unisonmaster.persistence
 
-import at.clavierhaus.unisonmaster.tuning.LiveReference
+import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 
@@ -38,12 +38,12 @@ object SessionCodec {
     // the old tracker had placed 300 cents flat (another string's) made the
     // whole file unreadable: one bad number cost the tuner the session.
     private fun noteInRange(midi: Int, f1Hz: Double, b: Double, residualCents: Double, timeMs: Long) =
-        midi in 21..108 && f1Hz.isFinite() && f1Hz in 20.0..5000.0 &&
+        midi in 12..108 && f1Hz.isFinite() && f1Hz in 15.0..5000.0 &&
             b.isFinite() && b in 0.0..0.1 &&
             residualCents.isFinite() && residualCents in 0.0..1000.0 && timeMs >= 0
 
     private fun partialInRange(k: Int, cents: Double, levelDb: Double, sustainS: Double) =
-        k in 1..LiveReference.PARTIALS &&
+        k in 1..Partials.MAX &&
             cents.isFinite() && cents in -200.0..1200.0 &&
             levelDb.isFinite() && levelDb in -200.0..0.0 &&
             sustainS.isFinite() && sustainS in 0.0..600.0
@@ -96,7 +96,7 @@ object SessionCodec {
         if (head[1] != VERSION.toString()) fail("unsupported version ${head[1]}")
         val saved = long(tokens("saved", 1)[0])
         val a4 = d(tokens("a4", 1)[0], 400.0, 480.0)
-        val current = int(tokens("current", 1)[0], 21, 108)
+        val current = int(tokens("current", 1)[0], 12, 108)
 
         // Structure — header, version, line shapes, the end marker — must be
         // right, or the file is not a session and is refused. Values are
@@ -111,7 +111,7 @@ object SessionCodec {
             if (i >= lines.size) fail("missing end")
             if (lines[i] == "end") { i++; break }
             val n = tokens("note", 6)
-            val count = int(n[5], 0, LiveReference.PARTIALS)
+            val count = int(n[5], 0, Partials.MAX)
             val partials = ArrayList<MeasuredPartial>()
             repeat(count) {
                 val p = tokens("p", 4)

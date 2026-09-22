@@ -161,8 +161,9 @@ class SessionStoreTest {
         assertEquals(a4, second.referenceA4Hz.value)
         val before = first.tuning.value!!
         assertTrue(abs(view.targetHz - before.targetHz) < 1e-9, "target ${view.targetHz} vs ${before.targetHz}")
-        assertEquals(before.predicted.map { it.k }, view.predicted.map { it.k })
-        for ((p, q) in before.predicted.zip(view.predicted)) assertTrue(abs(p.hz - q.hz) < 1e-9)
+        assertEquals(before.listening, view.listening)
+        assertEquals(first.targets.value.map { it.k }, second.targets.value.map { it.k })
+        for ((p, q) in first.targets.value.zip(second.targets.value)) assertTrue(abs(p.hz - q.hz) < 1e-9)
     }
 
     @Test

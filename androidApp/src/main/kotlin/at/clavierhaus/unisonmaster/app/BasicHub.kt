@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -52,14 +51,14 @@ import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
-import kotlin.math.round
+import kotlin.math.abs
 
 /**
  * The one main screen. Before A4 is set it is the hub (define A4 on one
  * string). After Done it is the tuning screen of docs/SCREEN.md: one note,
- * its target and where the target comes from, the measured fundamental,
- * the beat as motion, a scale magnified at the match window, one state
- * word — and Done. "Partials" opens Full Spectrum (the bells, the readout
+ * the partial listened to and its target, where the target comes from
+ * (docs/ENGINE.md), the partial as read, the beat as motion, a scale
+ * magnified at the match window, one state word — and Done. "Partials" opens Full Spectrum (the bells, the readout
  * column and the partial row); "Progress" the keyboard. The gear is the
  * settings screen, and back. Top right, beside the state word, the red
  * recording button when recording is switched on in the settings.
@@ -86,8 +85,7 @@ fun BasicHub(
     val targets by controller.targets.collectAsState()
     val cfg by controller.settings.collectAsState()
     val liveTarget by controller.targetHz.collectAsState()
-    val linkReading by controller.linkReading.collectAsState()
-    val heard by controller.heardMidi.collectAsState()
+    val reading by controller.reading.collectAsState()
 
     val t = tuning
     Box(
@@ -144,61 +142,43 @@ fun BasicHub(
 
         // ---- the tuning screen ----
         val name = Notes.name(t.midi)
-        val f = hz                                  // a local: delegated state cannot be smart-cast
-        val sounding = level > 0.0
-        // What is tuned by: below and above the temperament octave the string's
-        // own link partial against the reference partial — the beat the ear
-        // hears — inside it the fundamental against the temperament.
-        val read = linkReading
-        val shownHz = read?.hz ?: f
-        val shownTarget = read?.targetHz ?: liveTarget
-        val matched = TuningSession.matched(shownHz, shownTarget, cfg.matchHz)
-        val link = t.link
-        val curve = t.curve
-        val origin = when {
-            t.midi == TuningSession.MIDI_A4 -> "the reference, set on the hub"
-            link != null && link.calculated -> "${link.type.label} octave against ${Notes.name(link.refMidi)}, calculated stretch"
-            link != null -> "${link.type.label} octave against ${Notes.name(link.refMidi)}, measured"
-            t.midi < cfg.temperamentLowMidi ->
-                "equal temperament — ${Notes.name(t.midi + cfg.octaveTypeFor(t.midi).semitones)} not tuned yet"
-            t.midi > TunerSettings.TEMPERAMENT_HIGH ->
-                "equal temperament — ${Notes.name(t.midi - cfg.octaveTypeFor(t.midi).semitones)} not tuned yet"
-            else -> "equal temperament on A4 ${formatHz(a4)}"
+        // What is tuned by: the note's listened partial (or one the tuner
+        // tapped) against its target, read by phase (docs/ENGINE.md)
+        val read = reading
+        val l = t.listening
+        val shownHz = read?.hz
+        val shownTarget = read?.targetHz ?: l.targetHz
+        val live = read?.live == true
+        val matched = live && TuningSession.matched(shownHz, shownTarget, cfg.matchHz)
+        val origin = when (l.source) {
+            TuningSession.Source.REFERENCE -> "the reference, set on the hub"
+            TuningSession.Source.TEMPERAMENT -> "equal temperament on A4 ${formatHz(a4)}"
+            TuningSession.Source.OCTAVE -> buildString {
+                append("${l.type!!.label} octave to ${Notes.name(l.refMidi!!)}")
+                append(if (l.widthCents > 0.0) String.format(Locale.ROOT, ", %.1f c wide", l.widthCents) else ", beatless")
+                if (l.refModelled) append(" (partial placed by its fit)")
+            }
+            TuningSession.Source.PARTNER_UNTUNED -> "equal temperament — ${Notes.name(l.refMidi!!)} not tuned yet"
         }
-        val heardElsewhere = heard?.takeIf { it != t.midi && sounding }
+        val coarse = read?.coarseCents
         val state: Pair<String, Color> = when {
-            t.calibrating && heardElsewhere != null && (heardElsewhere < t.stepLowMidi || heardElsewhere > t.stepHighMidi) ->
-                "${Notes.name(heardElsewhere)}: outside ${Notes.name(t.stepLowMidi)}–${Notes.name(t.stepHighMidi)}" to Color(Brand.ORANGE)
-            t.calibrating && heardElsewhere != null -> "heard ${Notes.name(heardElsewhere)}" to Color(Brand.WHITE_MUTED)
-            t.calibrating && sounding && f != null -> "sampling" to Color(Brand.ORANGE)
-            t.calibrating -> "listening" to Color(Brand.WHITE_MUTED)
-            t.complete -> "complete" to Color(Brand.GO_GREEN)
-            heardElsewhere != null && !(cfg.autoNote && t.temperamentComplete) ->
-                "that's ${Notes.name(heardElsewhere)}" to Color(Brand.ORANGE)
-            !sounding || shownHz == null -> "listening" to Color(Brand.WHITE_MUTED)
+            t.complete && !live -> "complete" to Color(Brand.GO_GREEN)
+            coarse != null && !live ->
+                String.format(Locale.ROOT, "%.0f c %s", abs(coarse), if (coarse < 0) "flat" else "sharp") to Color(Brand.ORANGE)
+            read?.settling == true -> "listening" to Color(Brand.WHITE_MUTED)
+            !live || shownHz == null -> "listening" to Color(Brand.WHITE_MUTED)
             matched -> "matches" to Color(Brand.GO_GREEN)
             shownHz > shownTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
-        val status = buildString {
-            append(if (cfg.autoNote && t.temperamentComplete) "follows the key" else "arrows")
-            append(" · ")
-            if (cfg.temperamentFirst) {
-                append(if (t.temperamentComplete) "A3–A4 done" else "A3–A4 first")
-            } else if (t.calibrating) {
-                append("Stretch Definition: ${t.anchors} of ${t.anchorsWanted} single strings")
-            } else {
-                // Pro: the sampling report of docs/INHARMONICITY.md
-                append(
-                    when {
-                        curve.anchors == 0 -> "no anchors yet"
-                        curve.worstCents == null -> "${curve.anchors} anchors, need 3 across two octaves"
-                        curve.representative -> String.format(Locale.ROOT, "curve representative: %d anchors, ±%.1f c", curve.anchors, curve.worstCents)
-                        else -> String.format(Locale.ROOT, "curve: %d anchors, worst ±%.1f c", curve.anchors, curve.worstCents)
-                    },
-                )
-            }
+        val status = when {
+            !cfg.temperamentFirst -> "leaving a note keeps it"
+            t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
+            else -> "A3–A4 first · Done keeps a note"
         }
+        // Full Spectrum: the partial read by phase replaces the finder's place for it
+        val spectrum = partials.map { p -> if (read != null && p.k == read.k && shownHz != null) p.copy(hz = shownHz) else p }
+        val p1Hz = spectrum.firstOrNull { it.k == 1 }?.hz
 
         // header: back and gear only; the title lives on the hub
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart)) {
@@ -234,12 +214,12 @@ fun BasicHub(
             full -> {
                 // Full Spectrum: the bells, the readout column and the row
                 TuningGraph(
-                    liveHz = hz,
-                    sounding = sounding,
+                    liveHz = p1Hz,
+                    sounding = live,
                     targetHz = liveTarget,
                     shown = shownTuning,
                     predicted = targets,
-                    livePartials = partials,
+                    livePartials = spectrum,
                     active = active,
                     matchHz = cfg.matchHz,
                     modifier = Modifier
@@ -248,60 +228,21 @@ fun BasicHub(
                 )
                 Column(Modifier.align(Alignment.TopStart).padding(top = 60.dp)) {
                     Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
-                    Text("target " + String.format(Locale.ROOT, "%.2f Hz", liveTarget), color = Color(Brand.TARGET_BLUE), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1)
+                    Text("target " + String.format(Locale.ROOT, "%.2f Hz", shownTarget) + if (active > 1) ", partial $active" else "", color = Color(Brand.TARGET_BLUE), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1)
                     Text(origin, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 }
                 ReadoutColumn(
                     shown = shownTuning,
                     active = active,
                     targetHz = liveTarget,
-                    liveHz = hz,
+                    liveHz = p1Hz,
                     predicted = targets,
-                    livePartials = partials,
+                    livePartials = spectrum,
                     a4Hz = a4,
                     matchHz = cfg.matchHz,
                     onSelect = { k -> controller.activatePartial(k) },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp),
                 )
-            }
-            t.calibrating -> {
-                // Pro, Stretch Definition: single strings across the range, no target yet
-                Column(
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .fillMaxSize()
-                        .padding(top = 52.dp, bottom = 84.dp),
-                ) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        Column {
-                            Text("Stretch Definition", color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                "Play single strings across the whole range — the lowest plain wire, every major third up to C5, and either side of each break or strut. Leaving a note keeps it.",
-                                color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 3,
-                                modifier = Modifier.width(520.dp),
-                            )
-                        }
-                        Spacer(Modifier.weight(1f))
-                        MeasuredBlock(f)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                        Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 64.sp, maxLines = 1)
-                        Spacer(Modifier.width(28.dp))
-                        Text(
-                            "${t.anchors} of ${t.anchorsWanted}",
-                            color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 64.sp, maxLines = 1,
-                        )
-                        Spacer(Modifier.width(18.dp))
-                        Text(
-                            if (curve.worstCents != null) String.format(Locale.ROOT, "anchors · curve ±%.1f c", curve.worstCents) else "anchors",
-                            color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 18.sp, maxLines = 1,
-                            modifier = Modifier.padding(bottom = 14.dp),
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
             }
             else -> {
                 // Fundamental: one note, one motion, one colour
@@ -315,19 +256,19 @@ fun BasicHub(
                         NoteBlock(
                             name = name,
                             targetHz = shownTarget,
-                            partial = read?.k?.takeIf { it > 1 },
+                            partial = read?.k?.takeIf { it > 1 } ?: l.k.takeIf { it > 1 },
                             origin = origin,
                             onSemitone = { d -> controller.stepNote(d) },
                             onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
                         )
                         Spacer(Modifier.weight(1f))
-                        MeasuredBlock(shownHz, partial = read?.k?.takeIf { it > 1 })
+                        MeasuredBlock(shownHz, partial = read?.k?.takeIf { it > 1 } ?: l.k.takeIf { it > 1 })
                     }
                     Spacer(Modifier.weight(1f))
                     BeatBand(
                         measuredHz = shownHz,
                         targetHz = shownTarget,
-                        sounding = sounding,
+                        sounding = live,
                         matched = matched,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                     )
@@ -336,7 +277,7 @@ fun BasicHub(
                         measuredHz = shownHz,
                         targetHz = shownTarget,
                         matchHz = cfg.matchHz,
-                        sounding = sounding,
+                        sounding = live,
                         matched = matched,
                         modifier = Modifier.fillMaxWidth().height(64.dp),
                     )
@@ -367,9 +308,9 @@ fun BasicHub(
                     baseHz = liveTarget,
                     count = controller.highestPartial(liveTarget),
                     shown = shownTuning,
-                    tappable = (targets.map { it.k }.toSet() + audible) - 1,
+                    tappable = (targets.map { it.k }.toSet() + audible) - t.listening.k,
                     onTap = { k -> controller.tapPartial(k) },
-                    pulse = if (matched) suggested else null,
+                    pulse = if (active != suggested) suggested else null,
                     modifier = Modifier.weight(1f),
                 )
             } else {
