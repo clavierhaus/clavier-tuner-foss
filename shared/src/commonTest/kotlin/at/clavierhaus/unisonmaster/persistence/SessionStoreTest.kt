@@ -145,7 +145,7 @@ class SessionStoreTest {
         first.onSessionChanged = { saved.add(it) }
         first.startLive(); first.acceptLive(); first.stopLive()
         assertEquals(21, first.tuning.value!!.midi)
-        first.startLive(); assertNotNull(first.acceptLive()); first.stopLive()
+        first.startLive(); first.stopLive()                 // A0 held: sampled by itself
         val snap = saved.last()
         assertEquals(42L, snap.savedAtMs)
         assertTrue(snap.sampling)

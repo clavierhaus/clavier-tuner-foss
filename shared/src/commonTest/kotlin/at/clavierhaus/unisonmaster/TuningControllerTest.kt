@@ -172,6 +172,21 @@ class TuningControllerTest {
     }
 
     @Test
+    fun samplingWalksByItself() {
+        val (c, src) = controller(settings.copy(lowestKeyMidi = 21))
+        c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
+        c.acceptLive()
+        val t = c.tuning.value!!
+        assertTrue(t.sampling); assertEquals(21, t.midi)
+        // A0 struck and held: kept after a second of steady reading, on to the next
+        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-12.0 / 1200), 1.2e-4, 4.0))
+        val after = c.tuning.value!!
+        assertEquals(25, after.midi, "moved on by itself")
+        assertTrue(21 in after.sampled)
+        assertEquals(-12.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "kept as it stood")
+    }
+
+    @Test
     fun fullSpectrumBellsStandStillOnASteadyUnison() {
         // three strings a few hundredths of a cent apart, sounding together: every
         // shown partial is read by phase and stays within hundredths of a hertz

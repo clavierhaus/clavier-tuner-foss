@@ -16,7 +16,10 @@ class SettingsTest {
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(false, b.settings.value.autoNote)
-        assertEquals(17, b.settings.value.lowestKeyMidi)
+        assertEquals(21, b.settings.value.lowestKeyMidi, "FOSS pins A0: the compass is a Pro setting")
+        val pro = MemoryStore()
+        SettingsModel(pro, TunerSettings(temperamentFirst = false)).update { it.copy(lowestKeyMidi = 17) }
+        assertEquals(17, SettingsModel(pro, TunerSettings(temperamentFirst = false)).settings.value.lowestKeyMidi, "Pro keeps the lowest key it was given")
         assertEquals(0.2, b.settings.value.matchHz)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
         assertEquals(OctaveType.O8_4, b.settings.value.octaveWound)

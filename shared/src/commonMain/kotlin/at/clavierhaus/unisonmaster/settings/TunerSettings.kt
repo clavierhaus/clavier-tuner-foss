@@ -77,11 +77,9 @@ data class TunerSettings(
      */
     val lowestUnwoundMidi: Int = 43,           // G2
     /**
-     * The instrument's lowest key: A0 on the 88-key piano, F0 on the
-     * Bösendorfer 225, C0 on the 290. The session runs down to here; the
-     * wound strings between it and the lowest plain string are tuned like
-     * any other, each against the note an octave above, and are kept out of
-     * the plain-wire inharmonicity curve.
+     * The instrument's lowest key: A0 on the piano as it is built; a Pro
+     * setting for the few that go lower (F0 on the Bösendorfer 225, C0 on
+     * the Imperial). FOSS pins A0. The session runs down to here.
      */
     val lowestKeyMidi: Int = 21,               // A0
     // SAMPLING
@@ -183,12 +181,22 @@ class SettingsModel(
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
 
     fun update(change: (TunerSettings) -> TunerSettings) {
-        val s = change(_settings.value).copy(temperamentFirst = edition.temperamentFirst)
+        val s = pin(change(_settings.value))
         _settings.value = s
         save(s)
     }
 
-    private fun load(): TunerSettings {
+    /**
+     * What the edition fixes: FOSS is the free tuner for the piano as it is
+     * built, A0 to C8; the compass is a Pro setting, for the few instruments
+     * that go lower (the Bösendorfer 225 and Imperial, the Érard).
+     */
+    private fun pin(s: TunerSettings): TunerSettings =
+        if (edition.temperamentFirst) s.copy(temperamentFirst = true, lowestKeyMidi = 21) else s.copy(temperamentFirst = false)
+
+    private fun load(): TunerSettings = pin(loadStored())
+
+    private fun loadStored(): TunerSettings {
         val d = edition
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v

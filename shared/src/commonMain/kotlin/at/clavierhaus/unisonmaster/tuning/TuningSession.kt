@@ -348,9 +348,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * measurement whose fundamental lies nearer another key is another
      * note's, and what the note already has stays.
      */
-    fun record(m: NoteMeasurement) {
-        if (Notes.nearestMidi(m.f1Hz, a4Hz) != m.midi) return
+    fun record(m: NoteMeasurement): Boolean {
+        if (Notes.nearestMidi(m.f1Hz, a4Hz) != m.midi) return false
         measured[m.midi] = m.copy(partials = m.partials.filter { it.k == 1 || Partials.plausibleCents(it.k, it.cents) })
+        return true
     }
 
     fun select(midi: Int) {

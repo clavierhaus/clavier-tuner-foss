@@ -64,6 +64,10 @@ class TuningController(
         const val SILENCE_RMS = 0.00025
         /** ... and full height at the strike's peak, falling to zero over this. */
         const val LEVEL_RANGE_DB = 48.0
+        /** A sample is taken when the string has been read this many hops in a row (about a second) ... */
+        const val SAMPLE_STEADY_HOPS = 47
+        /** ... within this many cents. */
+        const val SAMPLE_STEADY_CENTS = 1.0
         /** Partials shown at once in Full Spectrum: what the readout column has room for. */
         const val MAX_SHOWN = 6
         /** The key struck is named on this many samples ... */
@@ -491,8 +495,9 @@ class TuningController(
             val last = lastShown ?: return null
             if (last.generation != generation || hops - last.hop > LEAVE_HOPS) return null
             val m = measureNote(t, last.k, last.hz) ?: return null
-            s.record(m)
-            if (s.settings.temperamentFirst && s.sampleSetComplete()) s.finishSampling()
+            if (!s.record(m)) return null                  // another key's string: not this sample
+            lastShown = null
+            if (s.sampleSetComplete()) s.finishSampling()
             advance(s)
             return last.hz
         }
@@ -564,6 +569,28 @@ class TuningController(
     @Volatile private var generation = 0
 
     private class Shown(val hz: Double, val targetHz: Double, val k: Int, val hop: Long, val generation: Int)
+    private val steady = DoubleArray(SAMPLE_STEADY_HOPS)
+    private var steadyN = 0
+
+    /**
+     * Sampling walks by itself: once the string has been read for
+     * [SAMPLE_STEADY_HOPS] hops in a row within [SAMPLE_STEADY_CENTS], it is
+     * kept and the screen moves to the next of the set. Done does the same
+     * by hand.
+     */
+    private fun autoSample(rd: PhaseReader.Reading?) {
+        val t = _tuning.value ?: return
+        if (!t.sampling) { steadyN = 0; return }
+        if (rd == null || !rd.shown) { steadyN = 0; return }
+        steady[steadyN % steady.size] = rd.cents
+        steadyN++
+        if (steadyN < steady.size) return
+        var lo = steady[0]; var hi = steady[0]
+        for (v in steady) { if (v < lo) lo = v; if (v > hi) hi = v }
+        if (hi - lo > SAMPLE_STEADY_CENTS) return
+        steadyN = 0
+        acceptLive()
+    }
     @Volatile private var lastShown: Shown? = null
     @Volatile private var hops = 0L
 
@@ -697,12 +724,15 @@ class TuningController(
                 if (_liveLevel.value == 0.0) _heardMidi.value = null
                 val heard = _heardMidi.value
                 val s = session
+                // (never while sampling: the string just kept is still ringing when the screen moves on)
                 if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
-                    _settings.value.autoNote && !s.gated && s.selectable(heard)) {
+                    _settings.value.autoNote && !s.gated && !s.sampling && s.selectable(heard)) {
                     followed = true
                     selectNote(heard)
                 }
                 if (w.generation != generation) return@start      // the note changed meanwhile
+                autoSample(rd)
+                if (w.generation != generation) return@start      // sampled: on to the next
                 val held = lastShown?.takeIf { it.generation == w.generation }?.hz
                 _reading.value = Reading(w.k, held, w.hz, live = rd?.shown == true, settling = rd?.settling == true, coarseCents = coarse)
                 _liveHz.value = held
