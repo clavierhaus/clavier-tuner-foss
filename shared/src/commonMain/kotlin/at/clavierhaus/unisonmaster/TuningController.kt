@@ -10,6 +10,7 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
+import at.clavierhaus.unisonmaster.tuning.NoteDetector
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
@@ -62,6 +63,14 @@ class TuningController(
         const val SILENCE_RMS = 0.00025
         /** ... and full height at the strike's peak, falling to zero over this. */
         const val LEVEL_RANGE_DB = 48.0
+        /** The key struck is named on this many samples ... */
+        const val DETECT_SAMPLES = 16384
+        /** ... from this many hops after the strike (the window full of it) to this many (1.5 s) ... */
+        const val DETECT_FROM_HOPS = 12L
+        const val DETECT_UNTIL_HOPS = 70L
+        /** ... every other hop, and the same key this many times in a row. */
+        const val DETECT_EVERY = 2L
+        const val DETECT_RUN = 3
     }
 
     // ---- Reference and settings ----
@@ -386,7 +395,8 @@ class TuningController(
         val last = lastShown ?: return
         if (last.generation != generation || hops - last.hop > LEAVE_HOPS) return
         if (abs(TuningSession.centsOff(last.hz, last.targetHz)) > LEAVE_CENTS) return
-        measureNote(t, last.k, last.hz)?.let { s.record(it) }
+        // measured up to that reading: a key struck since is not this string
+        measureNote(t, last.k, last.hz, upToHop = last.hop + 2)?.let { s.record(it) }
     }
 
     /**
@@ -434,9 +444,11 @@ class TuningController(
      * the reading is what the notes linked to it are tuned against. Null
      * when not even the first partial can be placed.
      */
-    private fun measureNote(t: TuningView, k: Int, hz: Double): NoteMeasurement? {
+    private fun measureNote(t: TuningView, k: Int, hz: Double, upToHop: Long = hops): NoteMeasurement? {
         val f1Guess = hz / (k * Inharmonicity.ratio(k, t.b))
-        val m = StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, t.midi, f1Guess, t.b, timeMs = clock())
+        val all = ringSnapshot()
+        val cut = ((hops - upToHop).coerceAtLeast(0) * HOP).coerceAtMost(all.size.toLong()).toInt()
+        val m = StringMeasure.measure(all.copyOfRange(0, all.size - cut), audioSource.sampleRateHz, t.midi, f1Guess, t.b, timeMs = clock())
         val f1 = m?.f1Hz ?: f1Guess
         val own = MeasuredPartial(k, TuningSession.centsOff(hz, k * f1), 0.0, 0.0)
         if (m == null) {
@@ -448,6 +460,14 @@ class TuningController(
     }
 
     // ---- Live input ----
+
+    private val _heardMidi = MutableStateFlow<Int?>(null)
+    /**
+     * The key struck, as the note detector names it in the first moments of
+     * a strike (the whole comb of partials, docs/ENGINE.md §5); null in
+     * silence. The screen follows it ([TunerSettings.autoNote]) or names it.
+     */
+    val heardMidi: StateFlow<Int?> = _heardMidi.asStateFlow()
 
     /** What the reader is to be set on: [hz] of partial [k]; [generation] changes with every note or partial. */
     private class Wanted(val hz: Double, val k: Int, val generation: Int)
@@ -511,6 +531,13 @@ class TuningController(
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
         var coarse: Double? = null
+        // the keys the detector chooses from: the instrument's compass, nothing below it
+        var detectorLow = -1
+        var detector = NoteDetector(sr, DETECT_SAMPLES)
+        var strikeHop = -1_000_000L
+        var candidate: Int? = null
+        var run = 0
+        var followed = false
         _live.value = true
         return try {
             audioSource.start(HOP) { chunk ->
@@ -525,7 +552,9 @@ class TuningController(
                 val rms = kotlin.math.sqrt(ss / chunk.size)
                 val db = 20 * log10(maxOf(rms, 1e-12))
                 val loudest = recent.max()
-                if (db - loudest >= PhaseReader.ONSET_DB || db > peakDb) peakDb = db
+                val strike = db - loudest >= PhaseReader.ONSET_DB && rms >= SILENCE_RMS
+                if (strike) { strikeHop = hop; candidate = null; run = 0; followed = false; _heardMidi.value = null }
+                if (strike || db > peakDb) peakDb = db
                 recent[(hop % recent.size).toInt()] = db
                 _liveLevel.value = if (rms < SILENCE_RMS) 0.0 else (1.0 + (db - peakDb) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0)
 
@@ -563,6 +592,24 @@ class TuningController(
                     coarse = finder.near(w.hz, COARSE_CENTS)?.let { TuningSession.centsOff(it.hz, w.hz) }
                         ?.takeIf { abs(it) > PhaseReader.DEFAULT_BAND_CENTS }
                 } else if (_liveLevel.value == 0.0) coarse = null
+                // which key was struck: named within the first moments of a strike,
+                // and followed when the note on screen is not what sounds
+                val since = hop - strikeHop
+                if (since in DETECT_FROM_HOPS..DETECT_UNTIL_HOPS && hop % DETECT_EVERY == 0L && ringFilled >= DETECT_SAMPLES) {
+                    val low = session?.lowMidi ?: 21
+                    if (low != detectorLow) { detector = NoteDetector(sr, DETECT_SAMPLES, low, TuningSession.MIDI_C8); detectorLow = low }
+                    val key = detector.detectIn(lastSamples(DETECT_SAMPLES), _referenceA4Hz.value)
+                    if (key != null && key == candidate) run++ else { candidate = key; run = if (key != null) 1 else 0 }
+                    if (run >= DETECT_RUN && _heardMidi.value != candidate) _heardMidi.value = candidate
+                }
+                if (_liveLevel.value == 0.0) _heardMidi.value = null
+                val heard = _heardMidi.value
+                val s = session
+                if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
+                    _settings.value.autoNote && !s.gated && s.selectable(heard)) {
+                    followed = true
+                    selectNote(heard)
+                }
                 if (w.generation != generation) return@start      // the note changed meanwhile
                 val held = lastShown?.takeIf { it.generation == w.generation }?.hz
                 _reading.value = Reading(w.k, held, w.hz, live = rd?.shown == true, settling = rd?.settling == true, coarseCents = coarse)

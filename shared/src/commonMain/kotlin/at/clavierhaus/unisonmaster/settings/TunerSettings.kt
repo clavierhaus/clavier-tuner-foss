@@ -84,6 +84,14 @@ data class TunerSettings(
      * the plain-wire inharmonicity curve.
      */
     val lowestKeyMidi: Int = 21,               // A0
+    // WORKFLOW
+    /**
+     * The tuning screen follows the key struck: when a strike is another
+     * note of the session and the note on screen is not heard, the screen
+     * moves to it and the note left is kept (as leaving does). Never inside
+     * an unfinished temperament octave, which is walked with Done.
+     */
+    val autoNote: Boolean = true,
     // PRECISION
     /** The partial read matches within this of its target, Hz: the beat rate the tuner accepts as gone. */
     val matchHz: Double = 0.1,
@@ -184,6 +192,7 @@ class SettingsModel(
             weightFifth = i("weightFifth", d.weightFifth),
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
+            autoNote = b("autoNote", d.autoNote),
             matchHz = f("matchHz", d.matchHz),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
@@ -206,6 +215,7 @@ class SettingsModel(
         store.put("weightFifth", s.weightFifth.toString())
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
+        store.put("autoNote", s.autoNote.toString())
         store.put("matchHz", s.matchHz.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())

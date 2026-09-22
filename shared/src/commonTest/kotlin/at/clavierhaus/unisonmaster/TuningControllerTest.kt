@@ -148,4 +148,25 @@ class TuningControllerTest {
         assertTrue(abs(r.hz!! - p3) < 0.05, "partial 3 read %.3f for %.3f".format(r.hz, p3))
         assertTrue(c.liveAudible.value.containsAll(setOf(1, 2, 3)), "Full Spectrum hears ${c.liveAudible.value}")
     }
+
+    @Test
+    fun theScreenFollowsTheKeyStruckAndKeepsTheNoteItLeft() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        val first = SyntheticString.strike(et(68), 7e-4, 2.5)
+        val second = SyntheticString.strike(et(66) * 2.0.pow(-8.0 / 1200), 7e-4, 2.5, seed = 2)
+        c.hear(src, first + second)
+        assertEquals(66, c.tuning.value!!.midi, "the screen moved to the key struck")
+        assertEquals(et(68), c.measurements()[68]!!.f1Hz, 0.05, "and kept G#4 as it was heard, not as F#4")
+        assertEquals(-8.0, c.reading.value!!.cents!!, 0.3, "F#4 read on its own target")
+    }
+
+    @Test
+    fun withoutFollowingTheKeyStruckIsNamed() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false, autoNote = false))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.hear(src, SyntheticString.strike(et(66), 7e-4, 1.2))
+        assertEquals(68, c.tuning.value!!.midi)
+        assertEquals(66, c.heardMidi.value)
+    }
 }

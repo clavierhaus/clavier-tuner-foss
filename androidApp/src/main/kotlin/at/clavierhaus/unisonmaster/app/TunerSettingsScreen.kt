@@ -110,6 +110,14 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         s.recordPcm,
     ) { on -> model.update { it.copy(recordPcm = on) } }
 
+    SettingsSection("Workflow")
+    SwitchRow(
+        "Follow the key struck",
+        if (s.temperamentFirst) "The screen moves to the note played, once the temperament octave is finished; the note left is kept"
+        else "The screen moves to the note played; the note left is kept",
+        s.autoNote,
+    ) { on -> model.update { it.copy(autoNote = on) } }
+
     SettingsSection("Precision")
     StepperRow(
         "Match window", "A partial turns green within this of its target",

@@ -52,12 +52,16 @@ class SessionRecorder(private val context: Context, private val sampleRate: Int,
     private var open: Open? = null
     private val lock = Any()
 
-    /** Opens the file and starts writing. Returns false if storage refused. */
-    fun start(): Boolean = synchronized(lock) {
+    /**
+     * Opens the file and starts writing. Returns false if storage refused.
+     * [kind] begins the file name: "session" on the tuning screen, "unison"
+     * on Pro's unison screen.
+     */
+    fun start(kind: String = "session"): Boolean = synchronized(lock) {
         if (open != null) return@synchronized true
         if (Build.VERSION.SDK_INT < 29) return@synchronized false
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(Date())
-        val name = "session_${stamp}_${if (unprocessed()) "unproc" else "mic"}.wav"
+        val name = "${kind}_${stamp}_${if (unprocessed()) "unproc" else "mic"}.wav"
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)

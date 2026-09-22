@@ -206,4 +206,51 @@ class EngineRecordingsTest {
             if (before != null) assertTrue(abs(endCents!! - before) < 5.0, "${f.name}: ends at $endCents, stood at $before")
         }
     }
+
+    /** Part B: every key as it stood, unmuted; the last take of each. */
+    private fun partB(dir: File): Map<Int, File> {
+        val rows = File(dir, "Boesendorfer_manifest.csv").readLines().drop(1).map { it.split(",") }
+        val out = LinkedHashMap<Int, File>()
+        for (r in rows.filter { it[3].startsWith("B") }.sortedBy { it[0] }) {
+            val midi = Notes.midi(r[1].substringBefore("-")) ?: continue
+            out[midi] = File(dir, r[2])
+        }
+        return out
+    }
+
+    @Test
+    fun theScreenFollowsAWalkAcrossTheCompassKeyByKey() {
+        val dir = day() ?: run { println("EngineRecordingsTest: no recordings of 22 September here"); return }
+        val (a4, ms) = measured(dir)
+        val b = partB(dir)
+        // the unmuted keys one after another, 2.5 s each from a little before the strike,
+        // walking down from C6 to F0 as a tuner walks, and up again through the treble
+        val walk = (84 downTo 17) + (85..96)
+        val pieces = walk.mapNotNull { m -> b[m]?.let { f ->
+            val (sr, x) = readWav(f)
+            var on = 0
+            while (on + 1024 < x.size) { var q = 0.0; for (i in on until on + 1024) q += x[i].toDouble() * x[i]; if (q / 1024 > 1e-5) break; on += 1024 }
+            val from = maxOf(0, on - sr / 5)
+            m to x.copyOfRange(from, minOf(x.size, from + (2.5 * sr).toInt()))
+        } }
+        val ends = ArrayList<Int>()
+        var total = 0
+        for ((_, p) in pieces) { total += p.size; ends += total }
+        val all = FloatArray(total); var at = 0
+        for ((_, p) in pieces) { p.copyInto(all, at); at += p.size }
+        lateinit var c: TuningController
+        val onScreen = ArrayList<Int>()
+        var next = 0
+        val player = Player(all) { hop ->
+            val sample = (hop + 1) * 1024
+            if (next < ends.size && sample >= ends[next] - 1024) { onScreen += c.tuning.value!!.midi; next++ }
+        }
+        c = TuningController(player)
+        c.applySettings(settings)
+        c.restore(SessionSnapshot(0, a4, walk.first(), ms.values.toList()))
+        c.startLive()
+        val wrong = pieces.zip(onScreen).filter { (p, s) -> p.first != s }.map { (p, s) -> "${Notes.name(p.first)}→${Notes.name(s)}" }
+        println("followed ${pieces.size - wrong.size} of ${pieces.size} keys; not followed: $wrong")
+        assertTrue(wrong.size <= pieces.size / 10, "followed ${pieces.size - wrong.size} of ${pieces.size}: $wrong")
+    }
 }

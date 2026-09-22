@@ -86,6 +86,7 @@ fun BasicHub(
     val cfg by controller.settings.collectAsState()
     val liveTarget by controller.targetHz.collectAsState()
     val reading by controller.reading.collectAsState()
+    val heard by controller.heardMidi.collectAsState()
 
     val t = tuning
     Box(
@@ -165,13 +166,16 @@ fun BasicHub(
             t.complete && !live -> "complete" to Color(Brand.GO_GREEN)
             coarse != null && !live ->
                 String.format(Locale.ROOT, "%.0f c %s", abs(coarse), if (coarse < 0) "flat" else "sharp") to Color(Brand.ORANGE)
+            // another key struck, and the screen does not follow (off, or the temperament octave first)
+            heard != null && heard != t.midi && !live -> "that's ${Notes.name(heard!!)}" to Color(Brand.ORANGE)
             read?.settling == true -> "listening" to Color(Brand.WHITE_MUTED)
             !live || shownHz == null -> "listening" to Color(Brand.WHITE_MUTED)
             matched -> "matches" to Color(Brand.GO_GREEN)
             shownHz > shownTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
-        val status = when {
+        val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete)
+        val status = (if (follows) "follows the key · " else "") + when {
             !cfg.temperamentFirst -> "leaving a note keeps it"
             t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
             else -> "A3–A4 first · Done keeps a note"
