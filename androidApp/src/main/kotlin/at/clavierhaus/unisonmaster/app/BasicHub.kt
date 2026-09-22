@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.i18n.K
+import at.clavierhaus.unisonmaster.i18n.Strings
+import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
@@ -86,6 +89,7 @@ fun BasicHub(
     val cfg by controller.settings.collectAsState()
     val liveTarget by controller.targetHz.collectAsState()
     val reading by controller.reading.collectAsState()
+    val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
     val heard by controller.heardMidi.collectAsState()
 
     val t = tuning
@@ -152,35 +156,28 @@ fun BasicHub(
         val live = read?.live == true
         val matched = live && TuningSession.matched(shownHz, shownTarget, cfg.matchHz)
         val origin = when (l.source) {
-            TuningSession.Source.REFERENCE -> "the reference, set on the hub"
-            TuningSession.Source.TEMPERAMENT -> "equal temperament on A4 ${formatHz(a4)}"
-            TuningSession.Source.OCTAVE -> buildString {
-                append("${l.type!!.label} octave to ${Notes.name(l.refMidi!!)}")
-                append(if (l.widthCents > 0.0) String.format(Locale.ROOT, ", %.1f c wide", l.widthCents) else ", beatless")
-                if (l.refModelled) append(" (partial placed by its fit)")
-            }
-            TuningSession.Source.PARTNER_UNTUNED -> "equal temperament — ${Notes.name(l.refMidi!!)} not tuned yet"
-            TuningSession.Source.CURVE -> buildString {
-                append("${l.type!!.label} octave to ${Notes.name(l.refMidi!!)} on the curve")
-                append(if (l.widthCents > 0.0) String.format(Locale.ROOT, ", %.1f c wide", l.widthCents) else ", beatless")
-                l.checkCents?.let { append(String.format(Locale.ROOT, " · %s stands %.1f c %s", Notes.name(l.refMidi!!), abs(it), if (it >= 0) "wide" else "narrow")) }
-            }
+            TuningSession.Source.REFERENCE -> t(K.origin_reference)
+            TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
+            TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, Notes.name(l.refMidi!!)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless))
+            TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, Notes.name(l.refMidi!!))
+            TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, Notes.name(l.refMidi!!)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless)) +
+                (l.checkCents?.let { t(K.origin_check, Notes.name(l.refMidi!!), String.format(Locale.ROOT, "%.1f", abs(it)), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
         val coarse = read?.coarseCents
         val state: Pair<String, Color> = when {
-            t.sampling && t.sampled.contains(t.midi) && !live -> "sampled" to Color(Brand.GO_GREEN)
-            t.sampling && live -> "heard" to Color(Brand.GO_GREEN)
-            t.sampling -> "listening" to Color(Brand.WHITE_MUTED)
-            t.complete && !live -> "complete" to Color(Brand.GO_GREEN)
+            t.sampling -> "" to Color(Brand.WHITE_MUTED)
+            t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)
             coarse != null && !live ->
-                String.format(Locale.ROOT, "%.0f c %s", abs(coarse), if (coarse < 0) "flat" else "sharp") to Color(Brand.ORANGE)
+                t(K.state_off, String.format(Locale.ROOT, "%.0f", abs(coarse)), if (coarse < 0) t(K.state_flat) else t(K.state_sharp)) to Color(Brand.ORANGE)
             // another key struck, and the screen does not follow (off, or the temperament octave first)
-            heard != null && heard != t.midi && !live -> "that's ${Notes.name(heard!!)}" to Color(Brand.ORANGE)
-            read?.settling == true -> "listening" to Color(Brand.WHITE_MUTED)
-            !live || shownHz == null -> "listening" to Color(Brand.WHITE_MUTED)
-            matched -> "matches" to Color(Brand.GO_GREEN)
-            shownHz > shownTarget -> "sharp" to Color(Brand.ORANGE)
-            else -> "flat" to Color(Brand.ORANGE)
+            heard != null && heard != t.midi && !live -> t(K.state_heardOther, Notes.name(heard!!)) to Color(Brand.ORANGE)
+            read?.settling == true -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
+            !live || shownHz == null -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
+            matched -> t(K.state_matches) to Color(Brand.GO_GREEN)
+            shownHz > shownTarget -> t(K.state_sharp) to Color(Brand.ORANGE)
+            else -> t(K.state_flat) to Color(Brand.ORANGE)
         }
         val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
         val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
@@ -264,10 +261,10 @@ fun BasicHub(
                         .fillMaxSize()
                         .padding(top = 52.dp, bottom = 84.dp),
                 ) {
-                    Text("Sampling your piano", color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 22.sp, maxLines = 1)
+                    Text(t(K.sampling_title), color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 22.sp, maxLines = 1)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "${t.samplesTotal} single strings, ${Notes.name(controller.sampleNotes().first())} to ${Notes.name(controller.sampleNotes().last())}: one wedge, strike, hold. It moves on by itself.",
+                        t(K.sampling_line, t.samplesTotal, Notes.name(controller.sampleNotes().first()), Notes.name(controller.sampleNotes().last())),
                         color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1,
                     )
                     Spacer(Modifier.weight(1f))
@@ -275,11 +272,11 @@ fun BasicHub(
                         Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 96.sp, maxLines = 1)
                         Spacer(Modifier.width(28.dp))
                         Text(
-                            if (live) "heard — hold" else "strike $name alone and hold",
+                            if (live) t(K.sampling_heard) else t(K.sampling_strike, name),
                             color = if (live) Color(Brand.GO_GREEN) else Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1,
                         )
                         Spacer(Modifier.weight(1f))
-                        Text("${t.samplesDone} of ${t.samplesTotal}", color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1)
+                        Text(t(K.sampling_count, t.samplesDone, t.samplesTotal), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1)
                     }
                     Spacer(Modifier.weight(1f))
                     Text(

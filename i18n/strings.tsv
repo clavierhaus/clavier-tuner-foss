@@ -1,0 +1,39 @@
+# Every word the apps show, in one place. Columns: key, then one per language (BCP-47).
+# A key is dotted by screen: sampling.title. {0} {1} … are arguments, filled in order.
+# Regenerate the code after editing: scripts/i18n.py (run by the build; scripts/i18n.py --check refuses a hole).
+key	en	de
+app.settings	Settings	Einstellungen
+app.done	Done	Fertig
+app.progress	Progress	Verlauf
+app.tuning	Tuning	Stimmen
+app.partials	Partials	Teiltöne
+app.onePartial	One partial	Ein Teilton
+sampling.title	Sampling your piano	Ihr Klavier wird vermessen
+sampling.line	{0} single strings, {1} to {2}: one wedge, strike, hold. It moves on by itself.	{0} einzelne Saiten, {1} bis {2}: ein Keil, anschlagen, halten. Es geht von selbst weiter.
+sampling.strike	strike {0} alone and hold	{0} allein anschlagen und halten
+sampling.heard	heard — hold	gehört — halten
+sampling.count	{0} of {1}	{0} von {1}
+state.listening	listening	hört zu
+state.matches	matches	stimmt
+state.sharp	sharp	zu hoch
+state.flat	flat	zu tief
+state.complete	complete	fertig
+state.heardOther	that's {0}	das ist {0}
+state.off	{0} c {1}	{0} c {1}
+origin.reference	the reference, set on the hub	die Referenz, auf dem Hub gesetzt
+origin.temperament	equal temperament on A4 {0}	gleichstufig auf A4 {0}
+origin.curve	{0} octave to {1} on the curve	{0}-Oktave zu {1} nach der Kurve
+origin.wide	, {0} c wide	, {0} c weit
+origin.beatless	, beatless	, schwebungsfrei
+origin.check	 · {0} stands {1} c {2}	 · {0} steht {1} c {2}
+origin.wideWord	wide	weit
+origin.narrowWord	narrow	eng
+origin.octave	{0} octave to {1}	{0}-Oktave zu {1}
+origin.untuned	equal temperament — {0} not tuned yet	gleichstufig — {0} noch nicht gestimmt
+settings.tab.temperament	Temperament	Temperatur
+settings.tab.about	About	Über
+settings.tab.license	License	Lizenz
+settings.tab.care	Customer care	Kundenpflege
+settings.tab.research	Research	Forschung
+settings.language	Language	Sprache
+settings.language.system	System	System

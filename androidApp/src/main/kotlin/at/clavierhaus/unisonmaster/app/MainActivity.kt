@@ -11,6 +11,7 @@ import at.clavierhaus.unisonmaster.ui.HomeHub
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
+import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,6 +87,10 @@ class MainActivity : ComponentActivity() {
                 var screen by rememberSaveable { mutableStateOf("hub") }
                 var settingsFrom by rememberSaveable { mutableStateOf("hub") }
                 val settings by settingsModel.settings.collectAsState()
+                LaunchedEffect(settings.language) {
+                    // the words: the chosen language, or the phone's
+                    Strings.use(settings.language.ifEmpty { java.util.Locale.getDefault().toLanguageTag() })
+                }
                 LaunchedEffect(settings) {
                     // FOSS: the temperament octave is always A3-A4 (selectable in Pro only)
                     controller.applySettings(settings.copy(temperamentLowMidi = TunerSettings.MAX_TEMPERAMENT_LOW))

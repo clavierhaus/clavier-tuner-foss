@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import at.clavierhaus.unisonmaster.TuningController
+import at.clavierhaus.unisonmaster.i18n.K
+import at.clavierhaus.unisonmaster.i18n.Strings
+import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.TunerSettings
@@ -26,14 +29,20 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
 @Composable
 fun TunerSettingsScreen(controller: TuningController, model: SettingsModel, version: String, onBack: () -> Unit) {
     val s by model.settings.collectAsState()
+    Strings.language.collectAsState().value                    // recompose on a language change
     val a4 by controller.referenceA4Hz.collectAsState()
 
     SettingsScreen(
         subtitle = "Configuration only. Tuning stays on the main screen.",
         onBack = onBack,
         tabs = listOf(
-            SettingsTab("Temperament", accent = true) { TemperamentTab(s, a4, controller, model) },
-            SettingsTab("About") {
+            SettingsTab(t(K.settings_tab_temperament), accent = true) { TemperamentTab(s, a4, controller, model) },
+            SettingsTab(t(K.settings_tab_about)) {
+                SettingsSection(t(K.settings_language))
+                val langs = listOf("") + Strings.languages
+                ChoiceRow(t(K.settings_language), "", langs.map { if (it.isEmpty()) t(K.settings_language_system) else it.uppercase() }, langs.indexOf(s.language).coerceAtLeast(0)) { i ->
+                    model.update { c -> c.copy(language = langs[i]) }
+                }
                 SettingsSection("Clavier Tuner")
                 ReadOnlyRow("Version", "", version)
                 ReadOnlyRow("Core", "The open piano-tuning foundation shared with Clavier Tuner Pro", "clavier-tuner-foss")
@@ -41,7 +50,7 @@ fun TunerSettingsScreen(controller: TuningController, model: SettingsModel, vers
                 ReadOnlyRow("Typeface", "DejaVu Serif, DejaVu fonts project", "Bitstream Vera licence")
                 ReadOnlyRow("Settings icon", "Material Design icons, Google", "Apache 2.0")
             },
-            SettingsTab("License") {
+            SettingsTab(t(K.settings_tab_license)) {
                 SettingsSection("License")
                 ReadOnlyRow("Clavier Tuner", "clavierhaus.at", "Apache License 2.0")
                 SettingsNote("The full text is in the repository (LICENSE) and in the app's licences screen below. Free to use, study, change and share, including commercially, with attribution and no warranty.")

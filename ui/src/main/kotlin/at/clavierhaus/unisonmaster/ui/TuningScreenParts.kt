@@ -44,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.i18n.K
+import at.clavierhaus.unisonmaster.i18n.t
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ln
@@ -296,7 +298,7 @@ fun PartialsButton(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifie
         border = BorderStroke(1.dp, Color(Brand.WHITE_MUTED)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.WHITE)),
     ) {
-        Text(label ?: if (fullSpectrum) "One partial" else "Partials", fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
+        Text(label ?: if (fullSpectrum) t(K.app_onePartial) else t(K.app_partials), fontFamily = DejaVuSerif, fontSize = 16.sp, maxLines = 1)
     }
 }
 

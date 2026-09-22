@@ -82,6 +82,9 @@ data class TunerSettings(
      * the Imperial). FOSS pins A0. The session runs down to here.
      */
     val lowestKeyMidi: Int = 21,               // A0
+    // LANGUAGE
+    /** The language of the screens: a tag the strings table has, or "" for the system's. */
+    val language: String = "",
     // SAMPLING
     /**
      * Where the inharmonicity curve breaks: notes at which a new run of
@@ -220,6 +223,7 @@ class SettingsModel(
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
+            language = store.get("language") ?: d.language,
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchHz = f("matchHz", d.matchHz),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
@@ -244,6 +248,7 @@ class SettingsModel(
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("autoNote", s.autoNote.toString())
+        store.put("language", s.language)
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchHz", s.matchHz.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())

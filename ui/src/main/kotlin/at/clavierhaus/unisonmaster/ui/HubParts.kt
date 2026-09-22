@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.i18n.K
+import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.Notes
@@ -384,7 +386,7 @@ fun ProgressButton(
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(Brand.ORANGE)),
     ) {
         Text(
-            if (showingProgress) "Tuning" else "Progress",
+            if (showingProgress) t(K.app_tuning) else t(K.app_progress),
             fontFamily = DejaVuSerif,
             fontSize = 16.sp,
             maxLines = 1,
@@ -404,6 +406,6 @@ fun DoneButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Bool
             contentColor = Color(Brand.BLACK),
         ),
     ) {
-        Text("Done", fontFamily = DejaVuSerif, fontSize = 18.sp)
+        Text(t(K.app_done), fontFamily = DejaVuSerif, fontSize = 18.sp)
     }
 }
