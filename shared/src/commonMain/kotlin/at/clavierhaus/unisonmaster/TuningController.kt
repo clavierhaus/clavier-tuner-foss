@@ -63,6 +63,8 @@ class TuningController(
         const val SILENCE_RMS = 0.00025
         /** ... and full height at the strike's peak, falling to zero over this. */
         const val LEVEL_RANGE_DB = 48.0
+        /** Partials shown at once in Full Spectrum: what the readout column has room for. */
+        const val MAX_SHOWN = 6
         /** The key struck is named on this many samples ... */
         const val DETECT_SAMPLES = 16384
         /** ... from this many hops after the strike (the window full of it) to this many (1.5 s) ... */
@@ -185,8 +187,10 @@ class TuningController(
         _hiddenPartials.value = emptySet()
         val t = _tuning.value ?: return
         val k = t.listening.k
-        _shownPartials.value = if (_fullSpectrum.value) _targets.value.map { it.k }.toSet() + k else setOf(k)
+        // what fits the readout column: the listened partial and the lowest of the rest
+        _shownPartials.value = if (_fullSpectrum.value) (_targets.value.map { it.k }.filter { it != k }.take(MAX_SHOWN - 1) + k).toSet() else setOf(k)
         setActive(k)
+        wantShown()
     }
 
     fun tapPartial(k: Int) {
@@ -203,21 +207,41 @@ class TuningController(
             // one tap adds a partial and reads it ...
             k !in shown -> {
                 val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
-                if (k !in available) return
+                if (k !in available || shown.size >= MAX_SHOWN) return
                 _shownPartials.value = shown + k
                 setActive(k)
+                wantShown()
             }
             // ... and one tap removes it again
             else -> {
                 _shownPartials.value = shown - k
                 if (_activePartial.value == k) setActive(listened)
+                wantShown()
             }
         }
     }
 
     /** Readout column: the tapped line's partial becomes the one read. */
     fun activatePartial(k: Int) {
-        if (k in _shownPartials.value) setActive(k)
+        if (k in _shownPartials.value) { setActive(k); wantShown() }
+    }
+
+    /**
+     * Full Spectrum: every shown partial is read by its own phase reader on
+     * its own target (docs/ENGINE.md §2) — never by the finder, whose place
+     * for a partial jumps by tenths of a hertz from one window to the next
+     * on three unmuted strings. The finder only says which partials are
+     * there to be tapped.
+     */
+    private class WantedSet(val targets: Map<Int, Double>, val generation: Int)
+    @Volatile private var wantedSet: WantedSet? = null
+    private var shownGen = 0
+
+    private fun wantShown() {
+        val t = _tuning.value ?: run { wantedSet = null; return }
+        val active = _activePartial.value
+        val map = if (_fullSpectrum.value) _shownPartials.value.filter { it != active }.associateWith { targetOf(t, it) } else emptyMap()
+        wantedSet = WantedSet(map, ++shownGen)
     }
 
     private fun setActive(k: Int) {
@@ -299,6 +323,7 @@ class TuningController(
         _targets.value = emptyList()
         _targetHz.value = _referenceA4Hz.value
         wanted = null
+        wantedSet = null
         generation++
     }
 
@@ -377,6 +402,8 @@ class TuningController(
         val k = _activePartial.value
         wanted = Wanted(targetOf(view, k), k, ++generation)
         _reading.value = Reading(k, null, wanted!!.hz, live = false, settling = false, coarseCents = null)
+        if (noteChanged) { _livePartials.value = emptyList(); _liveAudible.value = emptySet() }
+        wantShown()
         onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
 
@@ -528,6 +555,9 @@ class TuningController(
         val sr = audioSource.sampleRateHz
         var reader: PhaseReader? = null
         var readerGeneration = -1
+        val shownReaders = HashMap<Int, PhaseReader>()
+        var shownGeneration = -1
+        val shownHeld = HashMap<Int, PhaseReader.Reading>()
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
         var coarse: Double? = null
@@ -573,7 +603,7 @@ class TuningController(
                     }
                     readerGeneration = -1
                     reader?.push(chunk)?.let { rd -> if (rd.shown) _liveHz.value = rd.hz }
-                    if (_fullSpectrum.value && finder != null) spectrum(finder, _liveHz.value ?: _referenceA4Hz.value, 0.0)
+                    if (_fullSpectrum.value && finder != null) hubSpectrum(finder, _liveHz.value ?: _referenceA4Hz.value)
                     return@start
                 }
 
@@ -615,7 +645,20 @@ class TuningController(
                 _reading.value = Reading(w.k, held, w.hz, live = rd?.shown == true, settling = rd?.settling == true, coarseCents = coarse)
                 _liveHz.value = held
                 val t = _tuning.value
-                if (_fullSpectrum.value && finder != null && t != null) spectrum(finder, t.targetHz, t.b)
+                // the other shown partials, each by its own reader
+                val ws = wantedSet
+                if (ws != null && ws.generation != shownGeneration) {
+                    shownGeneration = ws.generation
+                    shownReaders.keys.retainAll(ws.targets.keys)
+                    shownHeld.keys.retainAll(ws.targets.keys)
+                    for ((k, hz) in ws.targets) {
+                        val r = shownReaders[k]
+                        if (r == null) shownReaders[k] = PhaseReader(sr, hz)
+                        else if (abs(TuningSession.centsOff(hz, r.targetHz)) > 0.01) r.retarget(hz)
+                    }
+                }
+                for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) shownHeld[k] = it }
+                if (_fullSpectrum.value && t != null) spectrum(finder, t, w.k, held, shownHeld)
             }
             true
         } catch (e: Exception) {
@@ -629,20 +672,40 @@ class TuningController(
         return all.copyOfRange(all.size - n, all.size)
     }
 
-    /** Full Spectrum: where the finder places each partial of a string whose first partial is near [f1Hz]. */
-    private fun spectrum(finder: PartialFinder, f1Hz: Double, b: Double) {
-        val cap = highestPartial(f1Hz)
-        val found = (1..cap).mapNotNull { k ->
-            val predicted = k * f1Hz * Inharmonicity.ratio(k, b)
-            finder.near(predicted, 40.0)?.let { k to it }
-        }
-        val top = found.maxOfOrNull { it.second.levelDb } ?: return run {
-            _livePartials.value = emptyList(); _liveAudible.value = emptySet()
-        }
-        _livePartials.value = found.map { (k, p) ->
-            LivePartial(k, p.hz, TuningSession.centsOff(p.hz, k * f1Hz), (1.0 + (p.levelDb - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0))
-        }
+    /** The hub's Full Spectrum: where the finder hears the A4 string's partials. */
+    private fun hubSpectrum(finder: PartialFinder, f1Hz: Double) {
+        val found = (1..highestPartial(f1Hz)).mapNotNull { k -> finder.near(k * f1Hz, 40.0)?.let { k to it } }
+        val top = found.maxOfOrNull { it.second.levelDb } ?: run { _livePartials.value = emptyList(); _liveAudible.value = emptySet(); return }
+        _livePartials.value = found.map { (k, p) -> LivePartial(k, p.hz, TuningSession.centsOff(p.hz, k * f1Hz), (1.0 + (p.levelDb - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0)) }
         _liveAudible.value = found.map { it.first }.toSet()
+    }
+
+    /**
+     * Full Spectrum on the tuning screen: the shown partials as their readers
+     * read them ([activeHz] for the active one), and, from the [finder] when
+     * it ran, which further partials are there to be tapped.
+     */
+    private fun spectrum(finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, held: Map<Int, PhaseReader.Reading>) {
+        val read = LinkedHashMap<Int, Double>()
+        activeHz?.let { read[activeK] = it }
+        for ((k, r) in held) read[k] = r.hz
+        _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
+            LivePartial(k, hz, TuningSession.centsOff(hz, k * t.targetHz), 1.0)
+        }
+        // the string's own targets: a string has one free variable, its tension,
+        // so once the active partial is on target every other partial of it sits
+        // at its own measured ratio to it — the bells all show the same error,
+        // magnified k times in Hz. Before a partial is heard, the model's place.
+        if (activeHz != null) {
+            val scale = targetOf(t, activeK) / activeHz
+            val own = read.mapValues { (_, hz) -> hz * scale }
+            _targets.value = _targets.value.map { p -> own[p.k]?.let { p.copy(hz = it) } ?: p }
+        }
+        if (finder != null) {
+            val cap = highestPartial(t.targetHz)
+            val heard = (1..cap).filter { k -> finder.near(k * t.targetHz * Inharmonicity.ratio(k, t.b), 40.0) != null }.toSet()
+            _liveAudible.value = heard + read.keys
+        } else if (read.keys.any { it !in _liveAudible.value }) _liveAudible.value = _liveAudible.value + read.keys
     }
 
     fun stopLive() {

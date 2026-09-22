@@ -169,4 +169,37 @@ class TuningControllerTest {
         assertEquals(68, c.tuning.value!!.midi)
         assertEquals(66, c.heardMidi.value)
     }
+
+    @Test
+    fun fullSpectrumBellsStandStillOnASteadyUnison() {
+        // three strings a few hundredths of a cent apart, sounding together: every
+        // shown partial is read by phase and stays within hundredths of a hertz
+        val c = TuningController(TappedSource) { 0L }
+        c.applySettings(settings)
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4))))
+        c.toggleFullSpectrum()
+        val t = c.tuning.value!!
+        val strings = listOf(0.0, 0.04, -0.03).mapIndexed { i, cts -> SyntheticString.strike(t.targetHz * 2.0.pow(cts / 1200), t.b, 3.0, seed = 3 + i) }
+        TappedSource.signal = FloatArray(strings[0].size) { i -> strings.sumOf { it[i].toDouble() }.toFloat() / 3 }
+        val seen = HashMap<Int, MutableList<Double>>()
+        TappedSource.afterHop = { pos -> if (pos > 48_000) for (lp in c.livePartials.value) seen.getOrPut(lp.k) { ArrayList() } += lp.hz }
+        c.startLive()
+        assertTrue(seen.size >= 4, "partials shown: ${seen.keys}")
+        for ((k, hz) in seen) {
+            val swing = hz.max() - hz.min()
+            assertTrue(swing < 0.06 * k, "partial $k swings %.3f Hz over the strike".format(swing))
+        }
+    }
+}
+
+/** Plays [signal] and calls [afterHop] with the position after every buffer. */
+private object TappedSource : AudioSource {
+    override val sampleRateHz = 48_000
+    var signal = FloatArray(0)
+    var afterHop: (Int) -> Unit = {}
+    override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {
+        val buf = FloatArray(bufferSize); var p = 0
+        while (p + bufferSize <= signal.size) { signal.copyInto(buf, 0, p, p + bufferSize); onBuffer(buf); p += bufferSize; afterHop(p) }
+    }
+    override fun stop() = Unit
 }

@@ -20,6 +20,8 @@ class PartialFinder(samples: FloatArray, private val sampleRate: Int, zeroPad: I
     private val size: Int
     private val magnitude: DoubleArray
     private val binHz: Double
+    /** The Hann window's main lobe, bins: four of the unpadded bins. */
+    private val mainLobeBins: Int
 
     init {
         var n = 1
@@ -32,6 +34,7 @@ class PartialFinder(samples: FloatArray, private val sampleRate: Int, zeroPad: I
         Fft.transform(re, im)
         magnitude = DoubleArray(n / 2) { sqrt(re[it] * re[it] + im[it] * im[it]) }
         binHz = sampleRate.toDouble() / n
+        mainLobeBins = 4 * n / m
     }
 
     /** A peak: its frequency (interpolated), how far it stands above its surroundings, and its level. */
@@ -48,7 +51,12 @@ class PartialFinder(samples: FloatArray, private val sampleRate: Int, zeroPad: I
         if (hi - lo < 2) return null
         var j = lo
         for (b in lo..hi) if (magnitude[b] > magnitude[j]) j = b
-        val window = (lo..hi).map { magnitude[it] }.sorted()
+        // the surroundings: at least REFERENCE_LOBES main lobes wide, or in the
+        // bass the peak's own skirt fills the window and nothing is prominent
+        // (the D4 of the 22nd: ±40 cents is 14 Hz, the lobe 12 — partial 1 "not found")
+        val half = maxOf((hi - lo) / 2, REFERENCE_LOBES * mainLobeBins / 2)
+        val rlo = (j - half).coerceAtLeast(1); val rhi = (j + half).coerceAtMost(magnitude.size - 2)
+        val window = (rlo..rhi).map { magnitude[it] }.sorted()
         val median = window[window.size / 2]
         val prominence = 20 * log10(magnitude[j] / maxOf(median, 1e-30))
         if (prominence < minProminenceDb) return null
@@ -61,5 +69,6 @@ class PartialFinder(samples: FloatArray, private val sampleRate: Int, zeroPad: I
 
     companion object {
         const val MIN_PROMINENCE_DB = 12.0
+        const val REFERENCE_LOBES = 8
     }
 }
