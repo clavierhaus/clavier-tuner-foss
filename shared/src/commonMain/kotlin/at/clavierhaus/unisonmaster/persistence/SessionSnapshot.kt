@@ -12,6 +12,8 @@ data class SessionSnapshot(
     /** The note the tuner was on. */
     val currentMidi: Int,
     val measurements: List<NoteMeasurement>,
+    /** True while the strings are still being sampled, before tuning. */
+    val sampling: Boolean = false,
 )
 
 /**
@@ -22,6 +24,7 @@ data class SessionSnapshot(
  *     saved <ms>
  *     a4 <hz>
  *     current <midi>
+ *     sampling <0|1>                          (optional)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
  *     end
@@ -53,6 +56,7 @@ object SessionCodec {
         append("saved ${s.savedAtMs}\n")
         append("a4 ${s.a4Hz}\n")
         append("current ${s.currentMidi}\n")
+        if (s.sampling) append("sampling 1\n")
         for (m in s.measurements) {
             if (!noteInRange(m.midi, m.f1Hz, m.b, m.residualCents, m.timeMs)) continue
             val ps = m.partials.filter { partialInRange(it.k, it.cents, it.levelDb, it.sustainS) }
@@ -97,6 +101,8 @@ object SessionCodec {
         val saved = long(tokens("saved", 1)[0])
         val a4 = d(tokens("a4", 1)[0], 400.0, 480.0)
         val current = int(tokens("current", 1)[0], 12, 108)
+        var sampling = false
+        if (i < lines.size && lines[i].startsWith("sampling ")) sampling = int(tokens("sampling", 1)[0], 0, 1) == 1
 
         // Structure — header, version, line shapes, the end marker — must be
         // right, or the file is not a session and is refused. Values are
@@ -133,7 +139,7 @@ object SessionCodec {
             notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs))
         }
         if (i != lines.size) fail("data after end")
-        return SessionSnapshot(saved, a4, current, notes)
+        return SessionSnapshot(saved, a4, current, notes, sampling)
     }
 }
 

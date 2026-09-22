@@ -65,10 +65,14 @@ object Inharmonicity {
 }
 
 /**
- * The tuning session (docs/ENGINE.md). A4 is set on the hub; the
- * temperament octave below it is tuned to equal temperament on that A4;
- * every other note is tuned by an octave to a note already tuned — the way
- * an aural tuner works, with the reference partial measured, not predicted.
+ * The tuning session (docs/ENGINE.md). A4 is set on the hub; then the
+ * strings are **sampled** — single strings across the compass, each
+ * measured for its inharmonicity — and the instrument's curve is fitted
+ * ([InharmonicityCurve]); then every note's target is computed from the
+ * curve: the temperament octave to equal temperament on A4, every other
+ * note by an octave of the region's type and width to the modelled partial
+ * of its partner, chained outward. A partner already tuned is the check
+ * on that target, shown beside it, never the source.
  *
  * For every note the session says which partial is listened to and where it
  * must sit ([listening]):
@@ -90,7 +94,7 @@ object Inharmonicity {
  * Done measures the string ([StringMeasure]) and keeps it: its partials are
  * what the notes linked to it are tuned against.
  */
-class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
+class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sampling: Boolean = true) {
     /** The A4 reference. Changing it re-targets every note. */
     var a4Hz: Double = a4Hz
     /** The settings in force: temperament octave, octave types and widths, plain-wire floor. */
@@ -115,7 +119,41 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
     val temperamentComplete: Boolean get() = temperamentNotes.all { it in measured }
 
     /** True while the session walks the temperament octave first (FOSS, until it is complete). */
-    val gated: Boolean get() = settings.temperamentFirst && !temperamentComplete
+    val gated: Boolean get() = !sampling && settings.temperamentFirst && !temperamentComplete
+
+    // ---- Sampling ----
+
+    /**
+     * True while the strings are being sampled. FOSS samples exactly
+     * [TunerSettings.sampleNotes] and finishes by itself; Pro proposes them,
+     * takes any note, and finishes on [finishSampling].
+     */
+    var sampling: Boolean = sampling
+        private set
+
+    /** The notes proposed for sampling, lowest first. */
+    val sampleNotes: List<Int> get() = settings.sampleNotes.filter { it in notes }
+
+    /** The proposed notes not sampled yet. */
+    val samplesLeft: List<Int> get() = sampleNotes.filter { it !in measured }
+
+    /** The next note to sample above [midi], wrapping to the lowest; null when all are in. */
+    fun nextSample(after: Int = current): Int? =
+        if (after in sampleNotes) samplesLeft.firstOrNull { it > after } ?: samplesLeft.firstOrNull() else samplesLeft.firstOrNull()
+
+    /** Ends the sampling: Pro when the tuner says so, FOSS when the set is complete. */
+    fun finishSampling() {
+        if (!sampling) return
+        sampling = false
+        select(next() ?: notes.first { it != MIDI_A4 })
+    }
+
+    /** True when the FOSS set is complete and sampling ends by itself. */
+    fun sampleSetComplete(): Boolean = samplesLeft.isEmpty()
+
+    /** The instrument's inharmonicity curve from what has been measured. */
+    val curve: InharmonicityCurve
+        get() = InharmonicityCurve(measured.mapValues { it.value.b }, settings.lowestUnwoundMidi, settings.curveBreaks)
 
     /**
      * True when leaving a note registers it as done with what was heard of
@@ -124,7 +162,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * for Done on every note, because the octave is what everything else is
      * built on.
      */
-    val recordsOnLeaving: Boolean get() = !gated
+    val recordsOnLeaving: Boolean get() = !gated && !sampling
 
     /** Lowest note the arrows may reach: the foot of the session, always. */
     val stepLowMidi: Int get() = lowMidi
@@ -145,9 +183,11 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         REFERENCE,
         /** The temperament octave: equal temperament on A4. */
         TEMPERAMENT,
-        /** An octave to a measured note. */
+        /** An octave of the region's type and width, computed on the curve from the samples. */
+        CURVE,
+        /** No curve yet (nothing sampled): an octave to a measured note. */
         OCTAVE,
-        /** The octave partner is not tuned yet: equal temperament for now. */
+        /** No curve and the partner not tuned: equal temperament for now. */
         PARTNER_UNTUNED,
     }
 
@@ -169,6 +209,12 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         val refPartialHz: Double? = null,
         val widthCents: Double = 0.0,
         val refModelled: Boolean = false,
+        /**
+         * The check: for a CURVE target whose partner is measured, how far
+         * the measured partner's partial stands from where the curve puts it,
+         * cents (+ = the partner stands wider than the curve). Null without.
+         */
+        val checkCents: Double? = null,
     )
 
     /** The octave partner of [midi] and the partials that meet: (partner, own k, partner's k). Null inside the temperament octave. */
@@ -187,6 +233,19 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         val p = partner(midi) ?: return Listening(midi, 1, targetF1(midi, a4Hz), Source.TEMPERAMENT)
         val (refMidi, ownK, refK) = p
         val type = settings.octaveTypeFor(midi)
+        val c = curve
+        if (c.ready) {
+            val f1 = curveTargetF1(midi, c)
+            val hz = ownK * f1 * Inharmonicity.ratio(ownK, bOf(midi, c))
+            val width = settings.widthFor(midi)
+            val sign = if (midi < refMidi) -1.0 else 1.0
+            // the check: the partner as measured against the partner as the curve has it
+            val check = measured[refMidi]?.partialHz(refK)?.let { measuredRef ->
+                val modelledRef = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c))
+                sign * centsOff(measuredRef, modelledRef)
+            }
+            return Listening(midi, ownK, hz, Source.CURVE, type, refMidi, null, width, checkCents = check)
+        }
         val ref = measured[refMidi]
         if (ref == null) {
             val k = PartialMap.listening(midi)
@@ -200,6 +259,34 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
         val sign = if (midi < refMidi) -1.0 else 1.0
         val hz = refHz * 2.0.pow(sign * width / 1200.0)
         return Listening(midi, ownK, hz, Source.OCTAVE, type, refMidi, refHz, width, refModelled = measuredHz == null)
+    }
+
+    /** B for [midi]: its own measurement, else the curve's. */
+    private fun bOf(midi: Int, c: InharmonicityCurve): Double = measured[midi]?.b?.takeIf { it > 0 } ?: c.b(midi) ?: StringMeasure.DEFAULT_B
+
+    private val curveCache = HashMap<Int, Double>()
+    private var curveCacheKey: Any? = null
+
+    /**
+     * The computed stretch: the first partial of [midi] such that its
+     * octave of the region's type, widened by the region's width, meets the
+     * modelled partial of its partner, chained outward from the temperament
+     * octave (equal temperament on A4). The strings' inharmonicity is the
+     * curve's, or their own where measured.
+     */
+    fun curveTargetF1(midi: Int, c: InharmonicityCurve = curve): Double {
+        val key = Triple(a4Hz, settings, measured.size to measured.values.sumOf { it.b })
+        if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
+        curveCache[midi]?.let { return it }
+        val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) targetF1(midi, a4Hz) else {
+            val (refMidi, ownK, refK) = partner(midi)!!
+            val refHz = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c))
+            val sign = if (midi < refMidi) -1.0 else 1.0
+            val target = refHz * 2.0.pow(sign * settings.widthFor(midi) / 1200.0)
+            target / (ownK * Inharmonicity.ratio(ownK, bOf(midi, c)))
+        }
+        curveCache[midi] = v
+        return v
     }
 
     /**
@@ -281,6 +368,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      * without a measurement. Null at the end of the compass.
      */
     fun next(): Int? {
+        if (sampling) return nextSample()
         if (gated) return notes.firstOrNull { it in temperamentNotes && it !in measured }
         return notes.getOrNull(notes.indexOf(current) + 1)
     }
@@ -308,6 +396,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings()) {
      */
     fun predictedB(midi: Int = current): Double {
         measured[midi]?.b?.takeIf { it > 0.0 }?.let { return it }
-        return basisFor(midi)?.b?.takeIf { it > 0.0 } ?: StringMeasure.DEFAULT_B
+        val c = curve
+        if (c.ready) c.b(midi)?.let { return it }
+        val withB = measured.values.filter { it.midi != midi && it.b > 0.0 }
+        val sameWire = withB.filter { settings.isWound(it.midi) == settings.isWound(midi) }
+        return (sameWire.ifEmpty { withB }).minByOrNull { abs(it.midi - midi) }?.b ?: StringMeasure.DEFAULT_B
     }
 }

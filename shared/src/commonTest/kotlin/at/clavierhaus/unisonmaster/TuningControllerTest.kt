@@ -62,13 +62,14 @@ class TuningControllerTest {
         val m = assertNotNull(c.measurements()[69])
         assertTrue(abs(m.b - 8e-4) / 8e-4 < 0.15, "A4 measured with its inharmonicity: B %.2e".format(m.b))
         assertTrue(m.partials.size >= 4)
-        assertEquals(68, c.tuning.value!!.midi, "on to G#4")
+        assertEquals(17, c.tuning.value!!.midi, "on to the first sample, F0")
+        assertTrue(c.tuning.value!!.sampling)
     }
 
     @Test
     fun aTemperamentNoteMatchesOnTargetAndDoneRefusesItOffTarget() {
         val (c, src) = controller()
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         val t = c.tuning.value!!
         assertEquals(1, t.listening.k)
         // four cents flat: read, not matched
@@ -90,7 +91,7 @@ class TuningControllerTest {
     fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
         val gs4 = measuredString(68, et(68), 7e-4)
-        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4)))
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4), sampling = false))
         val t = c.tuning.value!!
         assertEquals(4, t.listening.k)
         val target = gs4.partialHz(2)!!
@@ -112,7 +113,7 @@ class TuningControllerTest {
     @Test
     fun aStringFarOffIsNotReadButSaidToBeFarOff() {
         val (c, src) = controller()
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-70.0 / 1200), 7e-4, 3.0))
         val r = c.reading.value!!
         assertFalse(r.live, "70 cents off is outside the band")
@@ -123,7 +124,7 @@ class TuningControllerTest {
     @Test
     fun leavingANoteKeepsItOnlyWhenItWasHeardNearItsTarget() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         c.stepNote(-1)                                  // not struck: nothing kept
         assertNull(c.measurements()[68])
         c.selectNote(68)
@@ -136,7 +137,7 @@ class TuningControllerTest {
     @Test
     fun aTappedPartialIsReadAgainstItsOwnPlace() {
         val (c, src) = controller()
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4)), sampling = false))
         c.toggleFullSpectrum()
         c.activatePartial(3)
         assertEquals(3, c.activePartial.value)
@@ -152,7 +153,7 @@ class TuningControllerTest {
     @Test
     fun theScreenFollowsTheKeyStruckAndKeepsTheNoteItLeft() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         val first = SyntheticString.strike(et(68), 7e-4, 2.5)
         val second = SyntheticString.strike(et(66) * 2.0.pow(-8.0 / 1200), 7e-4, 2.5, seed = 2)
         c.hear(src, first + second)
@@ -164,7 +165,7 @@ class TuningControllerTest {
     @Test
     fun withoutFollowingTheKeyStruckIsNamed() {
         val (c, src) = controller(settings.copy(temperamentFirst = false, autoNote = false))
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         c.hear(src, SyntheticString.strike(et(66), 7e-4, 1.2))
         assertEquals(68, c.tuning.value!!.midi)
         assertEquals(66, c.heardMidi.value)
@@ -176,7 +177,7 @@ class TuningControllerTest {
         // shown partial is read by phase and stays within hundredths of a hertz
         val c = TuningController(TappedSource) { 0L }
         c.applySettings(settings)
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4))))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4)), sampling = false))
         c.toggleFullSpectrum()
         val t = c.tuning.value!!
         val strings = listOf(0.0, 0.04, -0.03).mapIndexed { i, cts -> SyntheticString.strike(t.targetHz * 2.0.pow(cts / 1200), t.b, 3.0, seed = 3 + i) }

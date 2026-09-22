@@ -88,7 +88,7 @@ class EngineRecordingsTest {
     }
 
     @Test
-    fun everyStringIsMeasuredAndTheOctavesItWasTunedToAreFound() {
+    fun theSampleSetGivesACurveWhoseTargetsAreWhereThePianoWasTuned() {
         val dir = day() ?: run { println("EngineRecordingsTest: no recordings of 22 September here"); return }
         val (a4, ms) = measured(dir)
         val files = partA(dir)
@@ -96,43 +96,54 @@ class EngineRecordingsTest {
         val missing = files.keys - ms.keys
         if (missing.isNotEmpty()) println("not measured: ${missing.sorted().map { Notes.name(it) }}")
         assertTrue(ms.size >= files.size - 2, "measured ${ms.size} of ${files.size}")
+
+        // the sampling regime as the app runs it: the proposed set only, then the curve
         val s = TuningSession(a4, settings)
-        for (m in ms.values) s.record(m)
-        println("note  k  partials   B        f1 vs ET   octave   width (+ = wide)")
-        val widths = HashMap<String, MutableList<Double>>()
+        ms[69]?.let { s.record(it) }
+        for (m in s.sampleNotes) ms[m]?.let { s.record(it) }
+        assertTrue(s.sampleSetComplete() || s.samplesLeft.size <= 1, "samples left: ${s.samplesLeft}")
+        s.finishSampling()
+        val c = s.curve
+        assertTrue(c.ready)
+        println("sampled ${c.count} strings: ${c.sampled.map { Notes.name(it) }}")
+
+        // 1. the curve's B against every string not sampled
+        val errs = ms.values.filter { it.midi !in c.sampled && it.b > 0 && it.partials.size >= 3 }.map { m ->
+            val pred = c.b(m.midi)!!
+            Triple(m.midi, m.b, pred)
+        }
+        val relErr = errs.map { (_, b, p) -> abs(kotlin.math.ln(p / b)) }.sorted()
+        println("B predicted for %d unsampled strings: median |ln(pred/meas)| %.2f, p90 %.2f".format(errs.size, relErr[relErr.size / 2], relErr[relErr.size * 9 / 10]))
+        for ((m, b, p) in errs.filter { (_, b, p) -> abs(kotlin.math.ln(p / b)) > 0.4 }) println("   %-4s measured %.2e, curve %.2e".format(Notes.name(m), b, p))
+
+        // 2. the computed targets against where the tuner left every string
+        println("note  target f1  stood     cents   (+ = the string stands sharp of the computed target)")
+        val byRegion = HashMap<String, MutableList<Double>>()
         for (midi in ms.keys.sorted()) {
-            val m = s.measurements[midi] ?: continue
-            val l = s.listening(midi)
-            val own = m.partialHz(l.k)
+            val stood = ms[midi]!!.f1Hz
+            val target = s.curveTargetF1(midi, c)
+            val cents = TuningSession.centsOff(stood, target)
             val region = when {
-                l.source != TuningSession.Source.OCTAVE -> "temperament"
+                midi in settings.temperamentLowMidi..TunerSettings.TEMPERAMENT_HIGH -> "temperament"
                 settings.isWound(midi) -> "wound"
                 midi <= settings.bassBoundaryMidi -> "bass"
                 midi > TunerSettings.TEMPERAMENT_HIGH -> "treble"
                 else -> "middle"
             }
-            val width = if (own == null) null else {
-                val dev = TuningSession.centsOff(own, l.targetHz)
-                if (l.source == TuningSession.Source.OCTAVE && midi < l.refMidi!!) -dev else dev
-            }
-            if (width != null && l.source != TuningSession.Source.REFERENCE) widths.getOrPut(region) { ArrayList() } += width
-            println("%-4s %2d  %2d      %.2e  %+7.2f   %-6s  %s".format(
-                Notes.name(midi), l.k, m.partials.size, m.b, TuningSession.centsOff(m.f1Hz, TuningSession.targetF1(midi, a4)),
-                l.type?.label?.let { "$it ${Notes.name(l.refMidi!!)}" } ?: region,
-                width?.let { "%+6.2f".format(it) } ?: "partial ${l.k} not measured"))
+            byRegion.getOrPut(region) { ArrayList() } += cents
+            println("%-4s %9.2f %9.2f %+7.2f   %s".format(Notes.name(midi), target, stood, cents, region))
         }
-        for ((region, v) in widths) {
+        for ((region, v) in byRegion) {
             val sorted = v.sorted()
             println("%-11s n=%2d  median %+5.2f c   p10..p90 %+5.1f..%+5.1f".format(region, v.size, sorted[v.size / 2], sorted[v.size / 10], sorted[v.size * 9 / 10]))
         }
-        // the temperament octave was tuned to equal temperament on this A4 and
-        // is found there; the middle and the treble were tuned by beatless
-        // octaves and are found within a few cents of them. How wide the bass
-        // was tuned is the tuner's, and is printed, not asserted.
-        fun median(r: String) = widths[r]!!.sorted().let { it[it.size / 2] }
-        assertTrue(abs(median("temperament")) < 2.0, "temperament octave median ${median("temperament")}")
-        assertTrue(abs(median("middle")) < 3.0, "middle median ${median("middle")}")
-        assertTrue(abs(median("treble")) < 3.0, "treble median ${median("treble")}")
+        // beatless octaves of the set types (width 0): the middle and the treble were
+        // tuned within a few cents of them; the bass was tuned wider — the tuner's
+        // width, a setting, printed here and not asserted
+        fun median(r: String) = byRegion[r]!!.sorted().let { it[it.size / 2] }
+        assertTrue(abs(median("temperament")) < 2.0, "temperament ${median("temperament")}")
+        assertTrue(abs(median("middle")) < 3.0, "middle ${median("middle")}")
+        assertTrue(abs(median("treble")) < 4.0, "treble ${median("treble")}")
     }
 
     /** Plays a file in hops, and hands over the controller's state after each one. */
@@ -187,7 +198,7 @@ class EngineRecordingsTest {
             }
             c = TuningController(player)
             c.applySettings(settings)
-            c.restore(SessionSnapshot(0, a4, midi, ms.values.filter { it.midi != midi }.toList()))
+            c.restore(SessionSnapshot(0, a4, midi, ms.values.filter { it.midi != midi }.toList(), sampling = false))
             val l = c.tuning.value!!.listening
             c.startLive()
             val seconds = x.size.toDouble() / sr
@@ -247,7 +258,7 @@ class EngineRecordingsTest {
         }
         c = TuningController(player)
         c.applySettings(settings)
-        c.restore(SessionSnapshot(0, a4, walk.first(), ms.values.toList()))
+        c.restore(SessionSnapshot(0, a4, walk.first(), ms.values.toList(), sampling = false))
         c.startLive()
         val wrong = pieces.zip(onScreen).filter { (p, s) -> p.first != s }.map { (p, s) -> "${Notes.name(p.first)}→${Notes.name(s)}" }
         println("followed ${pieces.size - wrong.size} of ${pieces.size} keys; not followed: $wrong")

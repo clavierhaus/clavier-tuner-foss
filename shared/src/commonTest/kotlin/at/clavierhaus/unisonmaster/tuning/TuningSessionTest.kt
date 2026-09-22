@@ -29,7 +29,7 @@ class TuningSessionTest {
 
     @Test
     fun theWalkIsA4DownToTheLowestKeyThenUpToTheTop() {
-        val s = TuningSession(a4, foss)
+        val s = TuningSession(a4, foss, sampling = false)
         assertEquals((69 downTo 17).toList() + (70..108).toList(), s.notes)
         assertEquals(17, s.stepLowMidi)
         assertEquals(108, s.stepHighMidi)
@@ -37,7 +37,7 @@ class TuningSessionTest {
 
     @Test
     fun fossWalksTheTemperamentOctaveFirstAndAsksForDoneThere() {
-        val s = TuningSession(a4, foss)
+        val s = TuningSession(a4, foss, sampling = false)
         assertTrue(s.gated)
         assertFalse(s.recordsOnLeaving)
         s.record(measuredString(69, a4, 8e-4))
@@ -52,7 +52,7 @@ class TuningSessionTest {
 
     @Test
     fun proRecordsOnLeavingFromTheStart() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         assertTrue(s.recordsOnLeaving)
         s.select(69)
         assertEquals(68, s.next())
@@ -60,7 +60,7 @@ class TuningSessionTest {
 
     @Test
     fun a4IsTheReferenceAndTheTemperamentOctaveIsEqualTemperamentOnTheFirstPartial() {
-        val s = TuningSession(a4, foss)
+        val s = TuningSession(a4, foss, sampling = false)
         val l = s.listening(69)
         assertEquals(1, l.k); assertEquals(a4, l.targetHz); assertEquals(TuningSession.Source.REFERENCE, l.source)
         for (m in 57..68) {
@@ -73,7 +73,7 @@ class TuningSessionTest {
 
     @Test
     fun belowTheOctaveTheListenedPartialMeetsThePartnersMeasuredPartial() {
-        val s = TuningSession(a4, foss)
+        val s = TuningSession(a4, foss, sampling = false)
         // G#4 measured with its second partial 0.8 cents off its model: the octave
         // below must meet the partial as measured, not as the model has it
         val gs4 = measuredString(68, et(68) * 1.0003, 7e-4, offsetK = 2, offsetCents = 0.8)
@@ -89,12 +89,12 @@ class TuningSessionTest {
 
     @Test
     fun theOctaveWidthLowersTheLowerNoteAndRaisesTheUpper() {
-        val s = TuningSession(a4, pro.copy(widthMiddle = 2.0, widthTreble = 3.0))
+        val s = TuningSession(a4, pro.copy(widthMiddle = 2.0, widthTreble = 3.0), sampling = false)
         val gs4 = measuredString(68, et(68), 7e-4)
         s.record(gs4)
         assertEquals(-2.0, cents(s.listening(56).targetHz, gs4.partialHz(2)!!), 1e-9)
         // the treble: A#4 is the upper note of a double octave (4:1) over A#2
-        val as2 = measuredString(46, et(46), 2e-4)
+        val as2 = measuredString(46, et(46), 0.0)         // B unknown: the curve does not stand on it
         s.record(as2)
         val l = s.listening(70)
         assertEquals(OctaveType.O4_1, l.type)
@@ -106,14 +106,14 @@ class TuningSessionTest {
 
     @Test
     fun theRegionsGiveTheOctaveType() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         for (m in listOf(56, 52, 39)) s.record(measuredString(m + 12, et(m + 12), 5e-4))
         assertEquals(OctaveType.O4_2, s.listening(56).type)           // middle
         assertEquals(4, s.listening(56).k)
         assertEquals(OctaveType.O6_3, s.listening(52).type)           // bass: within an octave of E2
         assertEquals(6, s.listening(52).k)
         assertEquals(OctaveType.O6_3, s.listening(39).type)           // wound, below E2
-        val wound = TuningSession(a4, pro.copy(octaveWound = OctaveType.O8_4, widthWound = 10.0))
+        val wound = TuningSession(a4, pro.copy(octaveWound = OctaveType.O8_4, widthWound = 10.0), sampling = false)
         val e3 = measuredString(51, et(51), 5e-4)
         wound.record(e3)
         val l = wound.listening(39)
@@ -123,7 +123,7 @@ class TuningSessionTest {
 
     @Test
     fun aPartnerNotYetTunedGivesEqualTemperamentOnTheRegistersPartialAndSaysSo() {
-        val s = TuningSession(a4, foss)
+        val s = TuningSession(a4, foss, sampling = false)
         s.record(measuredString(69, a4, 8e-4))
         val l = s.listening(40)
         assertEquals(TuningSession.Source.PARTNER_UNTUNED, l.source)
@@ -136,7 +136,7 @@ class TuningSessionTest {
 
     @Test
     fun aPartnerWithoutThatPartialIsPlacedByItsOwnFit() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         val gs4 = measuredString(68, et(68), 7e-4, maxK = 1)
         s.record(gs4)
         val l = s.listening(56)
@@ -146,12 +146,12 @@ class TuningSessionTest {
 
     @Test
     fun theFirstPartialFollowsFromTheListenedOne() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         s.record(measuredString(68, et(68), 7e-4))
-        s.record(measuredString(57, et(57), 4e-4))
+        s.record(measuredString(57, et(57), 0.0))       // B unknown: no curve yet
         val l = s.listening(56)
         val b = s.predictedB(56)
-        assertEquals(4e-4, b, 1e-12, "the nearest measured plain string")
+        assertEquals(7e-4, b, 1e-12, "the nearest measured plain string with a B")
         val f1 = s.targetF1Of(56)
         assertEquals(l.targetHz, 4 * f1 * Inharmonicity.ratio(4, b), 1e-9)
         val p = s.predictedPartials(56)
@@ -160,17 +160,17 @@ class TuningSessionTest {
 
     @Test
     fun theInharmonicityOfAWoundStringComesFromAWoundString() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         s.record(measuredString(40, et(40), 1.5e-4))       // E2, plain
         s.record(measuredString(35, et(35), 6e-5))         // B1, wound
         assertEquals(6e-5, s.predictedB(38), 1e-12)
         assertEquals(1.5e-4, s.predictedB(45), 1e-12)
-        assertEquals(StringMeasure.DEFAULT_B, TuningSession(a4, pro).predictedB(50))
+        assertEquals(StringMeasure.DEFAULT_B, TuningSession(a4, pro, sampling = false).predictedB(50))
     }
 
     @Test
     fun aMeasurementKeepsOnlyPartialsAPlainStringCanHave() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         val m = measuredString(57, et(57), 4e-4, offsetK = 3, offsetCents = -100.0)
         s.record(m)
         assertNull(s.measurements[57]!!.partials.firstOrNull { it.k == 3 }, "a partial a semitone flat is another string's")
@@ -179,7 +179,7 @@ class TuningSessionTest {
 
     @Test
     fun anotherNotesReadingIsNotKeptAndWhatTheNoteHadStays() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         s.record(measuredString(57, et(57), 4e-4))
         s.record(measuredString(57, et(58), 4e-4))      // A#3 still ringing, recorded as A3
         assertEquals(et(57), s.measurements[57]!!.f1Hz, 1e-9)
@@ -187,7 +187,7 @@ class TuningSessionTest {
 
     @Test
     fun aNewReferenceRetargetsEveryNote() {
-        val s = TuningSession(a4, pro)
+        val s = TuningSession(a4, pro, sampling = false)
         s.a4Hz = 440.0
         assertEquals(TuningSession.targetF1(60, 440.0), s.listening(60).targetHz, 1e-9)
     }
@@ -198,5 +198,61 @@ class TuningSessionTest {
         assertEquals(4 * 220.0 * 2.0.pow(Inharmonicity.centsOf(4, 4e-4) / 1200), m.partialHz(4)!!, 1e-9)
         assertTrue(abs(m.partialHz(4)!! - 4 * 220.0 * Inharmonicity.ratio(4, 4e-4)) < 1e-9)
         assertNull(m.partialHz(9))
+    }
+
+    // ---- sampling and the curve ----
+
+    @Test
+    fun aNewSessionSamplesTheSetThenTunes() {
+        val s = TuningSession(a4, foss)
+        assertTrue(s.sampling)
+        assertFalse(s.recordsOnLeaving)
+        assertEquals(foss.sampleNotes, s.sampleNotes)
+        assertTrue(17 in s.sampleNotes && 40 in s.sampleNotes && 69 !in s.sampleNotes)
+        s.record(measuredString(69, a4, 8e-4))
+        assertEquals(17, s.next(), "Done walks the sample set from the bottom")
+        for (m in s.sampleNotes) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        assertTrue(s.sampleSetComplete())
+        s.finishSampling()
+        assertFalse(s.sampling)
+        assertTrue(s.curve.ready)
+    }
+
+    @Test
+    fun theCurveFitsLnBPerSegmentAndBreaksAtTheFloor() {
+        // plain wire doubling B every octave from 1e-4 at E2; wound strings flat at 6e-5
+        val samples = (40..96 step 4).associateWith { 1e-4 * 2.0.pow((it - 40) / 12.0) } + mapOf(20 to 6e-5, 32 to 6e-5)
+        val c = InharmonicityCurve(samples, 40)
+        assertTrue(c.ready)
+        assertEquals(1e-4 * 2.0.pow(10 / 12.0), c.b(50)!!, 2e-6, "between samples, on the line")
+        assertEquals(1e-4 * 2.0.pow(60 / 12.0), c.b(100)!!, 2e-4 * 2.0.pow(60 / 12.0) * 0.02, "beyond the top, on the line")
+        assertEquals(6e-5, c.b(26)!!, 1e-9, "wound: its own segment, not the plain line")
+        // a break at C4 splits the plain line: below it, one flat run; above, another
+        val split = (40..56 step 4).associateWith { 2e-4 } + (60..96 step 4).associateWith { 8e-4 }
+        val d = InharmonicityCurve(split, 40, breaks = setOf(60))
+        assertEquals(2e-4, d.b(58)!!, 1e-9); assertEquals(8e-4, d.b(61)!!, 1e-9)
+    }
+
+    @Test
+    fun withTheCurveTheTargetIsComputedAndThePartnerIsTheCheck() {
+        val s = TuningSession(a4, pro.copy(widthMiddle = 1.0), sampling = false)
+        for (m in listOf(40, 52, 64, 76, 88)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        assertTrue(s.curve.ready)
+        val l = s.listening(56)
+        assertEquals(TuningSession.Source.CURVE, l.source)
+        assertEquals(4, l.k); assertEquals(68, l.refMidi); assertEquals(1.0, l.widthCents)
+        assertEquals(null, l.checkCents, "G#4 not tuned: nothing to check against")
+        // the chain: G#4's second partial as the curve models it, a cent wide
+        val bGs4 = s.curve.b(68)!!
+        val gs4p2 = 2 * et(68) * Inharmonicity.ratio(2, bGs4)
+        assertEquals(gs4p2 * 2.0.pow(-1.0 / 1200), l.targetHz, 1e-6)
+        // G#4 tuned a cent sharp of the curve's place: the check says so
+        s.record(measuredString(68, et(68) * 2.0.pow(1.0 / 1200), bGs4))
+        val l2 = s.listening(56)
+        assertEquals(l.targetHz, l2.targetHz, 1e-6, "the curve stays the target")
+        assertEquals(-1.0, l2.checkCents!!, 0.05, "the partner stands a cent sharp: the octave to it a cent narrower")
+        // the treble chains upward the same way
+        val t = s.listening(81)
+        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(57, t.refMidi)
     }
 }

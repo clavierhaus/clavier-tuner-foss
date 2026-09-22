@@ -48,8 +48,8 @@ fun partialNoteName(k: Int, f1Hz: Double, a4Hz: Double): String =
 private val ROW_ACTIVE = Color(0xFF2E2E2E)
 
 /**
- * The tuning graph on a fixed axis, ±4 Hz around the fundamental's target,
- * labelled at every whole Hz. One static light-blue bell on the line stands
+ * The tuning graph on a fixed axis, ±8 cents around the targets, labelled
+ * every 2 cents: in cents every partial of one string shows the same error. One static light-blue bell on the line stands
  * for every target; each shown partial is an orange bell of one common
  * height, numbered, placed by its own offset from its own target, green
  * within ±0.1 Hz; the [active] partial is drawn on top. The frequencies
@@ -93,7 +93,7 @@ fun TuningGraph(
         val tk = targetOf(k)
         val lk = liveOf(k)
         key(k) {
-            val target = if (tk != null && lk != null) (lk - tk).toFloat() else 0f
+            val target = if (tk != null && lk != null) (1200.0 * kotlin.math.ln(lk / tk) / kotlin.math.ln(2.0)).toFloat() else 0f
             glide[k] = animateFloatAsState(target, tween(20, easing = LinearEasing), label = "bell$k").value
         }
     }
@@ -109,8 +109,8 @@ fun TuningGraph(
         val green = Color(Brand.GO_GREEN)
         val muted = Color(Brand.WHITE_MUTED)
         val native = drawContext.canvas.nativeCanvas
-        fun xOf(offsetHz: Double): Float =
-            xc + (offsetHz / HZ_SPAN).coerceIn(-1.0, 1.0).toFloat() * half
+        fun xOf(offsetCents: Double): Float =
+            xc + (offsetCents / CENTS_SPAN).coerceIn(-1.0, 1.0).toFloat() * half
 
         val height = base * 0.85f
         val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it), matchHz) }
@@ -121,22 +121,28 @@ fun TuningGraph(
             val lk = liveOf(k) ?: continue
             if (!sounding) continue
             val match = TuningSession.matched(lk, tk, matchHz)
-            val x = xOf((glide[k] ?: (lk - tk).toFloat()).toDouble())
+            val x = xOf((glide[k] ?: (1200.0 * kotlin.math.ln(lk / tk) / kotlin.math.ln(2.0)).toFloat()).toDouble())
             bellFilled(x, height, sigma, base, if (match) green else Color(Brand.ORANGE))
             if (shown.size > 1) native.drawText("$k", x, base - height - 10f, topLabel)
         }
 
-        val first = ceil(targetHz - HZ_SPAN).toInt()
-        val last = floor(targetHz + HZ_SPAN).toInt()
-        for (n in first..last) {
-            val x = xOf(n - targetHz)
+        // the axis in cents: on one string every partial has the same error in
+        // cents, so the bells of a string coincide — a bell apart is a false
+        // beat, or a string that is not what its model says
+        var n = -CENTS_SPAN.toInt()
+        while (n <= CENTS_SPAN.toInt()) {
+            val x = xOf(n.toDouble())
             drawLine(muted, Offset(x, base), Offset(x, base + 10f), strokeWidth = 1.5f)
-            native.drawText("$n", x, base + 34f, axisPaint)
+            native.drawText(if (n == 0) "0" else "%+d c".format(n), x, base + 34f, axisPaint)
+            n += 2
         }
         drawLine(muted, Offset(0f, base), Offset(w, base), strokeWidth = 1f)
         drawLine(Color(Brand.WHITE), Offset(xc, 0f), Offset(xc, base), strokeWidth = 1.5f)
     }
 }
+
+/** The tuning graph's span either side of the target, cents. */
+const val CENTS_SPAN = 8.0
 
 private fun hz1(hz: Double): String = String.format(Locale.ROOT, "%.1f", hz)
 

@@ -84,6 +84,14 @@ data class TunerSettings(
      * the plain-wire inharmonicity curve.
      */
     val lowestKeyMidi: Int = 21,               // A0
+    // SAMPLING
+    /**
+     * Where the inharmonicity curve breaks: notes at which a new run of
+     * scaling begins (a bridge break, a strut, a change of wire). Pro marks
+     * them on the sampling screen; FOSS has none beyond the wound/plain
+     * floor. An instrument's property, kept with the settings.
+     */
+    val curveBreaks: Set<Int> = emptySet(),
     // WORKFLOW
     /**
      * The tuning screen follows the key struck: when a strike is another
@@ -119,7 +127,18 @@ data class TunerSettings(
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MAX_WIDTH_CENTS = 20.0
+        const val SAMPLE_STEP = 4
+        const val SAMPLE_TOP = 96            // C7: above it the second partial is gone before it is read
     }
+
+    /**
+     * The strings sampled before tuning (docs/ENGINE.md §1): from the lowest
+     * key up to C7, every [SAMPLE_STEP] semitones, and the lowest plain
+     * string itself, so each side of the floor has its own; A4 is the hub's.
+     * FOSS samples exactly these; Pro proposes them and takes any note added.
+     */
+    val sampleNotes: List<Int>
+        get() = ((lowestKeyMidi..SAMPLE_TOP step SAMPLE_STEP) + lowestUnwoundMidi).filter { it != TEMPERAMENT_HIGH }.distinct().sorted()
 
     /** True for a wound string: below the lowest plain one. */
     fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi
@@ -193,6 +212,7 @@ class SettingsModel(
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
+            curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchHz = f("matchHz", d.matchHz),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
@@ -216,6 +236,7 @@ class SettingsModel(
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("autoNote", s.autoNote.toString())
+        store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchHz", s.matchHz.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())

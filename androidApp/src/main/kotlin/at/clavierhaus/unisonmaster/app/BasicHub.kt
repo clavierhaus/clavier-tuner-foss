@@ -69,6 +69,8 @@ fun BasicHub(
     recorder: SessionRecorder?,
     onSettings: () -> Unit,
     onBack: () -> Unit,
+    /** Pro: marks a break of the inharmonicity curve at the note (a strut, a bridge break); null in FOSS. */
+    onToggleBreak: ((Int) -> Unit)? = null,
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -160,9 +162,19 @@ fun BasicHub(
                 if (l.refModelled) append(" (partial placed by its fit)")
             }
             TuningSession.Source.PARTNER_UNTUNED -> "equal temperament — ${Notes.name(l.refMidi!!)} not tuned yet"
+            TuningSession.Source.CURVE -> buildString {
+                append("${l.type!!.label} octave to ${Notes.name(l.refMidi!!)} on the curve")
+                append(if (l.widthCents > 0.0) String.format(Locale.ROOT, ", %.1f c wide", l.widthCents) else ", beatless")
+                l.checkCents?.let { append(String.format(Locale.ROOT, " · %s stands %.1f c %s", Notes.name(l.refMidi!!), abs(it), if (it >= 0) "wide" else "narrow")) }
+            }
         }
+        val sampleLine = if (t.sampling) "sampling ${t.samplesDone} of ${t.samplesTotal}" +
+            (if (t.sampled.contains(t.midi)) " · ${name} sampled" else "") else ""
         val coarse = read?.coarseCents
         val state: Pair<String, Color> = when {
+            t.sampling && t.sampled.contains(t.midi) && !live -> "sampled" to Color(Brand.GO_GREEN)
+            t.sampling && live -> "heard" to Color(Brand.GO_GREEN)
+            t.sampling -> "listening" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> "complete" to Color(Brand.GO_GREEN)
             coarse != null && !live ->
                 String.format(Locale.ROOT, "%.0f c %s", abs(coarse), if (coarse < 0) "flat" else "sharp") to Color(Brand.ORANGE)
@@ -174,8 +186,8 @@ fun BasicHub(
             shownHz > shownTarget -> "sharp" to Color(Brand.ORANGE)
             else -> "flat" to Color(Brand.ORANGE)
         }
-        val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete)
-        val status = (if (follows) "follows the key · " else "") + when {
+        val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
+        val status = if (t.sampling) sampleLine else (if (follows) "follows the key · " else "") + when {
             !cfg.temperamentFirst -> "leaving a note keeps it"
             t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
             else -> "A3–A4 first · Done keeps a note"
@@ -183,6 +195,7 @@ fun BasicHub(
         // Full Spectrum: the partial read by phase replaces the finder's place for it
         val spectrum = partials.map { p -> if (read != null && p.k == read.k && shownHz != null) p.copy(hz = shownHz) else p }
         val p1Hz = spectrum.firstOrNull { it.k == 1 }?.hz
+        val doneReady = live || (read?.hz != null && level > 0.0)
 
         // header: back and gear only; the title lives on the hub
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart)) {
@@ -247,6 +260,51 @@ fun BasicHub(
                     onSelect = { k -> controller.activatePartial(k) },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp),
                 )
+            }
+            t.sampling -> {
+                // Sampling: one string alone, as it stands; Done measures it
+                Column(
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxSize()
+                        .padding(top = 52.dp, bottom = 84.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        NoteBlock(
+                            name = name,
+                            targetHz = shownTarget,
+                            partial = l.k.takeIf { it > 1 },
+                            origin = "sampling: mute the other strings, strike, hold — Done keeps the string as it stands",
+                            onSemitone = { d -> controller.stepNote(d) },
+                            onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
+                        )
+                        Spacer(Modifier.weight(1f))
+                        MeasuredBlock(shownHz, partial = l.k.takeIf { it > 1 })
+                    }
+                    Spacer(Modifier.weight(1f))
+                    // the set: sampled strings green, the one on screen white
+                    Text(
+                        buildString {
+                            for (m in controller.sampleNotes()) append(if (m in t.sampled) "●" else "○").append(" ").append(Notes.name(m)).append("   ")
+                        },
+                        color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 2,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (!cfg.temperamentFirst) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (onToggleBreak != null) {
+                                PartialsButton(fullSpectrum = t.breakHere, onClick = { onToggleBreak(t.midi) }, label = if (t.breakHere) "Break here ✓" else "Break here")
+                                Spacer(Modifier.width(12.dp))
+                            }
+                            if (t.curveReady) PartialsButton(fullSpectrum = false, onClick = { controller.finishSampling() }, label = "Start tuning")
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                if (t.curveReady) "any note can be sampled; a break splits the curve at this note" else "at least two plain strings before tuning",
+                                color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1,
+                            )
+                        }
+                    }
+                }
             }
             else -> {
                 // Fundamental: one note, one motion, one colour
@@ -328,7 +386,7 @@ fun BasicHub(
                 PartialsButton(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
             }
             Spacer(Modifier.width(10.dp))
-            DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
+            DoneButton(onClick = { controller.acceptLive() }, enabled = if (t.sampling) doneReady else matched)
         }
     }
 }

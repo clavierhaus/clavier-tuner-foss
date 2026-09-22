@@ -19,6 +19,7 @@ import at.clavierhaus.unisonmaster.tuning.TuningSession
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.log10
+import kotlin.math.pow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -284,6 +285,17 @@ class TuningController(
         val stepHighMidi: Int,
         /** True once every note of the session is measured. */
         val complete: Boolean,
+        /** Sampling: single strings across the compass, before tuning. */
+        val sampling: Boolean = false,
+        /** Of the proposed sample set: how many are in, how many there are. */
+        val samplesDone: Int = 0,
+        val samplesTotal: Int = 0,
+        /** True once the curve stands on enough strings for computed targets. */
+        val curveReady: Boolean = false,
+        /** The strings sampled so far (for the sampling screen's row). */
+        val sampled: Set<Int> = emptySet(),
+        /** True when a curve break is marked at this note (Pro). */
+        val breakHere: Boolean = false,
     )
 
     private var session: TuningSession? = null
@@ -291,6 +303,9 @@ class TuningController(
     private val _tuning = MutableStateFlow<TuningView?>(null)
     /** Null on the hub, before A4 is set; the note being tuned after. */
     val tuning: StateFlow<TuningView?> = _tuning.asStateFlow()
+
+    /** The strings proposed for sampling, lowest first. */
+    fun sampleNotes(): List<Int> = session?.sampleNotes ?: _settings.value.sampleNotes
 
     /** The session's measurements so far (A4 first). */
     fun measurements(): Map<Int, NoteMeasurement> = session?.measurements ?: emptyMap()
@@ -306,6 +321,7 @@ class TuningController(
             a4Hz = _referenceA4Hz.value,
             currentMidi = s.current,
             measurements = s.measurements.values.toList(),
+            sampling = s.sampling,
         )
     }
 
@@ -333,6 +349,7 @@ class TuningController(
         setReference(snap.a4Hz)
         val s = TuningSession(_referenceA4Hz.value, _settings.value)
         for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
+        if (!snap.sampling) s.finishSampling()
         val resume = snap.currentMidi.takeIf { s.selectable(it) }
             ?: s.next()?.takeIf { s.selectable(it) }
             ?: TuningSession.MIDI_A4
@@ -366,6 +383,18 @@ class TuningController(
         publish(s)
     }
 
+    /**
+     * While sampling, the reader goes where the string is: a string as it
+     * stands may lie outside the band around the curve's place for it.
+     */
+    private fun followCoarse(w: Wanted, coarseCents: Double) {
+        val t = _tuning.value ?: return
+        if (!t.sampling) return
+        val hz = w.hz * 2.0.pow(coarseCents / 1200.0)
+        wanted = Wanted(hz, w.k, ++generation)
+        _reading.value = Reading(w.k, null, hz, live = false, settling = false, coarseCents = null)
+    }
+
     private fun publish(s: TuningSession) {
         val midi = s.current
         val listening = s.listening(midi)
@@ -385,6 +414,12 @@ class TuningController(
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,
             complete = s.nextUnmeasured() == null,
+            sampling = s.sampling,
+            samplesDone = s.sampleNotes.count { it in s.measurements },
+            samplesTotal = s.sampleNotes.size,
+            curveReady = s.curve.ready,
+            sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),
+            breakHere = midi in s.settings.curveBreaks,
         )
         _targetHz.value = f1
         _targets.value = s.predictedPartials(midi, highestPartial(f1).coerceAtLeast(listening.k))
@@ -451,12 +486,38 @@ class TuningController(
             return _referenceA4Hz.value
         }
         val s = session ?: return null
+        if (s.sampling) {
+            // a sample: the string as it stands, read within the last seconds
+            val last = lastShown ?: return null
+            if (last.generation != generation || hops - last.hop > LEAVE_HOPS) return null
+            val m = measureNote(t, last.k, last.hz) ?: return null
+            s.record(m)
+            if (s.settings.temperamentFirst && s.sampleSetComplete()) s.finishSampling()
+            advance(s)
+            return last.hz
+        }
         if (!matchedNow()) return null
         val r = _reading.value ?: return null
         val hz = r.hz ?: return null
         measureNote(t, r.k, hz)?.let { s.record(it) }
         advance(s)
         return hz
+    }
+
+    /** Pro: sampling ends when the tuner says so; the curve stands on what is in. */
+    fun finishSampling() {
+        val s = session ?: return
+        if (!s.sampling) return
+        s.finishSampling()
+        publish(s)
+    }
+
+    /** Done can be tapped: while tuning a live match, while sampling a reading of the string in the last seconds. */
+    fun doneReady(): Boolean {
+        val s = session ?: return _liveHz.value != null
+        if (!s.sampling) return matchedNow()
+        val last = lastShown ?: return false
+        return last.generation == generation && hops - last.hop <= LEAVE_HOPS
     }
 
     /** Whether the partial read matches its target now (what Done asks). */
@@ -621,6 +682,7 @@ class TuningController(
                 } else if (finder != null && _liveLevel.value > 0.0) {
                     coarse = finder.near(w.hz, COARSE_CENTS)?.let { TuningSession.centsOff(it.hz, w.hz) }
                         ?.takeIf { abs(it) > PhaseReader.DEFAULT_BAND_CENTS }
+                    coarse?.let { followCoarse(w, it) }
                 } else if (_liveLevel.value == 0.0) coarse = null
                 // which key was struck: named within the first moments of a strike,
                 // and followed when the note on screen is not what sounds
@@ -691,15 +753,6 @@ class TuningController(
         for ((k, r) in held) read[k] = r.hz
         _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
             LivePartial(k, hz, TuningSession.centsOff(hz, k * t.targetHz), 1.0)
-        }
-        // the string's own targets: a string has one free variable, its tension,
-        // so once the active partial is on target every other partial of it sits
-        // at its own measured ratio to it — the bells all show the same error,
-        // magnified k times in Hz. Before a partial is heard, the model's place.
-        if (activeHz != null) {
-            val scale = targetOf(t, activeK) / activeHz
-            val own = read.mapValues { (_, hz) -> hz * scale }
-            _targets.value = _targets.value.map { p -> own[p.k]?.let { p.copy(hz = it) } ?: p }
         }
         if (finder != null) {
             val cap = highestPartial(t.targetHz)
