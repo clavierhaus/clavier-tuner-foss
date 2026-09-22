@@ -43,7 +43,10 @@ fun TunerSettingsScreen(controller: TuningController, model: SettingsModel, vers
             },
             SettingsTab("License") {
                 SettingsSection("License")
-                SettingsNote("The licence of Clavier Tuner is being settled before its first release on F-Droid. Until then this build is for the clavierhaus workshop only.")
+                ReadOnlyRow("Clavier Tuner", "clavierhaus.at", "Apache License 2.0")
+                SettingsNote("The full text is in the repository (LICENSE) and in the app's licences screen below. Free to use, study, change and share, including commercially, with attribution and no warranty.")
+                ReadOnlyRow("Typeface", "DejaVu Serif, DejaVu fonts project", "Bitstream Vera licence")
+                ReadOnlyRow("Settings icon", "Material Design icons, Google", "Apache 2.0")
             },
         ),
     )
