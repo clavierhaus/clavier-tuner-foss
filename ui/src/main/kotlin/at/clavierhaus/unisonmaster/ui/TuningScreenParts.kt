@@ -145,7 +145,7 @@ fun MeasuredBlock(hz: Double?, partial: Int? = null, modifier: Modifier = Modifi
             maxLines = 1,
         )
         Text(
-            if (partial != null) "measured, partial $partial" else "measured, fundamental",
+            if (partial != null) "partial $partial" else "fundamental",
             color = Color(Brand.WHITE_MUTED),
             fontFamily = DejaVuSerif,
             fontSize = 15.sp,

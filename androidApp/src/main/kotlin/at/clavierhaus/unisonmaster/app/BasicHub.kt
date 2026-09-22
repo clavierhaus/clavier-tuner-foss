@@ -262,7 +262,7 @@ fun BasicHub(
                 )
             }
             t.sampling -> {
-                // Sampling: one string alone, as it stands; Done measures it
+                // Sampling: what is being done and why, the exact sequence, the set
                 Column(
                     Modifier
                         .align(Alignment.TopStart)
@@ -270,38 +270,48 @@ fun BasicHub(
                         .padding(top = 52.dp, bottom = 84.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        NoteBlock(
-                            name = name,
-                            targetHz = shownTarget,
-                            partial = l.k.takeIf { it > 1 },
-                            origin = "sampling: mute the other strings, strike, hold — Done keeps the string as it stands",
-                            onSemitone = { d -> controller.stepNote(d) },
-                            onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
-                        )
+                        Column {
+                            Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 40.sp, maxLines = 1)
+                            Text(
+                                (if (t.sampled.contains(t.midi)) "sampled — Done again replaces it" else "strike the string alone, hold, then Done") +
+                                    "  ·  read on partial ${l.k} near ${String.format(Locale.ROOT, "%.1f", shownTarget)} Hz",
+                                color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1,
+                            )
+                        }
                         Spacer(Modifier.weight(1f))
                         MeasuredBlock(shownHz, partial = l.k.takeIf { it > 1 })
                     }
-                    Spacer(Modifier.weight(1f))
-                    // the set: sampled strings green, the one on screen white
+                    Spacer(Modifier.height(6.dp))
+                    val lowest = Notes.name(cfg.lowestKeyMidi)
+                    val guide = buildString {
+                        append("SAMPLING THE INSTRUMENT — ${t.samplesTotal} single strings, $lowest to C7, measured as they stand; ")
+                        append("from them the stiffness of every string is derived and every note's target computed. Nothing is tuned yet.\n")
+                        append("1. Mute the other strings of the note with one wedge: only the left string sounds.\n")
+                        append("2. Strike once, mezzo-forte, and hold the key until the number stands.\n")
+                        append("3. Tap Done: the string is kept and the screen moves to the next of the set.\n")
+                        append(
+                            if (cfg.temperamentFirst) "Tuning begins by itself when the set is complete. The lowest key is set under Settings → Piano."
+                            else "Any note can be sampled (arrows, or strike it). Break here marks a strut or a bridge break: the curve is cut there. Start tuning once the set is in. Lowest key: Settings → Piano.",
+                        )
+                    }
+                    Text(guide, color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 14.sp, lineHeight = 18.sp, maxLines = 7, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.height(4.dp))
+                    // the set: sampled strings filled, the rest open
                     Text(
                         buildString {
                             for (m in controller.sampleNotes()) append(if (m in t.sampled) "●" else "○").append(" ").append(Notes.name(m)).append("   ")
                         },
                         color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 2,
                     )
-                    Spacer(Modifier.height(8.dp))
                     if (!cfg.temperamentFirst) {
+                        Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (onToggleBreak != null) {
                                 PartialsButton(fullSpectrum = t.breakHere, onClick = { onToggleBreak(t.midi) }, label = if (t.breakHere) "Break here ✓" else "Break here")
                                 Spacer(Modifier.width(12.dp))
                             }
                             if (t.curveReady) PartialsButton(fullSpectrum = false, onClick = { controller.finishSampling() }, label = "Start tuning")
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                if (t.curveReady) "any note can be sampled; a break splits the curve at this note" else "at least two plain strings before tuning",
-                                color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1,
-                            )
+                            else Text("Start tuning: after two plain strings", color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                         }
                     }
                 }
