@@ -6,6 +6,8 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -174,7 +176,42 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 },
                 color = Muted, fontSize = 13.sp,
             )
+            // piano and study are chosen once a session: here, not in the take's panel, which
+            // needs its height for the instruction, the reading field and Record
             Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (p in Piano.entries) {
+                    Chip(p.label, selected = p == piano, enabled = !busy) {
+                        piano = p
+                        prefs.edit().putString("piano", p.code).apply()
+                        phase = Phase.Idle
+                    }
+                }
+            }
+            // the studies on a row of their own: beside the pianos they ran off the edge on a phone
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (st in Study.entries) {
+                    Chip(st.label, selected = st == study, enabled = !busy) {
+                        study = st
+                        prefs.edit().putString("study", st.code).apply()
+                        phase = Phase.Idle
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            // Start over forgets the progress of this piano (no file is deleted): a session
+            // action, kept away from Record
+            Row {
+                Chip("Start over", selected = false, enabled = !busy && done.isNotEmpty()) {
+                    done = emptySet()
+                    prefs.edit().putStringSet("done-${piano.code}", emptySet()).putStringSet("done", emptySet()).apply()
+                    index = 0
+                    phase = Phase.Idle
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text("SETUP", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
             when (study) {
                 Study.COMPASS -> StrikeProtocol.compassSetup
@@ -186,7 +223,8 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                     Text(line, color = White, fontSize = 13.sp, lineHeight = 17.sp)
                 }
             }
-            Spacer(Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(6.dp))
             Text(
                 "Files: /sdcard/${StrikeProtocol.DIRECTORY}/ — collect them on the X1 with scripts/collect-recordings.sh",
                 color = Muted, fontSize = 12.sp,
@@ -203,26 +241,8 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 .background(Panel, RoundedCornerShape(12.dp))
                 .padding(20.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (p in Piano.entries) {
-                    Chip(p.label, selected = p == piano, enabled = !busy) {
-                        piano = p
-                        prefs.edit().putString("piano", p.code).apply()
-                        phase = Phase.Idle
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                for (st in Study.entries) {
-                    Chip(st.label, selected = st == study, enabled = !busy) {
-                        study = st
-                        prefs.edit().putString("study", st.code).apply()
-                        phase = Phase.Idle
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
             Text("Take ${index + 1} of ${takes.size}  ·  ${done.size} done", color = Muted, fontSize = 14.sp)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Chip("◀", selected = false, enabled = !busy && index > 0) { index--; phase = Phase.Idle }
                 Spacer(Modifier.width(12.dp))
@@ -246,26 +266,16 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 Chip("▶", selected = false, enabled = !busy && index < takes.size - 1) { index++; phase = Phase.Idle }
             }
             Spacer(Modifier.height(8.dp))
+            // what to do for this take scrolls in the space that is left; the status,
+            // the level and Record stay put below it (on a det3 take with its part
+            // banner and the reading field they used to fall off the panel)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState(), enabled = !busy)) {
             if (take.part.isNotEmpty()) {
                 Text(take.part, color = Orange, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                 if (partStarts) Text(StrikeProtocol.partSetup(take.part), color = Orange, fontSize = 15.sp, lineHeight = 19.sp)
                 Spacer(Modifier.height(4.dp))
             }
             Text(take.instruction, color = White, fontSize = 15.sp)
-            if (StrikeProtocol.wantsReading(take)) {
-                Spacer(Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = reading,
-                    onValueChange = { v -> reading = v; prefs.edit().putString("reading-${piano.code}-${take.id}", v).apply() },
-                    singleLine = true,
-                    label = { Text("second tuner's reading, cents", fontSize = 12.sp) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = White, unfocusedTextColor = White,
-                        focusedBorderColor = Orange, unfocusedBorderColor = Muted,
-                        focusedLabelColor = Orange, unfocusedLabelColor = Muted,
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                )
             }
             Spacer(Modifier.height(10.dp))
 
@@ -285,7 +295,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             Spacer(Modifier.height(8.dp))
             LevelBar((phase as? Phase.Recording)?.levelDb ?: -99f)
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -315,13 +325,21 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                         phase = Phase.Idle
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                Chip("Start over", selected = false, enabled = !busy && done.isNotEmpty()) {
-                    done = emptySet()
-                    prefs.edit().putStringSet("done-${piano.code}", emptySet()).putStringSet("done", emptySet()).apply()
-                    index = 0
-                    phase = Phase.Idle
-                }
+                if (StrikeProtocol.wantsReading(take)) {
+                    Spacer(Modifier.width(12.dp))
+                    OutlinedTextField(
+                    value = reading,
+                    onValueChange = { v -> reading = v; prefs.edit().putString("reading-${piano.code}-${take.id}", v).apply() },
+                    singleLine = true,
+                    label = { Text("reading, cents", fontSize = 12.sp) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = White, unfocusedTextColor = White,
+                        focusedBorderColor = Orange, unfocusedBorderColor = Muted,
+                        focusedLabelColor = Orange, unfocusedLabelColor = Muted,
+                    ),
+                    modifier = Modifier.weight(1f).height(56.dp),
+                )
+            }
             }
             if (lastName != null && phase !is Phase.Saved) {
                 Spacer(Modifier.height(6.dp))
