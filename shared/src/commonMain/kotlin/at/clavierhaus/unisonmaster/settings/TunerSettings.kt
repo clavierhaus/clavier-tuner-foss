@@ -128,18 +128,24 @@ data class TunerSettings(
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MAX_WIDTH_CENTS = 20.0
-        const val SAMPLE_STEP = 4
-        const val SAMPLE_TOP = 96            // C7: above it the second partial is gone before it is read
+        /**
+         * The FOSS sample set (25 September): the temperament octave A3–A4
+         * (A4 is the hub's), three bass notes and three treble notes — the
+         * compromise a free tuner makes, the professional's Pro samples where
+         * he sees fit.
+         */
+        val FOSS_SAMPLE_NOTES: List<Int> = listOf(24, 43, 48) + (57..68).toList() + listOf(79, 84, 93)   // C1 G2 C3 · A3..G#4 · G5 C6 A6
+        /** Pro: sampling may end once this many strings besides A4 are in. */
+        const val MIN_SAMPLES = 6
     }
 
     /**
-     * The strings sampled before tuning (docs/ENGINE.md §1): from the lowest
-     * key up to C7, every [SAMPLE_STEP] semitones, and the lowest plain
-     * string itself, so each side of the floor has its own; A4 is the hub's.
-     * FOSS samples exactly these; Pro proposes them and takes any note added.
+     * The strings a tuning must have sampled before it starts (docs/ENGINE.md
+     * §1): FOSS exactly [FOSS_SAMPLE_NOTES]; Pro names none — the tuner
+     * samples the instrument as he sees fit, at least [MIN_SAMPLES] strings.
      */
     val sampleNotes: List<Int>
-        get() = ((lowestKeyMidi..SAMPLE_TOP step SAMPLE_STEP) + lowestUnwoundMidi).filter { it != TEMPERAMENT_HIGH }.distinct().sorted()
+        get() = if (temperamentFirst) FOSS_SAMPLE_NOTES.filter { it >= lowestKeyMidi } else emptyList()
 
     /** True for a wound string: below the lowest plain one. */
     fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi

@@ -9,9 +9,12 @@ app.tuning	Tuning	Stimmen
 app.partials	Partials	Teiltöne
 app.onePartial	One partial	Ein Teilton
 sampling.title	Sampling your piano	Ihr Klavier wird vermessen
-sampling.line	{0} single strings, {1} to {2}: one wedge, strike, hold. It moves on by itself.	{0} einzelne Saiten, {1} bis {2}: ein Keil, anschlagen, halten. Es geht von selbst weiter.
-sampling.strike	strike {0} alone and hold	{0} allein anschlagen und halten
-sampling.heard	heard — hold	gehört — halten
+sampling.line	Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, Tasten nach Wahl, {0} davon: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe.
+sampling.lineSet	Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, die {0} Tasten unten: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe.
+sampling.strikeAny	strike a key: one string, one wedge	eine Taste anschlagen: eine Saite, ein Keil
+sampling.caught	caught — Accept keeps it	erkannt — Übernehmen behält sie
+sampling.kept	kept	behalten
+app.accept	Accept	Übernehmen
 sampling.count	{0} of {1}	{0} von {1}
 state.listening	listening	hört zu
 state.matches	matches	stimmt

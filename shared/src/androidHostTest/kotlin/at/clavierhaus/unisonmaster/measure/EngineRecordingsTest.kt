@@ -97,11 +97,12 @@ class EngineRecordingsTest {
         if (missing.isNotEmpty()) println("not measured: ${missing.sorted().map { Notes.name(it) }}")
         assertTrue(ms.size >= files.size - 2, "measured ${ms.size} of ${files.size}")
 
-        // the sampling regime as the app runs it: the proposed set only, then the curve
+        // a sampling as a tuner might make it: every fourth semitone from the lowest key to C7
+        // and the lowest plain string, then the curve
         val s = TuningSession(a4, settings)
         ms[69]?.let { s.record(it) }
-        for (m in s.sampleNotes) ms[m]?.let { s.record(it) }
-        assertTrue(s.sampleSetComplete() || s.samplesLeft.size <= 1, "samples left: ${s.samplesLeft}")
+        for (m in ((settings.lowestKeyMidi..96 step 4) + settings.lowestUnwoundMidi).filter { it != 69 }) ms[m]?.let { s.record(it) }
+        assertTrue(s.samplingReady)
         s.finishSampling()
         val c = s.curve
         assertTrue(c.ready)

@@ -31,6 +31,7 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
+import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.BackArrow
 import at.clavierhaus.unisonmaster.ui.BeatBand
 import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
@@ -254,7 +255,10 @@ fun BasicHub(
                 )
             }
             t.sampling -> {
-                // Sampling: the note, one instruction, the count. It walks by itself.
+                // Sampling (25 September): whatever key is struck is caught and shown green;
+                // Accept keeps it; a key already sampled, struck again, replaces its sample;
+                // Done once enough are in. Nothing here judges the pitch.
+                val caughtName = t.caught?.let { Notes.name(it) }
                 Column(
                     Modifier
                         .align(Alignment.TopStart)
@@ -264,27 +268,30 @@ fun BasicHub(
                     Text(t(K.sampling_title), color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 22.sp, maxLines = 1)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        t(K.sampling_line, t.samplesTotal, Notes.name(controller.sampleNotes().first()), Notes.name(controller.sampleNotes().last())),
-                        color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1,
+                        if (controller.sampleNotes().isNotEmpty()) t(K.sampling_lineSet, t.samplesNeeded) else t(K.sampling_line, t.samplesNeeded),
+                        color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 2,
                     )
                     Spacer(Modifier.weight(1f))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 96.sp, maxLines = 1)
+                        Text(caughtName ?: "—", color = if (caughtName != null) Color(Brand.GO_GREEN) else Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 96.sp, maxLines = 1)
                         Spacer(Modifier.width(28.dp))
                         Text(
-                            if (live) t(K.sampling_heard) else t(K.sampling_strike, name),
-                            color = if (live) Color(Brand.GO_GREEN) else Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1,
+                            when { caughtName == null -> t(K.sampling_strikeAny); t.caughtAccepted -> t(K.sampling_kept); else -> t(K.sampling_caught) },
+                            color = if (caughtName != null) Color(Brand.GO_GREEN) else Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 2,
                         )
                         Spacer(Modifier.weight(1f))
-                        Text(t(K.sampling_count, t.samplesDone, t.samplesTotal), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1)
+                        Text(t(K.sampling_count, t.samplesIn, t.samplesNeeded), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1)
                     }
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        buildString {
-                            for (m in controller.sampleNotes()) append(if (m in t.sampled) "●" else "○").append(" ").append(Notes.name(m)).append("   ")
-                        },
-                        color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 2,
-                    )
+                    if (controller.sampleNotes().isNotEmpty()) {
+                        // FOSS: the set, what is in and what is still to come
+                        Text(
+                            buildString {
+                                for (m in controller.sampleNotes()) append(if (m in t.sampled) "●" else "○").append(" ").append(Notes.name(m)).append("   ")
+                            },
+                            color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 2,
+                        )
+                    }
                 }
             }
             else -> {
@@ -337,6 +344,14 @@ fun BasicHub(
         ) {
             ProgressButton(showingProgress = showProgress, onClick = { showProgress = !showProgress })
             Spacer(Modifier.width(10.dp))
+            if (t.sampling) {
+                // sampling: the tuner chooses the key at the keyboard, not here
+                Spacer(Modifier.weight(1f))
+                AcceptButton(accepted = t.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
+                Spacer(Modifier.width(10.dp))
+                DoneButton(onClick = { controller.finishSampling() }, enabled = t.samplingReady)
+                return@Row
+            }
             NoteStepper(
                 name = name,
                 canDown = t.midi > t.stepLowMidi,
@@ -367,7 +382,7 @@ fun BasicHub(
                 PartialsButton(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
             }
             Spacer(Modifier.width(10.dp))
-            DoneButton(onClick = { controller.acceptLive() }, enabled = if (t.sampling) live else matched)
+            DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
         }
     }
 }

@@ -62,8 +62,10 @@ class TuningControllerTest {
         val m = assertNotNull(c.measurements()[69])
         assertTrue(abs(m.b - 8e-4) / 8e-4 < 0.15, "A4 measured with its inharmonicity: B %.2e".format(m.b))
         assertTrue(m.partials.size >= 4)
-        assertEquals(17, c.tuning.value!!.midi, "on to the first sample, F0")
-        assertTrue(c.tuning.value!!.sampling)
+        val t = c.tuning.value!!
+        assertTrue(t.sampling, "on to the sampling")
+        assertNull(t.caught, "nothing struck yet")
+        assertFalse(c.acceptReady()); assertFalse(c.doneReady())
     }
 
     @Test
@@ -172,18 +174,60 @@ class TuningControllerTest {
     }
 
     @Test
-    fun samplingWalksByItself() {
+    fun samplingCatchesTheKeyStruckAndAcceptKeepsIt() {
+        // Pro: any key, in any order; six besides A4 and Done ends it
+        val (c, src) = controller(settings.copy(lowestKeyMidi = 21, temperamentFirst = false))
+        c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
+        c.acceptLive()
+        assertTrue(c.tuning.value!!.sampling)
+        // A0 struck, twelve cents flat of its key: caught as A0, not yet kept
+        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-12.0 / 1200), 1.2e-4, 3.0))
+        var t = c.tuning.value!!
+        assertEquals(21, t.caught, "caught"); assertFalse(t.caughtAccepted)
+        assertEquals(21, t.midi, "the screen is the key caught")
+        assertTrue(c.acceptReady()); assertFalse(c.doneReady())
+        assertNull(c.measurements()[21], "not kept until Accept")
+        assertNotNull(c.acceptLive())
+        t = c.tuning.value!!
+        assertTrue(t.caughtAccepted); assertTrue(21 in t.sampled); assertEquals(1, t.samplesIn)
+        assertEquals(-12.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "kept as it stood")
+        assertFalse(c.acceptReady(), "kept once")
+        // another key: caught afresh, Accept open again
+        c.hear(src, SyntheticString.strike(et(40) * 2.0.pow(8.0 / 1200), 1.9e-4, 3.0))
+        t = c.tuning.value!!
+        assertEquals(40, t.caught); assertFalse(t.caughtAccepted); assertTrue(c.acceptReady())
+        // A0 struck again, now eight cents flat: already sampled, so the new measurement replaces it, still accepted
+        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-8.0 / 1200), 1.2e-4, 3.0))
+        t = c.tuning.value!!
+        assertEquals(21, t.caught); assertTrue(t.caughtAccepted); assertFalse(c.acceptReady())
+        assertEquals(-8.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "replaced")
+        assertEquals(1, t.samplesIn, "E2 was never kept")
+        // five more, kept: Done opens, and ends the sampling at A4's neighbour
+        for ((m, b) in listOf(33 to 8e-5, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 76 to 1.0e-3)) {
+            c.hear(src, SyntheticString.strike(et(m), b, 3.0))
+            assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
+            assertNotNull(c.acceptLive(), "kept ${m}")
+        }
+        t = c.tuning.value!!
+        assertEquals(6, t.samplesIn); assertEquals(6, t.samplesNeeded); assertTrue(t.samplingReady); assertTrue(c.doneReady())
+        c.finishSampling()
+        t = c.tuning.value!!
+        assertFalse(t.sampling); assertEquals(68, t.midi); assertTrue(t.curveReady)
+    }
+
+    @Test
+    fun fossSamplesExactlyItsSet() {
         val (c, src) = controller(settings.copy(lowestKeyMidi = 21))
         c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
         c.acceptLive()
         val t = c.tuning.value!!
-        assertTrue(t.sampling); assertEquals(21, t.midi)
-        // A0 struck and held: kept after a second of steady reading, on to the next
-        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-12.0 / 1200), 1.2e-4, 4.0))
-        val after = c.tuning.value!!
-        assertEquals(25, after.midi, "moved on by itself")
-        assertTrue(21 in after.sampled)
-        assertEquals(-12.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "kept as it stood")
+        assertTrue(t.sampling); assertEquals(18, t.samplesNeeded)
+        assertEquals(TunerSettings.FOSS_SAMPLE_NOTES, c.sampleNotes())
+        // a key outside the set is caught and may be kept, but does not count towards Done
+        c.hear(src, SyntheticString.strike(et(33), 8e-5, 3.0))
+        assertEquals(33, c.tuning.value!!.caught)
+        assertNotNull(c.acceptLive())
+        assertFalse(c.tuning.value!!.samplingReady)
     }
 
     @Test

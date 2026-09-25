@@ -3,7 +3,7 @@ package at.clavierhaus.unisonmaster.unison
 import at.clavierhaus.unisonmaster.measure.PartialFinder
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
-import at.clavierhaus.unisonmaster.tuning.NoteDetector
+import at.clavierhaus.unisonmaster.tuning.KeyIdentifier
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import kotlin.math.log10
 import kotlin.math.ln
@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * out of the count.
  *
  * Nothing here is a constant of one piano: the note is named by the
- * [NoteDetector], the partials are placed where the [PartialFinder] hears
+ * [KeyIdentifier], the partials are placed where the [PartialFinder] hears
  * them, and the threshold is the one at which the tuner's ear, on those
  * recordings, called a partial still.
  */
@@ -80,7 +80,7 @@ class UnisonSync(
     private val readers = arrayOfNulls<PhaseReader>(partials + 1)
     private val window = Array(partials + 1) { DoubleArray(WINDOW_HOPS) }
     private val filled = IntArray(partials + 1)
-    private val ring = FloatArray(NoteDetector_SAMPLES)
+    private val ring = FloatArray(IDENTIFY_SAMPLES)
     private var ringFilled = 0
     private var ringPos = 0
     private var samples = 0L
@@ -91,7 +91,7 @@ class UnisonSync(
     private var midi: Int? = null
     private var candidate: Int? = null
     private var lastKey: Int? = null
-    private val detector by lazy { NoteDetector(sampleRate, NoteDetector_SAMPLES, lowMidi, TuningSession.MIDI_C8) }
+    private val detector by lazy { KeyIdentifier(sampleRate, IDENTIFY_SAMPLES, lowMidi, TuningSession.MIDI_C8) }
     private val own = HashMap<Int, MutableSet<Int>>()          // note -> partials with their own beat
     private val checked = HashMap<Int, Int>()
     @kotlin.concurrent.Volatile private var checkArmed = false
@@ -127,7 +127,7 @@ class UnisonSync(
         // (the first window still holds the hammer's knock: the key is named on the
         // windows after it, and twice alike)
         if (!placed && strikeHop >= 0 && ringFilled == ring.size && hop % 2 == 0L &&
-            (hop - strikeHop) * chunk.size >= NoteDetector_SAMPLES + PLACE_AFTER_S * sampleRate) {
+            (hop - strikeHop) * chunk.size >= IDENTIFY_SAMPLES + PLACE_AFTER_S * sampleRate) {
             val snap = FloatArray(ring.size)
             ring.copyInto(snap, 0, ringPos, ring.size); ring.copyInto(snap, ring.size - ringPos, 0, ringPos)
             val key = detector.detectIn(snap, a4Hz())
@@ -271,6 +271,6 @@ class UnisonSync(
         const val RETARGET_CENTS = 8.0
         const val TYPICAL_B = 4e-4
         const val SILENCE_DB = -70.0
-        private const val NoteDetector_SAMPLES = 16384
+        private const val IDENTIFY_SAMPLES = 16384
     }
 }

@@ -203,19 +203,34 @@ class TuningSessionTest {
     // ---- sampling and the curve ----
 
     @Test
-    fun aNewSessionSamplesTheSetThenTunes() {
+    fun aNewSessionSamplesThenTunes() {
+        // FOSS: exactly its set — the temperament octave, three bass and three treble notes
         val s = TuningSession(a4, foss)
         assertTrue(s.sampling)
         assertFalse(s.recordsOnLeaving)
-        assertEquals(foss.sampleNotes, s.sampleNotes)
-        assertTrue(17 in s.sampleNotes && 40 in s.sampleNotes && 69 !in s.sampleNotes)
+        assertEquals(TunerSettings.FOSS_SAMPLE_NOTES, s.sampleNotes)
+        assertTrue(24 in s.sampleNotes && 57 in s.sampleNotes && 93 in s.sampleNotes && 69 !in s.sampleNotes)
+        assertEquals(18, s.samplesNeeded)
         s.record(measuredString(69, a4, 8e-4))
-        assertEquals(17, s.next(), "Done walks the sample set from the bottom")
-        for (m in s.sampleNotes) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
-        assertTrue(s.sampleSetComplete())
+        assertFalse(s.samplingReady)
+        for (m in s.sampleNotes.drop(1)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        assertFalse(s.samplingReady, "one of the set still missing: ${s.samplesLeft}")
+        s.record(measuredString(s.sampleNotes.first(), et(s.sampleNotes.first()), 1e-4))
+        assertTrue(s.samplingReady)
         s.finishSampling()
         assertFalse(s.sampling)
         assertTrue(s.curve.ready)
+        assertEquals(68, s.current, "the tuning begins at A4's neighbour")
+
+        // Pro: no set — any six strings besides A4, as the tuner sees fit
+        val p = TuningSession(a4, pro)
+        assertTrue(p.sampleNotes.isEmpty())
+        assertEquals(TunerSettings.MIN_SAMPLES, p.samplesNeeded)
+        p.record(measuredString(69, a4, 8e-4))
+        for (m in listOf(20, 33, 45, 52, 76)) p.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        assertFalse(p.samplingReady); assertEquals(5, p.samplesIn)
+        p.record(measuredString(88, et(88), 3e-3))
+        assertTrue(p.samplingReady)
     }
 
     @Test

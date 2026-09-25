@@ -394,6 +394,29 @@ fun ProgressButton(
     }
 }
 
+/**
+ * Sampling's Accept: dim orange until tapped, full orange once the caught
+ * string is kept, dim again when another key is caught. Disabled while
+ * nothing is caught.
+ */
+@Composable
+fun AcceptButton(accepted: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val orange = Color(Brand.ORANGE)
+    Button(
+        onClick = onClick,
+        enabled = enabled && !accepted,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = orange,
+            contentColor = Color(Brand.BLACK),
+            disabledContainerColor = if (accepted) orange else orange.copy(alpha = 0.3f),
+            disabledContentColor = if (accepted) Color(Brand.BLACK) else Color(Brand.BLACK).copy(alpha = 0.6f),
+        ),
+    ) {
+        Text(t(K.app_accept), fontFamily = DejaVuSerif, fontSize = 18.sp)
+    }
+}
+
 /** The green confirmation button. */
 @Composable
 fun DoneButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {

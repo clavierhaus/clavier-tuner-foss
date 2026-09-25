@@ -138,18 +138,20 @@ class SessionStoreTest {
     @Test
     fun aSessionContinuesWhereItWasLeft() {
         val a4 = 441.0
-        // after A4 the session samples: the first sample note is A0 (the default lowest key)
+        // after A4 the session samples: A0 struck is caught, Accept keeps it
         val a0 = TuningSession.targetF1(21, a4)
         val saved = ArrayList<SessionSnapshot>()
         val first = TuningController(Queue(listOf(strike(a4, 4e-4, 3.0), strike(a0, 1e-4, 3.0))), clock = { 42L })
         first.onSessionChanged = { saved.add(it) }
         first.startLive(); first.acceptLive(); first.stopLive()
-        assertEquals(21, first.tuning.value!!.midi)
-        first.startLive(); first.stopLive()                 // A0 held: sampled by itself
+        assertTrue(first.tuning.value!!.sampling)
+        first.startLive(); first.stopLive()                 // A0 struck: caught
+        assertEquals(21, first.tuning.value!!.caught)
+        first.acceptLive()                                  // and kept
         val snap = saved.last()
         assertEquals(42L, snap.savedAtMs)
         assertTrue(snap.sampling)
-        assertEquals(25, snap.currentMidi, "the next sample")
+        assertEquals(21, snap.currentMidi, "the key caught")
         assertEquals(setOf(69, 21), snap.measurements.map { it.midi }.toSet())
 
         val file = MemoryFile()
@@ -159,7 +161,7 @@ class SessionStoreTest {
         val second = TuningController(Queue(emptyList()))
         second.restore(loaded)
         val view = assertNotNull(second.tuning.value)
-        assertEquals(25, view.midi)
+        assertEquals(21, view.midi)
         assertTrue(view.sampling)
         assertEquals(setOf(69, 21), view.measured)
         assertEquals(a4, second.referenceA4Hz.value)
@@ -180,7 +182,8 @@ class SessionStoreTest {
         assertEquals(null, tuning.snapshot())
         tuning.startLive()
         assertEquals(440.0, tuning.acceptLive(), "A4 is defined again on the hub")
-        assertEquals(21, tuning.tuning.value?.midi, "and the sampling begins at the lowest key")
+        assertTrue(tuning.tuning.value!!.sampling, "and the sampling begins")
+        assertEquals(null, tuning.tuning.value?.caught)
     }
 
     // ---- one bad number must not cost the tuner the session ----

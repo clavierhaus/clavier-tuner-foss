@@ -46,13 +46,13 @@ private fun key(midi: Int, a4: Double = 442.0, seconds: Double = 1.0, seed: Int 
     }
 }
 
-/** The detector's answer on the frame that begins at [fromS]. */
+/** The identifier's answer on the frame that begins at [fromS]. */
 private fun read(signal: FloatArray, fromS: Double = 0.15, a4: Double = 442.0): Int? {
     val start = (fromS * SR).toInt()
-    return NoteDetector(SR, 16384).detectIn(signal.copyOfRange(start, start + 16384), a4)
+    return KeyIdentifier(SR, 16384).detectIn(signal.copyOfRange(start, start + 16384), a4)
 }
 
-class NoteDetectorTest {
+class KeyIdentifierTest {
 
     @Test
     fun everyKeyOfTheCompassIsReadAsItself() {
@@ -75,6 +75,29 @@ class NoteDetectorTest {
         val rnd = Random(3)
         val room = FloatArray(SR) { i -> val t = i.toDouble() / SR; (0.015 * sin(2 * PI * 47 * t) + 0.012 * sin(2 * PI * 118 * t) + 0.002 * (rnd.nextDouble() * 2 - 1)).toFloat() }
         assertNull(read(room))
+    }
+
+    @Test
+    fun aStringFortyCentsOffItsKeyIsStillThatKeyAndItsFitSaysWhereItStands() {
+        // a piano well below pitch: every string 40 cents flat of its key on the session's A4
+        val f = KeyIdentifier(SR, 16384)
+        for (midi in listOf(28, 45, 60, 76, 90)) {
+            val signal = key(midi, a4 = 442.0 * 2.0.pow(-40.0 / 1200))
+            val start = (0.15 * SR).toInt()
+            val fit = f.identify(signal, 442.0, start)
+            assertEquals(midi, fit?.midi, "key $midi")
+            assertEquals(-40.0, 1200 * kotlin.math.ln(fit!!.f1 / (442.0 * 2.0.pow((midi - 69) / 12.0))) / kotlin.math.ln(2.0), 3.0, "the fit reads the string where it stands")
+        }
+    }
+
+    @Test
+    fun aRingingNoteIsNotTheStrike() {
+        // C3 still ringing under a struck G4: the C3 of the moment before the strike is background
+        val c3 = key(48, seconds = 2.0); val g4 = key(67, seconds = 1.0)
+        val mixed = FloatArray(c3.size) { i -> c3[i] * 0.7f + if (i >= SR) g4[i - SR] else 0f }
+        val f = KeyIdentifier(SR, 16384)
+        val start = SR + (0.15 * SR).toInt()
+        assertEquals(67, f.identify(mixed, 442.0, start, backgroundEnd = SR)?.midi)
     }
 
     @Test

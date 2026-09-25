@@ -12,8 +12,11 @@ object K {
     const val app_onePartial = "app.onePartial"
     const val sampling_title = "sampling.title"
     const val sampling_line = "sampling.line"
-    const val sampling_strike = "sampling.strike"
-    const val sampling_heard = "sampling.heard"
+    const val sampling_lineSet = "sampling.lineSet"
+    const val sampling_strikeAny = "sampling.strikeAny"
+    const val sampling_caught = "sampling.caught"
+    const val sampling_kept = "sampling.kept"
+    const val app_accept = "app.accept"
     const val sampling_count = "sampling.count"
     const val state_listening = "state.listening"
     const val state_matches = "state.matches"
@@ -51,9 +54,12 @@ internal object StringsTable {
         "app.partials" to arrayOf("Partials", "Teiltöne"),
         "app.onePartial" to arrayOf("One partial", "Ein Teilton"),
         "sampling.title" to arrayOf("Sampling your piano", "Ihr Klavier wird vermessen"),
-        "sampling.line" to arrayOf("{0} single strings, {1} to {2}: one wedge, strike, hold. It moves on by itself.", "{0} einzelne Saiten, {1} bis {2}: ein Keil, anschlagen, halten. Es geht von selbst weiter."),
-        "sampling.strike" to arrayOf("strike {0} alone and hold", "{0} allein anschlagen und halten"),
-        "sampling.heard" to arrayOf("heard — hold", "gehört — halten"),
+        "sampling.line" to arrayOf("Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.", "Einzelne Saiten, Tasten nach Wahl, {0} davon: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe."),
+        "sampling.lineSet" to arrayOf("Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.", "Einzelne Saiten, die {0} Tasten unten: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe."),
+        "sampling.strikeAny" to arrayOf("strike a key: one string, one wedge", "eine Taste anschlagen: eine Saite, ein Keil"),
+        "sampling.caught" to arrayOf("caught — Accept keeps it", "erkannt — Übernehmen behält sie"),
+        "sampling.kept" to arrayOf("kept", "behalten"),
+        "app.accept" to arrayOf("Accept", "Übernehmen"),
         "sampling.count" to arrayOf("{0} of {1}", "{0} von {1}"),
         "state.listening" to arrayOf("listening", "hört zu"),
         "state.matches" to arrayOf("matches", "stimmt"),

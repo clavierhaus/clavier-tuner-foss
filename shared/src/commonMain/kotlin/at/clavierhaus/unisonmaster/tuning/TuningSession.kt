@@ -124,32 +124,36 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     // ---- Sampling ----
 
     /**
-     * True while the strings are being sampled. FOSS samples exactly
-     * [TunerSettings.sampleNotes] and finishes by itself; Pro proposes them,
-     * takes any note, and finishes on [finishSampling].
+     * True while the strings are being sampled (docs/ENGINE.md §1): the
+     * tuner strikes whatever key he chooses, the key is caught and Accept
+     * keeps it; Done ends the sampling once [samplingReady]. FOSS needs
+     * exactly [TunerSettings.sampleNotes]; Pro any [TunerSettings.MIN_SAMPLES]
+     * strings besides A4.
      */
     var sampling: Boolean = sampling
         private set
 
-    /** The notes proposed for sampling, lowest first. */
+    /** The notes a sampling must have (FOSS), lowest first; none in Pro. */
     val sampleNotes: List<Int> get() = settings.sampleNotes.filter { it in notes }
 
-    /** The proposed notes not sampled yet. */
+    /** Of [sampleNotes], those not sampled yet. */
     val samplesLeft: List<Int> get() = sampleNotes.filter { it !in measured }
 
-    /** The next note to sample above [midi], wrapping to the lowest; null when all are in. */
-    fun nextSample(after: Int = current): Int? =
-        if (after in sampleNotes) samplesLeft.firstOrNull { it > after } ?: samplesLeft.firstOrNull() else samplesLeft.firstOrNull()
+    /** How many strings besides A4 have been sampled. */
+    val samplesIn: Int get() = measured.keys.count { it != MIDI_A4 }
 
-    /** Ends the sampling: Pro when the tuner says so, FOSS when the set is complete. */
+    /** How many a sampling needs: the FOSS set, or Pro's minimum. */
+    val samplesNeeded: Int get() = if (sampleNotes.isNotEmpty()) sampleNotes.size else TunerSettings.MIN_SAMPLES
+
+    /** True once the sampling may end: the FOSS set complete, or Pro's minimum in. */
+    val samplingReady: Boolean get() = if (sampleNotes.isNotEmpty()) samplesLeft.isEmpty() else samplesIn >= TunerSettings.MIN_SAMPLES
+
+    /** Ends the sampling (Done): the curve stands on what is in, and the tuning begins at A4's neighbour. */
     fun finishSampling() {
         if (!sampling) return
         sampling = false
-        select(next() ?: notes.first { it != MIDI_A4 })
+        select(notes.first { it != MIDI_A4 })
     }
-
-    /** True when the FOSS set is complete and sampling ends by itself. */
-    fun sampleSetComplete(): Boolean = samplesLeft.isEmpty()
 
     /** The instrument's inharmonicity curve from what has been measured. */
     val curve: InharmonicityCurve
@@ -369,7 +373,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * without a measurement. Null at the end of the compass.
      */
     fun next(): Int? {
-        if (sampling) return nextSample()
+        if (sampling) return null
         if (gated) return notes.firstOrNull { it in temperamentNotes && it !in measured }
         return notes.getOrNull(notes.indexOf(current) + 1)
     }
