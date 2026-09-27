@@ -9,8 +9,8 @@ package at.clavierhaus.unisonmaster.audio
  *    UNPROCESSED source. Set preferredSampleRate to 48_000.
  *  - AVAudioEngine: installTap(onBus: 0) on the inputNode, convert the tap's
  *    AVAudioPCMBuffer (float32) to FloatArray and forward to onBuffer.
- *  - Everything above this file (Goertzel, YIN, PartialAnalyzer,
- *    TuningController) runs unchanged.
+ *  - Everything above this file (PhaseReader, KeyIdentifier,
+ *    TuningController, AudioTap) runs unchanged.
  */
 class IosAudioSource(override val sampleRateHz: Int) : AudioSource {
     override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {

@@ -60,6 +60,8 @@ class UnisonSync(
 
     data class State(
         val midi: Int? = null,
+        /** The note's fundamental as the finder placed it on the strike that named the note. */
+        val f1Hz: Double? = null,
         val partials: List<Partial> = emptyList(),
         /** Steady partials, and how many are counted (heard, not an own beat). */
         val inSync: Int = 0,
@@ -89,6 +91,7 @@ class UnisonSync(
     private var strikeHop = -1L
     private var placed = false
     private var midi: Int? = null
+    private var f1Hz: Double? = null
     private var candidate: Int? = null
     private var lastKey: Int? = null
     private val detector by lazy { KeyIdentifier(sampleRate, IDENTIFY_SAMPLES, lowMidi, TuningSession.MIDI_C8) }
@@ -182,6 +185,7 @@ class UnisonSync(
             val predicted = k * f1 * Inharmonicity.ratio(k, TYPICAL_B)
             if (predicted > sampleRate * 0.4) { readers[k] = null; continue }
             val hz = finder.near(predicted, PLACE_CENTS)?.hz ?: predicted
+            if (k == 1) f1Hz = hz
             val r = readers[k]
             if (r == null) readers[k] = PhaseReader(sampleRate, hz)
             else if (kotlin.math.abs(1200 * ln(hz / r.targetHz) / ln(2.0)) > RETARGET_CENTS) r.retarget(hz)
@@ -237,7 +241,7 @@ class UnisonSync(
         }
         val counted = list.filter { it.heard && !it.ownBeat }
         val inSync = counted.count { it.steady }
-        return State(m, list, inSync, counted.size, best, bestOf, bestAtS, checkArmed || checkingStrike, m?.let { checked[it] } ?: 0)
+        return State(m, f1Hz, list, inSync, counted.size, best, bestOf, bestAtS, checkArmed || checkingStrike, m?.let { checked[it] } ?: 0)
     }
 
     companion object {

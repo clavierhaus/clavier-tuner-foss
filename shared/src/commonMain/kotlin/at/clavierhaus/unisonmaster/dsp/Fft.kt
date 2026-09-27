@@ -8,9 +8,10 @@ import kotlin.math.sqrt
 /**
  * Iterative in-place radix-2 FFT.
  *
- * Used only for the visual overview spectrum; the actual partial measurement
- * runs through [Goertzel]. Self-written on purpose: keeps the DSP layer 100 %
- * proprietary-safe and 100 % multiplatform (no JVM-only dependency).
+ * Finds, never measures: the finder and the key identifier locate peaks in
+ * its spectrum, and the reading of a partial is then taken by phase against
+ * a reference (PhaseReader). Self-written on purpose: keeps the DSP layer
+ * 100 % proprietary-safe and 100 % multiplatform (no JVM-only dependency).
  */
 object Fft {
 
