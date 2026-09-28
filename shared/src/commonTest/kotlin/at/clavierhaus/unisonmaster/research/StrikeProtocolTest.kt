@@ -81,4 +81,15 @@ class StrikeProtocolTest {
         assertEquals(4, StrikeProtocol.seconds(Piano.BOESENDORFER, 96, Study.REFERENCE))
         assertTrue(takes.size < 280, "an afternoon: ${takes.size} takes")
     }
+
+    @Test
+    fun everyStringAloneWalksLeftCentreRightThenTheUnisonKeyByKey() {
+        val takes = StrikeProtocol.takes(Piano.SAMICK, 40, Study.STRINGS)
+        assertEquals(88 * 4, takes.size)
+        assertEquals(listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT, StringPos.ALL), takes.take(4).map { it.string })
+        assertEquals(21, takes.first().midi)
+        assertEquals(108, takes.last().midi)
+        assertEquals("Samick_A4-R-s1_unproc_x.wav", StrikeProtocol.fileName(Piano.SAMICK, takes.first { it.midi == 69 && it.string == StringPos.RIGHT }, true, "x"))
+        assertEquals(8, StrikeProtocol.seconds(Piano.SAMICK, 21, Study.STRINGS))
+    }
 }

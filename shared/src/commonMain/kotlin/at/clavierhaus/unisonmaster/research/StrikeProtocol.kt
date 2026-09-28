@@ -38,7 +38,15 @@ enum class Study(val label: String, val code: String) {
      * measurement layer is built and judged on while the piano is out of
      * reach (docs/REFERENCE-RECORDING.md).
      */
-    REFERENCE("Reference", "reference");
+    REFERENCE("Reference", "reference"),
+    /**
+     * Every string alone: left, centre and right of every key, one strike
+     * each, then the key as it stands — the false-beat map and the
+     * inharmonicity of every single string of the instrument, and the
+     * unison to set against them (docs/SAMICK-2026-10.md). A key with fewer
+     * strings skips the positions it does not have.
+     */
+    STRINGS("Every string", "strings");
 
     companion object {
         fun ofCode(code: String?): Study = entries.firstOrNull { it.code == code } ?: WOBBLE
@@ -48,7 +56,9 @@ enum class Study(val label: String, val code: String) {
 /** The pianos of the study; [code] goes into file names. */
 enum class Piano(val label: String, val code: String) {
     STEINWAY_D("Steinway D", "D"),
-    BOESENDORFER("Bösendorfer", "Boesendorfer");
+    BOESENDORFER("Bösendorfer", "Boesendorfer"),
+    /** The Samick 172 of October 2026: a short grand, the test of bad inharmonicity. */
+    SAMICK("Samick 172", "Samick");
 
     companion object {
         fun ofCode(code: String?): Piano = entries.firstOrNull { it.code == code } ?: STEINWAY_D
@@ -73,12 +83,30 @@ object StrikeProtocol {
         Study.WOBBLE -> wobbleTakes(piano, firstPlainMidi)
         Study.COMPASS -> (lowestMidi(piano)..108).map { Take(it, StringPos.ALL, 1) }
         Study.REFERENCE -> referenceTakes(piano, firstPlainMidi)
+        Study.STRINGS -> stringsTakes(piano)
+    }
+
+    const val PART_STRINGS = "S · every string alone"
+
+    /**
+     * Every string alone, then the key as it stands, key by key: the wedge
+     * moves once per string and the unison is heard right after its strings,
+     * so a string that slipped between takes is caught. Left, centre, right
+     * — the tuner skips what a key does not have.
+     */
+    fun stringsTakes(piano: Piano): List<Take> {
+        val list = ArrayList<Take>()
+        for (m in lowestMidi(piano)..108) {
+            for (pos in listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT)) list += Take(m, pos, 1, part = PART_STRINGS)
+            list += Take(m, StringPos.ALL, 1, part = PART_B)
+        }
+        return list
     }
 
     /** Recording length per take: the compass wants only the strike and a few seconds of tone. */
     fun seconds(piano: Piano, midi: Int, study: Study): Int = when (study) {
         Study.COMPASS -> if (midi < 48) 5 else 4
-        Study.REFERENCE -> if (midi < C2) 8 else if (midi < C4) 6 else 4
+        Study.REFERENCE, Study.STRINGS -> if (midi < C2) 8 else if (midi < C4) 6 else 4
         Study.WOBBLE -> seconds(piano, midi)
     }
 
@@ -127,6 +155,7 @@ object StrikeProtocol {
         PART_A -> "One wedge per note, between the centre and right strings (between the two on a bichord): only the left string sounds. Move it along as you go."
         PART_B -> "Mutes out, all of them. The piano as it is."
         PART_C -> "The left string alone again, a wedge beside it: three strikes, soft, medium and hard."
+        PART_STRINGS -> "Key by key: the left string alone, the centre, the right (wedges on the others each time), then the wedges out and the key as it stands. Skip a string the key does not have."
         else -> ""
     }
 
@@ -138,6 +167,14 @@ object StrikeProtocol {
         "Lid fully open, room quiet, no pedal. Level: a mezzo-forte strike should reach at least a third of full scale on the meter, never red.",
         "Part A, one string per key: a wedge mutes the others, only the left string sounds. Part B: no wedge, the piano as it is. Part C: the left string again, at the corner notes, soft, medium and hard.",
         "Tap Record; when \"Strike now\" appears, play the key and hold it until the recording ends. If a strike goes wrong, tap Redo.",
+        "Every take saved is listed in Documents/ClavierTuner/<piano>_manifest.csv.",
+    )
+
+    val stringsSetup: List<String> = listOf(
+        "Place the phone on the music desk, bottom edge (microphone) towards the strings, and leave it there for the whole session; the same place for every take.",
+        "Lid fully open, room quiet, no pedal. Level: a mezzo-forte strike should reach at least a third of full scale on the meter, never red.",
+        "Key by key: left string alone, centre alone, right alone — wedges on the other strings each time — then wedges out and the key as it stands. Skip a string the key does not have.",
+        "Tap Record; when \"Strike now\" appears, play the key and hold it until the recording ends. If a strike goes wrong, tap Redo. Stop anywhere; the list remembers.",
         "Every take saved is listed in Documents/ClavierTuner/<piano>_manifest.csv.",
     )
 
@@ -169,6 +206,7 @@ object StrikeProtocol {
     /** Recording length per note, as the operator set it at the instrument. */
     fun seconds(piano: Piano, midi: Int): Int = when (piano) {
         Piano.STEINWAY_D -> if (midi >= C6) 5 else 20
+        Piano.SAMICK -> if (midi < C2) 8 else if (midi < C4) 6 else 4
         Piano.BOESENDORFER -> when {
             midi < C2 -> 10
             midi < C3 -> 12

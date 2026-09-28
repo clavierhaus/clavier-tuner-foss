@@ -172,6 +172,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 when (study) {
                     Study.COMPASS -> "Compass: every key of the instrument, unmuted, once — ${takes.size} recordings."
                     Study.REFERENCE -> "Reference: every key one string, every key as it is, and the corner cases — ${takes.size} recordings."
+                    Study.STRINGS -> "Every string alone, then the key as it stands — ${takes.size} recordings at most; skip what a key does not have."
                     Study.WOBBLE -> "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each."
                 },
                 color = Muted, fontSize = 13.sp,
@@ -216,6 +217,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
             when (study) {
                 Study.COMPASS -> StrikeProtocol.compassSetup
                 Study.REFERENCE -> StrikeProtocol.referenceSetup
+                Study.STRINGS -> StrikeProtocol.stringsSetup
                 Study.WOBBLE -> StrikeProtocol.setup
             }.forEachIndexed { i, line ->
                 Row(Modifier.padding(top = 4.dp)) {

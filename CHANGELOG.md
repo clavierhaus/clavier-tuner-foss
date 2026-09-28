@@ -7,6 +7,11 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-09-28
+- Record Strikes: the piano *Samick 172* and the study *Every string* — left,
+  centre and right of every key alone, then the key as it stands; the first
+  complete false-beat map of an instrument.
+
 ### 2026-09-27
 - The microphone is a pump: `audio/AudioTap` opens the source and fans every
   buffer out to its taps. The pre-September analysis chain (`PartialMonitor`,
