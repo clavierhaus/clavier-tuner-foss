@@ -99,6 +99,8 @@ studies *Every string · Drift · Compass · Reference · Wobble*.
 ## 5. Not decided yet
 
 "Accept" vs "Keep" for the measured string; "Progress" for the keyboard
-picture; what to call the best-compromise pull on the unison display when it
+picture — decided so far (28 Sept): *Verlauf* is History, so the keyboard
+picture is *Fortschritt* in German and keeps "Progress" in English until a
+better word is found; what to call the best-compromise pull on the unison display when it
 exists; the German for the coinages in §3. These are settled when the screen
 that shows them is next touched, and the row is added here first.

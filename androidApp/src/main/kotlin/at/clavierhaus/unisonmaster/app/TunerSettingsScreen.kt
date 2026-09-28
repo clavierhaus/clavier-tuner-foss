@@ -75,8 +75,38 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         onIncrease = { controller.setReference(tenths(a4 + 0.1)) },
     )
 
+    SettingsSection("Workflow")
+    SwitchRow(
+        "Follow the key struck",
+        if (s.temperamentFirst) "The screen moves to the note played, once the temperament octave is finished; the note left is kept"
+        else "The screen moves to the note played; the note left is kept",
+        s.autoNote,
+    ) { on -> model.update { it.copy(autoNote = on) } }
+
+    SettingsSection("Precision")
+    SwitchRow(
+        "Read the clean partials together",
+        "The reading is the string's clean partials read as one, once the string has been measured; a partial that beats on its own is left out and named under the bell. Off: the partial being tuned alone, as an ETD reads. A partial tapped under Partials is read alone either way.",
+        s.cleanPartials,
+    ) { on -> model.update { it.copy(cleanPartials = on) } }
+    StepperRow(
+        "Match window", "A partial turns green within this of its target",
+        String.format(Locale.ROOT, "±%.2f Hz", s.matchHz),
+        canDecrease = s.matchHz > 0.051,
+        canIncrease = s.matchHz < 0.499,
+        onDecrease = { model.update { it.copy(matchHz = round((it.matchHz - 0.05) * 100) / 100) } },
+        onIncrease = { model.update { it.copy(matchHz = round((it.matchHz + 0.05) * 100) / 100) } },
+    )
+    StepperRow(
+        "Highest partial", "Partials above this note are not offered; nothing up there helps a tuning",
+        Notes.name(s.highestPartialMidi),
+        canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
+        canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
+        onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
+        onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
+    )
     SettingsSection("Temperament")
-    ChoiceRow("Temperament", "Unequal temperaments will be listed here", listOf("Equal"), 0) { }
+    // unequal temperaments are not offered until they run: nothing on a screen that does nothing (SCREEN.md)
     ReadOnlyRow(
         "Temperament octave",
         "Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here",
@@ -111,36 +141,6 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         s.recordPcm,
     ) { on -> model.update { it.copy(recordPcm = on) } }
 
-    SettingsSection("Workflow")
-    SwitchRow(
-        "Follow the key struck",
-        if (s.temperamentFirst) "The screen moves to the note played, once the temperament octave is finished; the note left is kept"
-        else "The screen moves to the note played; the note left is kept",
-        s.autoNote,
-    ) { on -> model.update { it.copy(autoNote = on) } }
-
-    SettingsSection("Precision")
-    SwitchRow(
-        "Read the clean partials together",
-        "The reading is the string's clean partials read as one, once the string has been measured; a partial that beats on its own is left out and named under the bell. Off: the partial being tuned alone, as an ETD reads. A partial tapped under Partials is read alone either way.",
-        s.cleanPartials,
-    ) { on -> model.update { it.copy(cleanPartials = on) } }
-    StepperRow(
-        "Match window", "A partial turns green within this of its target",
-        String.format(Locale.ROOT, "±%.2f Hz", s.matchHz),
-        canDecrease = s.matchHz > 0.051,
-        canIncrease = s.matchHz < 0.499,
-        onDecrease = { model.update { it.copy(matchHz = round((it.matchHz - 0.05) * 100) / 100) } },
-        onIncrease = { model.update { it.copy(matchHz = round((it.matchHz + 0.05) * 100) / 100) } },
-    )
-    StepperRow(
-        "Highest partial", "Partials above this note are not offered; nothing up there helps a tuning",
-        Notes.name(s.highestPartialMidi),
-        canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
-        canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
-        onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
-        onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
-    )
 }
 
 @Composable
