@@ -120,6 +120,11 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
     ) { on -> model.update { it.copy(autoNote = on) } }
 
     SettingsSection("Precision")
+    SwitchRow(
+        "Read the clean partials together",
+        "The reading is the string's clean partials read as one, once the string has been measured; a partial that beats on its own is left out and named under the bell. Off: the partial being tuned alone, as an ETD reads. A partial tapped under Partials is read alone either way.",
+        s.cleanPartials,
+    ) { on -> model.update { it.copy(cleanPartials = on) } }
     StepperRow(
         "Match window", "A partial turns green within this of its target",
         String.format(Locale.ROOT, "±%.2f Hz", s.matchHz),

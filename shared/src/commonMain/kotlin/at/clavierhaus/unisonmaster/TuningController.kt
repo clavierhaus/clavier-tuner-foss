@@ -3,6 +3,7 @@ package at.clavierhaus.unisonmaster
 import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.PartialFinder
+import at.clavierhaus.unisonmaster.measure.CleanReading
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
@@ -161,8 +162,14 @@ class TuningController(
         val live: Boolean,
         val settling: Boolean,
         val coarseCents: Double?,
+        /** The partials the reading is made of when the clean partials are read together; empty when [k] alone is read. */
+        val usedPartials: List<Int> = emptyList(),
+        /** Partials present but beating on their own, left out of the reading. */
+        val falsePartials: List<Int> = emptyList(),
     ) {
+        /** Deviation from target, cents: of the clean partials together, or of [k] alone. */
         val cents: Double? get() = hz?.let { TuningSession.centsOff(it, targetHz) }
+        val combined: Boolean get() = usedPartials.isNotEmpty()
     }
 
     private val _reading = MutableStateFlow<Reading?>(null)
@@ -693,6 +700,10 @@ class TuningController(
         var readerGeneration = -1
         val shownReaders = HashMap<Int, PhaseReader>()
         var shownGeneration = -1
+        // the clean partials read together (CleanReading): targets follow the note, readings the strike
+        val clean = CleanReading(sr)
+        var cleanGeneration = -1
+        var cleanStrike = -1L
         val shownHeld = HashMap<Int, PhaseReader.Reading>()
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
@@ -813,9 +824,30 @@ class TuningController(
                 }
                 if (w.generation != generation) return@start      // the note changed meanwhile
                 val held = lastShown?.takeIf { it.generation == w.generation }?.hz
-                _reading.value = Reading(w.k, held, w.hz, live = rd?.shown == true, settling = rd?.settling == true, coarseCents = coarse)
-                _liveHz.value = held
                 val t = _tuning.value
+                // the clean partials together: only on the partial being tuned (a tapped partial is read alone),
+                // only while tuning, and only when the setting says so
+                var combinedHz: Double? = null
+                var used: List<Int> = emptyList()
+                var falseOnes: List<Int> = emptyList()
+                if (_settings.value.cleanPartials && t != null && w.k == t.listening.k && s != null && !s.sampling) {
+                    if (cleanGeneration != w.generation) {
+                        clean.target(_targets.value.filter { it.k <= CleanReading.PARTIALS }.associate { it.k to it.hz }, reset = true)
+                        cleanGeneration = w.generation
+                        cleanStrike = strikeHop
+                    } else if (cleanStrike != strikeHop) { clean.strike(); cleanStrike = strikeHop }
+                    val cr = clean.push(chunk, w.k, combine = s.isMeasured())
+                    used = cr.used
+                    falseOnes = cr.falseBeating
+                    cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
+                }
+                _reading.value = Reading(
+                    w.k, combinedHz ?: held, w.hz,
+                    live = if (combinedHz != null) true else rd?.shown == true,
+                    settling = combinedHz == null && rd?.settling == true,
+                    coarseCents = coarse, usedPartials = used, falsePartials = falseOnes,
+                )
+                _liveHz.value = combinedHz ?: held
                 // the other shown partials, each by its own reader
                 val ws = wantedSet
                 if (ws != null && ws.generation != shownGeneration) {

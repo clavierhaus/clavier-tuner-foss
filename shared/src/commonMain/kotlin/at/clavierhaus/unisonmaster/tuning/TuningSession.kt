@@ -304,15 +304,28 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         return l.targetHz / (l.k * Inharmonicity.ratio(l.k, b))
     }
 
-    /** Where partials 1..[maxK] of [midi] should sit when it is on target. */
+    /**
+     * Where partials 1..[maxK] of [midi] should sit when it is on target. A
+     * string that has been measured is read against its own partial table —
+     * each partial where the string actually puts it, not where the B model
+     * says — so that a partial the model places a few tenths of a cent off
+     * does not read as a detuning (28 Sept); an unmeasured string takes the
+     * model, its B predicted from the curve.
+     */
     fun predictedPartials(midi: Int = current, maxK: Int = Partials.MAX): List<PredictedPartial> {
         val b = predictedB(midi)
         val f1 = targetF1Of(midi, b)
-        val basis = basisFor(midi)
+        val own = measured[midi]
+        val basis = own ?: basisFor(midi)
         return (1..maxK).map { k ->
-            PredictedPartial(k, k * f1 * Inharmonicity.ratio(k, b), basis?.partials?.firstOrNull { it.k == k }?.levelDb ?: 0.0)
+            val ownPartial = own?.partials?.firstOrNull { it.k == k }
+            val hz = if (ownPartial != null) k * f1 * 2.0.pow(ownPartial.cents / 1200.0) else k * f1 * Inharmonicity.ratio(k, b)
+            PredictedPartial(k, hz, basis?.partials?.firstOrNull { it.k == k }?.levelDb ?: 0.0)
         }
     }
+
+    /** True when [midi] has been measured: its partials are read against its own table. */
+    fun isMeasured(midi: Int = current): Boolean = measured.containsKey(midi)
 
     companion object {
         const val MIDI_A4 = 69

@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-28
+- The reading on the string's clean partials (`measure/CleanReading`): a
+  measured string is read on partials 1–8 together — present, steady, in
+  agreement with the partial being tuned — level-weighted; a partial that
+  beats on its own is left out and named under the bell ("partials 2 4 5 ·
+  3 beats"). An unmeasured string is read on its partial alone, or, when
+  that one beats, on the steadiest other. Settings → Precision switch, on by
+  default; a partial tapped under Partials is read alone. A measured string's
+  partial targets come from its own table, not the B model.
 - `docs/GLOSSARY.md`: the words the app uses, decided once — what was wrong
   and what replaces it, the trade's words kept, our own coinages named as
   such, screen by screen what changes; sources Reblitz, TuneLab 3.2,

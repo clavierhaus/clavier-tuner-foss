@@ -104,6 +104,13 @@ data class TunerSettings(
     // PRECISION
     /** The partial read matches within this of its target, Hz: the beat rate the tuner accepts as gone. */
     val matchHz: Double = 0.1,
+    /**
+     * The reading is the string's clean partials read together — a partial
+     * that beats on its own is left out and named (CleanReading). Off: the
+     * partial being tuned alone, as an ETD reads. Tapping a partial under
+     * Partials reads that partial alone either way.
+     */
+    val cleanPartials: Boolean = true,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
     // RECORDING
@@ -229,6 +236,7 @@ class SettingsModel(
             lowestUnwoundMidi = i("lowestUnwoundMidi", d.lowestUnwoundMidi),
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
+            cleanPartials = b("cleanPartials", d.cleanPartials),
             language = store.get("language") ?: d.language,
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchHz = f("matchHz", d.matchHz),
@@ -254,6 +262,7 @@ class SettingsModel(
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("autoNote", s.autoNote.toString())
+        store.put("cleanPartials", s.cleanPartials.toString())
         store.put("language", s.language)
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchHz", s.matchHz.toString())

@@ -181,11 +181,16 @@ fun BasicHub(
             else -> t(K.state_flat) to Color(Brand.ORANGE)
         }
         val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
+        // which partials the reading is made of, when the clean partials are read together; a false one is named
+        val partialsLine = read?.takeIf { it.combined || it.falsePartials.isNotEmpty() }?.let { r ->
+            (if (r.combined) "partials " + r.usedPartials.joinToString(" ") else "partial ${r.k}") +
+                (if (r.falsePartials.isNotEmpty()) " · " + r.falsePartials.joinToString(" ") + (if (r.falsePartials.size == 1) " beats" else " beat") else "")
+        }
         val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
             !cfg.temperamentFirst -> "leaving a note keeps it"
             t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
             else -> "A3–A4 first · Done keeps a note"
-        }
+        } + (partialsLine?.let { " · $it" } ?: "")
         // Full Spectrum: the partial read by phase replaces the finder's place for it
         val spectrum = partials.map { p -> if (read != null && p.k == read.k && shownHz != null) p.copy(hz = shownHz) else p }
         val p1Hz = spectrum.firstOrNull { it.k == 1 }?.hz
