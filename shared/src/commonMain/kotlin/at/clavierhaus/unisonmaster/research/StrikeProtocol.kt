@@ -46,7 +46,9 @@ enum class Study(val label: String, val code: String) {
      * unison to set against them (docs/SAMICK-2026-10.md). A key with fewer
      * strings skips the positions it does not have.
      */
-    STRINGS("Every string", "strings");
+    STRINGS("Every string", "strings"),
+    /** The A's and C's as they stand, sixteen keys, two minutes: a piano's drift, visit by visit. */
+    DRIFT("Drift", "drift");
 
     companion object {
         fun ofCode(code: String?): Study = entries.firstOrNull { it.code == code } ?: WOBBLE
@@ -79,11 +81,15 @@ object StrikeProtocol {
     /** The lowest key of the instrument: the Bösendorfer 225 goes down to F0. */
     fun lowestMidi(piano: Piano): Int = when (piano) { Piano.BOESENDORFER -> 17; else -> 21 }
 
-    fun takes(piano: Piano, firstPlainMidi: Int = 40, study: Study = Study.WOBBLE): List<Take> = when (study) {
+    fun takes(
+        piano: Piano, firstPlainMidi: Int = 40, study: Study = Study.WOBBLE,
+        firstBichordMidi: Int = BICHORD_FROM, firstTrichordMidi: Int = 40,
+    ): List<Take> = when (study) {
         Study.WOBBLE -> wobbleTakes(piano, firstPlainMidi)
         Study.COMPASS -> (lowestMidi(piano)..108).map { Take(it, StringPos.ALL, 1) }
         Study.REFERENCE -> referenceTakes(piano, firstPlainMidi)
-        Study.STRINGS -> stringsTakes(piano)
+        Study.STRINGS -> stringsTakes(piano, firstBichordMidi, firstTrichordMidi)
+        Study.DRIFT -> (lowestMidi(piano)..108).filter { it % 12 == 9 || it % 12 == 0 }.map { Take(it, StringPos.ALL, 1) }
     }
 
     const val PART_STRINGS = "S · every string alone"
@@ -94,11 +100,17 @@ object StrikeProtocol {
      * so a string that slipped between takes is caught. Left, centre, right
      * — the tuner skips what a key does not have.
      */
-    fun stringsTakes(piano: Piano): List<Take> {
+    fun stringsTakes(piano: Piano, firstBichordMidi: Int = BICHORD_FROM, firstTrichordMidi: Int = 40): List<Take> {
         val list = ArrayList<Take>()
         for (m in lowestMidi(piano)..108) {
-            for (pos in listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT)) list += Take(m, pos, 1, part = PART_STRINGS)
-            list += Take(m, StringPos.ALL, 1, part = PART_B)
+            // the strings the key has: one below the two-string floor, two below the three-string floor, three above
+            val positions = when {
+                m < firstBichordMidi -> listOf(StringPos.LEFT)
+                m < firstTrichordMidi -> listOf(StringPos.LEFT, StringPos.RIGHT)
+                else -> listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT)
+            }
+            for (pos in positions) list += Take(m, pos, 1, part = PART_STRINGS)
+            if (positions.size > 1) list += Take(m, StringPos.ALL, 1, part = PART_B)
         }
         return list
     }
@@ -107,6 +119,7 @@ object StrikeProtocol {
     fun seconds(piano: Piano, midi: Int, study: Study): Int = when (study) {
         Study.COMPASS -> if (midi < 48) 5 else 4
         Study.REFERENCE, Study.STRINGS -> if (midi < C2) 8 else if (midi < C4) 6 else 4
+        Study.DRIFT -> if (midi < 48) 5 else 4
         Study.WOBBLE -> seconds(piano, midi)
     }
 
@@ -176,6 +189,11 @@ object StrikeProtocol {
         "Key by key: left string alone, centre alone, right alone — wedges on the other strings each time — then wedges out and the key as it stands. Skip a string the key does not have.",
         "Tap Record; when \"Strike now\" appears, play the key and hold it until the recording ends. If a strike goes wrong, tap Redo. Stop anywhere; the list remembers.",
         "Every take saved is listed in Documents/ClavierTuner/<piano>_manifest.csv.",
+    )
+
+    val driftSetup: List<String> = listOf(
+        "Phone in its place, lid open, nothing muted. The A's and C's from the lowest up, once each, as they stand: two minutes.",
+        "Tap Record; when \"Strike now\" appears, play the key mezzo-forte and hold it until the recording ends. If a strike goes wrong, tap Redo.",
     )
 
     val compassSetup: List<String> = listOf(

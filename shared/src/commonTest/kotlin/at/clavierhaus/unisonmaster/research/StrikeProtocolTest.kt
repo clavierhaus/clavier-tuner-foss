@@ -84,10 +84,16 @@ class StrikeProtocolTest {
 
     @Test
     fun everyStringAloneWalksLeftCentreRightThenTheUnisonKeyByKey() {
-        val takes = StrikeProtocol.takes(Piano.SAMICK, 40, Study.STRINGS)
-        assertEquals(88 * 4, takes.size)
-        assertEquals(listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT, StringPos.ALL), takes.take(4).map { it.string })
+        val takes = StrikeProtocol.takes(Piano.SAMICK, 40, Study.STRINGS, firstBichordMidi = 28, firstTrichordMidi = 40)
+        // 7 monochords × 1, 12 bichords × 3, 69 trichords × 4
+        assertEquals(7 + 12 * 3 + 69 * 4, takes.size)
+        assertEquals(listOf(StringPos.LEFT), takes.filter { it.midi == 21 }.map { it.string })
+        assertEquals(listOf(StringPos.LEFT, StringPos.RIGHT, StringPos.ALL), takes.filter { it.midi == 30 }.map { it.string })
+        assertEquals(listOf(StringPos.LEFT, StringPos.CENTRE, StringPos.RIGHT, StringPos.ALL), takes.filter { it.midi == 69 }.map { it.string })
         assertEquals(21, takes.first().midi)
+        val drift = StrikeProtocol.takes(Piano.SAMICK, 40, Study.DRIFT)
+        assertEquals(16, drift.size)
+        assertEquals(listOf(21, 24, 33, 36), drift.take(4).map { it.midi })
         assertEquals(108, takes.last().midi)
         assertEquals("Samick_A4-R-s1_unproc_x.wav", StrikeProtocol.fileName(Piano.SAMICK, takes.first { it.midi == 69 && it.string == StringPos.RIGHT }, true, "x"))
         assertEquals(8, StrikeProtocol.seconds(Piano.SAMICK, 21, Study.STRINGS))

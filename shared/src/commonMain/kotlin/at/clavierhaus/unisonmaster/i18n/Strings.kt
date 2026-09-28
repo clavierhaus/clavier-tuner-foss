@@ -41,6 +41,7 @@ object Strings {
 
     /** Adds a catalogue (Pro's, at start); a catalogue of the same name replaces the earlier one. */
     fun register(catalog: Catalog) { catalogs = catalogs.filter { it.name != catalog.name } + catalog }
+    fun unregister(name: String) { catalogs = catalogs.filter { it.name != name } }
 
     /** Every language any catalogue carries, English first. */
     val languages: List<String> get() = (listOf("en") + catalogs.flatMap { it.languages }).distinct()

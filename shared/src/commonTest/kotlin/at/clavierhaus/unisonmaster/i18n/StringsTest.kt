@@ -52,5 +52,6 @@ class StringsTest {
         assertEquals(listOf("clavier-tuner", "test-extra"), Strings.missing("fr").map { it.name })
         assertEquals(emptyList(), Strings.missing("de"))
         Strings.use(null)
+        Strings.unregister(Extra.name)
     }
 }

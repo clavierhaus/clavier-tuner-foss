@@ -81,7 +81,14 @@ private val Orange = Color(Brand.ORANGE)
 private val Panel = Color(0xFF1A1A1A)
 
 @Composable
-fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> Unit) {
+fun RecordStrikesScreen(
+    firstPlainMidi: Int,
+    micGranted: Boolean,
+    onBack: () -> Unit,
+    /** Where the strings change on this piano (Pianos, or Settings → Piano): Every string records only the strings a key has. */
+    firstBichordMidi: Int = StrikeProtocol.BICHORD_FROM,
+    firstTrichordMidi: Int = 40,
+) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("wobble-study", Context.MODE_PRIVATE) }
     // progress is kept per piano; the first sessions (Steinway D) stored theirs under "done"
@@ -89,7 +96,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
         (prefs.getStringSet("done-${p.code}", null) ?: if (p == Piano.STEINWAY_D) prefs.getStringSet("done", emptySet()) else emptySet())!!.toSet()
     var piano by remember { mutableStateOf(Piano.ofCode(prefs.getString("piano", "D"))) }
     var study by remember { mutableStateOf(Study.ofCode(prefs.getString("study", "wobble"))) }
-    val takes = remember(piano, firstPlainMidi, study) { StrikeProtocol.takes(piano, firstPlainMidi, study) }
+    val takes = remember(piano, firstPlainMidi, study, firstBichordMidi, firstTrichordMidi) { StrikeProtocol.takes(piano, firstPlainMidi, study, firstBichordMidi, firstTrichordMidi) }
     var done by remember(piano) { mutableStateOf(loadDone(piano)) }
     var index by remember(piano, takes) { mutableIntStateOf(takes.indexOfFirst { it.id !in done }.let { if (it < 0) 0 else it }) }
     var phase by remember { mutableStateOf<Phase>(Phase.Idle) }
@@ -172,7 +179,8 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 when (study) {
                     Study.COMPASS -> "Compass: every key of the instrument, unmuted, once — ${takes.size} recordings."
                     Study.REFERENCE -> "Reference: every key one string, every key as it is, and the corner cases — ${takes.size} recordings."
-                    Study.STRINGS -> "Every string alone, then the key as it stands — ${takes.size} recordings at most; skip what a key does not have."
+                    Study.STRINGS -> "Every string alone, then the key as it stands — ${takes.size} recordings, the strings each key has."
+                    Study.DRIFT -> "Drift: the A's and C's as they stand — ${takes.size} recordings, two minutes."
                     Study.WOBBLE -> "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each."
                 },
                 color = Muted, fontSize = 13.sp,
@@ -218,6 +226,7 @@ fun RecordStrikesScreen(firstPlainMidi: Int, micGranted: Boolean, onBack: () -> 
                 Study.COMPASS -> StrikeProtocol.compassSetup
                 Study.REFERENCE -> StrikeProtocol.referenceSetup
                 Study.STRINGS -> StrikeProtocol.stringsSetup
+                Study.DRIFT -> StrikeProtocol.driftSetup
                 Study.WOBBLE -> StrikeProtocol.setup
             }.forEachIndexed { i, line ->
                 Row(Modifier.padding(top = 4.dp)) {
