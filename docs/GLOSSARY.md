@@ -51,7 +51,7 @@ German pass; a word marked ? is a proposal.
 | coincident partials | koinzidierende Teiltöne ? | R | the pair an interval is tuned by |
 | inharmonicity; inharmonicity constant (B) | Inharmonizität; Inharmonizitätskonstante | R, TL | |
 | beats, beats per second; beatless | Schwebungen; schwebungsfrei | R | |
-| false beat, false-beating string | falsche Schwebung; unsaubere Saite ? | R "false beats", PTG "false string" | a string that beats alone |
+| false beat, false-beating string | unsaubere Saite (the string); Schwebung der Saite in sich | R "false beats", PTG "false string" | a string that beats alone |
 | wild string | — | PTG usage | a string whose false beat is bad enough to be a defect |
 | unison; monochord / bichord / trichord unison | Chor; einchörig / zweichörig / dreichörig | R | "three-string unison" in prose is fine; the field says trichord |
 | temperament; temperament octave; equal temperament (ET) | Temperatur; Temperaturoktave; gleichstufige Stimmung | R | |
