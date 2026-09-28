@@ -83,6 +83,9 @@ exists today.
 
 - **Languages.** The app's words live in `i18n/strings.tsv`
   (`scripts/i18n.py --check` refuses holes). English and German today.
+- **Words.** The app speaks the technician's words; `docs/GLOSSARY.md`
+  decides each one once, in English and German, with its source. A new
+  word on a screen cites its row there.
 - **Measurement.** Every decision about what is measured and how is written
   down under `docs/` (in preparation) with the recordings it was judged on;
   a change to the measurement is a change to that document in the same

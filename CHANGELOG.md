@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-28
+- `docs/GLOSSARY.md`: the words the app uses, decided once — what was wrong
+  and what replaces it, the trade's words kept, our own coinages named as
+  such, screen by screen what changes; sources Reblitz, TuneLab 3.2,
+  PianoMeter, PTG usage. The English pass over the tables follows it.
 - Languages as infrastructure: catalogues (FOSS's table and Pro's, looked up
   the same way, each carrying a language whole or not at all), the regional
   chain de-CH → de → en, `Strings.missing()` for "not available yet",
