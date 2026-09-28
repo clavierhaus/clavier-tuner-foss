@@ -38,15 +38,15 @@ object K {
     const val settings_tab_temperament = "settings.tab.temperament"
     const val settings_tab_about = "settings.tab.about"
     const val settings_tab_license = "settings.tab.license"
-    const val settings_tab_care = "settings.tab.care"
-    const val settings_tab_research = "settings.tab.research"
     const val settings_language = "settings.language"
     const val settings_language_system = "settings.language.system"
 }
 
-internal object StringsTable {
-    val languages: List<String> = listOf("en", "de")
-    val table: Map<String, Array<String>> = mapOf(
+internal object StringsTable : Catalog {
+    override val name = "clavier-tuner"
+    override val version = "2026-09-28"
+    override val languages: List<String> = listOf("en", "de")
+    override val table: Map<String, Array<String>> = mapOf(
         "app.settings" to arrayOf("Settings", "Einstellungen"),
         "app.done" to arrayOf("Done", "Fertig"),
         "app.progress" to arrayOf("Progress", "Verlauf"),
@@ -81,8 +81,6 @@ internal object StringsTable {
         "settings.tab.temperament" to arrayOf("Temperament", "Temperatur"),
         "settings.tab.about" to arrayOf("About", "Über"),
         "settings.tab.license" to arrayOf("License", "Lizenz"),
-        "settings.tab.care" to arrayOf("Customer care", "Kundenpflege"),
-        "settings.tab.research" to arrayOf("Research", "Forschung"),
         "settings.language" to arrayOf("Language", "Sprache"),
         "settings.language.system" to arrayOf("System", "System"),
     )

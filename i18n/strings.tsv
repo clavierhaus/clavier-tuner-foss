@@ -1,6 +1,8 @@
 # Every word the apps show, in one place. Columns: key, then one per language (BCP-47).
 # A key is dotted by screen: sampling.title. {0} {1} … are arguments, filled in order.
-# Regenerate the code after editing: scripts/i18n.py (run by the build; scripts/i18n.py --check refuses a hole).
+# Regenerate the code after editing: scripts/i18n.py (scripts/i18n.py --check refuses a hole).
+# This is the FOSS catalogue; Pro's own words are in clavier-tuner-pro/i18n/strings.tsv.
+# version: 2026-09-28
 key	en	de
 app.settings	Settings	Einstellungen
 app.done	Done	Fertig
@@ -36,7 +38,5 @@ origin.untuned	equal temperament — {0} not tuned yet	gleichstufig — {0} noch
 settings.tab.temperament	Temperament	Temperatur
 settings.tab.about	About	Über
 settings.tab.license	License	Lizenz
-settings.tab.care	Customer care	Kundenpflege
-settings.tab.research	Research	Forschung
 settings.language	Language	Sprache
 settings.language.system	System	System
