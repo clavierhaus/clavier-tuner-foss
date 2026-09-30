@@ -98,4 +98,17 @@ class StrikeProtocolTest {
         assertEquals("Samick_A4-R-s1_unproc_x.wav", StrikeProtocol.fileName(Piano.SAMICK, takes.first { it.midi == 69 && it.string == StringPos.RIGHT }, true, "x"))
         assertEquals(8, StrikeProtocol.seconds(Piano.SAMICK, 21, Study.STRINGS))
     }
+
+    @Test
+    fun stageOneTakesOneStringPerKeyByTheFloorsAndStageTwoTheOtherTwoOfThePlainTrichords() {
+        val one = StrikeProtocol.takes(Piano.SAMICK, 40, Study.ONE_STRING, firstBichordMidi = 28, firstTrichordMidi = 40)
+        assertEquals(88, one.size)
+        assertEquals(StringPos.LEFT, one.first { it.midi == 21 }.string)     // monochord
+        assertEquals(StringPos.RIGHT, one.first { it.midi == 30 }.string)    // wound bichord
+        assertEquals(StringPos.LEFT, one.first { it.midi == 69 }.string)     // plain trichord
+        val other = StrikeProtocol.takes(Piano.SAMICK, 40, Study.OTHER_STRINGS, firstBichordMidi = 28, firstTrichordMidi = 40)
+        assertEquals((108 - 40 + 1) * 2, other.size)
+        assertEquals(listOf(StringPos.CENTRE, StringPos.RIGHT), other.filter { it.midi == 69 }.map { it.string })
+        assertTrue(other.none { it.midi < 40 })
+    }
 }

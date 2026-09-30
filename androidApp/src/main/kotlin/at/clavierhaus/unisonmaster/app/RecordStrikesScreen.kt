@@ -181,6 +181,8 @@ fun RecordStrikesScreen(
                     Study.REFERENCE -> "Reference: every key one string, every key as it is, and the corner cases — ${takes.size} recordings."
                     Study.STRINGS -> "Every string alone, then the key as it stands — ${takes.size} recordings, the strings each key has."
                     Study.DRIFT -> "Drift: the A's and C's as they stand — ${takes.size} recordings, two minutes."
+                    Study.ONE_STRING -> "Stage 1: one string per key — monochords, the right string of the wound bichords, the left of the plain trichords — ${takes.size} recordings."
+                    Study.OTHER_STRINGS -> "Stage 2: centre and right of every plain trichord — ${takes.size} recordings."
                     Study.WOBBLE -> "Wobble study: ${takes.size} recordings of single strings, ${StrikeProtocol.STRIKES} strikes each."
                 },
                 color = Muted, fontSize = 13.sp,
@@ -227,6 +229,8 @@ fun RecordStrikesScreen(
                 Study.REFERENCE -> StrikeProtocol.referenceSetup
                 Study.STRINGS -> StrikeProtocol.stringsSetup
                 Study.DRIFT -> StrikeProtocol.driftSetup
+                Study.ONE_STRING -> StrikeProtocol.oneStringSetup
+                Study.OTHER_STRINGS -> StrikeProtocol.otherStringsSetup
                 Study.WOBBLE -> StrikeProtocol.setup
             }.forEachIndexed { i, line ->
                 Row(Modifier.padding(top = 4.dp)) {

@@ -48,7 +48,15 @@ enum class Study(val label: String, val code: String) {
      */
     STRINGS("Every string", "strings"),
     /** The A's and C's as they stand, sixteen keys, two minutes: a piano's drift, visit by visit. */
-    DRIFT("Drift", "drift");
+    DRIFT("Drift", "drift"),
+    /**
+     * Stage 1, one string per key: the monochords, the right string of the
+     * wound bichords, the left string of the plain trichords — the whole
+     * inharmonicity of the piano from one string each, before any pin moves.
+     */
+    ONE_STRING("Stage 1 · one string", "inharm"),
+    /** Stage 2, the other strings: centre and right of every plain trichord — the false-beat map and the unisons. */
+    OTHER_STRINGS("Stage 2 · other strings", "outer");
 
     companion object {
         fun ofCode(code: String?): Study = entries.firstOrNull { it.code == code } ?: WOBBLE
@@ -90,6 +98,17 @@ object StrikeProtocol {
         Study.REFERENCE -> referenceTakes(piano, firstPlainMidi)
         Study.STRINGS -> stringsTakes(piano, firstBichordMidi, firstTrichordMidi)
         Study.DRIFT -> (lowestMidi(piano)..108).filter { it % 12 == 9 || it % 12 == 0 }.map { Take(it, StringPos.ALL, 1) }
+        Study.ONE_STRING -> (lowestMidi(piano)..108).map { m ->
+            val pos = when {
+                m < firstBichordMidi -> StringPos.LEFT      // a monochord: the one string
+                m < firstPlainMidi -> StringPos.RIGHT       // a wound bichord: the right string, the wedge on the left
+                else -> StringPos.LEFT                      // a plain trichord: the left string, the wedge between the other two
+            }
+            Take(m, pos, 1, part = PART_STRINGS)
+        }
+        Study.OTHER_STRINGS -> (maxOf(lowestMidi(piano), firstPlainMidi)..108).flatMap { m ->
+            listOf(Take(m, StringPos.CENTRE, 1, part = PART_STRINGS), Take(m, StringPos.RIGHT, 1, part = PART_STRINGS))
+        }
     }
 
     const val PART_STRINGS = "S · every string alone"
@@ -120,6 +139,7 @@ object StrikeProtocol {
         Study.COMPASS -> if (midi < 48) 5 else 4
         Study.REFERENCE, Study.STRINGS -> if (midi < C2) 8 else if (midi < C4) 6 else 4
         Study.DRIFT -> if (midi < 48) 5 else 4
+        Study.ONE_STRING, Study.OTHER_STRINGS -> if (midi < C2) 8 else if (midi < C4) 6 else 4
         Study.WOBBLE -> seconds(piano, midi)
     }
 
@@ -189,6 +209,16 @@ object StrikeProtocol {
         "Key by key: left string alone, centre alone, right alone — wedges on the other strings each time — then wedges out and the key as it stands. Skip a string the key does not have.",
         "Tap Record; when \"Strike now\" appears, play the key and hold it until the recording ends. If a strike goes wrong, tap Redo. Stop anywhere; the list remembers.",
         "Every take saved is listed in Documents/ClavierTuner/<piano>_manifest.csv.",
+    )
+
+    val oneStringSetup: List<String> = listOf(
+        "Phone in its place, lid open, no pedal. One string per key: a monochord as it is; on a wound bichord a wedge on the left string, the right one sounds; on a plain trichord a wedge between centre and right, the left one sounds.",
+        "Tap Record; when \"Strike now\" appears, play the key mezzo-forte and hold it until the recording ends. If a strike goes wrong, tap Redo. Stop anywhere; the list remembers.",
+    )
+
+    val otherStringsSetup: List<String> = listOf(
+        "The plain trichords' other two strings, each alone: wedges on the two that must not sound. Centre, then right, key by key.",
+        "Tap Record; when \"Strike now\" appears, play the key mezzo-forte and hold it until the recording ends. If a strike goes wrong, tap Redo. Stop anywhere; the list remembers.",
     )
 
     val driftSetup: List<String> = listOf(
