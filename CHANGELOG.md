@@ -19,6 +19,11 @@ reconstructed from the commit history that day.
   resampling, the file repeating with a second of silence between passes so
   each begins with a clean onset. Any WAV the phone can reach, 48 kHz, 16-bit
   PCM or 32-bit float. For chasing at the desk what was seen at the instrument.
+- `docs/RULES.md`: the engine's invariants, written down because the one that
+  was broken today existed only in conversation — a bell is not pitch
+  dependent, the partials are a live measurement and are not stored, a reading
+  does not outlive its sound, the gate is a ratio and not a knob, physics is
+  measured and not asserted. Each rule carries what it cost when it was broken.
 - Reverted within the hour: a guard that placed a measured partial by the
   string's fitted inharmonicity when the stored reading disagreed with the fit.
   It rested on a claim that is false — that partial 2 cannot sit below twice
