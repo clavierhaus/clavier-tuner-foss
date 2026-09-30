@@ -144,6 +144,17 @@ fun TuningGraph(
 /** The tuning graph's span either side of the target, cents. */
 const val CENTS_SPAN = 8.0
 
+/**
+ * The reading against its target, in cents to a hundredth. Hz to one decimal
+ * cannot show what a tuner works to: 0.1 Hz is 0.39 cents at A4's fundamental
+ * and 0.08 at C#7, so the same column had four times the resolution at the
+ * top of the table as at the bottom (30 Sept). Cents are the same everywhere.
+ */
+private fun cents2(measuredHz: Double, targetHz: Double): String {
+    val c = 1200.0 * kotlin.math.ln(measuredHz / targetHz) / kotlin.math.ln(2.0)
+    return String.format(Locale.ROOT, "%+.2f", c)
+}
+
 private fun hz1(hz: Double): String = String.format(Locale.ROOT, "%.1f", hz)
 
 /**
@@ -164,13 +175,15 @@ fun ReadoutColumn(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.width(330.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.width(372.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             Spacer(Modifier.width(74.dp))
             Text("target", color = Color(Brand.TARGET_BLUE).copy(alpha = 0.7f), fontSize = 12.sp,
                 textAlign = TextAlign.End, modifier = Modifier.width(96.dp))
             Text("measured", color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
-                textAlign = TextAlign.End, modifier = Modifier.width(112.dp))
+                textAlign = TextAlign.End, modifier = Modifier.width(78.dp))
+            Text("cents", color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
+                textAlign = TextAlign.End, modifier = Modifier.width(76.dp))
         }
         for (k in shown.sorted()) {
             val tk = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz ?: continue
@@ -214,10 +227,19 @@ fun ReadoutColumn(
                     lk?.let { hz1(it) } ?: "—",
                     color = if (match) Color(Brand.GO_GREEN) else Color(Brand.WHITE),
                     fontFamily = DejaVuSerif,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(78.dp),
+                )
+                // the number the tuner works to: hundredths of a cent, the same resolution on every partial
+                Text(
+                    lk?.let { cents2(it, tk) } ?: "—",
+                    color = if (match) Color(Brand.GO_GREEN) else Color(Brand.WHITE),
+                    fontFamily = DejaVuSerif,
                     fontSize = if (isActive) 22.sp else 16.sp,
                     fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.width(112.dp),
+                    modifier = Modifier.width(76.dp),
                 )
             }
         }

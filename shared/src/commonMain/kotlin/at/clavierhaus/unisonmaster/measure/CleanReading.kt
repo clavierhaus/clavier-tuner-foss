@@ -41,6 +41,8 @@ class CleanReading(
     val count: Int = PARTIALS,
     /** The readers' memory (TunerSettings.readingMemoryS); a change applies to readers made from then on. */
     var memoryS: Double = PhaseReader.DEFAULT_MEMORY_S,
+    /** Hops after which a partial's last reading, and any verdict on it, expire (TuningController.holdHops). */
+    private val holdHops: Long = 23L,
 ) {
     /** One partial as read over the strike. */
     data class Partial(
@@ -71,6 +73,8 @@ class CleanReading(
     private val window = Array(count + 1) { DoubleArray(WINDOW_HOPS) }
     private val filled = IntArray(count + 1)
     private val last = arrayOfNulls<PhaseReader.Reading>(count + 1)
+    private val lastAt = LongArray(count + 1)
+    private var hops = 0L
     // a partial called false stays so until its spread has fallen well under the line: no flicker at the threshold
     private val falseNow = BooleanArray(count + 1)
 
@@ -88,15 +92,21 @@ class CleanReading(
     }
 
     /** A new strike: the readings start again. */
-    fun strike() { filled.fill(0); last.fill(null); falseNow.fill(false) }
+    fun strike() { filled.fill(0); last.fill(null); falseNow.fill(false); lastAt.fill(0L) }
 
     /** One hop of input; the result as of this hop, anchored on partial [anchorK], the one being tuned. */
     fun push(chunk: FloatArray, anchorK: Int = 1, combine: Boolean = true): Result {
+        hops++
         for (k in 1..count) {
             val r = readers[k] ?: continue
             val rd = r.push(chunk) ?: continue
             last[k] = rd
-            if (rd.shown) { window[k][filled[k] % WINDOW_HOPS] = rd.cents; filled[k]++ }
+            if (rd.shown) { window[k][filled[k] % WINDOW_HOPS] = rd.cents; filled[k]++; lastAt[k] = hops }
+        }
+        // a partial not read within the hold time is gone, and so is the call made on it:
+        // a "false" verdict must not outlive the reading behind it (30 Sept)
+        for (k in 1..count) {
+            if (lastAt[k] != 0L && hops - lastAt[k] > holdHops) { last[k] = null; filled[k] = 0; falseNow[k] = false; lastAt[k] = 0L }
         }
         return result(anchorK, combine)
     }

@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- The partials table gains a **cents** column to a hundredth: 0.1 Hz is
+  0.39 c at the fundamental and 0.08 c at C#7, so the Hz column alone had
+  five times the resolution at the bottom of the table as at the top.
+- A partial whose reading has expired loses the verdict on it too: a "false"
+  call can no longer outlive the reading behind it. The hold is derived from
+  seconds and the hop, not written as a count.
 - A reading stands for half a second after its partial was last read, then
   goes: numbers no longer sit on the screen looking live seconds after the
   sound has died. Found at the Samick, where it made the screen unusable as

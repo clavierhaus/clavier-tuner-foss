@@ -76,12 +76,14 @@ class TuningController(
         /** ... every other hop, and the same key this many times in a row. */
         const val DETECT_EVERY = 2L
         /**
-         * How long a reading stands after the partial was last read: half a
-         * second. Longer and a decayed partial's last number sits on the
-         * screen looking like a measurement; shorter and the display flickers
-         * between the hops the gate skips.
+         * How long a reading stands after the partial was last read. Longer
+         * and a decayed partial's last number sits on the screen looking like
+         * a measurement; shorter and the display flickers between the hops
+         * the gate skips. Derived from the hop, not written as a count: a
+         * changed hop or sample rate would break a constant silently.
          */
-        const val HOLD_HOPS = 23L
+        const val HOLD_S = 0.5
+        fun holdHops(sampleRate: Int): Long = (HOLD_S * sampleRate / HOP).toLong().coerceAtLeast(1L)
         const val DETECT_RUN = 3
         /** After this many hops (half a second) only a lower key may replace the key named: a decaying strike never becomes a higher note. */
         const val DETECT_SETTLED_HOPS = 24L
@@ -708,7 +710,7 @@ class TuningController(
         val shownReaders = HashMap<Int, PhaseReader>()
         var shownGeneration = -1
         // the clean partials read together (CleanReading): targets follow the note, readings the strike
-        val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS)
+        val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS, holdHops = holdHops(sr))
         var cleanGeneration = -1
         var memoryInForce = _settings.value.readingMemoryS
         var cleanStrike = -1L
@@ -842,7 +844,7 @@ class TuningController(
                     selectNote(heard)
                 }
                 if (w.generation != generation) return@start      // the note changed meanwhile
-                val held = lastShown?.takeIf { it.generation == w.generation && hop - it.hop <= HOLD_HOPS }?.hz
+                val held = lastShown?.takeIf { it.generation == w.generation && hop - it.hop <= holdHops(sr) }?.hz
                 val t = _tuning.value
                 // the clean partials together: only on the partial being tuned (a tapped partial is read alone),
                 // only while tuning, and only when the setting says so
@@ -881,7 +883,7 @@ class TuningController(
                     }
                 }
                 for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) { shownHeld[k] = it; shownAt[k] = hop } }
-                shownAt.entries.removeAll { (k, at) -> if (hop - at > HOLD_HOPS) { shownHeld.remove(k); true } else false }
+                shownAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { shownHeld.remove(k); true } else false }
                 if (_fullSpectrum.value && t != null) spectrum(finder, t, w.k, held, shownHeld)
             }
             true
