@@ -46,6 +46,7 @@ import at.clavierhaus.unisonmaster.ui.PartialsButton
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
 import at.clavierhaus.unisonmaster.ui.ReadoutColumn
+import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
