@@ -31,11 +31,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.audio.AndroidAudioSource
+import at.clavierhaus.unisonmaster.audio.FeedableAudioSource
+import at.clavierhaus.unisonmaster.audio.WavPcm
 import at.clavierhaus.unisonmaster.audio.createAudioSource
 
 class MainActivity : ComponentActivity() {
 
-    private val audioSource by lazy { createAudioSource() }
+    // the microphone, or a recording played in its place (the probe, docs/PROBE.md)
+    private val audioSource by lazy { FeedableAudioSource(createAudioSource()) }
     private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
     private val settingsModel by lazy {
         SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
@@ -50,7 +53,7 @@ class MainActivity : ComponentActivity() {
     private val lastTuning = mutableStateOf<SessionStore.Load>(SessionStore.Load.None)
     /** The red button's recorder: hears every buffer of the live screen, writes only between its taps. */
     private val recorder by lazy {
-        SessionRecorder(this, audioSource.sampleRateHz) { (audioSource as? AndroidAudioSource)?.usedUnprocessed ?: false }
+        SessionRecorder(this, audioSource.sampleRateHz) { (audioSource.live as? AndroidAudioSource)?.usedUnprocessed ?: false }
     }
 
     /** The microphone off, and with it any recording. */
@@ -58,6 +61,25 @@ class MainActivity : ComponentActivity() {
         recorder.stop()
         controller.stopLive()
     }
+
+    /** What the probe last said, for the settings screen to show. */
+    private val feedNote = mutableStateOf<String?>(null)
+
+    /** Picks a WAV anywhere the phone can reach — the recordings folder, Downloads, adb push. */
+    private val pickRecording =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val name = uri.lastPathSegment?.substringAfterLast('/') ?: "recording"
+            val listening = controller.live.value
+            runCatching {
+                val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                audioSource.feed(name, WavPcm.read(bytes))
+            }.onSuccess {
+                feedNote.value = null
+                // take it up at once if the tuning screen is already listening
+                if (listening) { controller.stopLive(); controller.startLive() }
+            }.onFailure { e -> feedNote.value = e.message ?: "That file could not be played." }
+        }
 
     private val permissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -113,6 +135,15 @@ class MainActivity : ComponentActivity() {
                             TunerSettingsScreen(
                                 controller = controller,
                                 model = settingsModel,
+                                feeding = audioSource.feeding.collectAsState().value,
+                                feedNote = feedNote.value,
+                                onPickRecording = { pickRecording.launch(arrayOf("audio/*", "application/octet-stream")) },
+                                onUseMicrophone = {
+                                    val listening = controller.live.value
+                                    audioSource.useMicrophone()
+                                    feedNote.value = null
+                                    if (listening) { controller.stopLive(); controller.startLive() }
+                                },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
                             )

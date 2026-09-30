@@ -27,7 +27,16 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
 
 /** The foss settings: Temperament, About, License. */
 @Composable
-fun TunerSettingsScreen(controller: TuningController, model: SettingsModel, version: String, onBack: () -> Unit) {
+fun TunerSettingsScreen(
+    controller: TuningController,
+    model: SettingsModel,
+    version: String,
+    feeding: String? = null,
+    feedNote: String? = null,
+    onPickRecording: () -> Unit = {},
+    onUseMicrophone: () -> Unit = {},
+    onBack: () -> Unit,
+) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
     val a4 by controller.referenceA4Hz.collectAsState()
@@ -49,6 +58,22 @@ fun TunerSettingsScreen(controller: TuningController, model: SettingsModel, vers
                 SettingsSection("Credits")
                 ReadOnlyRow("Typeface", "DejaVu Serif, DejaVu fonts project", "Bitstream Vera licence")
                 ReadOnlyRow("Settings icon", "Material Design icons, Google", "Apache 2.0")
+            },
+            SettingsTab("Probe") {
+                SettingsSection("What the engine hears")
+                ReadOnlyRow("Source", "Everything above the microphone runs the same either way", feeding ?: "Microphone")
+                ChoiceRow(
+                    "Input", "A recording is played at its own speed and repeats, with a second of silence between passes",
+                    listOf("Microphone", "A recording\u2026"), if (feeding == null) 0 else 1,
+                ) { i -> if (i == 0) onUseMicrophone() else onPickRecording() }
+                if (feedNote != null) SettingsNote(feedNote)
+                SettingsNote(
+                    "For testing away from a piano. Pick any WAV the phone can reach \u2014 the app's own " +
+                        "recordings, Downloads, anything pushed over adb \u2014 at 48 kHz, 16-bit PCM or " +
+                        "32-bit float. The tuning screen then reads the recording exactly as it would read " +
+                        "the string: same readers, same identifier, same numbers. Leave it on Microphone at " +
+                        "the instrument.",
+                )
             },
             SettingsTab(t(K.settings_tab_license)) {
                 SettingsSection("License")

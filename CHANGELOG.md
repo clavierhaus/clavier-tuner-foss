@@ -8,6 +8,13 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- **The probe** (Settings → Probe, docs/PROBE.md): a recording played in place
+  of the microphone. `FeedableAudioSource` *is* an `AudioSource`, so the tap,
+  the readers, the identifier and the screen cannot tell where the buffers came
+  from — what the probe shows is what the piano would show. Real time, no
+  resampling, the file repeating with a second of silence between passes so
+  each begins with a clean onset. Any WAV the phone can reach, 48 kHz, 16-bit
+  PCM or 32-bit float. For chasing at the desk what was seen at the instrument.
 - **Every partial on the tuning screen is placed from the partial being tuned.**
   Its target comes from the interval it must make; the note's place on the curve
   and a measured string's own table are different numbers, and the screen was
