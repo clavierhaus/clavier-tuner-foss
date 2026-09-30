@@ -19,6 +19,12 @@ reconstructed from the commit history that day.
   resampling, the file repeating with a second of silence between passes so
   each begins with a clean onset. Any WAV the phone can reach, 48 kHz, 16-bit
   PCM or 32-bit float. For chasing at the desk what was seen at the instrument.
+- **A measured string is tuned to a shape a string can have.** Its own partial
+  table is still used, as since 28 Sept — but only where a partial agrees with
+  that same string's own fitted inharmonicity within a cent; further off, the
+  fit stands in. Never the curve's B: always the string's own. Found on the
+  Samick's F3, where the table stored during sampling put partial 2 *below*
+  twice partial 1, which no string does, and the screen was tuning to it.
 - **Every partial on the tuning screen is placed from the partial being tuned.**
   Its target comes from the interval it must make; the note's place on the curve
   and a measured string's own table are different numbers, and the screen was

@@ -318,8 +318,20 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val own = measured[midi]
         val basis = own ?: basisFor(midi)
         return (1..maxK).map { k ->
+            // A measured string is read against its own table (28 Sept) -- but only where
+            // that table agrees with the same string's own stiff-string fit. A partial
+            // further off than PARTIAL_FIT_SLACK_CENTS is not the string: on the Samick's
+            // F3 the stored table put partial 2 below twice partial 1, which no string
+            // does, and the screen was tuning to it (30 Sept). There the string's own
+            // fitted inharmonicity stands in -- still this string's B, never the curve's,
+            // but a shape a string can have.
             val ownPartial = own?.partials?.firstOrNull { it.k == k }
-            val hz = if (ownPartial != null) k * f1 * 2.0.pow(ownPartial.cents / 1200.0) else k * f1 * Inharmonicity.ratio(k, b)
+            val ownB = own?.b ?: b
+            val fitted = k * f1 * Inharmonicity.ratio(k, if (own != null) ownB else b)
+            val hz = if (ownPartial == null) k * f1 * Inharmonicity.ratio(k, b) else {
+                val raw = k * f1 * 2.0.pow(ownPartial.cents / 1200.0)
+                if (abs(centsOff(raw, fitted)) <= PARTIAL_FIT_SLACK_CENTS) raw else fitted
+            }
             PredictedPartial(k, hz, basis?.partials?.firstOrNull { it.k == k }?.levelDb ?: 0.0)
         }
     }
@@ -331,6 +343,14 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         const val MIDI_A4 = 69
         /** Top of the compass. */
         const val MIDI_C8 = 108
+        /**
+         * How far a measured partial may stand from its own string's fitted place
+         * before the fit is used for its target instead. Generous enough to keep what
+         * the 28 September change was for -- the string's own partials, not the model's
+         * -- and tight enough that a table no string could have is not tuned to.
+         */
+        const val PARTIAL_FIT_SLACK_CENTS = 1.0
+
         /** A partial is matched when it is this close to its target, Hz (the display resolution). */
         const val MATCH_HZ = 0.1
 
