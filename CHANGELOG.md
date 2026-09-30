@@ -19,12 +19,17 @@ reconstructed from the commit history that day.
   resampling, the file repeating with a second of silence between passes so
   each begins with a clean onset. Any WAV the phone can reach, 48 kHz, 16-bit
   PCM or 32-bit float. For chasing at the desk what was seen at the instrument.
-- **A measured string is tuned to a shape a string can have.** Its own partial
-  table is still used, as since 28 Sept — but only where a partial agrees with
-  that same string's own fitted inharmonicity within a cent; further off, the
-  fit stands in. Never the curve's B: always the string's own. Found on the
-  Samick's F3, where the table stored during sampling put partial 2 *below*
-  twice partial 1, which no string does, and the screen was tuning to it.
+- Reverted within the hour: a guard that placed a measured partial by the
+  string's fitted inharmonicity when the stored reading disagreed with the fit.
+  It rested on a claim that is false — that partial 2 cannot sit below twice
+  partial 1 — and the Samick's own clean F3 does exactly that, by 0.3 c,
+  because a real string's fundamental runs about a cent sharp of the
+  stiff-string model (measured: every other partial within 0.13 c, the
+  fundamental +0.99). The guard then substituted a fitted series for good
+  measurements and broke the one thing the partial display is for: on a clean
+  string the bells must stand one above the other, and they do so only when
+  each partial is read against that same string's own partials. Targets from
+  the string's partials: spread 0.000 c. From the fit: 1.13 c.
 - **Every partial on the tuning screen is placed from the partial being tuned.**
   Its target comes from the interval it must make; the note's place on the curve
   and a measured string's own table are different numbers, and the screen was

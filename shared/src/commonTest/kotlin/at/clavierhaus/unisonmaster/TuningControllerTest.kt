@@ -272,25 +272,14 @@ class TuningControllerTest {
         // the ratios between the partials survive: anchoring moves the series bodily,
         // it does not reshape the string. Partial k over partial 1 must still be the
         // string's own, as it was measured.
-        val m = assertNotNull(c.measurements()[53])
-        val own = m.partials.associate { it.k to it.cents }
+        val own = assertNotNull(c.measurements()[53]).partials.associate { it.k to it.cents }
         val one = targets.first { it.k == 1 }
         for (p in targets) {
             val ck = own[p.k] ?: continue
             val c1 = own[1] ?: continue
-            // partial 4 was measured 2 cents off this string's own fit, which no string
-            // is: it must be placed by the fit, every other partial by its own reading
-            val fitted = 1200.0 * kotlin.math.ln(Inharmonicity.ratio(p.k, m.b) / Inharmonicity.ratio(1, m.b)) / kotlin.math.ln(2.0)
-            val offFit = abs((ck - c1) - fitted)
-            val want = p.k * one.hz * 2.0.pow((if (offFit <= TuningSession.PARTIAL_FIT_SLACK_CENTS) ck - c1 else fitted) / 1200.0)
-            assertEquals(want, p.hz, want * 1e-6,
-                "partial ${p.k}: ${if (offFit <= TuningSession.PARTIAL_FIT_SLACK_CENTS) "its own reading" else "the string's fit"}")
+            val want = p.k * one.hz * 2.0.pow((ck - c1) / 1200.0)
+            assertEquals(want, p.hz, want * 1e-9, "partial ${p.k} keeps the string's own ratio")
         }
-        // and the impossible one is not what was measured
-        val four = targets.first { it.k == 4 }
-        val raw = 4 * one.hz * 2.0.pow((own[4]!! - own[1]!!) / 1200.0)
-        assertTrue(abs(TuningSession.centsOff(four.hz, raw)) > 1.0,
-            "the partial two cents off the string's own fit is not tuned to")
     }
 }
 
