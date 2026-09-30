@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- A reading stands for half a second after its partial was last read, then
+  goes: numbers no longer sit on the screen looking live seconds after the
+  sound has died. Found at the Samick, where it made the screen unusable as
+  a measuring instrument.
 - A partial called false stays false until its spread has clearly fallen
   (0.5 c out, 0.3 c back in): the list under the bell no longer flickers at
   the line. It reads "partials 1 3 5 · not 4".
