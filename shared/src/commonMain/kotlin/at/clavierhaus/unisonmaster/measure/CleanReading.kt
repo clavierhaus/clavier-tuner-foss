@@ -63,7 +63,7 @@ class CleanReading(
     ) {
         val used: List<Int> get() = partials.filter { it.clean }.map { it.k }
         /** Partials present but beating on their own. */
-        val falseBeating: List<Int> get() = partials.filter { it.present && it.spreadCents != null && it.spreadCents >= OWN_CENTS }.map { it.k }
+        val falseBeating: List<Int> get() = partials.filter { it.present && !it.clean && !it.disagrees && it.spreadCents != null && it.spreadCents >= OWN_CLEAR_CENTS }.map { it.k }
     }
 
     private val readers = arrayOfNulls<PhaseReader>(count + 1)
@@ -71,22 +71,24 @@ class CleanReading(
     private val window = Array(count + 1) { DoubleArray(WINDOW_HOPS) }
     private val filled = IntArray(count + 1)
     private val last = arrayOfNulls<PhaseReader.Reading>(count + 1)
+    // a partial called false stays so until its spread has fallen well under the line: no flicker at the threshold
+    private val falseNow = BooleanArray(count + 1)
 
     /** Sets the partials' targets; a partial whose target is absent (0) is not read. Readings are kept unless [reset]. */
     fun target(hz: Map<Int, Double>, reset: Boolean) {
         for (k in 1..count) {
             val t = hz[k] ?: 0.0
-            if (t <= 0.0 || t > sampleRate * 0.45) { readers[k] = null; targets[k] = 0.0; filled[k] = 0; last[k] = null; continue }
+            if (t <= 0.0 || t > sampleRate * 0.45) { readers[k] = null; targets[k] = 0.0; filled[k] = 0; last[k] = null; falseNow[k] = false; continue }
             val r = readers[k]
             if (r == null) readers[k] = PhaseReader(sampleRate, t, memoryS = memoryS)
             else if (abs(1200.0 * kotlin.math.ln(t / r.targetHz) / kotlin.math.ln(2.0)) > 0.01) r.retarget(t)
             targets[k] = t
-            if (reset) { filled[k] = 0; last[k] = null }
+            if (reset) { filled[k] = 0; last[k] = null; falseNow[k] = false }
         }
     }
 
     /** A new strike: the readings start again. */
-    fun strike() { filled.fill(0); last.fill(null) }
+    fun strike() { filled.fill(0); last.fill(null); falseNow.fill(false) }
 
     /** One hop of input; the result as of this hop, anchored on partial [anchorK], the one being tuned. */
     fun push(chunk: FloatArray, anchorK: Int = 1, combine: Boolean = true): Result {
@@ -116,12 +118,14 @@ class CleanReading(
                 var r = 0.0
                 for (j in 0 until recent) r += w[(filled[k] - 1 - j) % WINDOW_HOPS]
                 mean = r / recent; spread = sqrt(ss / n)
+                // hysteresis: false above OWN_CENTS, clean again only below OWN_CLEAR_CENTS
+                if (spread >= OWN_CENTS) falseNow[k] = true else if (spread < OWN_CLEAR_CENTS) falseNow[k] = false
             }
             parts += Partial(k, rd.shown, mean, spread, rd.levelDbfs, clean = false, disagrees = false)
         }
         // the steady partials; where the string is, the partial being tuned says — or, when it
         // beats on its own, the median of the steady ones
-        val steady = parts.filter { it.present && it.cents != null && it.spreadCents != null && it.spreadCents < OWN_CENTS }
+        val steady = parts.filter { it.present && it.cents != null && it.spreadCents != null && !falseNow[it.k] }
         if (steady.isEmpty()) return Result(null, parts)
         if (!combine) {
             // the partial being tuned alone; when it beats on its own, the steadiest other partial
@@ -150,6 +154,8 @@ class CleanReading(
         const val PARTIALS = 8
         /** A partial that spreads more than this over the strike beats on its own (UnisonSync's OWN_CENTS). */
         const val OWN_CENTS = 0.5
+        /** … and is clean again only once its spread has fallen below this: no flicker at the line. */
+        const val OWN_CLEAR_CENTS = 0.3
         /** A steady partial farther than this from the one being tuned is not where the string is: the model placed it wrongly (an unmeasured string: partial k sits ~865·k²·ΔB cents off for a B error ΔB). */
         const val AGREE_CENTS = 0.3
         /** Readings kept per partial: 2 s at hop 1024. */

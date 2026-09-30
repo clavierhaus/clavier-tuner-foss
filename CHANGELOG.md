@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- A partial called false stays false until its spread has clearly fallen
+  (0.5 c out, 0.3 c back in): the list under the bell no longer flickers at
+  the line. It reads "partials 1 3 5 · not 4".
 - Reading memory as a setting (Settings → Precision: 0.15 / 0.3 / 0.6 / 1.2 s):
   how far back the bell looks; every reader takes it. The tuner's control
   over the averaging — a noisy room, a string that wanders.

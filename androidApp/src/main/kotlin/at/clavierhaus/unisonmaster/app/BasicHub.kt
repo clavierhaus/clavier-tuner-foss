@@ -184,7 +184,7 @@ fun BasicHub(
         // which partials the reading is made of, when the clean partials are read together; a false one is named
         val partialsLine = read?.takeIf { it.combined || it.falsePartials.isNotEmpty() }?.let { r ->
             (if (r.combined) "partials " + r.usedPartials.joinToString(" ") else "partial ${r.k}") +
-                (if (r.falsePartials.isNotEmpty()) " · " + r.falsePartials.joinToString(" ") + (if (r.falsePartials.size == 1) " beats" else " beat") else "")
+                (if (r.falsePartials.isNotEmpty()) " · not " + r.falsePartials.joinToString(" ") else "")
         }
         val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
             !cfg.temperamentFirst -> "leaving a note keeps it"
