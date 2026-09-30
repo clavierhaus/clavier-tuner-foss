@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-09-30
+- Octave width per region has a second value at the region's far end (the
+  lowest key; C8 for the treble), interpolated by key from the near end's:
+  a bass tuned wider the lower it goes is one setting, not a step. Unset,
+  nothing changes. Settings → Stretch, "… at the lowest key".
+- Recordings: the studies Stage 1 (one string per key) and Stage 2 (the
+  other strings of the plain trichords) for a piano investigated in stages.
+
 ### 2026-09-28
 - The reading on the string's clean partials (`measure/CleanReading`): a
   measured string is read on partials 1–8 together — present, steady, in

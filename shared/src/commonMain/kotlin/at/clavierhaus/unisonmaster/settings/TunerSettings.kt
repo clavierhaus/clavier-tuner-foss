@@ -64,6 +64,17 @@ data class TunerSettings(
     val widthBass: Double = 0.0,
     val widthMiddle: Double = 0.0,
     val widthTreble: Double = 0.0,
+    /**
+     * The width at the far end of each region — the lowest key for the
+     * three lower regions, C8 for the treble — interpolated by key from the
+     * region's width at the end nearest the temperament octave (the value
+     * above). Null: the same at both ends. A tuner's ear may want the low
+     * bass wider the lower it goes (the 225's, 30 Sept): this is that.
+     */
+    val widthWoundFar: Double? = null,
+    val widthBassFar: Double? = null,
+    val widthMiddleFar: Double? = null,
+    val widthTrebleFar: Double? = null,
     /** Interval weights 0..10 for the stretch calculation. */
     val weightOctave: Int = 10,
     val weightTwelfth: Int = 4,
@@ -128,6 +139,7 @@ data class TunerSettings(
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave: A4, the note the session is defined on. */
         const val TEMPERAMENT_HIGH = 69        // A4
+        const val MIDI_C8 = 108
         const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
         const val MAX_LOWEST_KEY = 40          // E2: never above the lowest plain string in practice
         const val MIN_UNWOUND = 28             // E1
@@ -172,13 +184,24 @@ data class TunerSettings(
         else -> octaveMiddle
     }
 
-    /** The octave width for [midi]'s region, cents; see [widthWound]. */
-    fun widthFor(midi: Int): Double = when {
-        isWound(midi) -> widthWound
-        midi <= bassBoundaryMidi -> widthBass
-        midi > TEMPERAMENT_HIGH -> widthTreble
-        else -> widthMiddle
+    /**
+     * The octave width for [midi], cents: its region's width at the end
+     * nearest the temperament octave, sliding to the far end's where one is
+     * set ([widthWoundFar] …), by key.
+     */
+    fun widthFor(midi: Int): Double {
+        val (near, far, nearMidi, farMidi) = when {
+            isWound(midi) -> Region(widthWound, widthWoundFar, lowestUnwoundMidi - 1, lowestKeyMidi)
+            midi <= bassBoundaryMidi -> Region(widthBass, widthBassFar, bassBoundaryMidi, lowestUnwoundMidi)
+            midi > TEMPERAMENT_HIGH -> Region(widthTreble, widthTrebleFar, TEMPERAMENT_HIGH + 1, MIDI_C8)
+            else -> Region(widthMiddle, widthMiddleFar, temperamentLowMidi - 1, bassBoundaryMidi + 1)
+        }
+        if (far == null || farMidi == nearMidi) return near
+        val t = ((midi - nearMidi).toDouble() / (farMidi - nearMidi)).coerceIn(0.0, 1.0)
+        return near + (far - near) * t
     }
+
+    private data class Region(val near: Double, val far: Double?, val nearMidi: Int, val farMidi: Int)
 }
 
 /**
@@ -216,6 +239,7 @@ class SettingsModel(
         val d = edition
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
+        fun fOrNull(k: String) = store.get(k)?.toDoubleOrNull()?.coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS)
         fun b(k: String, v: Boolean) = store.get(k)?.toBooleanStrictOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
@@ -229,6 +253,8 @@ class SettingsModel(
             widthBass = f("widthBass", d.widthBass).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthTreble = f("widthTreble", d.widthTreble).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
+            widthWoundFar = fOrNull("widthWoundFar"), widthBassFar = fOrNull("widthBassFar"),
+            widthMiddleFar = fOrNull("widthMiddleFar"), widthTrebleFar = fOrNull("widthTrebleFar"),
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -255,6 +281,10 @@ class SettingsModel(
         store.put("widthBass", s.widthBass.toString())
         store.put("widthMiddle", s.widthMiddle.toString())
         store.put("widthTreble", s.widthTreble.toString())
+        store.put("widthWoundFar", s.widthWoundFar?.toString() ?: "")
+        store.put("widthBassFar", s.widthBassFar?.toString() ?: "")
+        store.put("widthMiddleFar", s.widthMiddleFar?.toString() ?: "")
+        store.put("widthTrebleFar", s.widthTrebleFar?.toString() ?: "")
         store.put("weightOctave", s.weightOctave.toString())
         store.put("weightTwelfth", s.weightTwelfth.toString())
         store.put("weightDoubleOctave", s.weightDoubleOctave.toString())

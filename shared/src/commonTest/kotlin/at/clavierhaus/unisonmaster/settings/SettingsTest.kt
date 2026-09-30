@@ -69,4 +69,15 @@ class SettingsTest {
         s.select(40)
         assertEquals(40, s.stepped(-1))
     }
+
+    @Test
+    fun theWidthSlidesFromTheRegionsNearEndToItsFarEndWhenOneIsSet() {
+        val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40, widthWound = 4.0, widthWoundFar = 12.0, widthTreble = 1.0, widthTrebleFar = 5.0)
+        assertEquals(4.0, s.widthFor(39), 1e-9)                 // the top of the wound region: the near width
+        assertEquals(12.0, s.widthFor(21), 1e-9)                // A0: the far width
+        assertEquals(8.0, s.widthFor(30), 1e-9)                 // halfway between 39 and 21
+        assertEquals(1.0, s.widthFor(70), 1e-9)                 // just above the temperament octave
+        assertEquals(5.0, s.widthFor(108), 1e-9)                // C8
+        assertEquals(0.0, s.widthFor(45), 1e-9)                 // the plain bass: no far width set, constant
+    }
 }

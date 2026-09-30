@@ -115,14 +115,17 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
 
     SettingsSection("Stretch")
     SettingsNote("Every note outside the temperament octave is tuned by an octave to a note already tuned: its partial meets the partner's measured partial. The octave type says which partials; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.")
-    RegionRows("Wound strings", "Below the lowest unwound string", octaves, s.octaveWound, s.widthWound,
-        { t -> model.update { it.copy(octaveWound = t) } }, { w -> model.update { it.copy(widthWound = w) } })
-    RegionRows("Bass", "From the lowest unwound string, one octave up", octaves, s.octaveBass, s.widthBass,
-        { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } })
+    RegionRows("Wound strings", "Below the lowest plain string", octaves, s.octaveWound, s.widthWound,
+        { t -> model.update { it.copy(octaveWound = t) } }, { w -> model.update { it.copy(widthWound = w) } },
+        s.widthWoundFar, "the lowest key", { w -> model.update { it.copy(widthWoundFar = w) } })
+    RegionRows("Bass", "From the lowest plain string, one octave up", octaves, s.octaveBass, s.widthBass,
+        { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } },
+        s.widthBassFar, "the lowest plain string", { w -> model.update { it.copy(widthBassFar = w) } })
     RegionRows("Middle", "Up to the temperament octave", octaves, s.octaveMiddle, s.widthMiddle,
         { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } })
     RegionRows("Treble", "Above A4", octaves, s.octaveTreble, s.widthTreble,
-        { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } })
+        { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } },
+        s.widthTrebleFar, "C8", { w -> model.update { it.copy(widthTrebleFar = w) } })
 
     SettingsSection("Piano")
     StepperRow(
@@ -152,6 +155,10 @@ private fun RegionRows(
     width: Double,
     onType: (OctaveType) -> Unit,
     onWidth: (Double) -> Unit,
+    /** The width at the region's far end (the lowest key, or C8), null = the same as [width]; [farName] names that end. */
+    far: Double? = null,
+    farName: String = "",
+    onFar: ((Double?) -> Unit)? = null,
 ) {
     ChoiceRow("Octave type, ${region.lowercase()}", where, octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
     StepperRow(
@@ -162,6 +169,18 @@ private fun RegionRows(
         onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
         onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
     )
+    if (onFar != null) {
+        // the width slides by key from the value above to this one at the far end of the region
+        val f = far ?: width
+        StepperRow(
+            "… at $farName", if (far == null) "the same as above; set it and the width slides by key towards $farName" else "the width slides by key from the value above to this",
+            if (far == null) "same" else if (f == 0.0) "beatless" else String.format(Locale.ROOT, "%.1f c wide", f),
+            canDecrease = f > 0.0 || far != null,
+            canIncrease = f < TunerSettings.MAX_WIDTH_CENTS,
+            onDecrease = { val v = tenths(maxOf(0.0, f - WIDTH_STEP)); onFar(if (v == width) null else v) },
+            onIncrease = { onFar(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, f + WIDTH_STEP))) },
+        )
+    }
 }
 
 private const val WIDTH_STEP = 0.5
