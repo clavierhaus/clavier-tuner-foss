@@ -140,6 +140,14 @@ data class TunerSettings(
      * default: about 6 MB a minute.
      */
     val recordPcm: Boolean = false,
+    // PROBE
+    /**
+     * A play button beside the recording button that feeds a recording to the
+     * engine in place of the microphone (docs/PROBE.md). Off by default and
+     * meant to stay off: it is a workshop tool, and a tuner who forgets it is
+     * on is tuning to yesterday's piano.
+     */
+    val probe: Boolean = false,
 ) {
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
@@ -279,6 +287,7 @@ class SettingsModel(
             matchHz = f("matchHz", d.matchHz),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
+            probe = b("probe", d.probe),
         )
     }
 
@@ -310,5 +319,6 @@ class SettingsModel(
         store.put("matchHz", s.matchHz.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())
+        store.put("probe", s.probe.toString())
     }
 }

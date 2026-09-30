@@ -66,6 +66,11 @@ fun TunerSettingsScreen(
                     "Input", "A recording is played at its own speed and repeats, with a second of silence between passes",
                     listOf("Microphone", "A recording\u2026"), if (feeding == null) 0 else 1,
                 ) { i -> if (i == 0) onUseMicrophone() else onPickRecording() }
+                SwitchRow(
+                    "Play button on the tuning screen",
+                    "Beside the recording button: opens the file dialog, then plays into the engine",
+                    s.probe,
+                ) { on -> model.update { it.copy(probe = on) } }
                 if (feedNote != null) SettingsNote(feedNote)
                 SettingsNote(
                     "For testing away from a piano. Pick any WAV the phone can reach \u2014 the app's own " +

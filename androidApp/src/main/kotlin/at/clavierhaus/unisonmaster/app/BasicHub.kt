@@ -73,6 +73,9 @@ fun BasicHub(
     recorder: SessionRecorder?,
     onSettings: () -> Unit,
     onBack: () -> Unit,
+    feeding: String? = null,
+    onPickRecording: (() -> Unit)? = null,
+    onUseMicrophone: () -> Unit = {},
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -209,6 +212,10 @@ fun BasicHub(
                 RecordButton(recording = recording, seconds = seconds, onToggle = {
                     if (recording) recorder.stop() else recorder.start()
                 })
+            }
+            if (onPickRecording != null && !t.sampling) {
+                Spacer(Modifier.width(4.dp))
+                ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
             }
         }
 

@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- The probe gains a **play button on the tuning screen**, beside the recording
+  button: it opens the file dialog and plays straight into the engine, so the
+  scope, the partials and the Done button stay where they are while a recording
+  runs. Switched on under Settings → Probe, off by default.
 - **The probe** (Settings → Probe, docs/PROBE.md): a recording played in place
   of the microphone. `FeedableAudioSource` *is* an `AudioSource`, so the tap,
   the readers, the identifier and the screen cannot tell where the buffers came

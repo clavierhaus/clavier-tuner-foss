@@ -303,6 +303,51 @@ fun PartialsButton(fullSpectrum: Boolean, onClick: () -> Unit, modifier: Modifie
 }
 
 /**
+ * The probe's play button, beside the recording button: an outlined triangle
+ * while the microphone is live, a filled square and the recording's name while
+ * a recording is being fed (docs/PROBE.md). Tapping it opens the file dialog,
+ * or stops the feed and gives the microphone back. Shown only when the probe is
+ * switched on in the settings, and never at a piano.
+ */
+@Composable
+fun ProbeButton(feeding: String?, onPick: () -> Unit, onStop: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .clickable(onClick = { if (feeding == null) onPick() else onStop() })
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        if (feeding != null) {
+            Text(
+                feeding.removeSuffix(".wav").takeLast(18),
+                color = Color(Brand.ORANGE),
+                fontFamily = DejaVuSerif,
+                fontSize = 18.sp,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(10.dp))
+        }
+        Canvas(Modifier.size(22.dp)) {
+            val c = androidx.compose.ui.graphics.Color(if (feeding == null) Brand.WHITE_MUTED else Brand.ORANGE)
+            if (feeding == null) {
+                // a triangle pointing right, outlined: nothing is playing yet
+                val p = Path().apply {
+                    moveTo(size.width * 0.18f, size.height * 0.12f)
+                    lineTo(size.width * 0.88f, size.height * 0.5f)
+                    lineTo(size.width * 0.18f, size.height * 0.88f)
+                    close()
+                }
+                drawPath(p, c, style = Stroke(width = 2.dp.toPx()))
+            } else {
+                drawRect(c, topLeft = Offset(size.width * 0.2f, size.height * 0.2f),
+                    size = androidx.compose.ui.geometry.Size(size.width * 0.6f, size.height * 0.6f))
+            }
+        }
+    }
+}
+
+/**
  * The recording button, top right: a red ring while idle, a red disc with
  * the duration as mm:ss while the session is being written. Shown only when
  * recording is switched on in the settings.

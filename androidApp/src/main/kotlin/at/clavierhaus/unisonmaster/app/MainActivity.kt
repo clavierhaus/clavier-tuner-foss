@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
     private val feedNote = mutableStateOf<String?>(null)
 
     /** Picks a WAV anywhere the phone can reach — the recordings folder, Downloads, adb push. */
-    private val pickRecording =
+    private val pickRecordingLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
             val name = uri.lastPathSegment?.substringAfterLast('/') ?: "recording"
@@ -80,6 +80,18 @@ class MainActivity : ComponentActivity() {
                 if (listening) { controller.stopLive(); controller.startLive() }
             }.onFailure { e -> feedNote.value = e.message ?: "That file could not be played." }
         }
+
+    /** Opens the file dialog; the probe takes over from the next buffer. */
+    private fun pickRecording() =
+        pickRecordingLauncher.launch(arrayOf("audio/*", "application/octet-stream"))
+
+    /** Gives the microphone back, without leaving the tuning screen. */
+    private fun useMicrophone() {
+        val listening = controller.live.value
+        audioSource.useMicrophone()
+        feedNote.value = null
+        if (listening) { controller.stopLive(); controller.startLive() }
+    }
 
     private val permissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -137,13 +149,8 @@ class MainActivity : ComponentActivity() {
                                 model = settingsModel,
                                 feeding = audioSource.feeding.collectAsState().value,
                                 feedNote = feedNote.value,
-                                onPickRecording = { pickRecording.launch(arrayOf("audio/*", "application/octet-stream")) },
-                                onUseMicrophone = {
-                                    val listening = controller.live.value
-                                    audioSource.useMicrophone()
-                                    feedNote.value = null
-                                    if (listening) { controller.stopLive(); controller.startLive() }
-                                },
+                                onPickRecording = { pickRecording() },
+                                onUseMicrophone = { useMicrophone() },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
                             )
@@ -163,6 +170,9 @@ class MainActivity : ComponentActivity() {
                                 recorder = if (settings.recordPcm) recorder else null,
                                 onSettings = { openSettings() },
                                 onBack = { backToHub() },
+                                feeding = audioSource.feeding.collectAsState().value,
+                                onPickRecording = if (settings.probe) ({ pickRecording() }) else null,
+                                onUseMicrophone = { useMicrophone() },
                             )
                         }
                         else -> {

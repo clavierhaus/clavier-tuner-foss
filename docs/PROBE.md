@@ -26,7 +26,13 @@ Two things are deliberately kept honest:
 
 ## Using it
 
-Settings → **Probe** → Input → *A recording…* opens the system file picker.
+Switch on *Play button on the tuning screen* under Settings → **Probe**. A
+triangle then sits beside the recording button: it opens the file dialog and
+plays straight into the engine, so the scope, the partials, One partial and
+Done all stay where they are while a recording runs. It turns into a square
+and the recording's name; tapping it again gives the microphone back.
+
+Settings → **Probe** → Input → *A recording…* does the same from the settings.
 Any WAV the phone can reach will do: the app's own recordings, Downloads,
 anything pushed with `adb push … /sdcard/Download/`. 48 kHz, 16-bit PCM or
 32-bit float, mono or stereo (the left channel is taken).
