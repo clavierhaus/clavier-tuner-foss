@@ -701,8 +701,9 @@ class TuningController(
         val shownReaders = HashMap<Int, PhaseReader>()
         var shownGeneration = -1
         // the clean partials read together (CleanReading): targets follow the note, readings the strike
-        val clean = CleanReading(sr)
+        val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS)
         var cleanGeneration = -1
+        var memoryInForce = _settings.value.readingMemoryS
         var cleanStrike = -1L
         val shownHeld = HashMap<Int, PhaseReader.Reading>()
         var peakDb = -200.0
@@ -754,7 +755,7 @@ class TuningController(
                     finder?.near(centre, span)?.let { p ->
                         val r = reader
                         if (r == null || abs(TuningSession.centsOff(p.hz, r.targetHz)) > HUB_RETARGET_CENTS) {
-                            if (r == null) reader = PhaseReader(sr, p.hz) else r.retarget(p.hz)
+                            if (r == null) reader = PhaseReader(sr, p.hz, memoryS = _settings.value.readingMemoryS) else r.retarget(p.hz)
                         }
                     }
                     readerGeneration = -1
@@ -763,10 +764,17 @@ class TuningController(
                     return@start
                 }
 
+                // a changed reading memory remakes every reader (on the next hop, not mid-strike)
+                if (_settings.value.readingMemoryS != memoryInForce) {
+                    memoryInForce = _settings.value.readingMemoryS
+                    reader = null; readerGeneration = -1
+                    shownReaders.clear(); shownHeld.clear(); shownGeneration = -1
+                    clean.memoryS = memoryInForce; cleanGeneration = -1
+                }
                 // the tuning screen: the reader is set on the partial listened to
                 if (readerGeneration != w.generation) {
                     val r = reader
-                    if (r == null) reader = PhaseReader(sr, w.hz) else r.retarget(w.hz)
+                    if (r == null) reader = PhaseReader(sr, w.hz, memoryS = _settings.value.readingMemoryS) else r.retarget(w.hz)
                     readerGeneration = w.generation
                     coarse = null
                 }
@@ -856,7 +864,7 @@ class TuningController(
                     shownHeld.keys.retainAll(ws.targets.keys)
                     for ((k, hz) in ws.targets) {
                         val r = shownReaders[k]
-                        if (r == null) shownReaders[k] = PhaseReader(sr, hz)
+                        if (r == null) shownReaders[k] = PhaseReader(sr, hz, memoryS = _settings.value.readingMemoryS)
                         else if (abs(TuningSession.centsOff(hz, r.targetHz)) > 0.01) r.retarget(hz)
                     }
                 }

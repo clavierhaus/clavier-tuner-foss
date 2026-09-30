@@ -39,6 +39,8 @@ import kotlin.math.sqrt
 class CleanReading(
     private val sampleRate: Int,
     val count: Int = PARTIALS,
+    /** The readers' memory (TunerSettings.readingMemoryS); a change applies to readers made from then on. */
+    var memoryS: Double = PhaseReader.DEFAULT_MEMORY_S,
 ) {
     /** One partial as read over the strike. */
     data class Partial(
@@ -76,7 +78,7 @@ class CleanReading(
             val t = hz[k] ?: 0.0
             if (t <= 0.0 || t > sampleRate * 0.45) { readers[k] = null; targets[k] = 0.0; filled[k] = 0; last[k] = null; continue }
             val r = readers[k]
-            if (r == null) readers[k] = PhaseReader(sampleRate, t)
+            if (r == null) readers[k] = PhaseReader(sampleRate, t, memoryS = memoryS)
             else if (abs(1200.0 * kotlin.math.ln(t / r.targetHz) / kotlin.math.ln(2.0)) > 0.01) r.retarget(t)
             targets[k] = t
             if (reset) { filled[k] = 0; last[k] = null }

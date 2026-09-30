@@ -89,6 +89,18 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
         "The reading is the string's clean partials read as one, once the string has been measured; a partial that beats on its own is left out and named under the bell. Off: the partial being tuned alone, as an ETD reads. A partial tapped under Partials is read alone either way.",
         s.cleanPartials,
     ) { on -> model.update { it.copy(cleanPartials = on) } }
+    run {
+        val steps = TunerSettings.MEMORY_STEPS
+        val i = steps.indexOfFirst { kotlin.math.abs(it - s.readingMemoryS) < 1e-6 }.let { if (it < 0) 0 else it }
+        StepperRow(
+            "Reading memory", "How far back the bell looks. Short shows every wobble as it happens; longer steadies the bell in a noisy room or on a string that wanders, and shows a beat slower than it is",
+            String.format(Locale.ROOT, "%.2f s", steps[i]),
+            canDecrease = i > 0,
+            canIncrease = i < steps.size - 1,
+            onDecrease = { model.update { it.copy(readingMemoryS = steps[i - 1]) } },
+            onIncrease = { model.update { it.copy(readingMemoryS = steps[i + 1]) } },
+        )
+    }
     StepperRow(
         "Match window", "A partial turns green within this of its target",
         String.format(Locale.ROOT, "±%.2f Hz", s.matchHz),

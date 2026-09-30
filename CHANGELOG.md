@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- Reading memory as a setting (Settings → Precision: 0.15 / 0.3 / 0.6 / 1.2 s):
+  how far back the bell looks; every reader takes it. The tuner's control
+  over the averaging — a noisy room, a string that wanders.
 - Octave width per region has a second value at the region's far end (the
   lowest key; C8 for the treble), interpolated by key from the near end's:
   a bass tuned wider the lower it goes is one setting, not a step. Unset,

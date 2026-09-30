@@ -122,6 +122,13 @@ data class TunerSettings(
      * Partials reads that partial alone either way.
      */
     val cleanPartials: Boolean = true,
+    /**
+     * The reading's memory, seconds: how far back the shown reading looks.
+     * 0.15 s shows every wobble as it happens (Verituner's); longer steadies
+     * the bell in a noisy room or on a string that wanders, at the price of
+     * a beat shown slower than it is. The tuner's control over the averaging.
+     */
+    val readingMemoryS: Double = 0.15,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
     // RECORDING
@@ -140,6 +147,9 @@ data class TunerSettings(
         /** Top of the temperament octave: A4, the note the session is defined on. */
         const val TEMPERAMENT_HIGH = 69        // A4
         const val MIDI_C8 = 108
+        const val MIN_MEMORY_S = 0.15
+        const val MAX_MEMORY_S = 1.2
+        val MEMORY_STEPS = listOf(0.15, 0.3, 0.6, 1.2)
         const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
         const val MAX_LOWEST_KEY = 40          // E2: never above the lowest plain string in practice
         const val MIN_UNWOUND = 28             // E1
@@ -263,6 +273,7 @@ class SettingsModel(
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
             cleanPartials = b("cleanPartials", d.cleanPartials),
+            readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             language = store.get("language") ?: d.language,
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchHz = f("matchHz", d.matchHz),
@@ -293,6 +304,7 @@ class SettingsModel(
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("autoNote", s.autoNote.toString())
         store.put("cleanPartials", s.cleanPartials.toString())
+        store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchHz", s.matchHz.toString())
