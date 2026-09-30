@@ -8,6 +8,16 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-09-30
+- **Every partial on the tuning screen is placed from the partial being tuned.**
+  Its target comes from the interval it must make; the note's place on the curve
+  and a measured string's own table are different numbers, and the screen was
+  taking the fundamental from one and the rest from another. The row being tuned
+  could therefore disagree with the bell directly above it — on the Samick's F3,
+  697.0 against 697.77 — and the partials of one clean string scattered over
+  2.5 cents. Anchored, the same string's partials stand together within 0.24 c.
+  The partials' cents were also measured against the bare harmonic k·f1, which
+  no piano string sits on (F3 stands 11.7 c above it at partial 8), so every
+  upper partial of a clean string read sharp.
 - The partials table gains a **cents** column to a hundredth: 0.1 Hz is
   0.39 c at the fundamental and 0.08 c at C#7, so the Hz column alone had
   five times the resolution at the bottom of the table as at the top.

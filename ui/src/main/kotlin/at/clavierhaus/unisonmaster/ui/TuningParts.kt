@@ -83,7 +83,9 @@ fun TuningGraph(
             isAntiAlias = true
         }
     }
-    fun targetOf(k: Int): Double? = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz
+    // the predicted partials are anchored on the one being tuned, so the fundamental
+    // comes from them too: the note's own target is only the fallback before they exist
+    fun targetOf(k: Int): Double? = predicted.firstOrNull { it.k == k }?.hz ?: (if (k == 1) targetHz else null)
     fun liveOf(k: Int): Double? = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
 
     // A measured reading arrives every 21 ms; the bell moves to it within one
@@ -186,7 +188,10 @@ fun ReadoutColumn(
                 textAlign = TextAlign.End, modifier = Modifier.width(76.dp))
         }
         for (k in shown.sorted()) {
-            val tk = if (k == 1) targetHz else predicted.firstOrNull { it.k == k }?.hz ?: continue
+            // every row from one series, the fundamental included: taking row 1 from
+            // the note's target and the rest from the predicted partials put two
+            // different f1 on one screen, and row 2 could sit below twice row 1
+            val tk = predicted.firstOrNull { it.k == k }?.hz ?: (if (k == 1) targetHz else continue)
             val lk = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
             val match = TuningSession.matched(lk, tk, matchHz)
             val isActive = k == active

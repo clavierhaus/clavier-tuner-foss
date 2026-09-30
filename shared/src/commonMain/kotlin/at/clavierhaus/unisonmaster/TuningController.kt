@@ -288,6 +288,20 @@ class TuningController(
         wanted = Wanted(targetOf(t, k), k, ++generation)
     }
 
+    /**
+     * The predicted partials moved bodily so that partial [k] lands on [targetHz]:
+     * the string's own partial ratios kept, the note placed where it is being tuned.
+     * Scaling every partial by one factor keeps the ratios exact, which is what a
+     * string is; recomputing them from a shifted f1 would not.
+     */
+    private fun anchored(partials: List<PredictedPartial>, k: Int, targetHz: Double): List<PredictedPartial> {
+        val at = partials.firstOrNull { it.k == k }?.hz ?: return partials
+        if (at <= 0.0 || targetHz <= 0.0) return partials
+        val factor = targetHz / at
+        if (abs(1200.0 * kotlin.math.ln(factor) / kotlin.math.ln(2.0)) < 0.001) return partials
+        return partials.map { it.copy(hz = it.hz * factor) }
+    }
+
     /** The target of partial [k] of the note on screen: the listened partial's own, any other placed by the string's model. */
     private fun targetOf(t: TuningView, k: Int): Double =
         if (k == t.listening.k) t.listening.targetHz
@@ -467,7 +481,19 @@ class TuningController(
             breakHere = midi in s.settings.curveBreaks,
         )
         _targetHz.value = f1
-        _targets.value = s.predictedPartials(midi, highestPartial(f1).coerceAtLeast(listening.k))
+        // Every partial of the note is placed from the one being tuned, not from the
+        // curve's f1 for the note. The two are not the same number: the listened
+        // partial's target comes from the interval it must make (a beatless 4:2 to
+        // the octave below, say), the curve's f1 from the note's own place on the
+        // curve, and they differ by the width the tuner asked for. Left unanchored
+        // the table contradicted the bell -- partial 4 shown 0.8 Hz from the target
+        // it was actually being tuned to -- and the partials of one clean string
+        // scattered over 2.5 cents (30 Sept, F3 on the Samick, where the same
+        // string's partials agree to 0.24 c once anchored).
+        _targets.value = anchored(
+            s.predictedPartials(midi, highestPartial(f1).coerceAtLeast(listening.k)),
+            listening.k, listening.targetHz,
+        )
         _tuning.value = view
         _suggested.value = listening.k
         if (noteChanged) {
@@ -915,8 +941,11 @@ class TuningController(
         val read = LinkedHashMap<Int, Double>()
         activeHz?.let { read[activeK] = it }
         for ((k, r) in held) read[k] = r.hz
+        // against the partial's own target, not against k * f1: the harmonic is not
+        // where a piano string puts its partials (F3 on the Samick stands 11.7 c above
+        // it at partial 8), so measuring from it made every clean string read sharp
         _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
-            LivePartial(k, hz, TuningSession.centsOff(hz, k * t.targetHz), 1.0)
+            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), 1.0)
         }
         if (finder != null) {
             val cap = highestPartial(t.targetHz)

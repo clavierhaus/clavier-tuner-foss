@@ -250,7 +250,39 @@ class TuningControllerTest {
             assertTrue(swing < 0.06 * k, "partial $k swings %.3f Hz over the strike".format(swing))
         }
     }
+    @Test
+    fun everyPartialShownIsPlacedFromTheOneBeingTuned() {
+        // The target of the listened partial comes from the interval it must make;
+        // the partial table of a measured string is its own. The two are not the same
+        // number, and before 30 Sept the table showed the second while the bell used
+        // the first, so the row being tuned disagreed with the bell above it -- on the
+        // Samick's F3, 697.0 against 697.77, and a clean string's partials scattered
+        // over 2.5 cents instead of standing together within 0.24.
+        val (c, _) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(
+            measuredString(69, a4, 8e-4),
+            measuredString(53, et(53), 2.2e-4, offsetK = 4, offsetCents = 2.0),
+        ), sampling = false))
+        val t = c.tuning.value!!
+        val targets = c.targets.value
+        val listened = targets.firstOrNull { it.k == t.listening.k }
+        assertNotNull(listened, "the partial being tuned is in the table: ${targets.map { it.k }}")
+        assertEquals(t.listening.targetHz, listened.hz, t.listening.targetHz * 1e-9,
+            "the table's target for the listened partial is the one it is tuned to")
+        // the ratios between the partials survive: anchoring moves the series bodily,
+        // it does not reshape the string. Partial k over partial 1 must still be the
+        // string's own, as it was measured.
+        val own = assertNotNull(c.measurements()[53]).partials.associate { it.k to it.cents }
+        val one = targets.first { it.k == 1 }
+        for (p in targets) {
+            val ck = own[p.k] ?: continue
+            val c1 = own[1] ?: continue
+            val want = p.k * one.hz * 2.0.pow((ck - c1) / 1200.0)
+            assertEquals(want, p.hz, want * 1e-9, "partial ${p.k} keeps the string's own ratio")
+        }
+    }
 }
+
 
 /** Plays [signal] and calls [afterHop] with the position after every buffer. */
 private object TappedSource : AudioSource {
