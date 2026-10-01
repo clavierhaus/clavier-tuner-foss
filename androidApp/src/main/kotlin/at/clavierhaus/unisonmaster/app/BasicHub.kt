@@ -400,7 +400,13 @@ fun BasicHub(
             }
             if (full && !showProgress) {
                 Spacer(Modifier.width(10.dp))
-                PartialsButton(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
+                // named for where it goes, as the Progress button is: leaving Partials
+                // by a button called "One partial" read as a mode and not as a way back
+                PartialsButton(
+                    fullSpectrum = full,
+                    onClick = { controller.toggleFullSpectrum() },
+                    label = t(K.app_tuning),
+                )
             }
             Spacer(Modifier.width(10.dp))
             DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
