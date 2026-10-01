@@ -7,6 +7,15 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-01
+- `docs/RULES.md` gains the two standing laws decided at the instrument:
+  **measurement has the primary role and modelling never overrides it** — no
+  guard, threshold, cap or fallback decides in advance what the piano may
+  produce, and a partial the strike produces is reported with its level, not
+  dropped — and **foss is the measurement foundation**: the engine is
+  byte-identical in both repositories, every engine change starts here and is
+  propagated into Pro, never the reverse.
+
 ### 2026-09-30
 - The probe gains a **play button on the tuning screen**, beside the recording
   button: it opens the file dialog and plays straight into the engine, so the

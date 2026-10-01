@@ -11,6 +11,39 @@ rule is decided; never quietly drop one.
 
 ---
 
+## 0. Measurement has the primary role; modelling never overrides it
+
+*Peter, 1 October 2026.*
+
+> **No guard, threshold, cap or fallback decides before the fact what the
+> piano is allowed to produce.** A partial the strike produces is reported —
+> with its own level and confidence — not dropped.
+
+A constant that silently limits what can be found is the same error as a claim
+asserted without measurement (rule 7), one layer down: it decides the answer
+before the question is asked, and it is invisible in the output. If a partial
+is too weak to measure, say so *with its level*, so the next reader can see
+what was there rather than what was allowed through.
+
+*Broken, and found 1 October 2026.* Three research scripts carried silent
+caps — `false_beats_strike.py` searched 8 partials, `unison_difference.py` 10
+(and 8 inside its simulation), `curve_adequacy.py` 8. F3 on the Samick has a
+real, strong partial at k=12 (2119.9 Hz, 22 c sharp of C7, on-series, 30–52 dB
+over the noise beside it, present on all nine single-string takes). Every F3
+table produced before that date was blind to it. The engine itself was never
+at fault and was not changed.
+
+## 0b. FOSS is the measurement foundation
+
+*Peter, 1 October 2026.*
+
+The engine is byte-identical between the two repositories. Pro carries feature
+enhancements only. **Every engine change starts in foss and is propagated into
+Pro**, never the other way round, and never edited in place in Pro's `core/`.
+Verified identical on 1 Oct: `StringMeasure`, `TuningSession`,
+`InharmonicityCurve`, `PhaseReader`, `PartialFinder`, `Partials`,
+`CleanReading`. Keep it so, with CI green on both.
+
 ## 1. A bell is not pitch dependent
 
 The partial display shows **one string seen several ways**, not several
