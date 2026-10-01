@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-01 (evening)
+- `scripts/deploy.sh` is silent when the build works and complete when it does
+  not. It ran gradle with `-q`, which says almost nothing about a compile
+  failure, and `set -e` then stopped the run where it stood, so nothing could be
+  analysed from what reached the screen. A failure now prints the lines that
+  name the fault, counts the compiler errors, and keeps the whole output in a
+  file to be read or pasted whole. Success still says nothing.
+
 ### 2026-10-01
 - **The tuning screen says when the A4 reference is assumed.** 440 Hz is where
   the reference starts, not where a piano stands: a session that never measured

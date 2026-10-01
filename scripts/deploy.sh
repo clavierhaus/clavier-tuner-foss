@@ -27,6 +27,39 @@ for arg in "$@"; do
   esac
 done
 
+
+# -----------------------------------------------------------------------------
+# Gradle, silent when it works and complete when it does not.
+#
+# The script used to run gradle with -q, which says almost nothing on a failure,
+# and set -e then stopped the run where it stood. Nothing could be analysed from
+# what reached the screen. Success stays silent; a failure now prints the lines
+# that name the fault and keeps the whole output in a file that can be read or
+# pasted whole.
+# -----------------------------------------------------------------------------
+GRADLE_LOG=""
+gradle_quietly() {
+  local what="$1"; shift
+  GRADLE_LOG="$(mktemp -t clavier-build-XXXXXX.log)"
+  if ./gradlew "$@" --console=plain >"$GRADLE_LOG" 2>&1; then
+    rm -f "$GRADLE_LOG"; GRADLE_LOG=""
+    return 0
+  fi
+  echo ""
+  echo "!! $what failed."
+  echo ""
+  # what the compiler and gradle actually said, in the order they said it
+  grep -nE '^(e:|FAILURE|\* What went wrong|\* Try|Caused by|Execution failed|> |[[:space:]]+at )' "$GRADLE_LOG" \
+    | head -60 | sed 's/^/   /'
+  local errs
+  errs=$(grep -cE '^e:' "$GRADLE_LOG" || true)
+  echo ""
+  echo "   $errs compiler error(s); the whole output is in:"
+  echo "   $GRADLE_LOG"
+  echo "   (paste it whole — the first error is usually the only real one)"
+  return 1
+}
+
 if [ "$DO_PULL" = 1 ]; then
   echo "==> git pull"
   git pull --ff-only
@@ -34,12 +67,12 @@ fi
 
 if [ "$DO_TEST" = 1 ]; then
   echo "==> DSP unit tests"
-  ./gradlew :shared:testAndroidHostTest --console=plain -q
+  gradle_quietly "the engine's own tests" :shared:testAndroidHostTest -q || exit 1
   echo "    tests green."
 fi
 
 echo "==> Building debug APK"
-./gradlew :androidApp:assembleDebug --console=plain -q
+gradle_quietly "building the app" :androidApp:assembleDebug -q || exit 1
 APK="androidApp/build/outputs/apk/debug/androidApp-debug.apk"
 echo "    $APK"
 
