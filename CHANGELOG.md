@@ -8,6 +8,15 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01
+- `CLAUDE.md`: the operating manual, binding on both repositories. Its Core
+  Directive — **the only truth is a verifiable, reproducible measurement from an
+  uncompressed, unaltered source of sound** — is the law the rest follow from:
+  no lossy audio or processing anywhere in the chain, a measurement is
+  reproducible or it is not one, the corpus is evidence and is never edited, and
+  where the ear and a measurement disagree the measurement is the suspect. With
+  it: the verification order, the questions to answer before changing anything,
+  build and test discipline, and a standing orders ledger of the ten failures of
+  30 September and 1 October that produced these rules.
 - **The partials shown on the tuning screen are measured from the strike you are
   hearing** (RULES.md 2). Every strike, the string's own partials are read from
   the ring and become the targets, anchored on the partial being tuned; they are

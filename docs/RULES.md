@@ -1,5 +1,10 @@
 # Working rules
 
+**`CLAUDE.md` at the repository root carries the Core Directive and is binding
+above this file**: the only truth is a verifiable, reproducible measurement from
+an uncompressed, unaltered source of sound. What follows are the invariants that
+directive produces in the engine.
+
 Invariants of this engine. They are not preferences and not style: each one
 was decided at an instrument, and each has already been broken once at a cost.
 A change that violates one of these is wrong even when its tests pass, even
