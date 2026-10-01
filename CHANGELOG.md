@@ -17,6 +17,11 @@ reconstructed from the commit history that day.
   a string that stood in tune; the second widened that third to ±2 c but kept
   log segments reaching ±100 c, a semitone on a tuning scale. The match window
   stays where the measurement puts it and is drawn at the width it really has.
+- **The match window is drawn as a gate on the scale**: a post at each edge, feet
+  pointing inward, the fill between them and the figure beside the right post,
+  all of it turning green with the pointer. A band that only changes colour says
+  the same thing at a tenth of a cent as at one and four tenths; the gate says
+  where inside the window the string stands.
 - The match window is **±1.5 cents**, a tenth of the scale either side of the
   target, so the green band is an area to aim at instead of the hairline ±0.2 c
   drew on a thirty-cent scale. The floor is still the measurement's — a string's

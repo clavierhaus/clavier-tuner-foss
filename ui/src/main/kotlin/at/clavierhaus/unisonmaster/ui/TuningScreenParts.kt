@@ -264,10 +264,31 @@ fun TargetScale(
             (cx + (cents / SCALE_C).coerceIn(-1.0, 1.0) * half).toFloat()
         val axisY = h * 0.45f
         val green = Color(Brand.GO_GREEN)
-        // the match window, at the width it really has on this scale
+        // The match window, at the width it really has on this scale, with a post at
+        // each edge: the tuner can see where in the window the pointer stands, which
+        // a colour alone never says. The posts and the fill are the same green as
+        // the pointer and turn with it.
         val left = xOf(-m); val right = xOf(m)
-        drawRect(green.copy(alpha = if (matched) 0.35f else 0.12f), Offset(left, axisY - h * 0.28f), androidx.compose.ui.geometry.Size((right - left).coerceAtLeast(3f), h * 0.56f))
-        drawRect(green.copy(alpha = 0.5f), Offset(left, axisY - h * 0.28f), androidx.compose.ui.geometry.Size((right - left).coerceAtLeast(3f), h * 0.56f), style = Stroke(width = 2f))
+        val top = axisY - h * 0.30f; val bot = axisY + h * 0.30f
+        val edge = if (matched) green else Color(Brand.WHITE_MUTED)
+        drawRect(green.copy(alpha = if (matched) 0.30f else 0.08f), Offset(left, top), androidx.compose.ui.geometry.Size((right - left).coerceAtLeast(2f), bot - top))
+        for (x in listOf(left, right)) {
+            drawLine(edge.copy(alpha = if (matched) 1f else 0.75f), Offset(x, top), Offset(x, bot), 4f)
+            // feet, pointing in: the window is the space between the posts
+            val inward = if (x == left) 1f else -1f
+            drawLine(edge.copy(alpha = if (matched) 1f else 0.75f), Offset(x, top), Offset(x + inward * h * 0.08f, top), 4f)
+            drawLine(edge.copy(alpha = if (matched) 1f else 0.75f), Offset(x, bot), Offset(x + inward * h * 0.08f, bot), 4f)
+        }
+        // and the window said in cents, above the posts, so the green is a number
+        run {
+            val wp = android.graphics.Paint().apply {
+                color = edge.toArgb(); textSize = h * 0.18f; isAntiAlias = true
+                textAlign = android.graphics.Paint.Align.LEFT
+            }
+            drawContext.canvas.nativeCanvas.drawText(
+                String.format(Locale.ROOT, "\u00b1%.1f", m), right + h * 0.12f, top + h * 0.16f, wp,
+            )
+        }
         // axis and ticks
         drawLine(Color(Brand.WHITE).copy(alpha = 0.35f), Offset(8f, axisY), Offset(w - 8f, axisY), 2f)
         val paint = android.graphics.Paint().apply {
