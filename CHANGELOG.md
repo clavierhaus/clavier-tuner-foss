@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01
+- **The tuning screen says when the A4 reference is assumed.** 440 Hz is where
+  the reference starts, not where a piano stands: a session that never measured
+  the A4 string tuned to that assumption silently, and on an instrument at
+  439.4 Hz that puts every target 2.3 cents sharp of the piano — more than a
+  tuner works to. The origin line now reads "A4 440.0 Hz assumed, not measured",
+  in orange, in front of the numbers it governs.
 - **Progress draws the curve this piano asks for**, in blue, unbroken across the
   whole compass: every key's target computed from the inharmonicity of the
   strings that were sampled. It was being computed for every note and shown for

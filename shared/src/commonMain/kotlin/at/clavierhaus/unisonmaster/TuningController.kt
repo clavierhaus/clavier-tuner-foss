@@ -338,6 +338,14 @@ class TuningController(
         val curve: Map<Int, Double> = emptyMap(),
         /** True once the temperament octave is measured throughout. */
         val temperamentComplete: Boolean,
+        /**
+         * True when A4 was measured from the piano in this session. False means the
+         * reference is DEFAULT_REFERENCE_HZ, assumed, and every target on the screen
+         * stands wherever that assumption puts it -- on a piano at 439.4 Hz, 2.3
+         * cents sharp of the instrument, which is of the order a tuner is working
+         * to. An assumed reference is not a measurement and the screen must say so.
+         */
+        val referenceMeasured: Boolean = false,
         /** True when moving to another note registers this one as done. */
         val recordsOnLeaving: Boolean,
         /** Lowest and highest note the arrows may reach. */
@@ -486,6 +494,7 @@ class TuningController(
                     TuningSession.centsOff(s.curveTargetF1(m), TuningSession.targetF1(m, s.a4Hz))
                 },
             temperamentComplete = s.temperamentComplete,
+            referenceMeasured = s.measurements.containsKey(TuningSession.MIDI_A4),
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,

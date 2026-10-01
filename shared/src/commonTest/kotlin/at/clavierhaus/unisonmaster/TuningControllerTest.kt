@@ -251,6 +251,23 @@ class TuningControllerTest {
         }
     }
     @Test
+    fun theScreenKnowsWhetherTheReferenceWasMeasuredOrAssumed() {
+        // 440 Hz is where the reference starts, not where this piano stands. A
+        // session that never measured the A4 string tunes to an assumption, and on
+        // a piano at 439.4 that is 2.3 cents -- more than a tuner works to. The
+        // screen has to be able to say which it is.
+        val (c, _) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(measuredString(60, et(60), 2.2e-4)), sampling = false))
+        assertFalse(assertNotNull(c.tuning.value).referenceMeasured,
+            "no A4 was measured: the reference is assumed")
+        c.restore(SessionSnapshot(0, a4, 53, listOf(
+            measuredString(TuningSession.MIDI_A4, a4, 4.0e-4), measuredString(60, et(60), 2.2e-4),
+        ), sampling = false))
+        assertTrue(assertNotNull(c.tuning.value).referenceMeasured,
+            "A4 was measured from the piano: the reference is a measurement")
+    }
+
+    @Test
     fun theCurveIsComputedForEveryKeyFromTheMeasuredInharmonicity() {
         // The sample set is a handful of notes; the curve it asks for covers the
         // whole compass. Progress drew only how far the measured notes stand from

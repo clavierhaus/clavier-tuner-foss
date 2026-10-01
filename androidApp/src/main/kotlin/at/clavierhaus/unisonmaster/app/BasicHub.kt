@@ -170,6 +170,13 @@ fun BasicHub(
                 (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless)) +
                 (l.checkCents?.let { t(K.origin_check, Notes.name(l.refMidi!!), String.format(Locale.ROOT, "%.1f", abs(it)), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
+        // An assumed reference is not a measurement, and every target on this screen
+        // stands wherever the assumption puts it: on a piano at 439.4 Hz, A4 = 440
+        // puts them 2.3 cents sharp of the instrument. Said plainly, in front of the
+        // numbers it governs, rather than left for the tuner to discover.
+        val originLine =
+            if (t.referenceMeasured) origin
+            else "A4 ${formatHz(a4)} assumed, not measured · $origin"
         val coarse = read?.coarseCents
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
@@ -253,7 +260,8 @@ fun BasicHub(
                 Column(Modifier.align(Alignment.TopStart).padding(top = 60.dp)) {
                     Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
                     Text("target " + String.format(Locale.ROOT, "%.2f Hz", shownTarget) + if (active > 1) ", partial $active" else "", color = Color(Brand.TARGET_BLUE), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1)
-                    Text(origin, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
+                    Text(originLine, color = Color(if (t.referenceMeasured) Brand.WHITE_MUTED else Brand.ORANGE),
+                        fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 }
                 ReadoutColumn(
                     shown = shownTuning,
@@ -321,7 +329,7 @@ fun BasicHub(
                             name = name,
                             targetHz = shownTarget,
                             partial = read?.k?.takeIf { it > 1 } ?: l.k.takeIf { it > 1 },
-                            origin = origin,
+                            origin = originLine,
                             onSemitone = { d -> controller.stepNote(d) },
                             onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
                         )
