@@ -133,14 +133,15 @@ private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningContr
     }
     StepperRow(
         "Match window",
-        "A partial turns green within this of its target. One string's partials " +
-            "repeat from strike to strike within about a tenth of a cent, so below " +
-            "that the window promises more than the measurement has",
-        String.format(Locale.ROOT, "\u00b1%.2f c", s.matchCents),
+        "A partial turns green within this of its target, and the green band on " +
+            "the scale is exactly this wide. One string's partials repeat from " +
+            "strike to strike within about a tenth of a cent, so below that the " +
+            "window promises more than the measurement has",
+        String.format(Locale.ROOT, "\u00b1%.1f c", s.matchCents),
         canDecrease = s.matchCents > 0.101,
-        canIncrease = s.matchCents < 0.999,
-        onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.05) * 100) / 100) } },
-        onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.05) * 100) / 100) } },
+        canIncrease = s.matchCents < 4.99,
+        onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.1) * 10) / 10) } },
+        onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.1) * 10) / 10) } },
     )
     StepperRow(
         "Highest partial", "Partials above this note are not offered; nothing up there helps a tuning",

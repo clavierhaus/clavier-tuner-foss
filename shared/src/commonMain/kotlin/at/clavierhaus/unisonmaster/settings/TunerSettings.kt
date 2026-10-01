@@ -120,7 +120,8 @@ data class TunerSettings(
      * cent at C7. The default is about twice the scatter the corpus shows between
      * strikes of one string, so green cannot promise more than the measurement has.
      */
-    val matchCents: Double = 0.2,
+    /** The tuner's tolerance, cents; [at.clavierhaus.unisonmaster.tuning.TuningSession.MATCH_CENTS] says where the figure comes from. */
+    val matchCents: Double = 1.5,
     /**
      * The reading is the string's clean partials read together — a partial
      * that beats on its own is left out and named (CleanReading). Off: the

@@ -17,6 +17,13 @@ reconstructed from the commit history that day.
   a string that stood in tune; the second widened that third to ±2 c but kept
   log segments reaching ±100 c, a semitone on a tuning scale. The match window
   stays where the measurement puts it and is drawn at the width it really has.
+- The match window is **±1.5 cents**, a tenth of the scale either side of the
+  target, so the green band is an area to aim at instead of the hairline ±0.2 c
+  drew on a thirty-cent scale. The floor is still the measurement's — a string's
+  partials repeat within 0.04–0.11 c, so a window under a tenth of a cent promises
+  what the reading cannot repeat — but above that floor the window is the tuner's
+  tolerance, and Peter set it at the piano. Settings steps it 0.2–5.0 c in tenths
+  and the band on the scale always draws at its true width.
 - Leaving **Partials** is a button called *Tuning*, as leaving Progress already
   was. It read *One partial* — the name of a mode, not of a destination — so the
   way back did not look like a way back. Both buttons now say where they go.

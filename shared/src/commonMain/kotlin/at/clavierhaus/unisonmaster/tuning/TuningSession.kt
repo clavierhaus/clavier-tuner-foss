@@ -345,13 +345,18 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
          * compass, and at the top of the piano it promised a precision no
          * measurement here has (1 Oct 2026 -- "a false illusion of precision").
          *
-         * The figure comes from the corpus, not from taste: one string's partials
-         * repeat from strike to strike within 0.04-0.11 cents over all twelve
-         * (30 Sept, F3, three strikes on each of three strings). Two tenths of a
-         * cent is about twice that scatter, so green means the string is there and
-         * not that the reading twitched.
+         * Two numbers set it, and they are different kinds of number. The floor is
+         * the measurement's: one string's partials repeat from strike to strike
+         * within 0.04-0.11 cents over all twelve (30 Sept, F3, three strikes on
+         * each of three strings), so a window under about a tenth of a cent
+         * promises what the reading cannot repeat. What the window actually is,
+         * above that floor, is the tuner's tolerance, and only the tuner at the
+         * piano can set it: 1.5 cents on Peter's word (1 Oct 2026), a tenth of the
+         * scale's thirty cents either side, which is the band he can see and aim
+         * at. The green band on the scale is this window drawn at its true width,
+         * so narrowing it in Settings narrows the band with it.
          */
-        const val MATCH_CENTS = 0.2
+        const val MATCH_CENTS = 1.5
 
         fun targetF1(midi: Int, a4Hz: Double): Double = a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0)
 

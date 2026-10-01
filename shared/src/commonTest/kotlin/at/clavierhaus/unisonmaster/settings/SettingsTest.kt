@@ -48,10 +48,13 @@ class SettingsTest {
 
     @Test
     fun theMatchWindowIsASettingAndMeansTheSameEverywhereOnTheKeyboard() {
-        // 415.45 against 415.30 is 0.63 cents: outside the default window, inside a
-        // wide one. The window is a setting.
-        assertTrue(!TuningSession.matched(415.45, 415.30))
-        assertTrue(TuningSession.matched(415.45, 415.30, windowCents = 0.7))
+        // 415.45 against 415.30 is 0.63 cents: inside the default window of 1.5
+        // cents (the tuner's tolerance, set at the piano on 1 Oct 2026), outside a
+        // window tightened to a fifth of a cent. The window is a setting.
+        assertTrue(TuningSession.matched(415.45, 415.30))
+        assertTrue(!TuningSession.matched(415.45, 415.30, windowCents = 0.2))
+        // two cents is outside the default: the window is a window, not the scale
+        assertTrue(!TuningSession.matched(415.30 * 1.001156, 415.30))
         // and it is in cents, so one setting is one musical distance from the bottom
         // of the piano to the top. In Hertz it was not: a tenth of a Hertz is a cent
         // at F3 and a twelfth of a cent at C7.
