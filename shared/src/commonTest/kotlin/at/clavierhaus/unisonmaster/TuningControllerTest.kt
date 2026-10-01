@@ -251,34 +251,6 @@ class TuningControllerTest {
         }
     }
     @Test
-    fun aMeasuredA4BecomesTheReferenceEvenWhenTheSessionWasRestoredAt440() {
-        // The app held this piano's measured A4 and tuned to 440 anyway, because
-        // restore took the reference out of the snapshot and sampling records A4 by
-        // catching the key. On the Samick that is 2.3 cents on every target.
-        val (c, _) = controller()
-        val piano = 439.4                                   // what the string stands at
-        c.restore(SessionSnapshot(0, 440.0, 53, listOf(
-            measuredString(TuningSession.MIDI_A4, piano, 4.0e-4),
-            measuredString(60, 440.0 * 2.0.pow((60 - 69) / 12.0), 2.2e-4),
-        ), sampling = false))
-        assertEquals(piano, c.referenceA4Hz.value, 0.05,
-            "the measured A4 string is the reference, not the snapshot's 440")
-        val t = assertNotNull(c.tuning.value)
-        assertTrue(t.referenceMeasured, "and the screen says it was measured")
-        // every target moves with it: 440 -> 439.4 is 2.4 cents down
-        val (c2, _) = controller()
-        c2.restore(SessionSnapshot(0, 440.0, 53, listOf(
-            measuredString(TuningSession.MIDI_A4, 440.0, 4.0e-4),
-            measuredString(60, 440.0 * 2.0.pow((60 - 69) / 12.0), 2.2e-4),
-        ), sampling = false))
-        val at440 = assertNotNull(c2.tuning.value).listening.targetHz
-        val atPiano = t.listening.targetHz
-        val moved = TuningSession.centsOff(atPiano, at440)
-        assertEquals(1200.0 * kotlin.math.ln(piano / 440.0) / kotlin.math.ln(2.0), moved, 0.1,
-            "the target moved by exactly the distance between the two references")
-    }
-
-    @Test
     fun theScreenKnowsWhetherTheReferenceWasMeasuredOrAssumed() {
         // 440 Hz is where the reference starts, not where this piano stands. A
         // session that never measured the A4 string tunes to an assumption, and on

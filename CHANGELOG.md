@@ -8,18 +8,17 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01 (evening)
-- **This piano's measured A4 string is the reference.** 440 Hz is where the
-  reference starts; it is not where any piano stands. The hub set the reference
-  from the A4 string it heard, but a session restored from a snapshot took the
-  reference out of the snapshot, and sampling records A4 as a measurement simply
-  by catching the key — so the app could hold this piano's own measured A4 and go
-  on tuning to 440. On the Samick that is 2.3 cents on every target, more than a
-  tuner works to. A measured string outranks a default, always.
-- The warning added earlier the same day ("A4 … assumed, not measured") could
-  never fire in the case it was built for: it asked whether A4 was among the
-  measurements, which goes true the moment A4 is sampled, while the reference
-  stayed at the default. It is now true to its word, because the reference is
-  taken from that measurement.
+- **Reverted within the hour: taking the reference from `measurements[A4]`.** It
+  replaced a reference that was knowably wrong (the 440 default) with one nobody
+  can vouch for: on the Samick session it found 439.6 Hz, a figure Peter had
+  never seen and 0.7 cents from the 439.418 the corpus measures across nine
+  single-string takes. A reference from an unidentified strike is not a
+  measurement — it only looks like one, which is worse. **Where the reference
+  comes from is still open**; it is chosen deliberately or it is not a reference.
+- **The tuning screen always shows the A4 it is working from.** Every figure on
+  that screen is derived from it — the target, the cents, the octave and its
+  width — and it was the one number never shown. Four rounds at the piano on
+  1 October went into deducing it from where the bells landed.
 
 ### 2026-10-01 (evening)
 - `scripts/deploy.sh` is silent when the build works and complete when it does

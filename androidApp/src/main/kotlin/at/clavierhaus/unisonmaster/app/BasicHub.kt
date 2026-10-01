@@ -170,13 +170,12 @@ fun BasicHub(
                 (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless)) +
                 (l.checkCents?.let { t(K.origin_check, Notes.name(l.refMidi!!), String.format(Locale.ROOT, "%.1f", abs(it)), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
-        // An assumed reference is not a measurement, and every target on this screen
-        // stands wherever the assumption puts it: on a piano at 439.4 Hz, A4 = 440
-        // puts them 2.3 cents sharp of the instrument. Said plainly, in front of the
-        // numbers it governs, rather than left for the tuner to discover.
-        val originLine =
-            if (t.referenceMeasured) origin
-            else "A4 ${formatHz(a4)} assumed, not measured · $origin"
+        // Every number on this screen is derived from the A4 reference, and the
+        // screen showed the target, the measurement, the cents, the octave and its
+        // width -- and never the one figure the rest hangs from. Four rounds at the
+        // piano on 1 Oct 2026 went into deducing it from where the bells landed. It
+        // is said here, always, whatever it is and wherever it came from.
+        val originLine = "A4 ${formatHz(a4)} \u00b7 $origin"
         val coarse = read?.coarseCents
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
@@ -260,7 +259,7 @@ fun BasicHub(
                 Column(Modifier.align(Alignment.TopStart).padding(top = 60.dp)) {
                     Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
                     Text("target " + String.format(Locale.ROOT, "%.2f Hz", shownTarget) + if (active > 1) ", partial $active" else "", color = Color(Brand.TARGET_BLUE), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1)
-                    Text(originLine, color = Color(if (t.referenceMeasured) Brand.WHITE_MUTED else Brand.ORANGE),
+                    Text(originLine, color = Color(Brand.WHITE_MUTED),
                         fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 }
                 ReadoutColumn(

@@ -468,32 +468,7 @@ class TuningController(
         _reading.value = Reading(w.k, null, hz, live = false, settling = false, coarseCents = null)
     }
 
-    /**
-     * The reference is this piano's A4 string, whenever this piano's A4 has been
-     * measured.
-     *
-     * 440 Hz is where the reference starts; it is not where any piano stands. The
-     * hub sets the reference from the A4 string it hears, but a session restored
-     * from a snapshot took the reference out of the snapshot, and sampling records
-     * A4 as a measurement by catching the key. So the app could hold this piano's
-     * own measured A4 and go on tuning to 440 -- on the Samick, every target 2.3
-     * cents sharp of the instrument, which is more than a tuner works to (1 Oct
-     * 2026, found at the piano by Peter for the umpteenth time).
-     *
-     * A measured string outranks a default, always. The reading is rounded to a
-     * tenth of a Hertz, as the hub rounds it.
-     */
-    private fun referenceFromPiano(s: TuningSession) {
-        val m = s.measurements[TuningSession.MIDI_A4] ?: return
-        val hz = TuningSession.roundToTenth(m.f1Hz)
-        if (hz < MIN_REFERENCE_HZ || hz > MAX_REFERENCE_HZ) return
-        if (abs(hz - _referenceA4Hz.value) < 0.05) return
-        _referenceA4Hz.value = hz
-        s.a4Hz = hz
-    }
-
     private fun publish(s: TuningSession) {
-        referenceFromPiano(s)
         val midi = s.current
         val listening = s.listening(midi)
         val b = s.predictedB(midi)
@@ -519,8 +494,6 @@ class TuningController(
                     TuningSession.centsOff(s.curveTargetF1(m), TuningSession.targetF1(m, s.a4Hz))
                 },
             temperamentComplete = s.temperamentComplete,
-            // true because referenceFromPiano has just put that measurement into the
-            // reference: the two cannot drift apart
             referenceMeasured = s.measurements.containsKey(TuningSession.MIDI_A4),
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
