@@ -628,7 +628,7 @@ class TuningController(
     /** Whether the partial read matches its target now (what Done asks). */
     fun matchedNow(): Boolean {
         val r = _reading.value ?: return false
-        return r.live && TuningSession.matched(r.hz, r.targetHz, _settings.value.matchHz)
+        return r.live && TuningSession.matched(r.hz, r.targetHz, _settings.value.matchCents)
     }
 
     /**

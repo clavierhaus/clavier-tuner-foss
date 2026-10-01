@@ -159,7 +159,7 @@ fun BasicHub(
         val shownHz = read?.hz
         val shownTarget = read?.targetHz ?: l.targetHz
         val live = read?.live == true
-        val matched = live && TuningSession.matched(shownHz, shownTarget, cfg.matchHz)
+        val matched = live && TuningSession.matched(shownHz, shownTarget, cfg.matchCents)
         val origin = when (l.source) {
             TuningSession.Source.REFERENCE -> t(K.origin_reference)
             TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
@@ -251,7 +251,7 @@ fun BasicHub(
                     predicted = targets,
                     livePartials = spectrum,
                     active = active,
-                    matchHz = cfg.matchHz,
+                    matchCents = cfg.matchCents,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = 56.dp, bottom = 80.dp),
@@ -270,7 +270,7 @@ fun BasicHub(
                     predicted = targets,
                     livePartials = spectrum,
                     a4Hz = a4,
-                    matchHz = cfg.matchHz,
+                    matchCents = cfg.matchCents,
                     onSelect = { k -> controller.activatePartial(k) },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp),
                 )
@@ -347,7 +347,7 @@ fun BasicHub(
                     TargetScale(
                         measuredHz = shownHz,
                         targetHz = shownTarget,
-                        matchHz = cfg.matchHz,
+                        matchCents = cfg.matchCents,
                         sounding = live,
                         matched = matched,
                         modifier = Modifier.fillMaxWidth().height(64.dp),

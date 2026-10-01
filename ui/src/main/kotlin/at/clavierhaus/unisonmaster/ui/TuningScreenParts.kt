@@ -219,17 +219,23 @@ fun BeatBand(
 }
 
 /**
- * The scale under the band, magnified at the target: the match window
- * (±[matchHz]) takes the middle third of the width, ±1 Hz the next third
- * either side, ±5 Hz the rest, log-spaced between the anchors. The pointer
- * is the measured fundamental as measured; the window fills green while it
- * stands inside.
+ * The scale under the band, magnified at the target, **in cents**: the match
+ * window (±[matchCents]) takes the middle third of the width, ±2 cents the next
+ * third either side, ±10 cents the rest, log-spaced between the anchors. The
+ * pointer is the reading as measured; the window fills green while it stands
+ * inside.
+ *
+ * Cents and not Hertz. A tenth of a Hertz is a cent at F3 and a twelfth of a
+ * cent at C7, so a Hertz scale gave a third of the screen to forty times
+ * different musical distances across the compass, and at the top of the piano it
+ * magnified a twelfth of a cent into a visible swing -- a precision no
+ * measurement here has. One scale, one meaning, everywhere on the keyboard.
  */
 @Composable
 fun TargetScale(
     measuredHz: Double?,
     targetHz: Double,
-    matchHz: Double,
+    matchCents: Double,
     sounding: Boolean,
     matched: Boolean,
     modifier: Modifier = Modifier,
@@ -239,16 +245,16 @@ fun TargetScale(
         val w = size.width; val h = size.height
         val cx = w / 2f
         val z = ((w / 2f - 8f) / 3f).toDouble()
-        val m = matchHz.coerceIn(0.01, 0.9)
-        fun xOf(d: Double): Float {
-            val a = abs(d)
+        val m = matchCents.coerceIn(0.02, 1.8)
+        fun xOf(cents: Double): Float {
+            val a = abs(cents)
             val f: Double = when {
                 a <= m -> (a / m) * z
-                a <= 1.0 -> z + z * (ln(a / m) / ln(1.0 / m))
-                a <= 5.0 -> 2.0 * z + z * (ln(a) / ln(5.0))
+                a <= 2.0 -> z + z * (ln(a / m) / ln(2.0 / m))
+                a <= 10.0 -> 2.0 * z + z * (ln(a / 2.0) / ln(5.0))
                 else -> 3.0 * z
             }
-            return (cx.toDouble() + sign(d) * f).toFloat()
+            return (cx.toDouble() + sign(cents) * f).toFloat()
         }
         val axisY = h * 0.45f
         val green = Color(Brand.GO_GREEN)
@@ -262,22 +268,22 @@ fun TargetScale(
             color = labelColor; textSize = h * 0.2f; isAntiAlias = true
             textAlign = android.graphics.Paint.Align.CENTER
         }
-        val ticks = listOf(-5.0, -1.0, -0.3, -m, 0.0, m, 0.3, 1.0, 5.0)
+        val ticks = listOf(-10.0, -2.0, -0.5, -m, 0.0, m, 0.5, 2.0, 10.0)
         for (t in ticks) {
             val x = xOf(t)
             val major = t == 0.0
             drawLine(Color(Brand.WHITE).copy(alpha = 0.5f), Offset(x, axisY - if (major) h * 0.2f else h * 0.1f), Offset(x, axisY + if (major) h * 0.2f else h * 0.1f), 2f)
             val label = when {
                 t == 0.0 -> "0"
-                abs(t) == 5.0 -> if (t > 0) "+5 Hz" else "−5"
-                abs(t) == m -> String.format(Locale.ROOT, "%s%.1f", if (t > 0) "+" else "−", m)
+                abs(t) == 10.0 -> if (t > 0) "+10 c" else "−10"
+                abs(t) == m -> String.format(Locale.ROOT, "%s%.2f", if (t > 0) "+" else "−", m)
                 else -> String.format(Locale.ROOT, "%s%.1f", if (t > 0) "+" else "−", abs(t))
             }
             drawContext.canvas.nativeCanvas.drawText(label, x, h * 0.95f, paint)
         }
         // the pointer
-        if (measuredHz != null) {
-            val d = measuredHz - targetHz
+        if (measuredHz != null && measuredHz > 0.0 && targetHz > 0.0) {
+            val d = 1200.0 * ln(measuredHz / targetHz) / ln(2.0)
             val x = xOf(d)
             val c = (if (matched) green else Color(Brand.ORANGE)).copy(alpha = if (sounding) 1f else 0.45f)
             val tri = Path().apply {

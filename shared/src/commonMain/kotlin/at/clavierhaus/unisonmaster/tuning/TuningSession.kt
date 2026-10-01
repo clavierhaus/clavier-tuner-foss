@@ -337,16 +337,30 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         const val MIDI_A4 = 69
         /** Top of the compass. */
         const val MIDI_C8 = 108
-        /** A partial is matched when it is this close to its target, Hz (the display resolution). */
-        const val MATCH_HZ = 0.1
+        /**
+         * A partial is matched when it stands this close to its target, in cents.
+         *
+         * Cents, not Hertz. A tenth of a Hertz is a cent at F3 and a twelfth of a
+         * cent at C7: the same window meant forty different things across the
+         * compass, and at the top of the piano it promised a precision no
+         * measurement here has (1 Oct 2026 -- "a false illusion of precision").
+         *
+         * The figure comes from the corpus, not from taste: one string's partials
+         * repeat from strike to strike within 0.04-0.11 cents over all twelve
+         * (30 Sept, F3, three strikes on each of three strings). Two tenths of a
+         * cent is about twice that scatter, so green means the string is there and
+         * not that the reading twitched.
+         */
+        const val MATCH_CENTS = 0.2
 
         fun targetF1(midi: Int, a4Hz: Double): Double = a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0)
 
         fun centsOff(hz: Double, targetHz: Double): Double = 1200.0 * ln(hz / targetHz) / ln(2.0)
 
-        /** Green: the live frequency lies within [windowHz] of its target. */
-        fun matched(hz: Double?, targetHz: Double?, windowHz: Double = MATCH_HZ): Boolean =
-            hz != null && targetHz != null && abs(hz - targetHz) <= windowHz + 1e-9
+        /** Green: the live reading lies within [windowCents] of its target. */
+        fun matched(hz: Double?, targetHz: Double?, windowCents: Double = MATCH_CENTS): Boolean =
+            hz != null && targetHz != null && targetHz > 0.0 && hz > 0.0 &&
+                abs(centsOff(hz, targetHz)) <= windowCents + 1e-9
 
         /** Highest partial of a note at [f1Hz] that lies at or below [highestPartialHz]. */
         fun highestUsefulPartial(f1Hz: Double, highestPartialHz: Double): Int =

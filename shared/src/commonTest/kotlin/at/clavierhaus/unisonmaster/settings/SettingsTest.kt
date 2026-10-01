@@ -12,7 +12,7 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchHz = 0.2, octaveMiddle = OctaveType.O6_3, octaveWound = OctaveType.O8_4, lowestUnwoundMidi = 40, widthWound = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
+        a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O6_3, octaveWound = OctaveType.O8_4, lowestUnwoundMidi = 40, widthWound = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(false, b.settings.value.autoNote)
@@ -20,7 +20,7 @@ class SettingsTest {
         val pro = MemoryStore()
         SettingsModel(pro, TunerSettings(temperamentFirst = false)).update { it.copy(lowestKeyMidi = 17) }
         assertEquals(17, SettingsModel(pro, TunerSettings(temperamentFirst = false)).settings.value.lowestKeyMidi, "Pro keeps the lowest key it was given")
-        assertEquals(0.2, b.settings.value.matchHz)
+        assertEquals(0.3, b.settings.value.matchCents)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
         assertEquals(OctaveType.O8_4, b.settings.value.octaveWound)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)
@@ -47,9 +47,21 @@ class SettingsTest {
     }
 
     @Test
-    fun theMatchWindowIsASetting() {
+    fun theMatchWindowIsASettingAndMeansTheSameEverywhereOnTheKeyboard() {
+        // 415.45 against 415.30 is 0.63 cents: outside the default window, inside a
+        // wide one. The window is a setting.
         assertTrue(!TuningSession.matched(415.45, 415.30))
-        assertTrue(TuningSession.matched(415.45, 415.30, windowHz = 0.2))
+        assertTrue(TuningSession.matched(415.45, 415.30, windowCents = 0.7))
+        // and it is in cents, so one setting is one musical distance from the bottom
+        // of the piano to the top. In Hertz it was not: a tenth of a Hertz is a cent
+        // at F3 and a twelfth of a cent at C7.
+        for (hz in doubleArrayOf(27.5, 174.6, 440.0, 2093.0, 4186.0)) {
+            val halfACentSharp = hz * kotlin.math.exp(0.5 / 1200.0 * kotlin.math.ln(2.0))
+            assertTrue(TuningSession.matched(halfACentSharp, hz, windowCents = 0.6),
+                "half a cent is inside a 0.6 c window at $hz Hz")
+            assertTrue(!TuningSession.matched(halfACentSharp, hz, windowCents = 0.4),
+                "half a cent is outside a 0.4 c window at $hz Hz")
+        }
     }
 
     @Test

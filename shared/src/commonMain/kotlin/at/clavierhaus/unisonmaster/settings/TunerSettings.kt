@@ -114,7 +114,13 @@ data class TunerSettings(
     val autoNote: Boolean = true,
     // PRECISION
     /** The partial read matches within this of its target, Hz: the beat rate the tuner accepts as gone. */
-    val matchHz: Double = 0.1,
+    /**
+     * How close a partial must stand to its target to turn green, in cents.
+     * Cents and not Hertz: a tenth of a Hertz is a cent at F3 and a twelfth of a
+     * cent at C7. The default is about twice the scatter the corpus shows between
+     * strikes of one string, so green cannot promise more than the measurement has.
+     */
+    val matchCents: Double = 0.2,
     /**
      * The reading is the string's clean partials read together — a partial
      * that beats on its own is left out and named (CleanReading). Off: the
@@ -284,7 +290,7 @@ class SettingsModel(
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             language = store.get("language") ?: d.language,
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
-            matchHz = f("matchHz", d.matchHz),
+            matchCents = f("matchCents", d.matchCents),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
             probe = b("probe", d.probe),
@@ -316,7 +322,7 @@ class SettingsModel(
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
-        store.put("matchHz", s.matchHz.toString())
+        store.put("matchCents", s.matchCents.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())
         store.put("probe", s.probe.toString())

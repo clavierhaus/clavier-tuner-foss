@@ -64,7 +64,7 @@ fun TuningGraph(
     predicted: List<PredictedPartial>,
     livePartials: List<LivePartial>,
     active: Int,
-    matchHz: Double,
+    matchCents: Double,
     modifier: Modifier = Modifier,
 ) {
     val topLabel = remember {
@@ -115,14 +115,14 @@ fun TuningGraph(
             xc + (offsetCents / CENTS_SPAN).coerceIn(-1.0, 1.0).toFloat() * half
 
         val height = base * 0.85f
-        val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it), matchHz) }
+        val allMatched = shown.all { TuningSession.matched(liveOf(it), targetOf(it), matchCents) }
         bellOutline(xc, height, sigma, base, if (allMatched) green else Color(Brand.TARGET_BLUE))
         val order = shown.sorted().filter { it != active } + listOf(active).filter { it in shown }
         for (k in order) {
             val tk = targetOf(k) ?: continue
             val lk = liveOf(k) ?: continue
             if (!sounding) continue
-            val match = TuningSession.matched(lk, tk, matchHz)
+            val match = TuningSession.matched(lk, tk, matchCents)
             val x = xOf((glide[k] ?: (1200.0 * kotlin.math.ln(lk / tk) / kotlin.math.ln(2.0)).toFloat()).toDouble())
             bellFilled(x, height, sigma, base, if (match) green else Color(Brand.ORANGE))
             if (shown.size > 1) native.drawText("$k", x, base - height - 10f, topLabel)
@@ -173,7 +173,7 @@ fun ReadoutColumn(
     predicted: List<PredictedPartial>,
     livePartials: List<LivePartial>,
     a4Hz: Double,
-    matchHz: Double,
+    matchCents: Double,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -193,7 +193,7 @@ fun ReadoutColumn(
             // different f1 on one screen, and row 2 could sit below twice row 1
             val tk = predicted.firstOrNull { it.k == k }?.hz ?: (if (k == 1) targetHz else continue)
             val lk = if (k == 1) liveHz else livePartials.firstOrNull { it.k == k }?.hz
-            val match = TuningSession.matched(lk, tk, matchHz)
+            val match = TuningSession.matched(lk, tk, matchCents)
             val isActive = k == active
             Row(
                 verticalAlignment = Alignment.CenterVertically,

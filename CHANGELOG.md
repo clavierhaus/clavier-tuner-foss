@@ -8,6 +8,20 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01 (evening)
+- **The tuning screen works in cents, not Hertz.** The scale under the band was
+  a Hertz axis with its magnified middle third set by a match window in Hertz, so
+  a tenth of a Hertz — one cent at F3 — was a twelfth of a cent at C7, and the
+  same picture meant forty different musical distances across the compass. At the
+  top of the piano it magnified a twelfth of a cent into a visible swing: a
+  precision no measurement here has. The axis is now ±0.2 c in the middle third,
+  ±2 c in the next, ±10 c to the edge, one meaning everywhere on the keyboard.
+- **The match window is in cents and is set by what the measurement resolves.**
+  `matchHz` becomes `matchCents`, default **0.2 c** — about twice the 0.04–0.11 c
+  within which one string's partials repeat from strike to strike (30 Sept, F3,
+  three strikes on each of three strings). Green now means the string is there,
+  not that the reading twitched. Settings → Precision says so.
+
+### 2026-10-01 (evening)
 - **Reverted within the hour: taking the reference from `measurements[A4]`.** It
   replaced a reference that was knowably wrong (the 440 default) with one nobody
   can vouch for: on the Samick session it found 439.6 Hz, a figure Peter had
