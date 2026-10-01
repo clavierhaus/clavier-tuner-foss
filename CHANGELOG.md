@@ -8,11 +8,25 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01 (evening)
+- The tuning scale is an order of magnitude less sensitive. Its magnified
+  middle third now reaches ±2 c, a tuner's working distance, instead of ±0.2 c,
+  the match window: a fifth of a cent took a third of the screen, so the pointer
+  slammed across the scale while the string stood in tune. The anchors outside it
+  are ±20 c and ±100 c. The match window is unchanged and is now drawn as a green
+  band inside the middle third — how sensitive the display is and what counts as
+  matched are two questions, and tying them together is what made it unusable.
 - Leaving **Partials** is a button called *Tuning*, as leaving Progress already
   was. It read *One partial* — the name of a mode, not of a destination — so the
   way back did not look like a way back. Both buttons now say where they go.
 
 ### 2026-10-01 (evening)
+- The tuning scale is an order of magnitude less sensitive. Its magnified
+  middle third now reaches ±2 c, a tuner's working distance, instead of ±0.2 c,
+  the match window: a fifth of a cent took a third of the screen, so the pointer
+  slammed across the scale while the string stood in tune. The anchors outside it
+  are ±20 c and ±100 c. The match window is unchanged and is now drawn as a green
+  band inside the middle third — how sensitive the display is and what counts as
+  matched are two questions, and tying them together is what made it unusable.
 - **The tuning screen works in cents, not Hertz.** The scale under the band was
   a Hertz axis with its magnified middle third set by a match window in Hertz, so
   a tenth of a Hertz — one cent at F3 — was a twelfth of a cent at C7, and the
@@ -27,6 +41,13 @@ reconstructed from the commit history that day.
   not that the reading twitched. Settings → Precision says so.
 
 ### 2026-10-01 (evening)
+- The tuning scale is an order of magnitude less sensitive. Its magnified
+  middle third now reaches ±2 c, a tuner's working distance, instead of ±0.2 c,
+  the match window: a fifth of a cent took a third of the screen, so the pointer
+  slammed across the scale while the string stood in tune. The anchors outside it
+  are ±20 c and ±100 c. The match window is unchanged and is now drawn as a green
+  band inside the middle third — how sensitive the display is and what counts as
+  matched are two questions, and tying them together is what made it unusable.
 - **Reverted within the hour: taking the reference from `measurements[A4]`.** It
   replaced a reference that was knowably wrong (the 440 default) with one nobody
   can vouch for: on the Samick session it found 439.6 Hz, a figure Peter had
@@ -40,6 +61,13 @@ reconstructed from the commit history that day.
   1 October went into deducing it from where the bells landed.
 
 ### 2026-10-01 (evening)
+- The tuning scale is an order of magnitude less sensitive. Its magnified
+  middle third now reaches ±2 c, a tuner's working distance, instead of ±0.2 c,
+  the match window: a fifth of a cent took a third of the screen, so the pointer
+  slammed across the scale while the string stood in tune. The anchors outside it
+  are ±20 c and ±100 c. The match window is unchanged and is now drawn as a green
+  band inside the middle third — how sensitive the display is and what counts as
+  matched are two questions, and tying them together is what made it unusable.
 - `scripts/deploy.sh` is silent when the build works and complete when it does
   not. It ran gradle with `-q`, which says almost nothing about a compile
   failure, and `set -e` then stopped the run where it stood, so nothing could be

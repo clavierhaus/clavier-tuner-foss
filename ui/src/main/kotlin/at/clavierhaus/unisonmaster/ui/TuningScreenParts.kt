@@ -219,11 +219,19 @@ fun BeatBand(
 }
 
 /**
- * The scale under the band, magnified at the target, **in cents**: the match
- * window (±[matchCents]) takes the middle third of the width, ±2 cents the next
- * third either side, ±10 cents the rest, log-spaced between the anchors. The
- * pointer is the reading as measured; the window fills green while it stands
- * inside.
+ * The scale under the band, magnified at the target, **in cents**: ±[WORKING_C]
+ * cents takes the middle third of the width, ±20 cents the next third either
+ * side, ±100 cents the rest, log-spaced between the anchors. The pointer is the
+ * reading as measured; the match window (±[matchCents]) is the green band drawn
+ * inside the middle third, and fills while the pointer stands in it.
+ *
+ * The middle third was the match window itself -- two tenths of a cent -- until
+ * 1 Oct 2026, which made the pointer unusable at the piano: a third of the
+ * screen for a distance no tuner works to, so the pointer slammed across the
+ * scale while the string was in tune. An order of magnitude wider on Peter's
+ * order, at the instrument. The window stays where the measurement puts it and
+ * is now a band on the scale rather than the scale itself -- the display's
+ * sensitivity and what counts as matched are two different questions.
  *
  * Cents and not Hertz. A tenth of a Hertz is a cent at F3 and a twelfth of a
  * cent at C7, so a Hertz scale gave a third of the screen to forty times
@@ -231,6 +239,14 @@ fun BeatBand(
  * magnified a twelfth of a cent into a visible swing -- a precision no
  * measurement here has. One scale, one meaning, everywhere on the keyboard.
  */
+/**
+ * How far either side of the target the magnified middle third of [TargetScale]
+ * reaches, cents. A tuner's working distance: a string moves a cent or two
+ * between strikes, so this is the region the pointer should live in and move
+ * sensibly across.
+ */
+const val WORKING_C = 2.0
+
 @Composable
 fun TargetScale(
     measuredHz: Double?,
@@ -245,13 +261,13 @@ fun TargetScale(
         val w = size.width; val h = size.height
         val cx = w / 2f
         val z = ((w / 2f - 8f) / 3f).toDouble()
-        val m = matchCents.coerceIn(0.02, 1.8)
+        val m = matchCents.coerceIn(0.02, WORKING_C)
         fun xOf(cents: Double): Float {
             val a = abs(cents)
             val f: Double = when {
-                a <= m -> (a / m) * z
-                a <= 2.0 -> z + z * (ln(a / m) / ln(2.0 / m))
-                a <= 10.0 -> 2.0 * z + z * (ln(a / 2.0) / ln(5.0))
+                a <= WORKING_C -> (a / WORKING_C) * z
+                a <= 20.0 -> z + z * (ln(a / WORKING_C) / ln(20.0 / WORKING_C))
+                a <= 100.0 -> 2.0 * z + z * (ln(a / 20.0) / ln(5.0))
                 else -> 3.0 * z
             }
             return (cx.toDouble() + sign(cents) * f).toFloat()
@@ -268,16 +284,16 @@ fun TargetScale(
             color = labelColor; textSize = h * 0.2f; isAntiAlias = true
             textAlign = android.graphics.Paint.Align.CENTER
         }
-        val ticks = listOf(-10.0, -2.0, -0.5, -m, 0.0, m, 0.5, 2.0, 10.0)
+        val ticks = listOf(-100.0, -20.0, -WORKING_C, -m, 0.0, m, WORKING_C, 20.0, 100.0)
         for (t in ticks) {
             val x = xOf(t)
             val major = t == 0.0
             drawLine(Color(Brand.WHITE).copy(alpha = 0.5f), Offset(x, axisY - if (major) h * 0.2f else h * 0.1f), Offset(x, axisY + if (major) h * 0.2f else h * 0.1f), 2f)
             val label = when {
                 t == 0.0 -> "0"
-                abs(t) == 10.0 -> if (t > 0) "+10 c" else "−10"
+                abs(t) == 100.0 -> if (t > 0) "+100 c" else "−100"
                 abs(t) == m -> String.format(Locale.ROOT, "%s%.2f", if (t > 0) "+" else "−", m)
-                else -> String.format(Locale.ROOT, "%s%.1f", if (t > 0) "+" else "−", abs(t))
+                else -> String.format(Locale.ROOT, "%s%.0f", if (t > 0) "+" else "−", abs(t))
             }
             drawContext.canvas.nativeCanvas.drawText(label, x, h * 0.95f, paint)
         }
