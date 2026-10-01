@@ -83,6 +83,13 @@ class TuningController(
          * changed hop or sample rate would break a constant silently.
          */
         const val HOLD_S = 0.5
+
+        /** After a strike, the ring holds enough of it to measure the string's partials. */
+        const val LIVE_PARTIALS_S = 1.5
+
+        fun livePartialsHops(sampleRate: Int): Long =
+            (LIVE_PARTIALS_S * sampleRate / HOP).toLong().coerceAtLeast(1L)
+
         fun holdHops(sampleRate: Int): Long = (HOLD_S * sampleRate / HOP).toLong().coerceAtLeast(1L)
         const val DETECT_RUN = 3
         /** After this many hops (half a second) only a lower key may replace the key named: a decaying strike never becomes a higher note. */
@@ -603,6 +610,39 @@ class TuningController(
     }
 
     /**
+     * The partials of the string that was just struck, placed where this strike
+     * puts them, with the partial being tuned on its own target (RULES.md 2).
+     *
+     * The ratios between a string's partials are a property of the string and
+     * are measured; they are not carried over from an earlier strike, an
+     * earlier session, or the sampling pass. A stored table lets a strike made
+     * hours ago furnish today's targets, and the screen then shows agreement or
+     * disagreement that has nothing to do with the string now sounding.
+     *
+     * Measured on the 30 September corpus: the ratios repeat from strike to
+     * strike on one string to within 0.04-0.11 cents over all twelve partials,
+     * so deriving them afresh each time costs nothing in steadiness. Against
+     * them a clean string's partials stand on one line, which is what the
+     * display is for; against a table from another strike they scattered by
+     * more than two cents.
+     *
+     * Returns null when the strike cannot be measured, and the caller then
+     * leaves the model's prediction standing — an unmeasured string is read
+     * against the model, as it always was.
+     */
+    private fun livePartials(t: TuningView): List<PredictedPartial>? {
+        val k = t.listening.k
+        val target = t.listening.targetHz
+        if (target <= 0.0) return null
+        val f1Guess = target / (k * Inharmonicity.ratio(k, t.b))
+        val m = StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, t.midi, f1Guess, t.b, timeMs = clock())
+            ?: return null
+        val list = m.partials.mapNotNull { p -> m.partialHz(p.k)?.let { PredictedPartial(p.k, it, p.levelDb) } }
+        if (list.none { it.k == k }) return null
+        return anchored(list, k, target)
+    }
+
+    /**
      * The string of the note on screen, measured from the ring, with its
      * partial [k] as it was just read at [hz]: that partial was tuned, and
      * the reading is what the notes linked to it are tuned against. Null
@@ -753,6 +793,7 @@ class TuningController(
         var identifier = KeyIdentifier(sr, DETECT_SAMPLES)
         var identifierLong = KeyIdentifier(sr, SAMPLE_LONG_SAMPLES)
         var strikeHop = -1_000_000L
+        var livePartialsStrike = -1L
         var strikePeakDb = -200.0
         var candidate: Int? = null
         var run = 0
@@ -863,6 +904,15 @@ class TuningController(
                     }
                 }
                 if (s != null && s.sampling && since == remeasureHop && caught?.strikeHop == strikeHop) remeasureCaught()
+                // the partials of this strike, once the ring holds enough of it: the
+                // targets of every shown partial come from the string now sounding
+                val tv = _tuning.value
+                if (tv != null && s != null && !s.sampling && strikeHop > 0 &&
+                    since == livePartialsHops(sr) && livePartialsStrike != strikeHop
+                ) {
+                    livePartialsStrike = strikeHop
+                    livePartials(tv)?.let { _targets.value = it }
+                }
                 // (never while sampling: the string just kept is still ringing when the screen moves on)
                 if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
                     _settings.value.autoNote && !s.gated && !s.sampling && s.selectable(heard)) {

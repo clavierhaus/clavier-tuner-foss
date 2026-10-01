@@ -8,6 +8,16 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01
+- **The partials shown on the tuning screen are measured from the strike you are
+  hearing** (RULES.md 2). Every strike, the string's own partials are read from
+  the ring and become the targets, anchored on the partial being tuned; they are
+  discarded with the strike. The stored per-note partial table leaves the target
+  path entirely — f1 and B stay, since the curve is built from them. Until today
+  a table measured during sampling, hours earlier and possibly on another
+  string, furnished the targets of the string now sounding, and a clean string's
+  bells would not stand on one line. Measured on the 30 Sept corpus: one
+  string's ratios repeat from strike to strike within 0.04–0.11 cents over all
+  twelve partials, so deriving them afresh costs nothing in steadiness.
 - `docs/RULES.md` gains the two standing laws decided at the instrument:
   **measurement has the primary role and modelling never overrides it** — no
   guard, threshold, cap or fallback decides in advance what the piano may

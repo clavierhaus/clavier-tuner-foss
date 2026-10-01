@@ -251,6 +251,36 @@ class TuningControllerTest {
         }
     }
     @Test
+    fun theTargetsFollowTheStringThatWasStruck() {
+        // RULES.md 2: the partial ratios are a live measurement. A string whose
+        // inharmonicity is nothing like the model's must pull the targets onto its
+        // own partials within one strike, so that its bells stand on one line.
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = assertNotNull(c.tuning.value)
+        val k = t.listening.k
+        val playedB = 5.0e-4                       // the model for F3 predicts far less
+        val f1 = t.listening.targetHz / (k * Inharmonicity.ratio(k, playedB))
+        val before = c.targets.value.first { it.k == 2 }.hz
+        c.hear(src, SyntheticString.strike(f1, playedB, 3.0))
+        val after = c.targets.value
+        // the partial being tuned still sits exactly on its own target
+        assertEquals(t.listening.targetHz, after.first { it.k == k }.hz, t.listening.targetHz * 1e-6,
+            "the listened partial stays on the target it is tuned to")
+        // and every other partial is now where this string put it, not where the model did
+        // within the measurement's own repeatability: on the 30 Sept corpus one
+        // string's ratios repeat from strike to strike within 0.04-0.11 cents, so a
+        // quarter of a cent is the honest bar for a single synthetic strike
+        for (p in after.filter { it.k in 2..6 }) {
+            val want = p.k * f1 * Inharmonicity.ratio(p.k, playedB)
+            val off = abs(TuningSession.centsOff(p.hz, want))
+            assertTrue(off < 0.25, "partial ${p.k} follows the string that sounded: %.3f c off".format(off))
+        }
+        assertTrue(abs(TuningSession.centsOff(after.first { it.k == 2 }.hz, before)) > 0.5,
+            "the targets really moved off the model's prediction")
+    }
+
+    @Test
     fun everyPartialShownIsPlacedFromTheOneBeingTuned() {
         // The target of the listened partial comes from the interval it must make;
         // the partial table of a measured string is its own. The two are not the same
@@ -272,14 +302,22 @@ class TuningControllerTest {
         // the ratios between the partials survive: anchoring moves the series bodily,
         // it does not reshape the string. Partial k over partial 1 must still be the
         // string's own, as it was measured.
-        val own = assertNotNull(c.measurements()[53]).partials.associate { it.k to it.cents }
+        // Nothing has been struck, so the partials are the model's placing, from this
+        // note's own measured B. The stored partial table must not reach the targets
+        // (RULES.md 2): partial 4 of the stored measurement was deliberately put two
+        // cents off, and that offset must be nowhere in what the screen is tuned to.
+        val m = assertNotNull(c.measurements()[53])
         val one = targets.first { it.k == 1 }
         for (p in targets) {
-            val ck = own[p.k] ?: continue
-            val c1 = own[1] ?: continue
-            val want = p.k * one.hz * 2.0.pow((ck - c1) / 1200.0)
-            assertEquals(want, p.hz, want * 1e-9, "partial ${p.k} keeps the string's own ratio")
+            val want = p.k * one.hz * Inharmonicity.ratio(p.k, m.b) / Inharmonicity.ratio(1, m.b)
+            assertEquals(want, p.hz, want * 1e-9, "partial ${p.k} follows the string's own B")
         }
+        val stored = m.partials.first { it.k == 4 }.cents - m.partials.first { it.k == 1 }.cents
+        val modelled = 1200.0 * kotlin.math.ln(Inharmonicity.ratio(4, m.b) / Inharmonicity.ratio(1, m.b)) / kotlin.math.ln(2.0)
+        assertTrue(abs(stored - modelled) > 1.0, "the stored table really does differ from the model here")
+        val four = targets.first { it.k == 4 }
+        assertTrue(abs(TuningSession.centsOff(four.hz, 4 * one.hz * 2.0.pow(stored / 1200.0))) > 1.0,
+            "the stored partial table does not reach the targets")
     }
 }
 

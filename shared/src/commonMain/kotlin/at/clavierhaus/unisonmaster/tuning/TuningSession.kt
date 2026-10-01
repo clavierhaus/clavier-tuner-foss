@@ -317,10 +317,16 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val f1 = targetF1Of(midi, b)
         val own = measured[midi]
         val basis = own ?: basisFor(midi)
+        // The partial ratios are a live measurement and are not stored (RULES.md 2):
+        // what is predicted here is the model's placing, from this note's own B where
+        // it has been measured and the curve's otherwise. The moment a string sounds,
+        // TuningController replaces this with the partials of that strike. A stored
+        // partial table was used here until 1 Oct 2026 and let a strike made hours
+        // earlier furnish the targets of the string now sounding.
+        val ownB = measured[midi]?.b ?: b
         return (1..maxK).map { k ->
-            val ownPartial = own?.partials?.firstOrNull { it.k == k }
-            val hz = if (ownPartial != null) k * f1 * 2.0.pow(ownPartial.cents / 1200.0) else k * f1 * Inharmonicity.ratio(k, b)
-            PredictedPartial(k, hz, basis?.partials?.firstOrNull { it.k == k }?.levelDb ?: 0.0)
+            PredictedPartial(k, k * f1 * Inharmonicity.ratio(k, ownB),
+                basis?.partials?.firstOrNull { it.k == k }?.levelDb ?: 0.0)
         }
     }
 
