@@ -8,6 +8,20 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01 (evening)
+- **This piano's measured A4 string is the reference.** 440 Hz is where the
+  reference starts; it is not where any piano stands. The hub set the reference
+  from the A4 string it heard, but a session restored from a snapshot took the
+  reference out of the snapshot, and sampling records A4 as a measurement simply
+  by catching the key — so the app could hold this piano's own measured A4 and go
+  on tuning to 440. On the Samick that is 2.3 cents on every target, more than a
+  tuner works to. A measured string outranks a default, always.
+- The warning added earlier the same day ("A4 … assumed, not measured") could
+  never fire in the case it was built for: it asked whether A4 was among the
+  measurements, which goes true the moment A4 is sampled, while the reference
+  stayed at the default. It is now true to its word, because the reference is
+  taken from that measurement.
+
+### 2026-10-01 (evening)
 - `scripts/deploy.sh` is silent when the build works and complete when it does
   not. It ran gradle with `-q`, which says almost nothing about a compile
   failure, and `set -e` then stopped the run where it stood, so nothing could be
