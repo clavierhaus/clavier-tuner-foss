@@ -611,7 +611,7 @@ class TuningController(
 
     /**
      * The partials of the string that was just struck, placed where this strike
-     * puts them, with the partial being tuned on its own target (RULES.md 2).
+     * puts them, with the partial being tuned on its own target.
      *
      * The ratios between a string's partials are a property of the string and
      * are measured; they are not carried over from an earlier strike, an

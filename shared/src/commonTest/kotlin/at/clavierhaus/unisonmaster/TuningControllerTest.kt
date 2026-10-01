@@ -252,7 +252,7 @@ class TuningControllerTest {
     }
     @Test
     fun theTargetsFollowTheStringThatWasStruck() {
-        // RULES.md 2: the partial ratios are a live measurement. A string whose
+        // The partial ratios are a live measurement and are not stored. A string whose
         // inharmonicity is nothing like the model's must pull the targets onto its
         // own partials within one strike, so that its bells stand on one line.
         val (c, src) = controller()
@@ -304,7 +304,7 @@ class TuningControllerTest {
         // string's own, as it was measured.
         // Nothing has been struck, so the partials are the model's placing, from this
         // note's own measured B. The stored partial table must not reach the targets
-        // (RULES.md 2): partial 4 of the stored measurement was deliberately put two
+        // partial 4 of the stored measurement was deliberately put two
         // cents off, and that offset must be nowhere in what the screen is tuned to.
         val m = assertNotNull(c.measurements()[53])
         val one = targets.first { it.k == 1 }

@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01
+- The operating manual and the working rules move to clavier-tuner-pro, where
+  they are kept for both repositories: they name Pro's features and this
+  repository is published, while the engine they govern lives here and is
+  mirrored into Pro. A session working on the engine fetches `CLAUDE.md` and
+  `docs/RULES.md` from there before touching it.
 - `CLAUDE.md`: the operating manual, binding on both repositories. Its Core
   Directive — **the only truth is a verifiable, reproducible measurement from an
   uncompressed, unaltered source of sound** — is the law the rest follow from:

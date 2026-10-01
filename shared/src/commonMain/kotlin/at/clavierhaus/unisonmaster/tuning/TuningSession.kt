@@ -317,7 +317,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val f1 = targetF1Of(midi, b)
         val own = measured[midi]
         val basis = own ?: basisFor(midi)
-        // The partial ratios are a live measurement and are not stored (RULES.md 2):
+        // The partial ratios are a live measurement and are not stored:
         // what is predicted here is the model's placing, from this note's own B where
         // it has been measured and the curve's otherwise. The moment a string sounds,
         // TuningController replaces this with the partials of that strike. A stored
