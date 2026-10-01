@@ -334,6 +334,8 @@ class TuningController(
          * temperament on this session's A4: the tuning as executed.
          */
         val deviations: Map<Int, Double>,
+        /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. */
+        val curve: Map<Int, Double> = emptyMap(),
         /** True once the temperament octave is measured throughout. */
         val temperamentComplete: Boolean,
         /** True when moving to another note registers this one as done. */
@@ -472,6 +474,17 @@ class TuningController(
             lowestMidi = s.lowMidi,
             measured = s.measurements.keys.toSet(),
             deviations = s.measurements.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) },
+            // The tuning this piano's own inharmonicity asks for, every key of the
+            // compass, in cents from equal temperament. It is the curve the targets
+            // are already taken from -- built from the B of the strings that were
+            // sampled, not from a stretch table -- and until now it was computed for
+            // every note and shown for none, while Progress drew only how far the
+            // notes measured so far stand from equal temperament, which is a result
+            // and not a target. Empty until the curve has enough samples to stand on.
+            curve = if (!s.curve.ready) emptyMap() else
+                (s.lowMidi..TuningSession.MIDI_C8).associateWith { m ->
+                    TuningSession.centsOff(s.curveTargetF1(m), TuningSession.targetF1(m, s.a4Hz))
+                },
             temperamentComplete = s.temperamentComplete,
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,

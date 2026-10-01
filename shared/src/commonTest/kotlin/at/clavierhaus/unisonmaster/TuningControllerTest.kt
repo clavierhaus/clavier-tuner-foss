@@ -251,6 +251,34 @@ class TuningControllerTest {
         }
     }
     @Test
+    fun theCurveIsComputedForEveryKeyFromTheMeasuredInharmonicity() {
+        // The sample set is a handful of notes; the curve it asks for covers the
+        // whole compass. Progress drew only how far the measured notes stand from
+        // equal temperament -- a result, not a target -- while this was computed for
+        // every key and shown for none.
+        val (c, _) = controller()
+        val samples = listOf(
+            measuredString(36, et(36), 0.6e-4), measuredString(48, et(48), 1.1e-4),
+            measuredString(60, et(60), 2.2e-4), measuredString(69, a4, 4.0e-4),
+            measuredString(81, et(81), 1.2e-3), measuredString(93, et(93), 4.0e-3),
+        )
+        c.restore(SessionSnapshot(0, a4, 60, samples, sampling = false))
+        val t = assertNotNull(c.tuning.value)
+        val curve = t.curve
+        assertTrue(curve.isNotEmpty(), "the curve is computed from the samples")
+        for (m in t.lowestMidi..TuningSession.MIDI_C8) {
+            assertTrue(m in curve, "every key of the compass has a target: $m is missing")
+        }
+        // the shape inharmonicity forces: the treble stretched sharp of equal
+        // temperament, the bass flat of it, both growing with distance from A4
+        val a4c = curve.getValue(TuningSession.MIDI_A4)
+        assertTrue(curve.getValue(96) > a4c + 1.0, "the treble is stretched sharp: C7 ${curve[96]}")
+        assertTrue(curve.getValue(36) < a4c - 1.0, "the bass is stretched flat: C2 ${curve[36]}")
+        assertTrue(curve.getValue(96) > curve.getValue(84), "the stretch grows upward")
+        assertTrue(curve.getValue(36) < curve.getValue(48), "the stretch grows downward")
+    }
+
+    @Test
     fun theTargetsFollowTheStringThatWasStruck() {
         // The partial ratios are a live measurement and are not stored. A string whose
         // inharmonicity is nothing like the model's must pull the targets onto its

@@ -8,6 +8,13 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-01
+- **Progress draws the curve this piano asks for**, in blue, unbroken across the
+  whole compass: every key's target computed from the inharmonicity of the
+  strings that were sampled. It was being computed for every note and shown for
+  none — the screen drew only how far the measured notes stand from equal
+  temperament, a result and not a target, with a gap wherever two measured notes
+  were more than three semitones apart. Both lines now share one scale, so the
+  tuning can be seen lying on the curve or departing from it.
 - The operating manual and the working rules move to clavier-tuner-pro, where
   they are kept for both repositories: they name Pro's features and this
   repository is published, while the engine they govern lives here and is

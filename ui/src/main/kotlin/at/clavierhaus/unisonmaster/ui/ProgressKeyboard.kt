@@ -40,6 +40,8 @@ fun ProgressKeyboard(
     done: Set<Int>,
     current: Int?,
     deviations: Map<Int, Double> = emptyMap(),
+    /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. */
+    curve: Map<Int, Double> = emptyMap(),
     lowestMidi: Int = MIDI_A0,
     modifier: Modifier = Modifier,
 ) {
@@ -98,7 +100,7 @@ fun ProgressKeyboard(
         // note stands out to be "corrected" from here: one note's reading
         // apart from its neighbours is not a wrong note, it is the octave
         // links doing their work, or a reading to be struck again.
-        if (deviations.isNotEmpty() && curveBand > 12f) {
+        if ((deviations.isNotEmpty() || curve.isNotEmpty()) && curveBand > 12f) {
             val pts = deviations.keys.sorted()
             val smooth = pts.associateWith { midi ->
                 var num = 0.0; var den = 0.0
@@ -117,8 +119,10 @@ fun ProgressKeyboard(
             val mid = curveBand * CURVE_ZERO
             val roomUp = curveBand * (CURVE_ZERO - 0.08f)
             val roomDown = curveBand * (1f - CURVE_ZERO - 0.10f)
-            val up = maxOf(5.0, smooth.values.maxOf { it } * 1.15)
-            val down = maxOf(5.0, -smooth.values.minOf { it } * 1.15)
+            // both lines share one scale, or they could not be compared by eye
+            val shown = smooth.values + curve.values
+            val up = maxOf(5.0, (shown.maxOrNull() ?: 0.0) * 1.15)
+            val down = maxOf(5.0, -(shown.minOrNull() ?: 0.0) * 1.15)
             val pxPerCent = minOf(roomUp / up, roomDown / down).toFloat()
             fun yOf(cents: Double) = mid - (cents * pxPerCent).toFloat()
             fun xOf(midi: Int) =
@@ -130,6 +134,19 @@ fun ProgressKeyboard(
                 topLeft = Offset(0f, mid),
                 size = Size(size.width, 1f),
             )
+            // The curve this piano asks for, from the inharmonicity of the strings
+            // that were sampled: unbroken across the whole compass, because it is
+            // computed for every key and not measured at a few. Drawn first and in
+            // the target colour, so that the measured line lies on it or does not.
+            val ck = curve.keys.sorted()
+            for (i in 1 until ck.size) {
+                drawLine(
+                    color = Color(Brand.TARGET_BLUE),
+                    start = Offset(xOf(ck[i - 1]), yOf(curve.getValue(ck[i - 1]))),
+                    end = Offset(xOf(ck[i]), yOf(curve.getValue(ck[i]))),
+                    strokeWidth = 2f,
+                )
+            }
             for (i in 1 until pts.size) {
                 val a = pts[i - 1]
                 val b = pts[i]
@@ -148,7 +165,9 @@ fun ProgressKeyboard(
                 "%+.0f c".format(-roomDown / pxPerCent), 2f, mid + roomDown, captionPaint,
             )
             drawContext.canvas.nativeCanvas.drawText(
-                "measured — a result, not a target", 2f, curveBand - 2f, captionPaint,
+                if (curve.isEmpty()) "measured — a result, not a target"
+                else "blue: the curve this piano asks for · white: measured, a result",
+                2f, curveBand - 2f, captionPaint,
             )
         }
 
