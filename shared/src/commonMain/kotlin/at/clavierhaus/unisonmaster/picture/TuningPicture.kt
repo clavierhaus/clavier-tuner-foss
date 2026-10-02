@@ -42,7 +42,11 @@ class TuningPicture(
      * the anchor's reading; [errorCents] its own distance from its own target,
      * for the readout table; [level] its strength, 0..1 of the loudest.
      */
-    class Bell(val k: Int, val offsetCents: Double, val errorCents: Double, val level: Double, val counted: Boolean)
+    class Bell(
+        val k: Int, val offsetCents: Double, val errorCents: Double, val level: Double, val counted: Boolean,
+        /** As read and as asked, Hz, for the table beside the bells. */
+        val hz: Double, val targetHz: Double,
+    )
 
     enum class State {
         /** No reading: nothing is drawn but the note and its target. */
@@ -117,7 +121,8 @@ class TuningPicture(
             }
             val anchorError = errors[anchorNow] ?: centsOff(f.listenedHz, f.listenedTargetHz)
             val bells = errors.keys.sorted().map { k ->
-                Bell(k, errors[k]!! - anchorError, errors[k]!!, f.partials[k]!!.second, k in counted)
+                Bell(k, errors[k]!! - anchorError, errors[k]!!, f.partials[k]!!.second, k in counted,
+                    f.partials[k]!!.first, f.targets[k]!!)
             }
             val pointer = centsOff(f.listenedHz, f.listenedTargetHz)
             val inside = counted.isNotEmpty() && counted.all { abs(errors[it]!!) <= f.matchCents + 1e-9 } &&

@@ -7,6 +7,23 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-02 (evening)
+- **The new tuning picture, as a preview** (Settings → Probe → *New tuning
+  picture*): bells and scale in one picture. The bells stand on one steady
+  anchor line — each at its distance from the anchor partial's own reading, so
+  a clean string stacks at zero wherever the pitch is and only a false or
+  off-series partial leaves the line; the partial numbers in a row above so
+  labels never overprint; the readout table beside; the linear ±30 c scale with
+  its gate across the bottom. *Near* inside the gate, *on* after half a second
+  held, the scale and the note washing green. A partial the engine measures
+  false is red-violet. The picture is computed in `shared/picture` and tested;
+  the view only draws it (`docs/UI.md`). The old Tuning and Partials modes stay
+  until the picture replaces them.
+- `Pane` and `FitText`: the first two primitives of the screens — placement by
+  fractions of the pane, and text that steps its size down instead of being
+  cut. `LawWallsTest` counts every scroll and cut in the source and only ever
+  lets the count fall.
+
 ### 2026-10-01 (evening)
 - The tuning scale is **linear, ±30 cents**, a tick every five and a label
   every ten. No magnification anywhere on it: one cent is the same width

@@ -52,6 +52,8 @@ import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TargetScale
+import at.clavierhaus.unisonmaster.ui.TuningPictureView
+import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.TuningGraph
 import at.clavierhaus.unisonmaster.ui.formatHz
@@ -84,6 +86,8 @@ fun BasicHub(
     val audible by controller.liveAudible.collectAsState()
     val full by controller.fullSpectrum.collectAsState()
     var showProgress by remember { mutableStateOf(false) }
+    // the new one picture (preview, Settings → Probe): built frame by frame from the engine's readings
+    val pictureBuilder = remember { TuningPicture.Builder() }
     val hidden by controller.hiddenPartials.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
     val tuning by controller.tuning.collectAsState()
@@ -227,6 +231,28 @@ fun BasicHub(
         }
 
         when {
+            cfg.newPicture && !showProgress && !t.sampling -> {
+                // Everything on this picture is the engine's reading of the strike now sounding,
+                // mapped to a frame; the picture decides what is shown, the view how (docs/UI.md)
+                val frame = TuningPicture.Frame(
+                    note = name,
+                    listened = read?.k ?: l.k,
+                    live = live,
+                    listenedHz = shownHz,
+                    listenedTargetHz = shownTarget,
+                    partials = partials.associate { it.k to (it.hz to it.level) },
+                    targets = targets.associate { it.k to it.hz },
+                    falsePartials = read?.falsePartials?.toSet() ?: emptySet(),
+                    dropped = emptySet(),
+                    matchCents = cfg.matchCents,
+                    nowMs = System.currentTimeMillis(),
+                )
+                TuningPictureView(
+                    pictureBuilder.build(frame),
+                    matchCents = cfg.matchCents,
+                    modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
+                )
+            }
             showProgress -> {
                 ProgressKeyboard(
                     done = t.measured,

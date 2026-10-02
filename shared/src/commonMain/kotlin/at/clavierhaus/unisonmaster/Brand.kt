@@ -40,6 +40,15 @@ object Brand {
     const val TARGET_BLUE: Long = 0xFF8FD0FF
 
     /**
+     * A partial the engine has measured false on the strike now sounding —
+     * its bell, its button, its line in the table, and nothing else on any
+     * screen. Red-violet, bright enough to read at arm's length on black and
+     * far from the target blue; a dashed outline or a struck number carries
+     * the same meaning without colour (docs/UI.md).
+     */
+    const val FALSE_VIOLET: Long = 0xFFC040F0
+
+    /**
      * The progress keyboard. Green marks a note that is done, which is the
      * same functional meaning GO_GREEN carries elsewhere: a match. A black
      * key that is done takes a deeper green, so that it stays readable as a
