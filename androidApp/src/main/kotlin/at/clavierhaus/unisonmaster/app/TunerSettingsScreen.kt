@@ -71,11 +71,6 @@ fun TunerSettingsScreen(
                     "Beside the recording button: opens the file dialog, then plays into the engine",
                     s.probe,
                 ) { on -> model.update { it.copy(probe = on) } }
-                SwitchRow(
-                    "New tuning picture (preview)",
-                    "Bells and scale in one picture, the bells on one steady anchor line; replaces Tuning and Partials while it is built",
-                    s.newPicture,
-                ) { on -> model.update { it.copy(newPicture = on) } }
                 if (feedNote != null) SettingsNote(feedNote)
                 SettingsNote(
                     "For testing away from a piano. Pick any WAV the phone can reach \u2014 the app's own " +

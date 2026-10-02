@@ -33,29 +33,22 @@ import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.BackArrow
-import at.clavierhaus.unisonmaster.ui.BeatBand
 import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
-import at.clavierhaus.unisonmaster.ui.MeasuredBlock
-import at.clavierhaus.unisonmaster.ui.NoteBlock
 import at.clavierhaus.unisonmaster.ui.NoteStepper
 import at.clavierhaus.unisonmaster.ui.PartialRow
-import at.clavierhaus.unisonmaster.ui.PartialsButton
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
-import at.clavierhaus.unisonmaster.ui.ReadoutColumn
 import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.ui.SettingsGear
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.StateWord
-import at.clavierhaus.unisonmaster.ui.TargetScale
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.ToneGraph
-import at.clavierhaus.unisonmaster.ui.TuningGraph
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
 import kotlin.math.abs
@@ -86,7 +79,7 @@ fun BasicHub(
     val audible by controller.liveAudible.collectAsState()
     val full by controller.fullSpectrum.collectAsState()
     var showProgress by remember { mutableStateOf(false) }
-    // the new one picture (preview, Settings → Probe): built frame by frame from the engine's readings
+    // the one picture: built frame by frame from the engine's readings of the strike now sounding
     val pictureBuilder = remember { TuningPicture.Builder() }
     val hidden by controller.hiddenPartials.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
@@ -205,9 +198,6 @@ fun BasicHub(
             t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
             else -> "A3–A4 first · Done keeps a note"
         } + (partialsLine?.let { " · $it" } ?: "")
-        // Full Spectrum: the partial read by phase replaces the finder's place for it
-        val spectrum = partials.map { p -> if (read != null && p.k == read.k && shownHz != null) p.copy(hz = shownHz) else p }
-        val p1Hz = spectrum.firstOrNull { it.k == 1 }?.hz
 
         // header: back and gear only; the title lives on the hub
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart)) {
@@ -231,7 +221,7 @@ fun BasicHub(
         }
 
         when {
-            cfg.newPicture && !showProgress && !t.sampling -> {
+            !showProgress && !t.sampling -> {
                 // Everything on this picture is the engine's reading of the strike now sounding,
                 // mapped to a frame; the picture decides what is shown, the view how (docs/UI.md)
                 val frame = TuningPicture.Frame(
@@ -267,122 +257,9 @@ fun BasicHub(
                         .height(216.dp),
                 )
             }
-            full -> {
-                // Full Spectrum: the bells, the readout column and the row
-                TuningGraph(
-                    liveHz = p1Hz,
-                    sounding = live,
-                    targetHz = liveTarget,
-                    shown = shownTuning,
-                    predicted = targets,
-                    livePartials = spectrum,
-                    active = active,
-                    matchCents = cfg.matchCents,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 56.dp, bottom = 80.dp),
-                )
-                Column(Modifier.align(Alignment.TopStart).padding(top = 60.dp)) {
-                    Text(name, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 34.sp, maxLines = 1)
-                    Text("target " + String.format(Locale.ROOT, "%.2f Hz", shownTarget) + if (active > 1) ", partial $active" else "", color = Color(Brand.TARGET_BLUE), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 1)
-                    Text(originLine, color = Color(Brand.WHITE_MUTED),
-                        fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
-                }
-                ReadoutColumn(
-                    shown = shownTuning,
-                    active = active,
-                    targetHz = liveTarget,
-                    liveHz = p1Hz,
-                    predicted = targets,
-                    livePartials = spectrum,
-                    a4Hz = a4,
-                    matchCents = cfg.matchCents,
-                    onSelect = { k -> controller.activatePartial(k) },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp),
-                )
-            }
-            t.sampling -> {
-                // Sampling (25 September): whatever key is struck is caught and shown green;
-                // Accept keeps it; a key already sampled, struck again, replaces its sample;
-                // Done once enough are in. Nothing here judges the pitch.
-                val caughtName = t.caught?.let { Notes.name(it) }
-                Column(
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .fillMaxSize()
-                        .padding(top = 52.dp, bottom = 84.dp),
-                ) {
-                    Text(t(K.sampling_title), color = Color(Brand.ORANGE), fontFamily = DejaVuSerif, fontSize = 22.sp, maxLines = 1)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        if (controller.sampleNotes().isNotEmpty()) t(K.sampling_lineSet, t.samplesNeeded) else t(K.sampling_line, t.samplesNeeded),
-                        color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 15.sp, maxLines = 2,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(caughtName ?: "—", color = if (caughtName != null) Color(Brand.GO_GREEN) else Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 96.sp, maxLines = 1)
-                        Spacer(Modifier.width(28.dp))
-                        Text(
-                            when { caughtName == null -> t(K.sampling_strikeAny); t.caughtAccepted -> t(K.sampling_kept); else -> t(K.sampling_caught) },
-                            color = if (caughtName != null) Color(Brand.GO_GREEN) else Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 2,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(t(K.sampling_count, t.samplesIn, t.samplesNeeded), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 24.sp, maxLines = 1)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    if (controller.sampleNotes().isNotEmpty()) {
-                        // FOSS: the set, what is in and what is still to come
-                        Text(
-                            buildString {
-                                for (m in controller.sampleNotes()) append(if (m in t.sampled) "●" else "○").append(" ").append(Notes.name(m)).append("   ")
-                            },
-                            color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 2,
-                        )
-                    }
-                }
-            }
-            else -> {
-                // Fundamental: one note, one motion, one colour
-                Column(
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .fillMaxSize()
-                        .padding(top = 52.dp, bottom = 84.dp),
-                ) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        NoteBlock(
-                            name = name,
-                            targetHz = shownTarget,
-                            partial = read?.k?.takeIf { it > 1 } ?: l.k.takeIf { it > 1 },
-                            origin = originLine,
-                            onSemitone = { d -> controller.stepNote(d) },
-                            onOctave = { d -> controller.selectNote(t.midi + 12 * d) },
-                        )
-                        Spacer(Modifier.weight(1f))
-                        MeasuredBlock(shownHz, partial = read?.k?.takeIf { it > 1 } ?: l.k.takeIf { it > 1 })
-                    }
-                    Spacer(Modifier.weight(1f))
-                    BeatBand(
-                        measuredHz = shownHz,
-                        targetHz = shownTarget,
-                        sounding = live,
-                        matched = matched,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    TargetScale(
-                        measuredHz = shownHz,
-                        targetHz = shownTarget,
-                        matchCents = cfg.matchCents,
-                        sounding = live,
-                        matched = matched,
-                        modifier = Modifier.fillMaxWidth().height(64.dp),
-                    )
-                }
-            }
         }
 
-        // the bottom row: Progress · arrows · Partials · status · Done
+        // the bottom row: Progress · arrows · the partials · Done
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -407,7 +284,8 @@ fun BasicHub(
                 onUp = { controller.stepNote(+1) },
             )
             Spacer(Modifier.width(10.dp))
-            if (full && !showProgress) {
+            if (!showProgress) {
+                // the partials to tap: one row, the one picture above reads them
                 PartialRow(
                     a4Hz = a4,
                     baseHz = liveTarget,
@@ -419,20 +297,8 @@ fun BasicHub(
                     modifier = Modifier.weight(1f),
                 )
             } else {
-                PartialsButton(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
-                Spacer(Modifier.width(14.dp))
                 Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 Spacer(Modifier.weight(1f))
-            }
-            if (full && !showProgress) {
-                Spacer(Modifier.width(10.dp))
-                // named for where it goes, as the Progress button is: leaving Partials
-                // by a button called "One partial" read as a mode and not as a way back
-                PartialsButton(
-                    fullSpectrum = full,
-                    onClick = { controller.toggleFullSpectrum() },
-                    label = t(K.app_tuning),
-                )
             }
             Spacer(Modifier.width(10.dp))
             DoneButton(onClick = { controller.acceptLive() }, enabled = matched)

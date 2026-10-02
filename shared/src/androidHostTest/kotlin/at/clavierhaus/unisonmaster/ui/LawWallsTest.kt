@@ -35,7 +35,7 @@ class LawWallsTest {
         "ui/TuningScreenParts.kt" to 9,
         "ui/SettingsParts.kt" to 1,
         "ui/HubParts.kt" to 4,
-        "androidApp/BasicHub.kt" to 7,
+        "androidApp/BasicHub.kt" to 1,
         "androidApp/RecordStrikesScreen.kt" to 2,
     )
 

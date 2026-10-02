@@ -155,8 +155,6 @@ data class TunerSettings(
      * on is tuning to yesterday's piano.
      */
     val probe: Boolean = false,
-    /** The tuning screen draws the new one picture (bells and scale together) in place of the two modes. A preview while it is built. */
-    val newPicture: Boolean = false,
 ) {
     companion object {
         const val MIN_TEMPERAMENT_LOW = 48     // C3
@@ -297,7 +295,6 @@ class SettingsModel(
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
             probe = b("probe", d.probe),
-            newPicture = b("newPicture", d.newPicture),
         )
     }
 
@@ -330,6 +327,5 @@ class SettingsModel(
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())
         store.put("probe", s.probe.toString())
-        store.put("newPicture", s.newPicture.toString())
     }
 }
