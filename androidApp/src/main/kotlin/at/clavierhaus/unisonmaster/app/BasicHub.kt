@@ -96,8 +96,6 @@ fun BasicHub(
     val reading by controller.reading.collectAsState()
     val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
     val heard by controller.heardMidi.collectAsState()
-    // an aural sequence, when one is being walked: the arrows follow it, the status names its step
-    val seq by controller.sequenceView.collectAsState()
 
     val t = tuning
     Box(
@@ -198,15 +196,10 @@ fun BasicHub(
             (if (r.combined) "partials " + r.usedPartials.joinToString(" ") else "partial ${r.k}") +
                 (if (r.falsePartials.isNotEmpty()) " · not " + r.falsePartials.joinToString(" ") else "")
         }
-        val status = when {
-            t.sampling -> ""
-            // the sequence's step, in the tuner's own words from the file; the key is not followed
-            seq != null -> seq!!.let { q -> "${q.name} · ${q.index + 1}/${q.size}" + (if (q.hint.isNotEmpty()) " · ${q.hint}" else "") }
-            else -> (if (follows) "follows the key · " else "") + when {
-                !cfg.temperamentFirst -> "leaving a note keeps it"
-                t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
-                else -> "A3–A4 first · Done keeps a note"
-            }
+        val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
+            !cfg.temperamentFirst -> "leaving a note keeps it"
+            t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
+            else -> "A3–A4 first · Done keeps a note"
         } + (partialsLine?.let { " · $it" } ?: "")
         // Full Spectrum: the partial read by phase replaces the finder's place for it
         val spectrum = partials.map { p -> if (read != null && p.k == read.k && shownHz != null) p.copy(hz = shownHz) else p }
@@ -380,13 +373,12 @@ fun BasicHub(
                 DoneButton(onClick = { controller.finishSampling() }, enabled = t.samplingReady)
                 return@Row
             }
-            // the arrows step the keyboard, or the sequence while one is walked
             NoteStepper(
                 name = name,
-                canDown = seq?.let { !it.first } ?: (t.midi > t.stepLowMidi),
-                canUp = seq?.let { !it.last } ?: (t.midi < t.stepHighMidi),
-                onDown = { if (seq != null) controller.stepSequence(-1) else controller.stepNote(-1) },
-                onUp = { if (seq != null) controller.stepSequence(+1) else controller.stepNote(+1) },
+                canDown = t.midi > t.stepLowMidi,
+                canUp = t.midi < t.stepHighMidi,
+                onDown = { controller.stepNote(-1) },
+                onUp = { controller.stepNote(+1) },
             )
             Spacer(Modifier.width(10.dp))
             if (full && !showProgress) {

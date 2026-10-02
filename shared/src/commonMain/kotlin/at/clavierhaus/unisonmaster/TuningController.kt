@@ -8,7 +8,6 @@ import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.settings.TunerSettings
-import at.clavierhaus.unisonmaster.tuning.AuralSequence
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
@@ -400,7 +399,6 @@ class TuningController(
 
     /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
     fun resetSession() {
-        stopSequence()
         caught = null
         session = null
         _tuning.value = null
@@ -440,55 +438,6 @@ class TuningController(
         leaveCurrent(s)
         s.select(midi)
         publish(s)
-    }
-
-    // ---- An aural sequence: the screen walks a tuner's order, not the keyboard's ----
-
-    /** Where the sequence stands, for the screen: its name, the step, and the step's hint. */
-    data class SequenceView(val name: String, val index: Int, val size: Int, val note: String, val hint: String) {
-        val first: Boolean get() = index == 0
-        val last: Boolean get() = index == size - 1
-    }
-
-    private var sequence: AuralSequence? = null
-    private var sequenceIndex = 0
-    private val _sequence = MutableStateFlow<SequenceView?>(null)
-    /** Null while the arrows step the keyboard; set while they step a sequence. */
-    val sequenceView: StateFlow<SequenceView?> = _sequence.asStateFlow()
-
-    /**
-     * Walks [seq] from its first note. The arrows then move along the
-     * sequence, and the note struck is read against the sequence's note and
-     * not followed: the student tunes the interval by ear and strikes the
-     * note to see whether the ear landed (TuneLab: "no automatic note
-     * switching in aural sequence mode"). The reading is the engine's own.
-     */
-    fun startSequence(seq: AuralSequence) {
-        sequence = seq
-        sequenceIndex = 0
-        goToSequenceStep()
-    }
-
-    /** The arrows step the keyboard again. */
-    fun stopSequence() {
-        sequence = null
-        _sequence.value = null
-    }
-
-    /** One step back (-1) or on (+1) along the sequence; the ends hold. */
-    fun stepSequence(delta: Int) {
-        val seq = sequence ?: return
-        val to = (sequenceIndex + delta).coerceIn(0, seq.size - 1)
-        if (to == sequenceIndex) return
-        sequenceIndex = to
-        goToSequenceStep()
-    }
-
-    private fun goToSequenceStep() {
-        val seq = sequence ?: return
-        val step = seq.steps[sequenceIndex]
-        selectNote(step.midi)
-        _sequence.value = SequenceView(seq.name, sequenceIndex, seq.size, step.note, step.hint)
     }
 
     /** Arrows: one semitone down (-1) or up (+1), within the compass. */
@@ -988,7 +937,7 @@ class TuningController(
                 }
                 // (never while sampling: the string just kept is still ringing when the screen moves on)
                 if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
-                    _settings.value.autoNote && !s.gated && !s.sampling && s.selectable(heard) && sequence == null) {
+                    _settings.value.autoNote && !s.gated && !s.sampling && s.selectable(heard)) {
                     followed = true
                     selectNote(heard)
                 }

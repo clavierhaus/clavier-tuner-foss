@@ -4,7 +4,6 @@ import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.measure.SyntheticString
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.settings.TunerSettings
-import at.clavierhaus.unisonmaster.tuning.AuralSequence
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.tuning.measuredString
@@ -378,34 +377,4 @@ private object TappedSource : AudioSource {
         while (p + bufferSize <= signal.size) { signal.copyInto(buf, 0, p, p + bufferSize); onBuffer(buf); p += bufferSize; afterHop(p) }
     }
     override fun stop() = Unit
-}
-class AuralSequenceOnTheControllerTest {
-    private val a4 = 440.0
-
-    @Test
-    fun theArrowsWalkTheSequenceAndTheReadingIsTheNotesOwn() {
-        val c = TuningController(object : AudioSource {
-            override val sampleRateHz = 48_000
-            override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) = Unit
-            override fun stop() = Unit
-        })
-        c.applySettings(TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40))
-        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
-        assertNull(c.sequenceView.value, "the arrows step the keyboard until a sequence starts")
-        c.startSequence(AuralSequence.parse("t", "A4 ref\nA3 octave\nD4 4th up\n"))
-        val v0 = assertNotNull(c.sequenceView.value)
-        assertEquals(0, v0.index); assertEquals(3, v0.size); assertEquals("A4", v0.note); assertEquals("ref", v0.hint)
-        assertEquals(69, c.tuning.value!!.midi, "the screen is on the sequence's first note")
-        c.stepSequence(+1)
-        assertEquals(57, c.tuning.value!!.midi)
-        assertEquals(TuningSession.targetF1(57, a4), c.tuning.value!!.listening.targetHz, 1e-9, "A3's target is the session's own")
-        c.stepSequence(+1); c.stepSequence(+1)
-        val v2 = c.sequenceView.value!!
-        assertEquals(2, v2.index); assertTrue(v2.last, "the end holds"); assertEquals(62, c.tuning.value!!.midi)
-        c.stepSequence(-1); c.stepSequence(-1); c.stepSequence(-1)
-        assertTrue(c.sequenceView.value!!.first); assertEquals(69, c.tuning.value!!.midi)
-        c.stopSequence()
-        assertNull(c.sequenceView.value)
-        assertEquals(69, c.tuning.value!!.midi, "stopping leaves the screen where it is")
-    }
 }
