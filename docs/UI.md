@@ -52,7 +52,7 @@ pane and draws; it never reads the controller directly. The screen in
 The reason is the law above: if two places can put a number on the screen,
 one of them is wrong. A picture is the one place.
 
-### `TuningPicture` (Phase E of the revamp; the first picture)
+### `TuningPicture` (`shared/.../picture/`, the first picture; built, tested, not yet drawn)
 
 ```kotlin
 class TuningPicture(
@@ -62,16 +62,19 @@ class TuningPicture(
     val bells: List<Bell>,       // every partial over the noise, up to Partials.MAX
     val pointerCents: Double?,   // the listened partial against its target; null while nothing sounds
     val state: State,            // SILENT, SOUNDING, NEAR, ON
-    val falseMark: Set<Int>,     // measured false on this strike: red-violet, filled
+    val falseMarked: Set<Int>,   // measured false on this strike: red-violet, filled
     val dropped: Set<Int>,       // taken out by the tuner: red-violet, outlined, dimmed
 ) {
-    class Bell(val k: Int, val offsetCents: Double, val level: Double, val counted: Boolean)
+    class Bell(val k: Int, val offsetCents: Double, val errorCents: Double, val level: Double, val counted: Boolean)
     enum class State { SILENT, SOUNDING, NEAR, ON }
 }
 ```
 
-Built by `TuningPictureBuilder` from `TuningController`'s flows at every
-reading. Its rules, each with a test:
+Built by `TuningPicture.Builder` from a `Frame` — the engine's readings of one
+moment, as plain values, so the picture and its tests need no controller. The
+app maps `TuningController`'s flows to a frame at every reading. Its rules,
+each with a test in `TuningPictureTest`, and each test shown to fail when its
+rule is taken out:
 
 - the anchor is the listened partial while it is counted; when it is marked
   false or dropped, the anchor moves to the strongest counted partial and
