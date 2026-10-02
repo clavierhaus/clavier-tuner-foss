@@ -8,6 +8,9 @@ import androidx.activity.compose.setContent
 import at.clavierhaus.unisonmaster.ui.OnePicture
 import at.clavierhaus.unisonmaster.ui.HomeHubItem
 import at.clavierhaus.unisonmaster.ui.HomeHub
+import at.clavierhaus.unisonmaster.ui.SequenceChoice
+import at.clavierhaus.unisonmaster.ui.SequencePicker
+import at.clavierhaus.unisonmaster.tuning.AuralSequence
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
@@ -81,6 +84,34 @@ class MainActivity : ComponentActivity() {
             }.onFailure { e -> feedNote.value = e.message ?: "That file could not be played." }
         }
 
+    /** What the last sequence file had to say for itself, for the picker to show. */
+    private val sequenceNote = mutableStateOf<String?>(null)
+    /** A sequence chosen and waiting for the tuning screen to open on it. */
+    private val sequenceToStart = mutableStateOf<AuralSequence?>(null)
+
+    /** Picks a sequence file anywhere the phone can reach; a line that is not a note refuses the file by its number. */
+    private val pickSequenceLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            val name = (uri.lastPathSegment?.substringAfterLast('/') ?: "sequence").removeSuffix(".txt")
+            runCatching {
+                val text = contentResolver.openInputStream(uri)!!.use { it.readBytes() }.toString(Charsets.UTF_8)
+                AuralSequence.parse(name, text)
+            }.onSuccess { seq -> sequenceNote.value = null; sequenceToStart.value = seq }
+                .onFailure { e -> sequenceNote.value = "$name: " + (e.message ?: "that file could not be read") }
+        }
+
+    private fun pickSequence() = pickSequenceLauncher.launch(arrayOf("text/*", "application/octet-stream"))
+
+    /** The tuning as it stands (or a fresh one) with [seq] walking it: the targets are the session's own. */
+    private fun beginSequence(seq: AuralSequence) {
+        val last = lastTuning.value
+        if (last is SessionStore.Load.Ok) controller.restore(last.snapshot) else {
+            sessionStore.clear(); lastTuning.value = SessionStore.Load.None; controller.resetSession()
+        }
+        controller.startSequence(seq)
+    }
+
     /** Opens the file dialog; the probe takes over from the next buffer. */
     private fun pickRecording() =
         pickRecordingLauncher.launch(arrayOf("audio/*", "application/octet-stream"))
@@ -136,9 +167,15 @@ class MainActivity : ComponentActivity() {
                 }
                 fun openSettings() { settingsFrom = screen; screen = "settings" }
                 fun backToHub() {
+                    controller.stopSequence()
                     controller.snapshot()?.let { sessionStore.save(it) }
                     lastTuning.value = sessionStore.load()
                     screen = "hub"
+                }
+                // a sequence picked from a file: on to the tuning screen with it
+                val chosen by sequenceToStart
+                LaunchedEffect(chosen) {
+                    chosen?.let { seq -> sequenceToStart.value = null; beginSequence(seq); screen = "tune" }
                 }
                 OnePicture {
                     when (screen) {
@@ -153,6 +190,20 @@ class MainActivity : ComponentActivity() {
                                 onUseMicrophone = { useMicrophone() },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
+                            )
+                        }
+                        "sequence" -> {
+                            BackHandler { screen = "hub" }
+                            SequencePicker(
+                                choices = listOf(
+                                    SequenceChoice(
+                                        AuralSequence.EXAMPLE_NAME,
+                                        "the temperament F3–F4 by fourths and fifths, A4 first — an order, not a method",
+                                    ) { beginSequence(AuralSequence.EXAMPLE); screen = "tune" },
+                                ),
+                                onPickFile = { pickSequence() },
+                                fileNote = sequenceNote.value,
+                                onBack = { screen = "hub" },
                             )
                         }
                         "record" -> {
@@ -200,7 +251,10 @@ class MainActivity : ComponentActivity() {
                             }
                             // Record Strikes lives in Pro only: the wobble study continues
                             // there, and the FOSS hub carries nothing research-only.
-                            HomeHub(entries = entries, onSettings = { openSettings() })
+                            val withSequence = entries + HomeHubItem(
+                                "Aural", " sequence", "tune by ear in your own order; the reading checks each note",
+                            ) { screen = "sequence" }
+                            HomeHub(entries = withSequence, onSettings = { openSettings() })
                         }
                     }
                 }

@@ -7,6 +7,15 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-02
+- **Aural sequence**, a new entry on the hub: the tuning screen walks a tuner's
+  own order of notes — the temperament by fourths and fifths, say — instead of
+  the keyboard. The arrows step along the sequence, the status line names the
+  step and what the file says about it, the key struck is not followed, and the
+  reading is the engine's own. One sequence ships (*4ths and 5ths*, F3–F4, A4
+  first — an order, not a method); any text file of notes works, a TuneLab
+  sequence file as it is. `docs/AURAL-SEQUENCE.md`.
+
 ### 2026-10-01 (evening)
 - The tuning scale is **linear, ±30 cents**, a tick every five and a label
   every ten. No magnification anywhere on it: one cent is the same width
