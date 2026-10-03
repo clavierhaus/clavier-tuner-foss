@@ -218,9 +218,12 @@ class PhaseReader(
         val noiseDbfs = 10 * log10(maxOf(noisePower, 1e-24))
         val quality = ((levelDbfs - noiseDbfs) / (2 * SHOWN_ABOVE_NEIGHBOURS_DB)).coerceIn(0.0, 1.0)
         if (n == 0) {
-            // no fresh rate this hop: settling after a strike, or before the first block
+            // no fresh rate this hop: settling after a strike, or before the first block. The
+            // hop in which the skip ends may still hold no fresh rate; what is held then is the
+            // reading from before the strike, and it is not the string now sounding (3 Oct 2026:
+            // shown for one hop, it spread a clean partial's window to a cent)
             val held = last ?: return null
-            return held.copy(levelDbfs = levelDbfs, noiseDbfs = noiseDbfs, quality = quality, settling = sample < skipUntil)
+            return held.copy(levelDbfs = levelDbfs, noiseDbfs = noiseDbfs, quality = quality, settling = sample < skipUntil || !memoryFilled)
         }
         var sum = 0.0
         for (k in 0 until n) sum += rates[k]

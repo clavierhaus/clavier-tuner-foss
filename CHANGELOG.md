@@ -8,6 +8,13 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **A reading from before the strike is never shown after it.** The reader
+  resets its memory at a strike and skips the settle; the hop in which the skip
+  ends could still hold no fresh rate, and in that hop the reading held from
+  before the strike — the room's — passed as a reading of the string, for one
+  hop. On a synthetic F3 in a room floor that one hop spread partial 8's window
+  to 0.97 c and had a clean string called false. Until the memory holds a rate
+  read after the strike, the reader says it is settling.
 - **The tuning screen is a split window.** Left, the tuning: the note, the
   partial, the linear scale at half its former width with its gate. Right,
   nothing but the bells on their centre line, ±6 c so a bell's movement is seen

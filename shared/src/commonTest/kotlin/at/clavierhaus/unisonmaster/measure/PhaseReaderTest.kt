@@ -2,6 +2,8 @@ package at.clavierhaus.unisonmaster.measure
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -102,6 +104,35 @@ class PhaseReaderStrikeTest {
         // (the band is ±25 cents, 3.2 Hz), a quarter of that two octaves up
         assertTrue(firstShown in 30..50, "shown again after $firstShown hops")
         assertTrue(abs(afterSecond[firstShown].hz - 220.38) < 0.05, "the first reading is the new string: %.3f".format(afterSecond[firstShown].hz))
+    }
+
+    /**
+     * The room before a strike has its own faint content at the partial's
+     * place, and the reader has a reading of it. The strike resets the
+     * memory and skips the settle; the hop in which the skip ends may hold
+     * no fresh rate yet, and that hop must not pass the pre-strike reading
+     * off as a reading of the string. Seen on a synthetic F3 in a room floor
+     * (3 Oct 2026): partial 8's first shown reading after the strike was the
+     * room's −4.26 c, one hop long, and it alone spread the partial's window
+     * to 0.97 c — a false beat called on a clean string.
+     */
+    @Test
+    fun theReadingHeldFromBeforeAStrikeIsNeverShownAfterIt() {
+        val target = 1401.7
+        val before = target * 2.0.pow(-4.0 / 1200)
+        val sig = FloatArray((1.2 * SR).toInt()) { i ->
+            val t = i.toDouble() / SR
+            var x = 0.002 * sin(2 * PI * before * t)
+            if (t >= 0.3) x += 0.2 * (1 - exp(-(t - 0.3) / 0.002)) * sin(2 * PI * target * (t - 0.3))
+            x.toFloat()
+        }
+        val reader = PhaseReader(SR, target)
+        val rs = readAll(reader, sig, fromS = 0.3)
+        assertTrue(reader.strikes >= 1, "the strike is heard")
+        val shown = rs.filter { it.shown }
+        assertTrue(shown.isNotEmpty(), "the string is shown after the strike")
+        val worst = shown.maxByOrNull { abs(it.cents) }!!
+        assertTrue(abs(worst.cents) < 0.5, "every shown reading after the strike is the string: %.2f c".format(worst.cents))
     }
 
     @Test
