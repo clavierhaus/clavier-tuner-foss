@@ -22,6 +22,7 @@ state.listening	listening	hört zu
 state.matches	matches	stimmt
 state.sharp	sharp	zu hoch
 state.flat	flat	zu tief
+state.near	near	nah
 state.complete	complete	fertig
 state.heardOther	that's {0}	das ist {0}
 state.off	{0} c {1}	{0} c {1}

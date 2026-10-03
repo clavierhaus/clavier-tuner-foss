@@ -48,15 +48,6 @@ fun TuningPictureView(p: TuningPicture, matchCents: Double, modifier: Modifier =
             val anchorNote = if (p.anchor != p.listened) " · bells on partial ${p.anchor}" else ""
             FitText("partial ${p.listened}$anchorNote", 13.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE_MUTED))
         }
-        Place(0.78f, 0.02f, 0.22f, 0.16f) {
-            val (word, colour) = when (p.state) {
-                State.SILENT -> "listening" to Brand.WHITE_MUTED
-                State.SOUNDING -> (if ((p.pointerCents ?: 0.0) > 0) "sharp" else "flat") to Brand.ORANGE
-                State.NEAR -> "near" to Brand.ORANGE
-                State.ON -> "on" to Brand.GO_GREEN
-            }
-            FitText(word, 24.sp, Modifier.fillMaxSize(), color = Color(colour), align = TextAlign.End)
-        }
         Place(0.00f, 0.20f, 0.56f, 0.46f) { Bells(p) }
         Place(0.58f, 0.20f, 0.42f, 0.46f) { Readout(p) }
         Place(0.00f, 0.70f, 1.00f, 0.28f) { CentsScale(p.pointerCents, matchCents, on, p.state != State.SILENT) }

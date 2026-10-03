@@ -7,6 +7,17 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-03
+- **Every partial of a sounding string is read, on every note.** Until now the
+  partials beyond the listened one were read only in the Full Spectrum mode,
+  and at most six of them; with the modes gone the one picture of a sounding
+  string stood empty (3 Oct, 06:54, the first picture seen). The engine now
+  reads every partial the strike shows, up to the highest the setting offers,
+  each with its level from the finder, and a reader is remade only when its
+  target leaves the band it reads in, so the bells do not swing when the
+  strike's own series arrives. One state word: the header's, and it is the
+  picture's — *near* inside the gate, *matches* only when held.
+
 ### 2026-10-02 (evening)
 - **The tuning screen is one picture.** Bells and scale together, in place of
   the Tuning and Partials modes. The bells stand on one steady anchor line —

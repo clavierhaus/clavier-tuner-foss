@@ -22,6 +22,7 @@ object K {
     const val state_matches = "state.matches"
     const val state_sharp = "state.sharp"
     const val state_flat = "state.flat"
+    const val state_near = "state.near"
     const val state_complete = "state.complete"
     const val state_heardOther = "state.heardOther"
     const val state_off = "state.off"
@@ -65,6 +66,7 @@ internal object StringsTable : Catalog {
         "state.matches" to arrayOf("matches", "stimmt"),
         "state.sharp" to arrayOf("sharp", "zu hoch"),
         "state.flat" to arrayOf("flat", "zu tief"),
+        "state.near" to arrayOf("near", "nah"),
         "state.complete" to arrayOf("complete", "fertig"),
         "state.heardOther" to arrayOf("that's {0}", "das ist {0}"),
         "state.off" to arrayOf("{0} c {1}", "{0} c {1}"),

@@ -174,6 +174,24 @@ fun BasicHub(
         // is said here, always, whatever it is and wherever it came from.
         val originLine = "A4 ${formatHz(a4)} \u00b7 $origin"
         val coarse = read?.coarseCents
+        // The one picture: everything on it is the engine's reading of the strike now sounding,
+        // mapped to a frame; the picture decides what is shown, the view how (docs/UI.md).
+        // Built here, once, so the header's state word and the picture say the same thing.
+        val picture = pictureBuilder.build(
+            TuningPicture.Frame(
+                note = name,
+                listened = read?.k ?: l.k,
+                live = live,
+                listenedHz = shownHz,
+                listenedTargetHz = shownTarget,
+                partials = partials.associate { it.k to (it.hz to it.level) },
+                targets = targets.associate { it.k to it.hz },
+                falsePartials = read?.falsePartials?.toSet() ?: emptySet(),
+                dropped = emptySet(),
+                matchCents = cfg.matchCents,
+                nowMs = System.currentTimeMillis(),
+            ),
+        )
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)
@@ -183,7 +201,9 @@ fun BasicHub(
             heard != null && heard != t.midi && !live -> t(K.state_heardOther, Notes.name(heard!!)) to Color(Brand.ORANGE)
             read?.settling == true -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
             !live || shownHz == null -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
-            matched -> t(K.state_matches) to Color(Brand.GO_GREEN)
+            // near is not on: "on" is the picture's, earned by the hold
+            picture.state == TuningPicture.State.ON -> t(K.state_matches) to Color(Brand.GO_GREEN)
+            picture.state == TuningPicture.State.NEAR -> t(K.state_near) to Color(Brand.ORANGE)
             shownHz > shownTarget -> t(K.state_sharp) to Color(Brand.ORANGE)
             else -> t(K.state_flat) to Color(Brand.ORANGE)
         }
@@ -222,23 +242,8 @@ fun BasicHub(
 
         when {
             !showProgress && !t.sampling -> {
-                // Everything on this picture is the engine's reading of the strike now sounding,
-                // mapped to a frame; the picture decides what is shown, the view how (docs/UI.md)
-                val frame = TuningPicture.Frame(
-                    note = name,
-                    listened = read?.k ?: l.k,
-                    live = live,
-                    listenedHz = shownHz,
-                    listenedTargetHz = shownTarget,
-                    partials = partials.associate { it.k to (it.hz to it.level) },
-                    targets = targets.associate { it.k to it.hz },
-                    falsePartials = read?.falsePartials?.toSet() ?: emptySet(),
-                    dropped = emptySet(),
-                    matchCents = cfg.matchCents,
-                    nowMs = System.currentTimeMillis(),
-                )
                 TuningPictureView(
-                    pictureBuilder.build(frame),
+                    picture,
                     matchCents = cfg.matchCents,
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                 )

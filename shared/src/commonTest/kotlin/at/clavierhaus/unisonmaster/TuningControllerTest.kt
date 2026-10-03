@@ -90,6 +90,23 @@ class TuningControllerTest {
     }
 
     @Test
+    fun everyPartialOfASoundingStringIsReadOnEveryNoteWithoutAnyMode() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        assertFalse(c.fullSpectrum.value, "no mode is switched on")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val live = c.livePartials.value
+        assertTrue(live.size >= 4, "the string's partials are read as it sounds: ${live.map { it.k }}")
+        assertTrue(live.any { it.k == 1 } && live.any { it.k >= 3 }, "the listened one and the others alike: ${live.map { it.k }}")
+        assertTrue(live.all { it.level in 0.0..1.0 } && live.any { it.level < 1.0 },
+            "each with its level, not all at one: ${live.map { "%d:%.2f".format(it.k, it.level) }}")
+        val cap = c.highestPartial(c.tuning.value!!.targetHz)
+        assertEquals(c.targets.value.map { it.k }.filter { it <= cap }.toSet() + 1, c.shownPartials.value,
+            "every partial the strike showed is read, up to the highest the setting offers")
+        assertTrue(c.shownPartials.value.size > 1)
+    }
+
+    @Test
     fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
         val gs4 = measuredString(68, et(68), 7e-4)

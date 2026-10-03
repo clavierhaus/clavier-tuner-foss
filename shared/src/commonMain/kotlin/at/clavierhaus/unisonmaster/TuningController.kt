@@ -285,7 +285,7 @@ class TuningController(
     private fun wantShown() {
         val t = _tuning.value ?: run { wantedSet = null; return }
         val active = _activePartial.value
-        val map = if (_fullSpectrum.value) _shownPartials.value.filter { it != active }.associateWith { targetOf(t, it) } else emptyMap()
+        val map = _shownPartials.value.filter { it != active }.associateWith { targetOf(t, it) }
         wantedSet = WantedSet(map, ++shownGen)
     }
 
@@ -529,7 +529,11 @@ class TuningController(
             _liveHz.value = null
             _fullSpectrum.value = false
             _hiddenPartials.value = emptySet()
-            _shownPartials.value = setOf(listening.k)
+            // every partial the note can carry is read, on every note: the tuning screen is
+            // one picture of them all (docs/UI.md), not a mode that shows one and a mode that
+            // shows six. Until 3 Oct 2026 only the listened partial was read outside Full
+            // Spectrum, and the picture of a sounding string stood empty.
+            _shownPartials.value = (_targets.value.map { it.k } + listening.k).toSet()
             _activePartial.value = listening.k
         } else if (_activePartial.value !in _targets.value.map { it.k } && _activePartial.value != listening.k) {
             _activePartial.value = listening.k
@@ -537,7 +541,7 @@ class TuningController(
         val k = _activePartial.value
         wanted = Wanted(targetOf(view, k), k, ++generation)
         _reading.value = Reading(k, null, wanted!!.hz, live = false, settling = false, coarseCents = null)
-        if (noteChanged) { _livePartials.value = emptyList(); _liveAudible.value = emptySet() }
+        if (noteChanged) { _livePartials.value = emptyList(); _liveAudible.value = emptySet(); levels = emptyMap() }
         wantShown()
         onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
@@ -933,7 +937,14 @@ class TuningController(
                     since == livePartialsHops(sr) && livePartialsStrike != strikeHop
                 ) {
                     livePartialsStrike = strikeHop
-                    livePartials(tv)?.let { _targets.value = it }
+                    livePartials(tv)?.let { series ->
+                        _targets.value = series
+                        // the strike said which partials the string carries: read them all, up to
+                        // the highest the tuner's setting offers, less what he hid
+                        val cap = highestPartial(tv.targetHz)
+                        _shownPartials.value = (series.map { it.k }.filter { it <= cap } + tv.listening.k).toSet() - _hiddenPartials.value
+                        wantShown()
+                    }
                 }
                 // (never while sampling: the string just kept is still ringing when the screen moves on)
                 if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
@@ -976,13 +987,16 @@ class TuningController(
                     shownAt.keys.retainAll(ws.targets.keys)
                     for ((k, hz) in ws.targets) {
                         val r = shownReaders[k]
+                        // a reader is remade only when its target leaves the band it reads in: a
+                        // retarget starts its memory afresh, and the strike's own series arriving a
+                        // few cents from the model must not make every bell swing mid-strike
                         if (r == null) shownReaders[k] = PhaseReader(sr, hz, memoryS = _settings.value.readingMemoryS)
-                        else if (abs(TuningSession.centsOff(hz, r.targetHz)) > 0.01) r.retarget(hz)
+                        else if (abs(TuningSession.centsOff(hz, r.targetHz)) > PhaseReader.DEFAULT_BAND_CENTS / 2) r.retarget(hz)
                     }
                 }
                 for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) { shownHeld[k] = it; shownAt[k] = hop } }
                 shownAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { shownHeld.remove(k); true } else false }
-                if (_fullSpectrum.value && t != null) spectrum(finder, t, w.k, held, shownHeld)
+                if (t != null) spectrum(finder, t, w.k, held, shownHeld)
             }
             true
         } catch (e: Exception) {
@@ -1009,6 +1023,9 @@ class TuningController(
      * read them ([activeHz] for the active one), and, from the [finder] when
      * it ran, which further partials are there to be tapped.
      */
+    /** Each shown partial's level, 0..1 of the loudest, as the finder last measured it; emptied with the note. */
+    private var levels: Map<Int, Double> = emptyMap()
+
     private fun spectrum(finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, held: Map<Int, PhaseReader.Reading>) {
         val read = LinkedHashMap<Int, Double>()
         activeHz?.let { read[activeK] = it }
@@ -1016,8 +1033,14 @@ class TuningController(
         // against the partial's own target, not against k * f1: the harmonic is not
         // where a piano string puts its partials (F3 on the Samick stands 11.7 c above
         // it at partial 8), so measuring from it made every clean string read sharp
+        // the level of each partial from the finder when it ran this hop, else the last known
+        if (finder != null) {
+            val peaks = read.keys.associateWith { k -> finder.near(read[k]!!, 40.0)?.levelDb }
+            val top = peaks.values.filterNotNull().maxOrNull()
+            if (top != null) levels = peaks.mapNotNull { (k, db) -> db?.let { k to (1.0 + (it - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0) } }.toMap()
+        }
         _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
-            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), 1.0)
+            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0)
         }
         if (finder != null) {
             val cap = highestPartial(t.targetHz)
