@@ -19,7 +19,6 @@ import at.clavierhaus.unisonmaster.ui.SettingsSection
 import at.clavierhaus.unisonmaster.ui.SettingsTab
 import at.clavierhaus.unisonmaster.ui.StepperRow
 import at.clavierhaus.unisonmaster.ui.SwitchRow
-import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
 import kotlin.math.round
 
@@ -39,13 +38,12 @@ fun TunerSettingsScreen(
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
-    val a4 by controller.referenceA4Hz.collectAsState()
 
     SettingsScreen(
         subtitle = "Configuration only. Tuning stays on the main screen.",
         onBack = onBack,
         tabs = listOf(
-            SettingsTab(t(K.settings_tab_temperament)) { TemperamentTab(s, a4, controller, model) },
+            SettingsTab(t(K.settings_tab_temperament)) { TemperamentTab(s, model) },
             SettingsTab(t(K.settings_tab_about)) {
                 SettingsSection(t(K.settings_language))
                 val langs = listOf("") + Strings.languages
@@ -92,18 +90,8 @@ fun TunerSettingsScreen(
 }
 
 @Composable
-private fun TemperamentTab(s: TunerSettings, a4: Double, controller: TuningController, model: SettingsModel) {
+private fun TemperamentTab(s: TunerSettings, model: SettingsModel) {
     val octaves = OctaveType.entries
-
-    SettingsSection("Reference")
-    StepperRow(
-        "A4", "Set on the hub from a single string; adjust here to 0.1 Hz",
-        formatHz(a4),
-        canDecrease = a4 > TuningController.MIN_REFERENCE_HZ,
-        canIncrease = a4 < TuningController.MAX_REFERENCE_HZ,
-        onDecrease = { controller.setReference(tenths(a4 - 0.1)) },
-        onIncrease = { controller.setReference(tenths(a4 + 0.1)) },
-    )
 
     SettingsSection("Workflow")
     SwitchRow(

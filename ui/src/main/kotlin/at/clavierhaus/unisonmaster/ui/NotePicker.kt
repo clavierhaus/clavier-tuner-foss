@@ -27,9 +27,9 @@ import at.clavierhaus.unisonmaster.tuning.Notes
 /**
  * The session's compass — every key the session can tune, [lowMidi] to
  * [highMidi] as [at.clavierhaus.unisonmaster.tuning.TuningSession] gives
- * them — laid out as a keyboard the tuner reads at a glance: one row per
- * octave, bass at the bottom, the twelve notes left to right, the key now on
- * screen marked. A tap names the key and closes the picker; a tap outside
+ * them — laid out as the keyboard reads: one row per octave, the bass at the
+ * top left, the twelve notes left to right, the top treble at the bottom
+ * right (Peter, 3 Oct 2026), the key now on screen marked. A tap names the key and closes the picker; a tap outside
  * closes it with nothing changed. Nothing scrolls and nothing is cut: every
  * cell is an equal share of the dialog, and the label steps down to fit.
  * Opened from the note name on the tuning picture; choosing a key here is
@@ -48,7 +48,7 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            for (octave in highOctave downTo lowOctave) {
+            for (octave in lowOctave..highOctave) {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (pc in 0 until 12) {
                         val midi = (octave + 1) * 12 + pc

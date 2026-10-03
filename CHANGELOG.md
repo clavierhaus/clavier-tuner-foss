@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **A4 leaves the settings.** It is the piano's, set at the hub from a single
+  string when the session starts; the stepper under Temperament showed the same
+  value in a second place and confused. The note picker reads as the keyboard
+  does: bass at the top left, top treble at the bottom right.
 - **The orange settings tab is the open one.** The Temperament tab carried a
   fixed accent and stayed orange whichever tab was open; now orange marks the
   active tab and nothing else.
