@@ -167,6 +167,64 @@ class TuningControllerTest {
             "the stand-in is the same string: read %+.2f c on partial 4, %+.2f c on %s".format(was, worst.cents, worst.usedPartials))
     }
 
+    /**
+     * Each live partial carries its width — the robust spread of its last
+     * half second of readings (blueprint §14, 3 Oct 2026). A loud partial is
+     * read to hundredths of a cent; one standing a dozen dB over the floor
+     * scatters by the floor's phase, and its width says so. The width is
+     * cleared at a strike: a string whose fundamental beat on the strike
+     * before must not lend that width to the clean string struck next.
+     */
+    @Test
+    fun aPartialsWidthSaysHowWellItIsReadAndStartsAfreshAtAStrike() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = c.tuning.value!!
+        val b = 2.1e-4
+        val f1 = t.listening.targetHz / (t.listening.k * Inharmonicity.ratio(t.listening.k, b))
+        val sr = 48_000
+        // strike 1: partial 1 split 1.5 Hz (a false beat); strike 2 at 5.0 s: the same string clean;
+        // white noise under it all, loud enough that partial 8 stands only a dozen dB over the
+        // floor in its own band while partial 1 stands forty
+        val sig = FloatArray(8 * sr)
+        run {
+            val rng = kotlin.random.Random(9)
+            val phase = DoubleArray(9); val phase2 = DoubleArray(9)
+            for (i in sig.indices) {
+                val tt = i.toDouble() / sr
+                var x = 0.08 * (rng.nextDouble() * 2 - 1)
+                val strikeAt = if (tt < 5.0) 0.3 else 5.0
+                if (tt >= strikeAt) {
+                    val since = tt - strikeAt
+                    // the first strike dies in two seconds so that the second stands clear of it
+                    val env = exp(-since / (if (tt < 5.0) 2.0 else 3.0)) * (1 - exp(-since / 0.002))
+                    for (k in 1..8) {
+                        val hz = SyntheticString.partialHz(f1, b, k)
+                        val a = 0.2 * env * 10.0.pow(-3.0 * (k - 1) / 20)
+                        if (k == 1 && tt < 5.0) {
+                            phase[1] += 2 * PI * (hz - 0.75) / sr; phase2[1] += 2 * PI * (hz + 0.75) / sr
+                            x += a / 2 * sin(phase[1]) + a / 2 * sin(phase2[1])
+                        } else { phase[k] += 2 * PI * hz / sr; x += a * sin(phase[k]) }
+                    }
+                }
+                sig[i] = x.toFloat()
+            }
+        }
+        val trail = ArrayList<Pair<Double, List<at.clavierhaus.unisonmaster.measure.LivePartial>>>()
+        src.afterBuffer = { at -> trail += at to c.livePartials.value }
+        c.hear(src, sig)
+        fun width(at: Double, k: Int) = trail.lastOrNull { it.first <= at }?.second?.firstOrNull { it.k == k }?.widthCents
+        val w1 = width(2.4, 1); val w2 = width(2.4, 2); val w8 = width(2.4, 8)
+        assertTrue(w1 != null && w1 > 0.5, "the split fundamental is wide on the first strike: $w1")
+        assertTrue(w2 != null && w2 < 0.1, "a loud clean partial is a needle: $w2")
+        assertTrue(w8 != null && w8 > 2 * w2 && w8 > 0.15, "a partial near the floor is wide against the needle: $w8 vs $w2")
+        // the second strike: the first readings of partial 1 after its settle carry no width from the beat before
+        val first = trail.firstOrNull { (at, lp) -> at > 5.1 && lp.any { it.k == 1 && it.widthCents != null } }
+        assertTrue(first != null, "partial 1 is read again on the second strike")
+        val w1b = first!!.second.first { it.k == 1 }.widthCents!!
+        assertTrue(w1b < 0.3, "the clean string's fundamental starts afresh at %.2f s: %.2f c wide".format(first.first, w1b))
+    }
+
     @Test
     fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))

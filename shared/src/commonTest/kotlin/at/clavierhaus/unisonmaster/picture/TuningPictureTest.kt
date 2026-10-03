@@ -18,10 +18,44 @@ class TuningPictureTest {
     private fun frame(
         cents: Double, nowMs: Long, extra: Map<Int, Double> = emptyMap(), live: Boolean = true,
         falseP: Set<Int> = emptySet(), dropped: Set<Int> = emptySet(), listened: Int = 4,
+        /** Each partial's width, cents; absent = not yet known. */
+        widths: Map<Int, Double> = emptyMap(),
     ): TuningPicture.Frame {
-        val partials = targets.mapValues { (k, t) -> (t * 2.0.pow((cents + (extra[k] ?: 0.0)) / 1200.0)) to (1.0 / k) }
-        return TuningPicture.Frame("F3", listened, live, partials[listened]?.first, targets[listened]!!,
+        val partials = targets.mapValues { (k, t) ->
+            TuningPicture.Frame.Partial(t * 2.0.pow((cents + (extra[k] ?: 0.0)) / 1200.0), 1.0 / k, widths[k])
+        }
+        return TuningPicture.Frame("F3", listened, live, partials[listened]?.hz, targets[listened]!!,
             partials, targets, falseP, dropped, 1.5, nowMs)
+    }
+
+    /**
+     * The width is how well a partial is read. A bell much wider than the
+     * narrowest is wide: it neither anchors the line nor vetoes "on" — a
+     * needle outranks a wide bell (blueprint §14, 3 Oct 2026). Measured on the
+     * Samick: loud partials 0.2–0.5 c, floor-huggers 2–6 c.
+     */
+    @Test
+    fun aWideBellNeitherAnchorsNorVetoesOn() {
+        val b = TuningPicture.Builder()
+        // first the string sounds with every partial a needle: the listened partial 4 anchors
+        var p = b.build(frame(0.0, 0, widths = mapOf(1 to 0.2, 4 to 0.3)))
+        assertEquals(4, p.anchor); assertTrue(p.wide.isEmpty())
+        // then partials 4 and 8 have fallen to the floor, 2.5 and 3 c wide, 8 wandering 2 c off;
+        // the rest are needles on the line (the pointer is the engine's combined reading, which
+        // CleanReading already keeps off a partial at the floor — here it stands on the line)
+        val widths = mapOf(1 to 0.2, 2 to 0.25, 3 to 0.3, 4 to 2.5, 5 to 0.3, 6 to 0.4, 7 to 0.5, 8 to 3.0)
+        p = b.build(frame(0.0, 100, extra = mapOf(8 to -2.0), widths = widths))
+        assertEquals(setOf(4, 8), p.wide, "the two at the floor are wide")
+        assertEquals(4, p.anchor, "the anchor waits its hold before it moves")
+        p = b.build(frame(0.0, 700, extra = mapOf(8 to -2.0), widths = widths))
+        assertEquals(1, p.anchor, "then the strongest needle anchors, not the wide listened partial")
+        assertTrue(p.bells.filter { it.k !in p.wide }.all { abs(it.offsetCents) < 1e-9 }, "the needles stand on the line")
+        // 2 c off on a wide partial does not keep "on" from being earned by the needles and the pointer
+        p = b.build(frame(0.0, 1300, extra = mapOf(8 to -2.0), widths = widths))
+        assertEquals(State.ON, p.state, "a wide bell cannot veto on")
+        // a loud partial half a cent wide is not wide: 0.5 c against needles of 0.2
+        p = b.build(frame(0.0, 1400, widths = mapOf(1 to 0.2, 4 to 0.5)))
+        assertTrue(p.wide.isEmpty(), "half a cent on a loud partial is still a line to stand on")
     }
 
     @Test

@@ -19,6 +19,19 @@ import kotlin.math.abs
  * bell stands at zero wherever the pitch is (CLAUDE.md Rule 1), and only a
  * false or off-series partial leaves the line. The **scale** alone carries the
  * pitch, through [pointerCents].
+ *
+ * Each bell has a **width**: how well its partial is read, the spread of its
+ * last half second of readings (3 Oct 2026). A loud partial is a needle; a
+ * partial at the room's floor is a wide, low bell, and its wandering says
+ * "I am quiet", not "the string moved". A bell much wider than the narrowest
+ * — [Builder.WIDE_FACTOR] times it, and over [Builder.WIDE_CENTS] — is
+ * *wide*: it does not anchor the line (a needle outranks a wide bell) and
+ * does not veto "on". On the Samick's nine single-string F3 takes the loud
+ * partials read 0.2–0.5 c wide and the floor-huggers 2–6 c. The picture does
+ * not say *why* a bell is wide — the floor, a false string, three strings
+ * struck together all widen it, and on the Samick session width and depth
+ * over the floor do not tell them apart — so it claims nothing beyond the
+ * width itself.
  */
 class TuningPicture(
     /** "F3" */
@@ -36,16 +49,20 @@ class TuningPicture(
     val falseMarked: Set<Int>,
     /** Taken out of the reading by the tuner: red-violet, outlined, dimmed. */
     val dropped: Set<Int>,
+    /** Bells read much less well than the narrowest: they neither anchor nor veto. */
+    val wide: Set<Int> = emptySet(),
 ) {
     /**
      * One partial of the sounding string. [offsetCents] is its distance from
      * the anchor's reading; [errorCents] its own distance from its own target,
-     * for the readout table; [level] its strength, 0..1 of the loudest.
+     * for the readout table; [level] its strength, 0..1 of the loudest;
+     * [widthCents] how well it is read (null until known).
      */
     class Bell(
         val k: Int, val offsetCents: Double, val errorCents: Double, val level: Double, val counted: Boolean,
         /** As read and as asked, Hz, for the table beside the bells. */
         val hz: Double, val targetHz: Double,
+        val widthCents: Double? = null,
     )
 
     enum class State {
@@ -69,8 +86,8 @@ class TuningPicture(
         val listenedHz: Double?,
         /** The listened partial's target, Hz. */
         val listenedTargetHz: Double,
-        /** Every live partial: k to (hz, level 0..1). */
-        val partials: Map<Int, Pair<Double, Double>>,
+        /** Every live partial, by k. */
+        val partials: Map<Int, Partial>,
         /** Every partial's target, Hz, by k. */
         val targets: Map<Int, Double>,
         /** Partials the engine measured false on this strike. */
@@ -81,7 +98,10 @@ class TuningPicture(
         val matchCents: Double,
         /** The clock, ms. */
         val nowMs: Long,
-    )
+    ) {
+        /** One live partial: as read, its level 0..1 of the loudest, and its width when known. */
+        class Partial(val hz: Double, val level: Double, val widthCents: Double? = null)
+    }
 
     /**
      * Builds the picture frame by frame, keeping only what a hold needs: when
@@ -102,14 +122,22 @@ class TuningPicture(
             val errors = HashMap<Int, Double>()
             for ((k, p) in f.partials) {
                 val t = f.targets[k] ?: continue
-                errors[k] = centsOff(p.first, t)
+                errors[k] = centsOff(p.hz, t)
             }
             val counted = errors.keys.filter { it !in f.falsePartials && it !in f.dropped }.toSet()
-            // the anchor: the listened partial while it is counted, else the strongest counted one;
-            // a change waits ANCHOR_HOLD_S so the line never flaps between two partials
+            // wide: read much less well than the narrowest counted bell (an unknown width is not wide)
+            val narrowest = counted.mapNotNull { f.partials[it]!!.widthCents }.minOrNull()
+            val wide = if (narrowest == null) emptySet() else counted.filter { k ->
+                val w = f.partials[k]!!.widthCents; w != null && w > maxOf(WIDE_FACTOR * narrowest, WIDE_CENTS)
+            }.toSet()
+            val sharp = counted - wide
+            // the anchor: the listened partial while it is counted and not wide, else the strongest
+            // such one; a change waits ANCHOR_HOLD_S so the line never flaps between two partials
             val wanted = when {
+                f.listened in sharp -> f.listened
+                sharp.isNotEmpty() -> sharp.maxByOrNull { f.partials[it]!!.level }!!
                 f.listened in counted -> f.listened
-                counted.isNotEmpty() -> counted.maxByOrNull { f.partials[it]!!.second }!!
+                counted.isNotEmpty() -> counted.maxByOrNull { f.partials[it]!!.level }!!
                 else -> f.listened
             }
             val current = anchor ?: wanted.also { anchor = it }
@@ -121,11 +149,12 @@ class TuningPicture(
             }
             val anchorError = errors[anchorNow] ?: centsOff(f.listenedHz, f.listenedTargetHz)
             val bells = errors.keys.sorted().map { k ->
-                Bell(k, errors[k]!! - anchorError, errors[k]!!, f.partials[k]!!.second, k in counted,
-                    f.partials[k]!!.first, f.targets[k]!!)
+                val p = f.partials[k]!!
+                Bell(k, errors[k]!! - anchorError, errors[k]!!, p.level, k in counted, p.hz, f.targets[k]!!, p.widthCents)
             }
             val pointer = centsOff(f.listenedHz, f.listenedTargetHz)
-            val inside = counted.isNotEmpty() && counted.all { abs(errors[it]!!) <= f.matchCents + 1e-9 } &&
+            // "on" is judged by the counted bells that are read well: a wide one cannot veto it
+            val inside = sharp.isNotEmpty() && sharp.all { abs(errors[it]!!) <= f.matchCents + 1e-9 } &&
                 abs(pointer) <= f.matchCents + 1e-9
             val state = when {
                 !inside -> { onSinceMs = null; State.SOUNDING }
@@ -135,7 +164,7 @@ class TuningPicture(
                 }
             }
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
-                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys))
+                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide)
         }
 
         companion object {
@@ -143,6 +172,14 @@ class TuningPicture(
             const val HOLD_S = 0.5
             /** A new anchor is the strongest counted partial for this long before the line moves to it. */
             const val ANCHOR_HOLD_S = 0.5
+            /**
+             * A bell this many times wider than the narrowest counted one is wide. Measured on
+             * the Samick's nine single-string F3 takes (3 Oct 2026): loud partials 0.2–0.5 c,
+             * partials at the floor 2–6 c — four times apart at the least.
+             */
+            const val WIDE_FACTOR = 3.0
+            /** … and never for a width under this: a loud partial reads up to half a cent wide and is still a line to stand on. */
+            const val WIDE_CENTS = 0.5
         }
     }
 }

@@ -2,6 +2,7 @@ package at.clavierhaus.unisonmaster
 
 import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.measure.LivePartial
+import at.clavierhaus.unisonmaster.measure.ReadingSpread
 import at.clavierhaus.unisonmaster.measure.PartialFinder
 import at.clavierhaus.unisonmaster.measure.CleanReading
 import at.clavierhaus.unisonmaster.measure.PhaseReader
@@ -811,6 +812,9 @@ class TuningController(
         // HOLD_HOPS is stale and is dropped rather than stood there looking live (30 Sept,
         // at the Samick: numbers still on screen seconds after the sound had died)
         val shownAt = HashMap<Int, Long>()
+        // how well each shown partial is read: the spread of its last half second, cleared
+        // at a strike and dropped with the partial (the bell's width, docs/UI.md)
+        val shownSpread = HashMap<Int, ReadingSpread>()
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
         var coarse: Double? = null
@@ -845,7 +849,7 @@ class TuningController(
                 val loudest = recent.max()
                 // a strike; the attack's own rising hops are the same strike, not new ones
                 val strike = db - loudest >= PhaseReader.ONSET_DB && rms >= SILENCE_RMS && hop - strikeHop > STRIKE_HOPS
-                if (strike) { strikeHop = hop; strikePeakDb = db; candidate = null; run = 0; followed = false; early = null; decided = false; _heardMidi.value = null }
+                if (strike) { strikeHop = hop; strikePeakDb = db; candidate = null; run = 0; followed = false; early = null; decided = false; _heardMidi.value = null; shownSpread.values.forEach { it.clear() } }
                 if (strike || db > peakDb) peakDb = db
                 if (db > strikePeakDb) strikePeakDb = db
                 recent[(hop % recent.size).toInt()] = db
@@ -874,7 +878,7 @@ class TuningController(
                 if (_settings.value.readingMemoryS != memoryInForce) {
                     memoryInForce = _settings.value.readingMemoryS
                     reader = null; readerGeneration = -1
-                    shownReaders.clear(); shownHeld.clear(); shownGeneration = -1
+                    shownReaders.clear(); shownHeld.clear(); shownSpread.clear(); shownGeneration = -1
                     clean.memoryS = memoryInForce; cleanGeneration = -1
                 }
                 // the tuning screen: the reader is set on the partial listened to
@@ -989,18 +993,22 @@ class TuningController(
                     shownReaders.keys.retainAll(ws.targets.keys)
                     shownHeld.keys.retainAll(ws.targets.keys)
                     shownAt.keys.retainAll(ws.targets.keys)
+                    shownSpread.keys.retainAll(ws.targets.keys + w.k)
                     for ((k, hz) in ws.targets) {
                         val r = shownReaders[k]
                         // a reader is remade only when its target leaves the band it reads in: a
                         // retarget starts its memory afresh, and the strike's own series arriving a
                         // few cents from the model must not make every bell swing mid-strike
                         if (r == null) shownReaders[k] = PhaseReader(sr, hz, memoryS = _settings.value.readingMemoryS)
-                        else if (abs(TuningSession.centsOff(hz, r.targetHz)) > PhaseReader.DEFAULT_BAND_CENTS / 2) r.retarget(hz)
+                        else if (abs(TuningSession.centsOff(hz, r.targetHz)) > PhaseReader.DEFAULT_BAND_CENTS / 2) { r.retarget(hz); shownSpread[k]?.clear() }
                     }
                 }
-                for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) { shownHeld[k] = it; shownAt[k] = hop } }
-                shownAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { shownHeld.remove(k); true } else false }
-                if (t != null) spectrum(finder, t, w.k, held, shownHeld)
+                for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) { shownHeld[k] = it; shownAt[k] = hop; shownSpread.getOrPut(k) { ReadingSpread() }.push(it.cents) } }
+                shownAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { shownHeld.remove(k); shownSpread.remove(k); true } else false }
+                // the listened partial's own reader feeds its width the same way
+                if (rd != null && rd.shown) shownSpread.getOrPut(w.k) { ReadingSpread() }.push(rd.cents)
+                else if (held == null) shownSpread.remove(w.k)
+                if (t != null) spectrum(finder, t, w.k, held, shownHeld, shownSpread)
             }
             true
         } catch (e: Exception) {
@@ -1030,7 +1038,7 @@ class TuningController(
     /** Each shown partial's level, 0..1 of the loudest, as the finder last measured it; emptied with the note. */
     private var levels: Map<Int, Double> = emptyMap()
 
-    private fun spectrum(finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, held: Map<Int, PhaseReader.Reading>) {
+    private fun spectrum(finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, held: Map<Int, PhaseReader.Reading>, spread: Map<Int, ReadingSpread>) {
         val read = LinkedHashMap<Int, Double>()
         activeHz?.let { read[activeK] = it }
         for ((k, r) in held) read[k] = r.hz
@@ -1044,7 +1052,7 @@ class TuningController(
             if (top != null) levels = peaks.mapNotNull { (k, db) -> db?.let { k to (1.0 + (it - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0) } }.toMap()
         }
         _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
-            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0)
+            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0, spread[k]?.widthCents)
         }
         if (finder != null) {
             val cap = highestPartial(t.targetHz)

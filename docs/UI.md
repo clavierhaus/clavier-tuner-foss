@@ -86,6 +86,18 @@ rule is taken out:
   `HOLD_S` (0.5 s) by every counted bell; a dropped partial cannot veto `ON`;
 - the picture dies with its sound: when the engine's reading expires, the
   picture is `SILENT` and the bells are gone. Nothing is held.
+- **a bell has a width** (3 Oct): how well its partial is read — the robust
+  spread (median absolute deviation × 1.4826) of its last half second of
+  shown readings, kept by the controller per shown partial (`ReadingSpread`),
+  cleared at a strike, dropped with the partial. A loud partial is a needle
+  (0.01–0.3 c on the Samick's F3), a partial at the room's floor a wide, low
+  bell (0.5–1.4 c of spread, ±2–3 c of wander). A bell more than
+  `WIDE_FACTOR` (3×) wider than the narrowest counted one, and over
+  `WIDE_CENTS` (0.5 c), is *wide*: it does not anchor the line and does not
+  veto "on" — a needle outranks a wide bell. The picture says only the width;
+  it does not say why a bell is wide (the floor, a false string and three
+  strings struck together all widen it, and width and depth over the floor
+  do not tell them apart on the Samick session).
 
 **The one control on the picture** is the note name (3 Oct 2026). The screen
 follows the key struck by default (`TunerSettings.autoNote`). A tap on the

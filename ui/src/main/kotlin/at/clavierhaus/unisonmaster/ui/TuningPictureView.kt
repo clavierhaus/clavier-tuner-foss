@@ -24,6 +24,8 @@ import kotlin.math.abs
 
 /** The bells' span either side of the anchor, cents: narrow enough that a bell's movement is seen undistorted. */
 const val BELLS_SPAN_C = 6.0
+/** A bell is never drawn narrower than this, cents, whatever its width says: a needle must stay visible. */
+const val MIN_BELL_WIDTH_C = 0.2
 /** The scale's span either side of the target, cents: linear, one strip. */
 const val SCALE_SPAN_C = 30.0
 
@@ -96,11 +98,14 @@ private fun Bells(p: TuningPicture) {
             paint.color = colourOf(b, p).toArgb()
             drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx, h * 0.10f, paint)
         }
-        // the bells: height says level, place says distance from the anchor
+        // the bells: height says level, place says distance from the anchor, width says how well
+        // the partial is read — its own measured spread (a loud partial a needle, one at the room's
+        // floor a wide low bell), never narrower than MIN_BELL_WIDTH_C so a needle does not vanish
+        val perCent = half / BELLS_SPAN_C.toFloat()
         for (b in p.bells.filter { it.k !in p.dropped }.sortedBy { it.level }) {
             val x = xOf(b.offsetCents)
             val height = (base - top) * (0.25f + 0.75f * b.level.toFloat())
-            val sigma = w / 26f
+            val sigma = perCent * (b.widthCents ?: MIN_BELL_WIDTH_C).coerceIn(MIN_BELL_WIDTH_C, BELLS_SPAN_C).toFloat()
             val path = Path().apply {
                 moveTo(x - 3 * sigma, base)
                 cubicTo(x - sigma, base, x - sigma * 0.8f, base - height, x, base - height)

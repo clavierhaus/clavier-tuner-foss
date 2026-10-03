@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **Every bell has a width: how well its partial is read.** The spread of the
+  partial's last half second of readings, measured live, cleared at a strike,
+  gone with the sound. A loud partial is a needle; a partial at the room's
+  floor is a wide, low bell whose wandering says "I am quiet", not "the string
+  moved". A bell much wider than the narrowest neither anchors the line nor
+  vetoes "on" — a needle outranks a wide bell. Measured on the Samick's F3:
+  the loudest partial 0.01–0.17 c wide, the loud ones under half a cent, the
+  floor-huggers 0.5–1.4 c.
 - **A4 leaves the settings.** It is the piano's, set at the hub from a single
   string when the session starts; the stepper under Temperament showed the same
   value in a second place and confused. The note picker reads as the keyboard
