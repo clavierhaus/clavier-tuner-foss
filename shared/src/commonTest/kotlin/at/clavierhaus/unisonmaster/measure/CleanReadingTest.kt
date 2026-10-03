@@ -68,6 +68,73 @@ class CleanReadingTest {
         assertTrue(res.used.size >= 4, "four clean partials at least: ${res.used}")
     }
 
+    /**
+     * A clean string in a room: every partial decays onto the room's floor,
+     * and no partial beats on its own at any moment of the strike. The
+     * floor is built as the recordings show it — not white, but many weak
+     * steady components spread over the ±85 c the reader's neighbour probes
+     * cover, together [floorDb] under each partial's first level. On the
+     * Samick's nine F3 takes (30 Sept, read with the engine on 3 Oct) the
+     * largest two-second spread of any partial was 0.22–0.30 c while it
+     * stood 25 dB or more over the noise beside it, 0.27–0.52 c at 20 dB
+     * and 0.32–0.88 c at 15 dB, and the engine called 22 partials false over
+     * the nine takes, all of them past 4.6 s into the strike; this string
+     * does the same. The partials decay in [tau] seconds (the takes' in
+     * 1.1–2.3 s); the floor under partial 1 is set deeper, as the takes' is
+     * — their partial 1 never fell under 26 dB over the noise beside it.
+     */
+    private fun decayingCleanString(f1: Double, b: Double, seconds: Double, floorDb: (Int) -> Double, tau: Double = 2.0, seed: Int = 7): FloatArray {
+        val n = (seconds * sr).toInt()
+        val out = FloatArray(n)
+        val phase = DoubleArray(10)
+        val start = (0.3 * sr).toInt()
+        val rnd = java.util.Random(seed.toLong())
+        val perPartial = 24
+        val roomHz = ArrayList<Double>(); val roomA = ArrayList<Double>(); val roomPhase = ArrayList<Double>()
+        for (k in 1..8) for (j in 0 until perPartial) {
+            val off = (rnd.nextDouble() * 2 - 1) * 85.0
+            roomHz += SyntheticString.partialHz(f1, b, k) * 2.0.pow(off / 1200.0)
+            roomA += 0.2 * 10.0.pow(-3.0 * (k - 1) / 20) * 10.0.pow(-floorDb(k) / 20) / sqrt(perPartial.toDouble())
+            roomPhase += rnd.nextDouble() * 2 * PI
+        }
+        for (i in 0 until n) {
+            var x = 1e-3 * rnd.nextGaussian()
+            for (j in roomHz.indices) { roomPhase[j] += 2 * PI * roomHz[j] / sr; x += roomA[j] * sin(roomPhase[j]) }
+            if (i >= start) {
+                val t = (i - start).toDouble() / sr
+                for (k in 1..8) {
+                    val hz = SyntheticString.partialHz(f1, b, k)
+                    val env = exp(-t / tau) * (1 - exp(-t / 0.002))
+                    val a = 0.2 * env * 10.0.pow(-3.0 * (k - 1) / 20)
+                    phase[k] += 2 * PI * hz / sr
+                    x += a * sin(phase[k])
+                }
+            }
+            out[i] = x.toFloat()
+        }
+        return out
+    }
+
+    @Test
+    fun aPartialDyingIntoTheRoomIsNotCalledFalse() {
+        val f1 = 174.0; val b = 2.1e-4
+        val r = CleanReading(sr)
+        r.target(targets(f1, b), reset = true)
+        val x = decayingCleanString(f1, b, seconds = 8.0, floorDb = { k -> if (k == 1) 60.0 else 30.0 })
+        val everCalledFalse = HashMap<Int, String>()
+        var everPresent = 0
+        var i = 0
+        while (i + hop <= x.size) {
+            if (i == (0.3 * sr).toInt() / hop * hop) r.strike()
+            val res = r.push(x.copyOfRange(i, i + hop), 4, combine = true)
+            for (k in res.falseBeating) everCalledFalse.putIfAbsent(k, "at %.2f s, spread %.2f c".format(i.toDouble() / sr, res.partials.first { it.k == k }.spreadCents))
+            everPresent = maxOf(everPresent, res.partials.count { it.present })
+            i += hop
+        }
+        assertTrue(everPresent >= 6, "the partials were read while they stood: $everPresent present at most")
+        assertTrue(everCalledFalse.isEmpty(), "a clean string, decaying, was called false: $everCalledFalse")
+    }
+
     @Test
     fun anUnmeasuredStringIsReadOnThePartialBeingTunedAlone() {
         val f1 = 440.0; val b = 4e-4

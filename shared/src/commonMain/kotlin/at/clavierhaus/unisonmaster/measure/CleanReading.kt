@@ -18,7 +18,17 @@ import kotlin.math.sqrt
  * agreement with the partial being tuned (within [AGREE_CENTS] of its
  * deviation — the target is defined on that partial, and a partial the
  * model places wrongly must not pull the reading; when that partial beats
- * on its own, the median of the steady ones stands in for it). The
+ * on its own, the median of the steady ones stands in for it). The spread
+ * is judged only from readings in which the partial stands
+ * [JUDGE_OVER_NOISE_DB] over the noise beside it. A partial decaying onto
+ * the room's floor scatters by the floor's phase, not the string's: on the
+ * Samick's clean F3 (nine single-string takes of 30 Sept 2026, read 3 Oct)
+ * the largest two-second spread of any partial was 0.22–0.30 c while it
+ * stood 25 dB or more over the noise beside it, 0.27–0.52 c at 20 dB, and
+ * 0.32–0.88 c at 15 dB — three partials of one take were called false for
+ * it. A partial read only at less than that is present, and is shown, but
+ * is neither counted nor accused; its verdict, when it had one, expires
+ * with the readings that made it. The
  * combined deviation is their level-weighted mean, the loud partials
  * counting most, as the ear does. Four clean partials read a string to
  * better than a tenth of a cent; a single one is still a reading; none is
@@ -71,6 +81,8 @@ class CleanReading(
     private val readers = arrayOfNulls<PhaseReader>(count + 1)
     private val targets = DoubleArray(count + 1)
     private val window = Array(count + 1) { DoubleArray(WINDOW_HOPS) }
+    /** For each reading in [window]: whether the partial stood [JUDGE_OVER_NOISE_DB] over the noise beside it, and so counts towards the spread. */
+    private val judged = Array(count + 1) { BooleanArray(WINDOW_HOPS) }
     private val filled = IntArray(count + 1)
     private val last = arrayOfNulls<PhaseReader.Reading>(count + 1)
     private val lastAt = LongArray(count + 1)
@@ -101,7 +113,11 @@ class CleanReading(
             val r = readers[k] ?: continue
             val rd = r.push(chunk) ?: continue
             last[k] = rd
-            if (rd.shown) { window[k][filled[k] % WINDOW_HOPS] = rd.cents; filled[k]++; lastAt[k] = hops }
+            if (rd.shown) {
+                val at = filled[k] % WINDOW_HOPS
+                window[k][at] = rd.cents; judged[k][at] = rd.levelDbfs - rd.noiseDbfs >= JUDGE_OVER_NOISE_DB
+                filled[k]++; lastAt[k] = hops
+            }
         }
         // a partial not read within the hold time is gone, and so is the call made on it:
         // a "false" verdict must not outlive the reading behind it (30 Sept)
@@ -119,18 +135,24 @@ class CleanReading(
             val n = minOf(filled[k], WINDOW_HOPS)
             var mean: Double? = null; var spread: Double? = null
             if (n >= MIN_READINGS) {
-                val w = window[k]
-                // the spread over the whole window (a slow beat needs it); the deviation from the
-                // most recent readings only — the reader is still settling in the first ones
-                var m = 0.0; for (i in 0 until n) m += w[i]; m /= n
-                var ss = 0.0; for (i in 0 until n) ss += (w[i] - m) * (w[i] - m)
+                val w = window[k]; val j = judged[k]
+                // the deviation from the most recent readings only — the reader is still settling
+                // in the first ones; the spread over the whole window (a slow beat needs it), from
+                // the readings that stood well over the noise, and only when there are enough of them
                 val recent = minOf(n, MEAN_HOPS)
                 var r = 0.0
-                for (j in 0 until recent) r += w[(filled[k] - 1 - j) % WINDOW_HOPS]
-                mean = r / recent; spread = sqrt(ss / n)
-                // hysteresis: false above OWN_CENTS, clean again only below OWN_CLEAR_CENTS
-                if (spread >= OWN_CENTS) falseNow[k] = true else if (spread < OWN_CLEAR_CENTS) falseNow[k] = false
-            }
+                for (i in 0 until recent) r += w[(filled[k] - 1 - i) % WINDOW_HOPS]
+                mean = r / recent
+                var nj = 0; var m = 0.0
+                for (i in 0 until n) if (j[i]) { m += w[i]; nj++ }
+                if (nj >= MIN_READINGS) {
+                    m /= nj
+                    var ss = 0.0; for (i in 0 until n) if (j[i]) ss += (w[i] - m) * (w[i] - m)
+                    spread = sqrt(ss / nj)
+                    // hysteresis: false above OWN_CENTS, clean again only below OWN_CLEAR_CENTS
+                    if (spread >= OWN_CENTS) falseNow[k] = true else if (spread < OWN_CLEAR_CENTS) falseNow[k] = false
+                } else falseNow[k] = false
+            } else falseNow[k] = false
             parts += Partial(k, rd.shown, mean, spread, rd.levelDbfs, clean = false, disagrees = false)
         }
         // the steady partials; where the string is, the partial being tuned says — or, when it
@@ -172,6 +194,16 @@ class CleanReading(
         const val WINDOW_HOPS = 94
         /** A deviation and a spread are known from this many readings on (about 0.4 s). */
         const val MIN_READINGS = 18
+        /**
+         * A reading counts towards a partial's spread only while the partial stands this far
+         * over the noise beside it (PhaseReader's own measure; its gate is 10 dB). Nearer the
+         * floor the scatter is the floor's, not the string's. Measured on the nine F3 takes of
+         * 30 Sept 2026 (research: the largest two-second spread of any partial, by depth):
+         * ≥ 30 dB 0.14–0.30 c, ≥ 25 dB 0.22–0.30 c, ≥ 22 dB 0.24–0.52 c, ≥ 20 dB 0.26–0.52 c,
+         * ≥ 15 dB 0.32–0.88 c. The verdict line is [OWN_CENTS]; 25 dB is where no clean take
+         * came within 0.2 c of it.
+         */
+        const val JUDGE_OVER_NOISE_DB = 25.0
         /** The deviation is the mean of the most recent readings: half a second, as the display's memory. */
         const val MEAN_HOPS = 12
     }

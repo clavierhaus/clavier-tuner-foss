@@ -8,6 +8,19 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **A partial decaying onto the room's floor is no longer called false.** The
+  false-beat verdict is the spread of a partial's readings over two seconds;
+  as a partial fades to within 15 dB of the noise beside it, the floor's phase
+  scatters the reading by a cent and more, and on the Samick's clean F3 the
+  engine called 22 partials false over nine single-string takes, every one of
+  them past 4.6 s into the strike — the red-violet bells and chips Peter saw on
+  a string with no false beat. Now a reading counts towards the spread only
+  while the partial stands 25 dB over the noise beside it (measured: the
+  largest clean spread is 0.22–0.30 c there, 0.27–0.52 c at 20 dB); a partial
+  read only nearer the floor is shown, but neither counted in the combined
+  reading nor accused, and a verdict expires with the readings that made it.
+  A real false beat on a sounding partial (C5's fundamental, 2 Oct, 2 c of
+  spread at 33 dB over the noise) is named as before.
 - **A reading from before the strike is never shown after it.** The reader
   resets its memory at a strike and skips the settle; the hop in which the skip
   ends could still hold no fresh rate, and in that hop the reading held from
