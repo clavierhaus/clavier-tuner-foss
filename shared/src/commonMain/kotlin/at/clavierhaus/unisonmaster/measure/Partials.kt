@@ -13,7 +13,11 @@ package at.clavierhaus.unisonmaster.measure
  * few hundredths of a cent; one at the room's floor scatters by cents, and the
  * width says so before anyone takes the scatter for the string (3 Oct 2026).
  */
-data class LivePartial(val k: Int, val hz: Double, val cents: Double, val level: Double, val widthCents: Double? = null)
+data class LivePartial(
+    val k: Int, val hz: Double, val cents: Double, val level: Double, val widthCents: Double? = null,
+    /** How far the partial stands over the noise beside it, dB, as its reader last read it; null when not known. */
+    val overNoiseDb: Double? = null,
+)
 
 /**
  * The spread of a partial's recent readings, as a width in cents: the median

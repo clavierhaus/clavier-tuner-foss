@@ -98,6 +98,15 @@ rule is taken out:
   it does not say why a bell is wide (the floor, a false string and three
   strings struck together all widen it, and width and depth over the floor
   do not tell them apart on the Samick session).
+- **the anchor is a trusted reading** (3 Oct, evening): a partial standing
+  less than `ANCHOR_DEPTH_DB` (25 dB, the depth `CleanReading` trusts a
+  reading at) over the noise beside it does not anchor the line, however
+  narrow its last half second — at the floor a reading wanders slowly as
+  well as fast, and a narrow bell can stand a cent from where it was. On
+  F3-C-s1 the anchor leaves partial 4 for partial 1 at 4.5 s, when partial 4
+  falls under 25 dB; the needles then stand within the string's own drift of
+  the line (partial 5 against partial 1 moves 0.4–0.6 c over the strike,
+  measured independently of the engine — the string, not the picture).
 
 **The one control on the picture** is the note name (3 Oct 2026). The screen
 follows the key struck by default (`TunerSettings.autoNote`). A tap on the

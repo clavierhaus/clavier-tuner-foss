@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **The anchor is a trusted reading.** A partial standing less than 25 dB over
+  the noise beside it does not anchor the bells, however narrow its last half
+  second: at the floor a reading wanders slowly too, and Peter's recording of
+  17:45 showed partial 4, at the floor, anchoring every needle 1.5 c off the
+  line. The line moves to the strongest partial still well over the floor
+  ("bells on 1"), and the needles stand on it.
 - **Every bell has a width: how well its partial is read.** The spread of the
   partial's last half second of readings, measured live, cleared at a strike,
   gone with the sound. A loud partial is a needle; a partial at the room's

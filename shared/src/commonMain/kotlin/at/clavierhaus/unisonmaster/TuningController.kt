@@ -1008,7 +1008,7 @@ class TuningController(
                 // the listened partial's own reader feeds its width the same way
                 if (rd != null && rd.shown) shownSpread.getOrPut(w.k) { ReadingSpread() }.push(rd.cents)
                 else if (held == null) shownSpread.remove(w.k)
-                if (t != null) spectrum(finder, t, w.k, held, shownHeld, shownSpread)
+                if (t != null) spectrum(finder, t, w.k, held, rd?.takeIf { it.shown }, shownHeld, shownSpread)
             }
             true
         } catch (e: Exception) {
@@ -1038,7 +1038,10 @@ class TuningController(
     /** Each shown partial's level, 0..1 of the loudest, as the finder last measured it; emptied with the note. */
     private var levels: Map<Int, Double> = emptyMap()
 
-    private fun spectrum(finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, held: Map<Int, PhaseReader.Reading>, spread: Map<Int, ReadingSpread>) {
+    private fun spectrum(
+        finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, activeReading: PhaseReader.Reading?,
+        held: Map<Int, PhaseReader.Reading>, spread: Map<Int, ReadingSpread>,
+    ) {
         val read = LinkedHashMap<Int, Double>()
         activeHz?.let { read[activeK] = it }
         for ((k, r) in held) read[k] = r.hz
@@ -1052,7 +1055,8 @@ class TuningController(
             if (top != null) levels = peaks.mapNotNull { (k, db) -> db?.let { k to (1.0 + (it - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0) } }.toMap()
         }
         _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
-            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0, spread[k]?.widthCents)
+            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0, spread[k]?.widthCents,
+                (held[k] ?: if (k == activeK) activeReading else null)?.let { it.levelDbfs - it.noiseDbfs })
         }
         if (finder != null) {
             val cap = highestPartial(t.targetHz)

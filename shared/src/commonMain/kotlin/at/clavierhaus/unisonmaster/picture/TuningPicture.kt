@@ -32,6 +32,14 @@ import kotlin.math.abs
  * struck together all widen it, and on the Samick session width and depth
  * over the floor do not tell them apart — so it claims nothing beyond the
  * width itself.
+ *
+ * The anchor must be a reading that is trusted: a partial standing less than
+ * [Builder.ANCHOR_DEPTH_DB] over the noise beside it does not anchor the
+ * line, however narrow its last half second — at the floor a reading wanders
+ * slowly as well as fast (F3-C-s1 at 7.5 s: partial 4 at 10 dB over the floor
+ * anchored every needle 1.5 c off the line, 3 Oct 2026 17:45), and the
+ * depth is the same one [at.clavierhaus.unisonmaster.measure.CleanReading]
+ * trusts a reading at.
  */
 class TuningPicture(
     /** "F3" */
@@ -63,6 +71,8 @@ class TuningPicture(
         /** As read and as asked, Hz, for the table beside the bells. */
         val hz: Double, val targetHz: Double,
         val widthCents: Double? = null,
+        /** Over the noise beside it, dB, when known. */
+        val overNoiseDb: Double? = null,
     )
 
     enum class State {
@@ -99,8 +109,8 @@ class TuningPicture(
         /** The clock, ms. */
         val nowMs: Long,
     ) {
-        /** One live partial: as read, its level 0..1 of the loudest, and its width when known. */
-        class Partial(val hz: Double, val level: Double, val widthCents: Double? = null)
+        /** One live partial: as read, its level 0..1 of the loudest, its width and its depth over the noise when known. */
+        class Partial(val hz: Double, val level: Double, val widthCents: Double? = null, val overNoiseDb: Double? = null)
     }
 
     /**
@@ -130,9 +140,10 @@ class TuningPicture(
             val wide = if (narrowest == null) emptySet() else counted.filter { k ->
                 val w = f.partials[k]!!.widthCents; w != null && w > maxOf(WIDE_FACTOR * narrowest, WIDE_CENTS)
             }.toSet()
-            val sharp = counted - wide
-            // the anchor: the listened partial while it is counted and not wide, else the strongest
-            // such one; a change waits ANCHOR_HOLD_S so the line never flaps between two partials
+            // a line to stand on: counted, not wide, and standing well over the noise beside it
+            val sharp = (counted - wide).filter { k -> f.partials[k]!!.overNoiseDb?.let { it >= ANCHOR_DEPTH_DB } ?: true }.toSet()
+            // the anchor: the listened partial while it is such a line, else the strongest such one;
+            // a change waits ANCHOR_HOLD_S so the line never flaps between two partials
             val wanted = when {
                 f.listened in sharp -> f.listened
                 sharp.isNotEmpty() -> sharp.maxByOrNull { f.partials[it]!!.level }!!
@@ -150,7 +161,7 @@ class TuningPicture(
             val anchorError = errors[anchorNow] ?: centsOff(f.listenedHz, f.listenedTargetHz)
             val bells = errors.keys.sorted().map { k ->
                 val p = f.partials[k]!!
-                Bell(k, errors[k]!! - anchorError, errors[k]!!, p.level, k in counted, p.hz, f.targets[k]!!, p.widthCents)
+                Bell(k, errors[k]!! - anchorError, errors[k]!!, p.level, k in counted, p.hz, f.targets[k]!!, p.widthCents, p.overNoiseDb)
             }
             val pointer = centsOff(f.listenedHz, f.listenedTargetHz)
             // "on" is judged by the counted bells that are read well: a wide one cannot veto it
@@ -180,6 +191,8 @@ class TuningPicture(
             const val WIDE_FACTOR = 3.0
             /** … and never for a width under this: a loud partial reads up to half a cent wide and is still a line to stand on. */
             const val WIDE_CENTS = 0.5
+            /** A partial anchors the line only while it stands this far over the noise beside it: where a reading is trusted to a third of a cent (CleanReading.JUDGE_OVER_NOISE_DB, measured 3 Oct 2026). */
+            const val ANCHOR_DEPTH_DB = at.clavierhaus.unisonmaster.measure.CleanReading.JUDGE_OVER_NOISE_DB
         }
     }
 }

@@ -20,9 +20,11 @@ class TuningPictureTest {
         falseP: Set<Int> = emptySet(), dropped: Set<Int> = emptySet(), listened: Int = 4,
         /** Each partial's width, cents; absent = not yet known. */
         widths: Map<Int, Double> = emptyMap(),
+        /** Each partial's depth over the noise beside it, dB; absent = not known. */
+        depths: Map<Int, Double> = emptyMap(),
     ): TuningPicture.Frame {
         val partials = targets.mapValues { (k, t) ->
-            TuningPicture.Frame.Partial(t * 2.0.pow((cents + (extra[k] ?: 0.0)) / 1200.0), 1.0 / k, widths[k])
+            TuningPicture.Frame.Partial(t * 2.0.pow((cents + (extra[k] ?: 0.0)) / 1200.0), 1.0 / k, widths[k], depths[k])
         }
         return TuningPicture.Frame("F3", listened, live, partials[listened]?.hz, targets[listened]!!,
             partials, targets, falseP, dropped, 1.5, nowMs)
@@ -56,6 +58,30 @@ class TuningPictureTest {
         // a loud partial half a cent wide is not wide: 0.5 c against needles of 0.2
         p = b.build(frame(0.0, 1400, widths = mapOf(1 to 0.2, 4 to 0.5)))
         assertTrue(p.wide.isEmpty(), "half a cent on a loud partial is still a line to stand on")
+    }
+
+    /**
+     * A partial at the floor wanders slowly as well as fast: its last half
+     * second can be narrow while it stands a cent and more from where it was.
+     * The anchor is a reading that is trusted — standing ANCHOR_DEPTH_DB over
+     * the noise beside it — not merely a narrow one (F3-C-s1 at 7.5 s through
+     * the probe, 3 Oct 2026 17:45: partial 4 at 10 dB over the floor anchored
+     * every needle 1.5 c off the line).
+     */
+    @Test
+    fun aPartialAtTheFloorDoesNotAnchorHoweverNarrowItsLastHalfSecond() {
+        val b = TuningPicture.Builder()
+        var p = b.build(frame(0.0, 0, widths = mapOf(1 to 0.1, 4 to 0.1), depths = mapOf(1 to 33.0, 4 to 30.0)))
+        assertEquals(4, p.anchor)
+        // partial 4 has fallen to 10 dB over the floor, narrow this half second, 1.5 c from where it was
+        val deep = mapOf(1 to 32.0, 2 to 28.0, 3 to 27.0, 4 to 10.0, 5 to 26.0)
+        val narrow = mapOf(1 to 0.1, 2 to 0.1, 3 to 0.15, 4 to 0.2, 5 to 0.2)
+        p = b.build(frame(0.0, 100, extra = mapOf(4 to 1.5), widths = narrow, depths = deep))
+        assertEquals(4, p.anchor, "the move waits its hold")
+        p = b.build(frame(0.0, 700, extra = mapOf(4 to 1.5), widths = narrow, depths = deep))
+        assertEquals(1, p.anchor, "the strongest trusted partial anchors; the one at the floor does not")
+        assertTrue(p.bells.filter { it.k != 4 }.all { abs(it.offsetCents) < 1e-9 }, "the needles stand on the line: ${p.bells.map { it.offsetCents }}")
+        assertEquals(1.5, p.bells.first { it.k == 4 }.offsetCents, 1e-9, "and the one at the floor shows where it wandered")
     }
 
     @Test

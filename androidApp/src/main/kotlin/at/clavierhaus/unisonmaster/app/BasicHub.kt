@@ -187,7 +187,7 @@ fun BasicHub(
                 live = live,
                 listenedHz = shownHz,
                 listenedTargetHz = shownTarget,
-                partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents) },
+                partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
                 targets = targets.associate { it.k to it.hz },
                 falsePartials = read?.falsePartials?.toSet() ?: emptySet(),
                 dropped = emptySet(),
