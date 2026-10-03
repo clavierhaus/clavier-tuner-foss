@@ -252,7 +252,7 @@ class TuningController(
             // one tap adds a partial and reads it ...
             k !in shown -> {
                 val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
-                if (k !in available || shown.size >= MAX_SHOWN) return
+                if (k !in available) return
                 _shownPartials.value = shown + k
                 setActive(k)
                 wantShown()

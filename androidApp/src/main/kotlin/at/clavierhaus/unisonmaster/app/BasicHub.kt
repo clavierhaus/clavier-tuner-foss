@@ -38,6 +38,7 @@ import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.NoteStepper
+import at.clavierhaus.unisonmaster.ui.PartialChips
 import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
@@ -290,15 +291,16 @@ fun BasicHub(
             )
             Spacer(Modifier.width(10.dp))
             if (!showProgress) {
-                // the partials to tap: one row, the one picture above reads them
-                PartialRow(
+                // the partials to tap: one row that always fits; a false one is violet, and a
+                // tap on it takes it out of the bells
+                PartialChips(
                     a4Hz = a4,
                     baseHz = liveTarget,
                     count = controller.highestPartial(liveTarget),
                     shown = shownTuning,
+                    falseMarked = picture.falseMarked,
                     tappable = (targets.map { it.k }.toSet() + audible) - t.listening.k,
                     onTap = { k -> controller.tapPartial(k) },
-                    pulse = if (active != suggested) suggested else null,
                     modifier = Modifier.weight(1f),
                 )
             } else {

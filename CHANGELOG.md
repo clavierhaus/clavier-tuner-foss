@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **The tuning screen is a split window.** Left, the tuning: the note, the
+  partial, the linear scale at half its former width with its gate. Right,
+  nothing but the bells on their centre line, ±6 c so a bell's movement is seen
+  undistorted, the partial numbers in a row above. The frequency table is gone
+  (its place is the unisons, when they come). The partials are one row of chips
+  that always fits, each an equal share of the width; a partial measured false
+  is red-violet, and a tap on it takes it out of the bells. No cap on how many
+  partials may be shown.
 - **Every partial of a sounding string is read, on every note.** Until now the
   partials beyond the listened one were read only in the Full Spectrum mode,
   and at most six of them; with the modes gone the one picture of a sounding
