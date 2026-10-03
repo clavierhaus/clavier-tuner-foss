@@ -7,8 +7,11 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.tuning.measuredString
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,10 +19,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Plays what it is given, one signal per start(), synchronously. */
+/** Plays what it is given, one signal per start(), synchronously; [afterBuffer] sees the time after each buffer. */
 private class PlayedSource : AudioSource {
     override val sampleRateHz = 48_000
     var signal = FloatArray(0)
+    var afterBuffer: ((Double) -> Unit)? = null
     override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {
         var pos = 0
         val buf = FloatArray(bufferSize)
@@ -27,6 +31,7 @@ private class PlayedSource : AudioSource {
             signal.copyInto(buf, 0, pos, pos + bufferSize)
             onBuffer(buf)
             pos += bufferSize
+            afterBuffer?.invoke(pos.toDouble() / sampleRateHz)
         }
     }
     override fun stop() = Unit
@@ -104,6 +109,62 @@ class TuningControllerTest {
         assertEquals(c.targets.value.map { it.k }.filter { it <= cap }.toSet() + 1, c.shownPartials.value,
             "every partial the strike showed is read, up to the highest the setting offers")
         assertTrue(c.shownPartials.value.size > 1)
+    }
+
+    /**
+     * A string of its own stiffness, struck once; its partial 4 — the one
+     * being tuned — dies away at 2.7 s while the others ring on. Once the
+     * strike has spoken (1.5 s in) the string's own series is the targets of
+     * every partial, and the reading, when another partial stands in for
+     * the dead one, is the same string seen another way: it must not move.
+     * Until 3 Oct 2026 the clean partials were read against the model's
+     * series for the whole strike, and the stand-in carried the model's
+     * error at its partial — on the Samick's F3-C-s1 through the probe the
+     * reading hopped 8 c as partial 1 stood in for partial 4 at 5.76 s.
+     */
+    @Test
+    fun whenThePartialBeingTunedDiesTheStandInIsReadAgainstTheStringsOwnSeries() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        val gs4 = measuredString(68, et(68), 7e-4)
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4), sampling = false))
+        val t = c.tuning.value!!
+        assertEquals(4, t.listening.k)
+        val target = t.listening.targetHz
+        // the model's B for the unmeasured G#3 comes off the curve through G#4 and A4 (about 1.4e-4); the string's is 4e-4
+        val b = 4e-4
+        val f1 = target / (4 * Inharmonicity.ratio(4, b))
+        val sr = 48_000
+        val sig = FloatArray(5 * sr)
+        run {
+            val phase = DoubleArray(9); val start = (0.3 * sr).toInt()
+            val rng = kotlin.random.Random(5)
+            for (i in sig.indices) {
+                var x = 1e-4 * (rng.nextDouble() * 2 - 1)
+                if (i >= start) {
+                    val tt = (i - start).toDouble() / sr
+                    val env = exp(-tt / 3.0) * (1 - exp(-tt / 0.002))
+                    for (k in 1..8) {
+                        val hz = SyntheticString.partialHz(f1, b, k)
+                        val gone = if (k == 4 && tt > 2.4) exp(-(tt - 2.4) / 0.03) else 1.0
+                        phase[k] += 2 * PI * hz / sr
+                        x += 0.2 * env * gone * 10.0.pow(-3.0 * (k - 1) / 20) * sin(phase[k])
+                    }
+                }
+                sig[i] = x.toFloat()
+            }
+        }
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        c.hear(src, sig)
+        val before = trail.filter { it.first in 2.3..2.6 }.map { it.second }
+        assertTrue(before.isNotEmpty() && before.all { it.live && 4 in it.usedPartials }, "partial 4 is read before it dies")
+        val after = trail.filter { it.first in 3.6..4.9 }.map { it.second }
+        assertTrue(after.isNotEmpty() && after.all { it.live }, "the string is still read once partial 4 is gone")
+        assertTrue(after.all { 4 !in it.usedPartials && it.usedPartials.isNotEmpty() }, "another partial stands in: ${after.map { it.usedPartials }.distinct()}")
+        val was = before.last().cents!!
+        val worst = after.maxByOrNull { abs(it.cents!! - was) }!!
+        assertTrue(abs(worst.cents!! - was) < 0.3,
+            "the stand-in is the same string: read %+.2f c on partial 4, %+.2f c on %s".format(was, worst.cents, worst.usedPartials))
     }
 
     @Test

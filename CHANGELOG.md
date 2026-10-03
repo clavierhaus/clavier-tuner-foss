@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **The clean partials are read against the strike's own series.** Once the
+  strike has spoken (1.5 s in) every partial's target comes from the string now
+  sounding; the clean-partials reading kept the model's placing for the whole
+  strike, so when the partial being tuned died away and another stood in, the
+  reading carried the model's error at that partial — 8 c on F3-C-s1 through
+  the probe as partial 1 stood in for partial 4. The readings now follow the
+  series without the readers restarting: a target that moves within the band is
+  a change of reference, and what was read is said against the new one.
 - **A partial decaying onto the room's floor is no longer called false.** The
   false-beat verdict is the spread of a partial's readings over two seconds;
   as a partial fades to within 15 dB of the noise beside it, the floor's phase

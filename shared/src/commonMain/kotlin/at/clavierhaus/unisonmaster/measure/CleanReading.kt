@@ -90,18 +90,36 @@ class CleanReading(
     // a partial called false stays so until its spread has fallen well under the line: no flicker at the threshold
     private val falseNow = BooleanArray(count + 1)
 
-    /** Sets the partials' targets; a partial whose target is absent (0) is not read. Readings are kept unless [reset]. */
+    /**
+     * Sets the partials' targets; a partial whose target is absent (0) is not read.
+     * Readings are kept unless [reset]: a target that moves within the reader's band —
+     * the strike's own series replacing the model's placing, 1.5 s into the strike —
+     * leaves the reader where it is and re-expresses what it has read against the new
+     * target, which is the same measurement said against another reference, not a
+     * second measurement; only a target that leaves the band moves the reader, and
+     * with it its memory. The readings the controller sees are against the current
+     * targets whichever way.
+     */
     fun target(hz: Map<Int, Double>, reset: Boolean) {
         for (k in 1..count) {
             val t = hz[k] ?: 0.0
             if (t <= 0.0 || t > sampleRate * 0.45) { readers[k] = null; targets[k] = 0.0; filled[k] = 0; last[k] = null; falseNow[k] = false; continue }
             val r = readers[k]
             if (r == null) readers[k] = PhaseReader(sampleRate, t, memoryS = memoryS)
-            else if (abs(1200.0 * kotlin.math.ln(t / r.targetHz) / kotlin.math.ln(2.0)) > 0.01) r.retarget(t)
+            else if (abs(cents(t, r.targetHz)) > PhaseReader.DEFAULT_BAND_CENTS / 2) r.retarget(t)
+            val old = targets[k]
             targets[k] = t
             if (reset) { filled[k] = 0; last[k] = null; falseNow[k] = false }
+            else if (old > 0.0 && old != t && filled[k] > 0) {
+                // what was read against the old target, said against the new one
+                val shift = cents(old, t)
+                val w = window[k]; for (i in 0 until minOf(filled[k], WINDOW_HOPS)) w[i] += shift
+                last[k]?.let { last[k] = it.copy(cents = it.cents + shift) }
+            }
         }
     }
+
+    private fun cents(hz: Double, ref: Double): Double = 1200.0 * kotlin.math.ln(hz / ref) / kotlin.math.ln(2.0)
 
     /** A new strike: the readings start again. */
     fun strike() { filled.fill(0); last.fill(null); falseNow.fill(false); lastAt.fill(0L) }
@@ -111,7 +129,9 @@ class CleanReading(
         hops++
         for (k in 1..count) {
             val r = readers[k] ?: continue
-            val rd = r.push(chunk) ?: continue
+            val read = r.push(chunk) ?: continue
+            // the reader's cents are against its own reference; the partial's are against its target
+            val rd = if (r.targetHz == targets[k]) read else read.copy(cents = read.cents + cents(r.targetHz, targets[k]))
             last[k] = rd
             if (rd.shown) {
                 val at = filled[k] % WINDOW_HOPS

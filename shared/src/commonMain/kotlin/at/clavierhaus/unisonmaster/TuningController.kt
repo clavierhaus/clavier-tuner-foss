@@ -944,6 +944,10 @@ class TuningController(
                         val cap = highestPartial(tv.targetHz)
                         _shownPartials.value = (series.map { it.k }.filter { it <= cap } + tv.listening.k).toSet() - _hiddenPartials.value
                         wantShown()
+                        // and the clean partials are read against that series from here on, not the
+                        // model's: until 3 Oct 2026 they kept the model's placing for the whole strike,
+                        // and a partial standing in for the one being tuned carried the model's error
+                        clean.target(series.filter { it.k <= CleanReading.PARTIALS }.associate { it.k to it.hz }, reset = false)
                     }
                 }
                 // (never while sampling: the string just kept is still ringing when the screen moves on)
