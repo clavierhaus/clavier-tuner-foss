@@ -47,7 +47,8 @@ private val TAB = Color(0xFF1E1E1E)
 private val TAB_ACTIVE = Color(0xFF333333)
 private val CONTROL = Color(0xFF2A2A2A)
 
-class SettingsTab(val title: String, val accent: Boolean = false, val content: @Composable ColumnScope.() -> Unit)
+/** One tab of the settings screen: its title and its page. The active tab is the orange one — there is no other mark. */
+class SettingsTab(val title: String, val content: @Composable ColumnScope.() -> Unit)
 
 typealias ColumnScope = androidx.compose.foundation.layout.ColumnScope
 
@@ -92,9 +93,11 @@ fun SettingsScreen(
                         .clickable { selected = i },
                     contentAlignment = Alignment.Center,
                 ) {
+                    // orange is the active tab and nothing else: until 3 Oct 2026 the Temperament tab
+                    // carried a fixed accent and stayed orange whichever tab was open
                     Text(
                         tab.title,
-                        color = if (tab.accent) Color(Brand.ORANGE) else Color(Brand.WHITE),
+                        color = if (active) Color(Brand.ORANGE) else Color(Brand.WHITE),
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                         fontSize = 15.sp,
                     )

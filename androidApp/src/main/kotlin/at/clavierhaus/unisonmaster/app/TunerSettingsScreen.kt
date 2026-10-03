@@ -45,7 +45,7 @@ fun TunerSettingsScreen(
         subtitle = "Configuration only. Tuning stays on the main screen.",
         onBack = onBack,
         tabs = listOf(
-            SettingsTab(t(K.settings_tab_temperament), accent = true) { TemperamentTab(s, a4, controller, model) },
+            SettingsTab(t(K.settings_tab_temperament)) { TemperamentTab(s, a4, controller, model) },
             SettingsTab(t(K.settings_tab_about)) {
                 SettingsSection(t(K.settings_language))
                 val langs = listOf("") + Strings.languages

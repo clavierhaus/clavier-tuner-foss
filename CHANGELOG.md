@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **The orange settings tab is the open one.** The Temperament tab carried a
+  fixed accent and stayed orange whichever tab was open; now orange marks the
+  active tab and nothing else.
 - **The note name is the picture's one control; the arrows are gone.** The
   screen follows the key struck by default. A tap on the note name opens the
   compass as a keyboard — one row per octave, bass at the bottom, nothing
