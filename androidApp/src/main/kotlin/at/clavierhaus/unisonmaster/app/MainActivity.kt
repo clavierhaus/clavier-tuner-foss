@@ -173,6 +173,7 @@ class MainActivity : ComponentActivity() {
                                 feeding = audioSource.feeding.collectAsState().value,
                                 onPickRecording = if (settings.probe) ({ pickRecording() }) else null,
                                 onUseMicrophone = { useMicrophone() },
+                                onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                             )
                         }
                         else -> {

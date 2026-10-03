@@ -1,9 +1,12 @@
 package at.clavierhaus.unisonmaster.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -30,14 +33,35 @@ const val SCALE_SPAN_C = 30.0
  * nothing but the bells on their centre line, the partial numbers in one row
  * above them. Every position is a fraction of the pane. The picture decides
  * what is shown; this decides only how.
+ *
+ * The note name is the one control on the picture: the screen follows the key
+ * struck by default, and a tap on the name ([onNoteTap]) lets the tuner name
+ * a key by hand — the picker — after which the screen stays on it; a tap on
+ * the name then hands the choice back to the strike. While the key is set by
+ * hand ([follows] false) a thin line under the name says so.
  */
 @Composable
-fun TuningPictureView(p: TuningPicture, matchCents: Double, modifier: Modifier = Modifier) {
+fun TuningPictureView(
+    p: TuningPicture,
+    matchCents: Double,
+    modifier: Modifier = Modifier,
+    follows: Boolean = true,
+    onNoteTap: (() -> Unit)? = null,
+) {
     val on = p.state == State.ON
     Pane(modifier) {
         // left: the tuning
         Place(0.00f, 0.00f, 0.16f, 0.22f) {
-            FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(if (on) Brand.GO_GREEN else Brand.WHITE), fontWeight = FontWeight.Bold)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .then(if (onNoteTap != null) Modifier.clickable(onClick = onNoteTap) else Modifier)
+                    .drawBehind {
+                        if (!follows) drawLine(Color(Brand.WHITE_MUTED), Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 3f)
+                    },
+            ) {
+                FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(if (on) Brand.GO_GREEN else Brand.WHITE), fontWeight = FontWeight.Bold)
+            }
         }
         Place(0.17f, 0.08f, 0.30f, 0.10f) {
             val anchorNote = if (p.anchor != p.listened) " · bells on ${p.anchor}" else ""

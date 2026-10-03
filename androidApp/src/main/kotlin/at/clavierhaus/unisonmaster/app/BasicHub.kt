@@ -37,7 +37,7 @@ import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
-import at.clavierhaus.unisonmaster.ui.NoteStepper
+import at.clavierhaus.unisonmaster.ui.NotePicker
 import at.clavierhaus.unisonmaster.ui.PartialChips
 import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.ProgressButton
@@ -73,6 +73,8 @@ fun BasicHub(
     feeding: String? = null,
     onPickRecording: (() -> Unit)? = null,
     onUseMicrophone: () -> Unit = {},
+    /** Switches TunerSettings.autoNote: off when the tuner names a key by hand, on when he taps the name again. */
+    onAutoNote: ((Boolean) -> Unit)? = null,
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -241,12 +243,24 @@ fun BasicHub(
             }
         }
 
+        // the note name is the picture's one control: following the key struck is the default; a tap
+        // opens the picker and the key chosen there holds until the name is tapped again
+        var pickingNote by remember { mutableStateOf(false) }
         when {
             !showProgress && !t.sampling -> {
                 TuningPictureView(
                     picture,
                     matchCents = cfg.matchCents,
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
+                    follows = follows,
+                    onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
+                )
+                if (pickingNote) NotePicker(
+                    lowMidi = t.stepLowMidi,
+                    highMidi = t.stepHighMidi,
+                    current = t.midi,
+                    onPick = { midi -> controller.selectNote(midi); onAutoNote?.invoke(false); pickingNote = false },
+                    onDismiss = { pickingNote = false },
                 )
             }
             showProgress -> {
@@ -265,7 +279,7 @@ fun BasicHub(
             }
         }
 
-        // the bottom row: Progress · arrows · the partials · Done
+        // the bottom row: Progress · the partials · Done
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -282,14 +296,6 @@ fun BasicHub(
                 DoneButton(onClick = { controller.finishSampling() }, enabled = t.samplingReady)
                 return@Row
             }
-            NoteStepper(
-                name = name,
-                canDown = t.midi > t.stepLowMidi,
-                canUp = t.midi < t.stepHighMidi,
-                onDown = { controller.stepNote(-1) },
-                onUp = { controller.stepNote(+1) },
-            )
-            Spacer(Modifier.width(10.dp))
             if (!showProgress) {
                 // the partials to tap: one row that always fits; a false one is violet, and a
                 // tap on it takes it out of the bells

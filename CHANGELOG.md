@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-03
+- **The note name is the picture's one control; the arrows are gone.** The
+  screen follows the key struck by default. A tap on the note name opens the
+  compass as a keyboard — one row per octave, bass at the bottom, nothing
+  scrolls — and the key chosen there holds, with a thin line under the name
+  saying so; a tap on the name then hands the choice back to the strike. The
+  ◀ F3 ▶ stepper in the bottom row is removed.
 - **The clean partials are read against the strike's own series.** Once the
   strike has spoken (1.5 s in) every partial's target comes from the string now
   sounding; the clean-partials reading kept the model's placing for the whole

@@ -7,11 +7,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -248,49 +246,5 @@ fun ReadoutColumn(
                 )
             }
         }
-    }
-}
-
-/** ◀ note ▶ — one semitone down or up. */
-@Composable
-fun NoteStepper(
-    name: String,
-    canDown: Boolean,
-    canUp: Boolean,
-    onDown: () -> Unit,
-    onUp: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
-        StepArrow("◀", canDown, onDown)
-        Text(
-            name,
-            color = Color(Brand.WHITE),
-            fontFamily = DejaVuSerif,
-            fontSize = 22.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(64.dp),
-        )
-        StepArrow("▶", canUp, onUp)
-    }
-}
-
-@Composable
-private fun StepArrow(label: String, enabled: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(40.dp)
-            .background(
-                color = if (enabled) Color(0xFF3A3A3A) else Color(0xFF1C1C1C),
-                shape = RoundedCornerShape(6.dp),
-            )
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            color = if (enabled) Color(Brand.WHITE) else Color(Brand.WHITE_MUTED),
-            fontSize = 18.sp,
-        )
     }
 }

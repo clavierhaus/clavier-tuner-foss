@@ -52,7 +52,7 @@ pane and draws; it never reads the controller directly. The screen in
 The reason is the law above: if two places can put a number on the screen,
 one of them is wrong. A picture is the one place.
 
-### `TuningPicture` (`shared/.../picture/`, the first picture; built, tested, not yet drawn)
+### `TuningPicture` (`shared/.../picture/`, the first picture; drawn by `TuningPictureView` since 3 Oct)
 
 ```kotlin
 class TuningPicture(
@@ -86,6 +86,15 @@ rule is taken out:
   `HOLD_S` (0.5 s) by every counted bell; a dropped partial cannot veto `ON`;
 - the picture dies with its sound: when the engine's reading expires, the
   picture is `SILENT` and the bells are gone. Nothing is held.
+
+**The one control on the picture** is the note name (3 Oct 2026). The screen
+follows the key struck by default (`TunerSettings.autoNote`). A tap on the
+name opens `NotePicker` — the session's compass as a keyboard, one row per
+octave, nothing scrolls — and the key chosen there holds: the setting goes
+off and a thin line under the name says the key is the tuner's. A tap on the
+name then gives the choice back to the strike. The arrows that stepped the
+note a semitone at a time are gone with the stepper: they were clutter beside
+a screen that already knows which key was struck.
 
 Later pictures follow the same shape: `ProgressPicture`, `UnisonPicture`,
 `SettingsPage`.
