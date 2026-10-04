@@ -3,6 +3,7 @@ package at.clavierhaus.unisonmaster.measure
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
+import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.Notes
@@ -50,7 +51,9 @@ class EngineRecordingsTest {
         return base?.let { File(it, "2026-09-22") }?.takeIf { File(it, "Boesendorfer_manifest.csv").isFile }
     }
 
-    private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = false)
+    // the 225 as its tuner tuned it in June: the treble by double octaves (4:1) — said here, since the
+    // default became 4:2 on 4 Oct 2026 and the corpus is the piano as it was tuned, not as the default would
+    private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = false, octaveTreble = OctaveType.O4_1)
 
     /** Part A: one string per key; where a key was taken again, the last take. */
     private fun partA(dir: File): Map<Int, File> {
