@@ -67,7 +67,6 @@ fun TunerSettingsScreen(
     Strings.language.collectAsState().value                    // recompose on a language change
 
     SettingsScreen(
-        subtitle = "What is set and left. Tuning stays on the main screen.",
         onClose = onBack,
         onHome = onHome,
         open = open,

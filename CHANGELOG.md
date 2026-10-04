@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **The settings' tabs are words.** The tabs stand as a line of serif words,
+  the open one orange, as the hub writes its doors; under a tab with more
+  than one page its pages as a line of small words, the open one underlined.
+  The grey strips and the ◀ ▶ are gone; a tap or a swipe turns the page.
 - **The corners.** Every screen has the same two: top left the settings
   gear, alone — orange on the settings screen, where it closes them again;
   top right the name, *clavier tuner*, and a home button that leads to the

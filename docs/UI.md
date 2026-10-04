@@ -184,17 +184,20 @@ construction rather than by review.
   layout feature.
 - **`Page`** — a settings page with a row budget: it takes at most the rows
   that fit the smallest pane at minimum size, and a tab with more rows is a
-  tab with more pages, each with a label. The sub-tab row appears only where a
-  tab has more than one page; left/right and swipe step through them.
+  tab with more pages, each with a label. The page row appears only where a
+  tab has more than one page; a tap or a swipe turns the page.
 
 `OnePicture` (the scale-down of a reference design) is retired with these;
 `Pane` replaces it.
 
 ## Settings: tabs, pages, two columns (4 Oct 2026)
 
-`SettingsScreen` (`ui/SettingsParts.kt`) draws a strip of tabs and, under a
-tab with more than one page, a strip of sub-tabs with ◀ ▶ at its ends; a
-swipe turns the page. A `SettingsPage` is two columns of rows and one line
+`SettingsScreen` (`ui/SettingsParts.kt`) writes the tabs as a line of serif
+words, the open one orange, as the hub writes its doors — no pills; a
+hairline; under a tab with more than one page, its pages as a line of small
+words, the open one orange and underlined (Peter's choice of 4 Oct, option A
+of Pro's `wireframes/2026-10-04`; the pill strips and their ◀ ▶ went with
+it). A tap or a swipe turns the page. A `SettingsPage` is two columns of rows and one line
 at the foot; a row (`StepperRow`, `ChoiceRow`, `SwitchRow`, `ReadOnlyRow`,
 `ActionRow`) is a name and a control, 40 dp, nothing under the name — the
 page's note says the rest, as on the camera's LCD. Nothing scrolls: the

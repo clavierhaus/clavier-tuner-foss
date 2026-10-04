@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,19 +45,22 @@ import kotlin.math.abs
 
 /*
  * The settings screen in the clavierhaus convention, drawn to the laws of
- * the screen (docs/UI.md, 4 Oct 2026): a header with back arrow, title and
- * subtitle; a strip of tabs; under a tab with more than one page a strip of
- * sub-tabs with ◀ ▶ at its ends, a swipe stepping through them; the page as
- * two columns of rows — a row is a name and a control, nothing under the
- * name — with one line at the foot saying what the page means. Nothing
- * scrolls: a page holds five rows and a header per column on the reference
- * pane, and a context that needs more is two pages, named. Black, orange
- * for what is open. Each app assembles its own tabs from these parts.
+ * the screen (docs/UI.md, 4 Oct 2026): the corners every screen has; the
+ * tabs as a line of serif words, the open one orange, as the hub writes its
+ * doors — no pills, which the hub never had; a hairline; under a tab with
+ * more than one page its pages as a line of small words, the open one
+ * orange and underlined, a swipe or a tap turning the page (Peter's choice
+ * of 4 Oct 14:42, option A of wireframes/2026-10-04); the page as two
+ * columns of rows — a row is a name and a control, nothing under the name —
+ * with one line at the foot saying what the page means. Nothing scrolls: a
+ * page holds five rows and a header per column on the reference pane, and a
+ * context that needs more is two pages, named. Black, orange for what is
+ * open. Each app assembles its own tabs from these parts.
  */
 
-private val TAB = Color(0xFF1E1E1E)
-private val TAB_ACTIVE = Color(0xFF333333)
 private val CONTROL = Color(0xFF2A2A2A)
+/** The hairline between the tabs and their pages. */
+private val RULE = Color(0xFF3A3A3A)
 
 /**
  * One page of a tab: its name on the sub-tab strip, a [note] of one line at
@@ -80,7 +84,6 @@ class SettingsTab(val title: String, val pages: List<SettingsPage>) {
  */
 @Composable
 fun SettingsScreen(
-    subtitle: String,
     tabs: List<SettingsTab>,
     /** The gear, orange here, closes the settings: back to the screen they were opened from. */
     onClose: () -> Unit,
@@ -100,26 +103,17 @@ fun SettingsScreen(
     // the corners every screen has; the gear stands orange here and closes the settings
     Corners(onSettings = onClose, onHome = onHome, settingsOpen = true)
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 10.dp)) {
-        Column(Modifier.height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH - 20.dp)) {
-            Text("Settings", color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp)
-            Text(subtitle, color = Color(Brand.WHITE_MUTED), fontSize = 13.sp)
+        CornerBand()
+        // the tabs: a line of words, the open one orange, as the hub writes its doors
+        Row(horizontalArrangement = Arrangement.spacedBy(34.dp), verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+            tabs.forEachIndexed { i, t -> TabWord(t.title, open = i == selected) { selected = i } }
         }
-        Spacer(Modifier.height(10.dp))
-        // the tabs
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            tabs.forEachIndexed { i, t ->
-                Strip(t.title, active = i == selected, big = true, modifier = Modifier.weight(1f)) { selected = i }
-            }
-        }
-        // the sub-tabs: only where a tab has more than one page; ◀ ▶ step through them
+        Spacer(Modifier.height(4.dp))
+        HorizontalDivider(color = RULE)
+        // the pages of the open tab: only where there is more than one; small words, the open one underlined
         if (tab.pages.size > 1) {
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Arrow("◀", page > 0) { turnTo(page - 1) }
-                tab.pages.forEachIndexed { i, p ->
-                    Strip(p.title, active = i == page, big = false, modifier = Modifier.weight(1f)) { turnTo(i) }
-                }
-                Arrow("▶", page < tab.pages.size - 1) { turnTo(page + 1) }
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+                tab.pages.forEachIndexed { i, p -> PageWord(p.title, open = i == page) { turnTo(i) } }
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -157,35 +151,30 @@ fun SettingsScreen(
 /** A drag this long, in pixels, turns the page. */
 private const val SWIPE_PX = 120f
 
+/** A tab's name: a serif word, orange and bold when it is the open one, white otherwise; the touch target taller than the word. */
 @Composable
-private fun Strip(title: String, active: Boolean, big: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Box(
-        modifier
-            .height(if (big) 38.dp else 30.dp)
-            .background(if (active) TAB_ACTIVE else TAB, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        // orange is the open one and nothing else
-        FitText(
-            title, if (big) 15.sp else 13.sp,
-            color = if (active) Color(Brand.ORANGE) else Color(Brand.WHITE),
-            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-            align = TextAlign.Center,
-        )
-    }
+private fun TabWord(title: String, open: Boolean, onClick: () -> Unit) {
+    Text(
+        title,
+        color = if (open) Color(Brand.ORANGE) else Color(Brand.WHITE),
+        fontFamily = DejaVuSerif, fontSize = 22.sp,
+        fontWeight = if (open) FontWeight.Bold else FontWeight.Normal,
+        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 4.dp),
+    )
 }
 
+/** A page's name under its tab: a small serif word, muted; the open one orange with a bar beneath it as wide as the word. */
 @Composable
-private fun Arrow(label: String, enabled: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(width = 36.dp, height = 30.dp)
-            .background(if (enabled) TAB else Color(0xFF141414), RoundedCornerShape(8.dp))
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, color = if (enabled) Color(Brand.WHITE) else Color(0xFF444444), fontSize = 14.sp)
+private fun PageWord(title: String, open: Boolean, onClick: () -> Unit) {
+    Column(Modifier.width(IntrinsicSize.Min).clickable(onClick = onClick).padding(top = 8.dp, bottom = 2.dp)) {
+        Text(
+            title,
+            color = if (open) Color(Brand.ORANGE) else Color(Brand.WHITE_MUTED),
+            fontFamily = DejaVuSerif, fontSize = 15.sp,
+            fontWeight = if (open) FontWeight.Bold else FontWeight.Normal,
+        )
+        Spacer(Modifier.height(3.dp))
+        Box(Modifier.fillMaxWidth().height(2.dp).background(if (open) Color(Brand.ORANGE) else Color.Transparent))
     }
 }
 
