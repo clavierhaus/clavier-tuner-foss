@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **A partial's number stands over its own bell.** The numbers used to sit in
+  an evenly spaced row across the panel, so that none could overprint — and
+  that row said the partials stood at five different places while all five
+  were stacked on the anchor. Each number now stands over its bell, moved
+  sideways only as far as it must be to clear its neighbour, with a hairline
+  down to the bell it belongs to.
 - **Accept and Done are on the screen.** The sampling page's column grew
   past the pane and put the caught key with its Accept, and the count with
   its Done, below the screen's edge — they could not be tapped at all. The

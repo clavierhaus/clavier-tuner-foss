@@ -95,14 +95,26 @@ private fun Bells(p: TuningPicture) {
         drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
         drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
         val paint = android.graphics.Paint().apply { color = white; textSize = h * 0.07f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER }
-        // the partial numbers in one row above the bells, evenly spaced: a label never sits on
-        // its bell, so labels cannot overprint however close the bells stand
-        val shown = p.bells.filter { it.k !in p.dropped }
-        val n = shown.size
+        // Each partial's number stands over its own bell. It used to stand in a row of evenly spaced
+        // numbers across the panel, so that two labels could never overprint — and that row said five
+        // partials stood at five places when all five were stacked on the anchor (Peter's screen
+        // recording of 4 Oct 2026, 17:02: "the bells speak a totally different language"). A label is
+        // moved sideways only as far as it must be to clear the one before it, and a hairline runs from
+        // it down to the bell it belongs to, so the eye is never told a position the string does not hold.
+        val shown = p.bells.filter { it.k !in p.dropped }.sortedBy { it.offsetCents }
+        val gap = h * 0.075f
+        val lx = FloatArray(shown.size) { xOf(shown[it].offsetCents) }
+        for (i in 1 until lx.size) if (lx[i] - lx[i - 1] < gap) lx[i] = lx[i - 1] + gap
+        for (i in lx.indices.reversed()) {
+            if (lx[i] > w - gap / 2) lx[i] = w - gap / 2
+            if (i > 0 && lx[i] - lx[i - 1] < gap) lx[i - 1] = lx[i] - gap
+        }
         shown.forEachIndexed { i, b ->
-            val lx = w * (0.5f + i) / n.coerceAtLeast(1)
-            paint.color = colourOf(b, p).toArgb()
-            drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx, h * 0.10f, paint)
+            val c = colourOf(b, p)
+            paint.color = c.toArgb()
+            drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx[i].coerceIn(gap / 2, w - gap / 2), h * 0.10f, paint)
+            val bx = xOf(b.offsetCents)
+            if (abs(lx[i] - bx) > 1f) drawLine(c.copy(alpha = 0.5f), Offset(lx[i], h * 0.12f), Offset(bx, h * 0.17f), 1f)
         }
         // the bells: height says level, place says distance from the anchor, width says how well
         // the partial is read — its own measured spread (a loud partial a needle, one at the room's
