@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **One hub.** The hub is the library's too (`TunerHub`): Continue Tuning
+  while one is saved, New Tuning, Unisons, Recordings — the same words in both
+  editions; Pro adds its door, *Pianos*, after New Tuning.
 - **The screens are a library.** The tuning screens moved from the app into
   the `ui` module, so that the free app and Pro mount the same screens
   instead of carrying copies; the app is a shell around them.

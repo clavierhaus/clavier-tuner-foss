@@ -32,13 +32,16 @@ be both orientations.
 
 ## Where the screens live (4 Oct 2026)
 
-One tuner, two editions: the screens — `BasicHub`, `TunerSettingsScreen`,
-`CongruenceScreen`, `RecordStrikesScreen`, `SessionRecorder`, `PrefsStore` —
-live in the `ui` library (package `at.clavierhaus.unisonmaster.app`), and
-both apps' `MainActivity` mount them. Nothing is copied by hand any more.
-Pro adds the book beside them: its own tabs and pages go into the settings
-screen through `extraPianoPages` and `extraTabs`, its own screens hang off
-its own hub entries. A tuning feature is built here, once.
+One tuner, two editions: the screens — `TunerHub`, `BasicHub`,
+`TunerSettingsScreen`, `CongruenceScreen`, `RecordStrikesScreen`,
+`SessionRecorder`, `PrefsStore` — live in the `ui` library (package
+`at.clavierhaus.unisonmaster.app`), and both apps' `MainActivity` mount them.
+Nothing is copied by hand any more. Pro adds the book beside them: its own
+tabs and pages go into the settings screen through `extraPianoPages` and
+`extraTabs`, its own door — *Pianos* — into the hub through `TunerHub(extra)`,
+after *New Tuning*; its own screens hang off that door. The hub's words are
+written once, in `TunerHub`; an app only says what happens behind each door.
+A tuning feature is built here, once.
 
 ## Four layers, one direction
 

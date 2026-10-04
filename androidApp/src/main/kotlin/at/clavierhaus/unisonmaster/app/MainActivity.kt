@@ -6,8 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import at.clavierhaus.unisonmaster.ui.OnePicture
-import at.clavierhaus.unisonmaster.ui.HomeHubItem
-import at.clavierhaus.unisonmaster.ui.HomeHub
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
@@ -212,33 +210,20 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         else -> {
-                            val last by lastTuning
-                            val entries = buildList {
-                                (last as? SessionStore.Load.Ok)?.snapshot?.let { snap ->
-                                    add(
-                                        HomeHubItem("Continue", " Tuning", "from ${lastUsed(snap.savedAtMs)}, A4 ${at.clavierhaus.unisonmaster.ui.formatHz(snap.a4Hz)}") {
-                                            controller.restore(snap)
-                                            screen = "tune"
-                                        },
-                                    )
-                                }
-                                add(
-                                    HomeHubItem(
-                                        "New", " Tuning",
-                                        if (last is SessionStore.Load.Rejected) "the saved tuning could not be verified" else "starting from A4",
-                                    ) {
-                                        sessionStore.clear()
-                                        lastTuning.value = SessionStore.Load.None
-                                        controller.resetSession()
-                                        screen = "tune"
-                                    },
-                                )
-                            }
-                            // one tuner, two editions (4 Oct 2026): the unisons and the recorder are here as in Pro
-                            val all = entries +
-                                HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial") { screen = "congruence" } +
-                                HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies") { screen = "record" }
-                            HomeHub(entries = all, onSettings = { openSettings() })
+                            // the hub is the library's (TunerHub); this app only says what is behind each door
+                            TunerHub(
+                                last = lastTuning.value,
+                                onContinue = { snap -> controller.restore(snap); screen = "tune" },
+                                onNew = {
+                                    sessionStore.clear()
+                                    lastTuning.value = SessionStore.Load.None
+                                    controller.resetSession()
+                                    screen = "tune"
+                                },
+                                onUnisons = { screen = "congruence" },
+                                onRecordings = { screen = "record" },
+                                onSettings = { openSettings() },
+                            )
                         }
                     }
                 }
@@ -276,7 +261,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-/** "15 Sep" — the day the saved tuning was last used. */
-private fun lastUsed(ms: Long): String =
-    java.text.SimpleDateFormat("d MMM", java.util.Locale.ENGLISH).format(java.util.Date(ms))
