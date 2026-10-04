@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -272,12 +273,14 @@ fun ChoiceRow(name: String, options: List<String>, selected: Int, onSelect: (Int
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             options.forEachIndexed { i, label ->
                 val on = i == selected
+                // a chip is as wide as its word: nothing is cut to a fixed width
                 Box(
                     Modifier
                         .height(32.dp)
-                        .width(if (options.size > 4) 44.dp else 56.dp)
+                        .defaultMinSize(minWidth = 44.dp)
                         .background(if (on) Color(Brand.ORANGE) else CONTROL, RoundedCornerShape(6.dp))
-                        .clickable { onSelect(i) },
+                        .clickable { onSelect(i) }
+                        .padding(horizontal = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     FitText(label, 13.sp, color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE), align = TextAlign.Center)
