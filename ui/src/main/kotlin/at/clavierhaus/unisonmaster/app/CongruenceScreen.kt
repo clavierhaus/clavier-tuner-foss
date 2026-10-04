@@ -41,13 +41,13 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.audio.AudioTap
 import at.clavierhaus.unisonmaster.unison.CongruenceScope
 import at.clavierhaus.unisonmaster.tuning.Notes
-import at.clavierhaus.unisonmaster.ui.BackArrow
-import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
+import at.clavierhaus.unisonmaster.ui.CORNER_LEFT_WIDTH
+import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
+import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.unison.UnisonSync
-import at.clavierhaus.unisonmaster.ui.SettingsGear
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -81,7 +81,8 @@ fun CongruenceScreen(
     /** How many partials are in sync, strike by strike; the single-string check. */
     sync: UnisonSync,
     onSettings: () -> Unit,
-    onBack: () -> Unit,
+    /** Home: the hub, from the corner every screen shares. */
+    onHome: () -> Unit,
 ) {
     val listening by pump.listening.collectAsState()
     val syncState by sync.state.collectAsState()
@@ -121,13 +122,10 @@ fun CongruenceScreen(
     DisposableEffect(Unit) { onDispose { recorder?.stop(); pump.stop() } }
 
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK))) {
+        // the corners every screen has; the header row keeps to the band between them
+        Corners(onSettings = onSettings, onHome = onHome)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BackArrow(onClick = onBack)
-                SettingsGear(onClick = onSettings)
-                Spacer(Modifier.width(10.dp))
-                ClavierhausTitle(fontSize = 22.sp)
-                Spacer(Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = CORNER_LEFT_WIDTH - 12.dp, end = CORNER_RIGHT_WIDTH - 12.dp)) {
                 Text(
                     (if (heldHz > 0.0) heldHz else detected)?.let {
                         "${Notes.name(Notes.nearestMidi(it, refA4))}  ·  %.1f Hz".format(it)

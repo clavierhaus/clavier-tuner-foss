@@ -27,7 +27,6 @@ fun TunerHub(
     onRecordings: (() -> Unit)? = null,
     onSettings: () -> Unit,
     extra: List<HomeHubItem> = emptyList(),
-    edition: String? = null,
 ) {
     val entries = buildList {
         (last as? SessionStore.Load.Ok)?.snapshot?.let { snap ->
@@ -44,7 +43,7 @@ fun TunerHub(
         add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", onUnisons))
         if (onRecordings != null) add(HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies", onRecordings))
     }
-    HomeHub(entries = entries, onSettings = onSettings, edition = edition)
+    HomeHub(entries = entries, onSettings = onSettings)
 }
 
 /** "15 Sep" — the day the saved tuning was last used. */

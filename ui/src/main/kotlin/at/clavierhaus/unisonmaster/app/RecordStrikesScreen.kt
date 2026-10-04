@@ -48,7 +48,8 @@ import at.clavierhaus.unisonmaster.research.Study
 import at.clavierhaus.unisonmaster.research.Take
 import at.clavierhaus.unisonmaster.research.Wav
 import at.clavierhaus.unisonmaster.tuning.Notes
-import at.clavierhaus.unisonmaster.ui.BackArrow
+import at.clavierhaus.unisonmaster.ui.CORNER_LEFT_WIDTH
+import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.DejaVuSerifFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -84,7 +85,9 @@ private val Panel = Color(0xFF1A1A1A)
 fun RecordStrikesScreen(
     firstPlainMidi: Int,
     micGranted: Boolean,
-    onBack: () -> Unit,
+    /** The corners every screen has: the gear, and home — the hub; neither while a take is being written. */
+    onSettings: () -> Unit,
+    onHome: () -> Unit,
     /** Where the strings change on this piano (Pianos, or Settings → Piano): Every string records only the strings a key has. */
     firstBichordMidi: Int = StrikeProtocol.BICHORD_FROM,
     firstTrichordMidi: Int = 40,
@@ -162,19 +165,12 @@ fun RecordStrikesScreen(
         }
     }
 
-    Row(
-        Modifier
-            .fillMaxSize()
-            .background(Color(Brand.BLACK))
-            .safeDrawingPadding()
-            .padding(horizontal = 24.dp, vertical = 14.dp),
-    ) {
+    Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
+    Corners(onSettings = { if (!busy) onSettings() }, onHome = { if (!busy) onHome() })
+    Row(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 14.dp)) {
         // ---- left: what to do ----
         Column(Modifier.weight(1f).fillMaxHeight()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BackArrow(onClick = { if (!busy) onBack() })
-                Text("Record Strikes", color = White, fontFamily = DejaVuSerifFamily, fontSize = 26.sp)
-            }
+            Text("Record Strikes", color = White, fontFamily = DejaVuSerifFamily, fontSize = 26.sp, modifier = Modifier.padding(start = CORNER_LEFT_WIDTH - 24.dp))
             Text(
                 when (study) {
                     Study.COMPASS -> "Compass: every key of the instrument, unmuted, once — ${takes.size} recordings."
@@ -361,6 +357,7 @@ fun RecordStrikesScreen(
                 Text("Last file: $lastName", color = Muted, fontSize = 12.sp)
             }
         }
+    }
     }
 }
 

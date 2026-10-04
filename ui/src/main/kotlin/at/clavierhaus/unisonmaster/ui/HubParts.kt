@@ -17,13 +17,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,14 +36,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
@@ -65,34 +58,6 @@ val DejaVuSerif = FontFamily(Font(R.font.dejavu_serif))
 
 private val GREY_ON = Color(0xFF3A3A3A)
 private val GREY_OFF = Color(0xFF1C1C1C)
-
-/** "clavierhaustuner", white, with the "vie" in CI orange. */
-@Composable
-fun ClavierhausTitle(modifier: Modifier = Modifier, fontSize: TextUnit = 28.sp) {
-    Text(
-        buildAnnotatedString {
-            withStyle(SpanStyle(color = Color(Brand.WHITE))) { append("cla") }
-            withStyle(SpanStyle(color = Color(Brand.ORANGE))) { append("vie") }
-            withStyle(SpanStyle(color = Color(Brand.WHITE))) { append("rhaustuner") }
-        },
-        fontFamily = DejaVuSerif,
-        fontSize = fontSize,
-        modifier = modifier,
-    )
-}
-
-/** The settings gear, top left on every main screen (clavierhaus convention). */
-@Composable
-fun SettingsGear(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Icon(
-        painter = painterResource(R.drawable.ui_settings_gear),
-        contentDescription = "Settings",
-        tint = Color(Brand.WHITE_MUTED),
-        modifier = modifier
-            .size(30.dp)
-            .clickable(onClick = onClick),
-    )
-}
 
 /** A line of guidance under the title. */
 @Composable

@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **The corners.** Every screen has the same two: top left the settings
+  gear, alone — orange on the settings screen, where it closes them again;
+  top right the name, *clavier tuner*, and a home button that leads to the
+  hub from everywhere. The back arrows are gone. The hub's type steps down
+  one size when it carries five doors.
 - **No recorder in the free edition.** The red button, the play button and
   the Recordings door are Pro's: a reference recording belongs to the
   piano's record, which only Pro keeps. The probe under App · Probe stays —

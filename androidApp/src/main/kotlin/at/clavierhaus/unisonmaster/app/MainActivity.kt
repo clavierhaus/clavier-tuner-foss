@@ -160,6 +160,7 @@ class MainActivity : ComponentActivity() {
                                 onUseMicrophone = { useMicrophone() },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
+                                onHome = { screen = "hub" },
                                 open = settingsOpen,
                             )
                         }
@@ -172,7 +173,7 @@ class MainActivity : ComponentActivity() {
                                 recorder = null,                 // the recording is the piano's record, Pro's (blueprint §18.5)
                                 sync = unisonSync,
                                 onSettings = { openSettings() },
-                                onBack = { screen = "hub" },
+                                onHome = { screen = "hub" },
                             )
                         }
                         "tune" -> {
@@ -184,7 +185,7 @@ class MainActivity : ComponentActivity() {
                                 // stays — App · Probe feeds the engine a recording where the microphone's buffers arrive
                                 recorder = null,
                                 onSettings = { openSettings() },
-                                onBack = { backToHub() },
+                                onHome = { backToHub() },
                                 feeding = audioSource.feeding.collectAsState().value,
                                 onPickRecording = null,
                                 onUseMicrophone = { useMicrophone() },

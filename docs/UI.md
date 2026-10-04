@@ -52,6 +52,29 @@ in this library (built once) and the free app does not mount them:
 (App · Probe) is not playback: it feeds the engine a recording where the
 microphone's buffers arrive (`PROBE.md`) and stays in both editions.
 
+## The corners of every screen (4 Oct 2026)
+
+Blueprint §18–§19, Peter's word. `ui/Corners.kt` draws them, every screen
+the same, at the same inset from the pane's edge, in the screen's root box
+before any padding of its own:
+
+- **Top left: the gear, alone.** It opens the settings from anywhere. On
+  the settings screen it stands orange and a tap on it closes them again,
+  back to the screen they were opened from — the gear is the second hub.
+- **Top right: the name and the home button.** *clavier tuner*, lower-case,
+  the *vie* in orange, the edition's mark in script after it where there is
+  one (`Edition.mark`, set once by the app); then a house, drawn in strokes,
+  which leads to the hub from everywhere. On the hub it stands dim.
+- **No back arrow anywhere.** The Android back gesture still returns to
+  where a screen was opened from; it is not an arrow on the screen.
+
+A screen's own header keeps to the band between the corners
+(`CORNER_LEFT_WIDTH` … `CORNER_RIGHT_WIDTH`, `CORNER_BAND` high): the tuning
+screen's state word and Pro's two buttons, the unison screen's note and
+Listen, the record screen's title, the settings' title. The hub's name and
+gear of before, `ClavierhausTitle`, `SettingsGear` and `BackArrow`, are
+gone with the arrows.
+
 ## Four layers, one direction
 
 ```

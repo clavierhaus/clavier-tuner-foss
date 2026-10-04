@@ -53,7 +53,10 @@ fun TunerSettingsScreen(
     feedNote: String? = null,
     onPickRecording: () -> Unit = {},
     onUseMicrophone: () -> Unit = {},
+    /** The gear closes the settings: back to the screen they were opened from. */
     onBack: () -> Unit,
+    /** Home: the hub, from the corner every screen shares. */
+    onHome: () -> Unit,
     open: Pair<Int, Int>? = null,
     /** Pages an edition adds to the Piano tab after Compass (Pro: the unison floors and the regimen a new piano starts from). */
     extraPianoPages: List<SettingsPage> = emptyList(),
@@ -65,7 +68,8 @@ fun TunerSettingsScreen(
 
     SettingsScreen(
         subtitle = "What is set and left. Tuning stays on the main screen.",
-        onBack = onBack,
+        onClose = onBack,
+        onHome = onHome,
         open = open,
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),

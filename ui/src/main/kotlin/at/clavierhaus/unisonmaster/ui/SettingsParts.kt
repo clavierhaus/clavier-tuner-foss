@@ -82,7 +82,10 @@ class SettingsTab(val title: String, val pages: List<SettingsPage>) {
 fun SettingsScreen(
     subtitle: String,
     tabs: List<SettingsTab>,
-    onBack: () -> Unit,
+    /** The gear, orange here, closes the settings: back to the screen they were opened from. */
+    onClose: () -> Unit,
+    /** Home: the hub, from the corner every screen shares. */
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     open: Pair<Int, Int>? = null,
 ) {
@@ -93,26 +96,13 @@ fun SettingsScreen(
     val page = pages.getOrElse(selected) { 0 }.coerceIn(tab.pages.indices)
     fun turnTo(p: Int) { pages = pages.copyOf().also { it[selected] = p.coerceIn(tab.pages.indices) } }
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .background(Color(Brand.BLACK))
-            .safeDrawingPadding()
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "<-",
-                color = Color(Brand.WHITE),
-                fontSize = 22.sp,
-                modifier = Modifier
-                    .clickable(onClick = onBack)
-                    .padding(end = 20.dp, top = 6.dp, bottom = 6.dp),
-            )
-            Column {
-                Text("Settings", color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp)
-                Text(subtitle, color = Color(Brand.WHITE_MUTED), fontSize = 13.sp)
-            }
+    Box(modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
+    // the corners every screen has; the gear stands orange here and closes the settings
+    Corners(onSettings = onClose, onHome = onHome, settingsOpen = true)
+    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Column(Modifier.height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH - 20.dp)) {
+            Text("Settings", color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 24.sp)
+            Text(subtitle, color = Color(Brand.WHITE_MUTED), fontSize = 13.sp)
         }
         Spacer(Modifier.height(10.dp))
         // the tabs
@@ -160,6 +150,7 @@ fun SettingsScreen(
                 }
             }
         }
+    }
     }
 }
 

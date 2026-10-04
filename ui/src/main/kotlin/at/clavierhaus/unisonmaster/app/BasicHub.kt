@@ -32,8 +32,6 @@ import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.AcceptButton
-import at.clavierhaus.unisonmaster.ui.BackArrow
-import at.clavierhaus.unisonmaster.ui.ClavierhausTitle
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.HubHint
@@ -44,7 +42,9 @@ import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
 import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.RecordButton
-import at.clavierhaus.unisonmaster.ui.SettingsGear
+import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
+import at.clavierhaus.unisonmaster.ui.CornerBand
+import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
@@ -60,16 +60,19 @@ import kotlin.math.abs
  * the partial listened to and its target, where the target comes from
  * (docs/ENGINE.md), the partial as read, the beat as motion, a scale
  * magnified at the match window, one state word — and Done. "Partials" opens Full Spectrum (the bells, the readout
- * column and the partial row); "Progress" the keyboard. The gear is the
- * settings screen, and back. Top right, beside the state word, the red
- * recording button when recording is switched on in the settings.
+ * column and the partial row); "Progress" the keyboard. The corners are
+ * every screen's (ui/Corners.kt): the gear top left, the name and home top
+ * right; no back arrow (blueprint §18–§19). In the band between them, the
+ * state word and — in Pro, switched on in the settings — the red recording
+ * button and the play button.
  */
 @Composable
 fun BasicHub(
     controller: TuningController,
     recorder: SessionRecorder?,
     onSettings: () -> Unit,
-    onBack: () -> Unit,
+    /** Home: the hub, from the corner every screen shares. */
+    onHome: () -> Unit,
     feeding: String? = null,
     onPickRecording: (() -> Unit)? = null,
     onUseMicrophone: () -> Unit = {},
@@ -100,13 +103,9 @@ fun BasicHub(
     val heard by controller.heardMidi.collectAsState()
 
     val t = tuning
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color(Brand.BLACK))
-            .safeDrawingPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-    ) {
+    Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
+    Corners(onSettings = onSettings, onHome = onHome)
+    Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         if (t == null) {
             // ---- the hub: define A4 on one string ----
             val shown = PartialSelection.shown(full, audible, hidden)
@@ -122,12 +121,7 @@ fun BasicHub(
                     .padding(bottom = 80.dp),
             )
             Column(Modifier.align(Alignment.TopStart).width(300.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BackArrow(onClick = onBack)
-                    SettingsGear(onClick = onSettings)
-                }
-                Spacer(Modifier.height(10.dp))
-                ClavierhausTitle()
+                CornerBand()
                 Spacer(Modifier.height(18.dp))
                 HubHint("Define your A4 here by tuning a single string to the desired pitch.", maxLines = 3)
                 Spacer(Modifier.height(18.dp))
@@ -224,12 +218,8 @@ fun BasicHub(
             else -> "A3–A4 first · Done keeps a note"
         } + (partialsLine?.let { " · $it" } ?: "")
 
-        // header: back and gear only; the title lives on the hub
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart)) {
-            BackArrow(onClick = onBack)
-            SettingsGear(onClick = onSettings)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp)) {
+        // the band between the corners: the state word, and Pro's two buttons
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = CORNER_RIGHT_WIDTH)) {
             if (!t.sampling) StateWord(state.first, state.second)
             if (recorder != null && !t.sampling) {
                 val recording by recorder.recording.collectAsState()
@@ -319,5 +309,6 @@ fun BasicHub(
             Spacer(Modifier.width(10.dp))
             DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
         }
+    }
     }
 }
