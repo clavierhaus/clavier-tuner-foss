@@ -145,6 +145,21 @@ construction rather than by review.
 `OnePicture` (the scale-down of a reference design) is retired with these;
 `Pane` replaces it.
 
+## Settings: tabs, pages, two columns (4 Oct 2026)
+
+`SettingsScreen` (`ui/SettingsParts.kt`) draws a strip of tabs and, under a
+tab with more than one page, a strip of sub-tabs with ◀ ▶ at its ends; a
+swipe turns the page. A `SettingsPage` is two columns of rows and one line
+at the foot; a row (`StepperRow`, `ChoiceRow`, `SwitchRow`, `ReadOnlyRow`,
+`ActionRow`) is a name and a control, 40 dp, nothing under the name — the
+page's note says the rest, as on the camera's LCD. Nothing scrolls: the
+budget is five rows and a header per column on the reference pane (260 dp
+under a sub-tab row), and a context that needs more is two named pages.
+The open tab and the open page are the orange ones. foss's tabs: Tuning
+(Temperament · Reading), Stretch (Wound · Bass · Middle · Treble), Piano
+(Compass), App (Language · Probe · About); Pro adds its own from the same
+parts. A4 is not a setting.
+
 ## Settings: three scopes
 
 | scope | lives in | examples |

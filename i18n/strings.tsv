@@ -36,8 +36,19 @@ origin.wideWord	wide	weit
 origin.narrowWord	narrow	eng
 origin.octave	{0} octave to {1}	{0}-Oktave zu {1}
 origin.untuned	equal temperament — {0} not tuned yet	gleichstufig — {0} noch nicht gestimmt
-settings.tab.temperament	Temperament	Temperatur
-settings.tab.about	About	Über
-settings.tab.license	License	Lizenz
+settings.tab.tuning	Tuning	Stimmen
+settings.tab.stretch	Stretch	Spreizung
+settings.tab.piano	Piano	Klavier
+settings.tab.app	App	App
+settings.page.temperament	Temperament	Temperatur
+settings.page.reading	Reading	Ablesung
+settings.page.wound	Wound	Umsponnen
+settings.page.bass	Bass	Bass
+settings.page.middle	Middle	Mitte
+settings.page.treble	Treble	Diskant
+settings.page.compass	Compass	Umfang
+settings.page.language	Language	Sprache
+settings.page.probe	Probe	Sonde
+settings.page.about	About	Über
 settings.language	Language	Sprache
 settings.language.system	System	System

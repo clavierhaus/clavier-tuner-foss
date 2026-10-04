@@ -36,9 +36,20 @@ object K {
     const val origin_narrowWord = "origin.narrowWord"
     const val origin_octave = "origin.octave"
     const val origin_untuned = "origin.untuned"
-    const val settings_tab_temperament = "settings.tab.temperament"
-    const val settings_tab_about = "settings.tab.about"
-    const val settings_tab_license = "settings.tab.license"
+    const val settings_tab_tuning = "settings.tab.tuning"
+    const val settings_tab_stretch = "settings.tab.stretch"
+    const val settings_tab_piano = "settings.tab.piano"
+    const val settings_tab_app = "settings.tab.app"
+    const val settings_page_temperament = "settings.page.temperament"
+    const val settings_page_reading = "settings.page.reading"
+    const val settings_page_wound = "settings.page.wound"
+    const val settings_page_bass = "settings.page.bass"
+    const val settings_page_middle = "settings.page.middle"
+    const val settings_page_treble = "settings.page.treble"
+    const val settings_page_compass = "settings.page.compass"
+    const val settings_page_language = "settings.page.language"
+    const val settings_page_probe = "settings.page.probe"
+    const val settings_page_about = "settings.page.about"
     const val settings_language = "settings.language"
     const val settings_language_system = "settings.language.system"
 }
@@ -80,9 +91,20 @@ internal object StringsTable : Catalog {
         "origin.narrowWord" to arrayOf("narrow", "eng"),
         "origin.octave" to arrayOf("{0} octave to {1}", "{0}-Oktave zu {1}"),
         "origin.untuned" to arrayOf("equal temperament — {0} not tuned yet", "gleichstufig — {0} noch nicht gestimmt"),
-        "settings.tab.temperament" to arrayOf("Temperament", "Temperatur"),
-        "settings.tab.about" to arrayOf("About", "Über"),
-        "settings.tab.license" to arrayOf("License", "Lizenz"),
+        "settings.tab.tuning" to arrayOf("Tuning", "Stimmen"),
+        "settings.tab.stretch" to arrayOf("Stretch", "Spreizung"),
+        "settings.tab.piano" to arrayOf("Piano", "Klavier"),
+        "settings.tab.app" to arrayOf("App", "App"),
+        "settings.page.temperament" to arrayOf("Temperament", "Temperatur"),
+        "settings.page.reading" to arrayOf("Reading", "Ablesung"),
+        "settings.page.wound" to arrayOf("Wound", "Umsponnen"),
+        "settings.page.bass" to arrayOf("Bass", "Bass"),
+        "settings.page.middle" to arrayOf("Middle", "Mitte"),
+        "settings.page.treble" to arrayOf("Treble", "Diskant"),
+        "settings.page.compass" to arrayOf("Compass", "Umfang"),
+        "settings.page.language" to arrayOf("Language", "Sprache"),
+        "settings.page.probe" to arrayOf("Probe", "Sonde"),
+        "settings.page.about" to arrayOf("About", "Über"),
         "settings.language" to arrayOf("Language", "Sprache"),
         "settings.language.system" to arrayOf("System", "System"),
     )

@@ -7,6 +7,15 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-04
+- **Settings without scroll.** Four tabs by what they are for — Tuning,
+  Stretch, Piano, App — each with named pages on a second strip (◀ ▶, or a
+  swipe) where it has more than one; a page is two columns of rows that say
+  their name and a control, with one line at the foot saying what the page
+  means. Nothing scrolls, nothing is cut. The stretch has a page per region;
+  the probe and the recording button live under App; About and Licence are
+  one page. The Temperament tab that held everything is gone.
+
 ### 2026-10-03
 - **The anchor is a trusted reading.** A partial standing less than 25 dB over
   the noise beside it does not anchor the bells, however narrow its last half
