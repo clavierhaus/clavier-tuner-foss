@@ -95,6 +95,12 @@ class MainActivity : ComponentActivity() {
         hideSystemBars()
         lastTuning.value = sessionStore.load()
         controller.onSessionChanged = { snap -> sessionStore.save(snap) }
+        // The activity made again while a tuning was under way (4 Oct 2026, Peter at the piano: a turn of the
+        // phone between the two landscapes, or the system taking the activity down behind a screen
+        // recording): the screen comes back as "tune" from its saved state, but the controller is new and
+        // holds no session — the page stood as if nothing had been sampled. The session was saved at
+        // onPause; it is the same tuning, so it is restored here before the first frame.
+        if (savedInstanceState != null) (lastTuning.value as? SessionStore.Load.Ok)?.let { controller.restore(it.snapshot) }
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(

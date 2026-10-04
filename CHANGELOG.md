@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **A4 in tenths.** The pitch you want for A4 stands in tenths of a hertz,
+  with − and + beside it; the string's live reading stands next to it, also
+  to a tenth — every string beats, a hundredth is not a figure to aim at.
+- **A tuning survives the phone being turned.** Turning the phone between
+  the two landscapes, or the system taking the app down behind a screen
+  recording, remade the app with the tuning page open and nothing in it —
+  the sampling looked lost (Peter at the piano, 16:32). The saved session is
+  restored on the way back, and turning the phone no longer remakes the app.
 - **A4 on the sampling page.** The A4 string's live reading to a hundredth of
   a hertz, and one bell on a ±30 c strip against the pitch you aim at (set
   in half hertz), green inside the match window. The reading dies with the

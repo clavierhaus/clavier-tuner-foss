@@ -45,7 +45,7 @@ import at.clavierhaus.unisonmaster.ui.formatHz
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
  * function — set the reference A4 (the string's live reading to the
- * hundredth and one bell against the pitch aimed at), define the temperament octave (A3–A4 by
+ * tenth beside the pitch wanted, and one bell against it), define the temperament octave (A3–A4 by
  * default), and sample notes across the whole keyboard so the engine has the
  * piano's inharmonicity to compute the stretch from. No spectrum, no
  * partials to tap. Left, "Piano Sampling" and the short orders; right, A4,
@@ -68,8 +68,8 @@ internal fun SamplingPage(
     var strikeAgain by remember { mutableStateOf<Int?>(null) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
-    // the pitch aimed at for A4: the tuner's, on this page only; it starts at the last reference, to the half hertz
-    var aim by remember { mutableStateOf(kotlin.math.round(a4 * 2) / 2) }
+    // the pitch wanted for A4: the tuner's, on this page only; it starts at the last reference, in tenths of a hertz
+    var aim by remember { mutableStateOf(tenths(a4)) }
 
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 132.dp)) {
@@ -92,8 +92,20 @@ internal fun SamplingPage(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     if (view == null) {
-                        // the A4 string as it sounds now, to a hundredth; nothing when no string sounds
-                        Text(hz?.let { String.format(java.util.Locale.ROOT, "%.2f Hz", it) } ?: "strike A4, one string", color = if (hz != null) white else muted, fontFamily = DejaVuSerif, fontSize = 26.sp)
+                        // the pitch wanted, in tenths of a hertz (Peter, 4 Oct 2026: every string beats, a hundredth
+                        // is not a figure a tuner can aim at), and the string as it sounds now beside it, to a tenth
+                        Text("−", color = white, fontSize = 24.sp, modifier = Modifier.clickable { aim = tenths(aim - 0.1) }.padding(horizontal = 10.dp))
+                        Text("+", color = white, fontSize = 24.sp, modifier = Modifier.clickable { aim = tenths(aim + 0.1) }.padding(horizontal = 10.dp))
+                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", aim), color = white, fontFamily = DejaVuSerif, fontSize = 26.sp)
+                        Spacer(Modifier.width(24.dp))
+                        val c = hz?.let { 1200.0 * kotlin.math.ln(it / aim) / kotlin.math.ln(2.0) }
+                        val inWindow = c != null && kotlin.math.abs(c) <= cfg.matchCents
+                        Text(
+                            hz?.let { String.format(java.util.Locale.ROOT, "%.1f", it) } ?: "strike A4, one string",
+                            color = if (hz == null) muted else if (inWindow) Color(Brand.GO_GREEN) else orange,
+                            fontFamily = DejaVuSerif, fontSize = if (hz == null) 16.sp else 26.sp,
+                        )
+                        if (c != null) Text(String.format(java.util.Locale.ROOT, "  %+.1f c", c), color = if (inWindow) Color(Brand.GO_GREEN) else orange, fontSize = 14.sp)
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
                     } else {
@@ -102,21 +114,8 @@ internal fun SamplingPage(
                         Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { undo = TuningSession.MIDI_A4 }.padding(6.dp))
                     }
                 }
-                if (view == null) {
-                    // the A4 string as one bell against the pitch aimed at; Set A4 takes the string as it stands
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Aim", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
-                        Text("−", color = white, fontSize = 22.sp, modifier = Modifier.clickable { aim = (aim - 0.5).coerceAtLeast(TuningController.MIN_REFERENCE_HZ) }.padding(horizontal = 10.dp))
-                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", aim), color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
-                        Text("+", color = white, fontSize = 22.sp, modifier = Modifier.clickable { aim = (aim + 0.5).coerceAtMost(TuningController.MAX_REFERENCE_HZ) }.padding(horizontal = 10.dp))
-                        Spacer(Modifier.weight(1f))
-                        hz?.let { f ->
-                            val c = 1200.0 * kotlin.math.ln(f / aim) / kotlin.math.ln(2.0)
-                            Text(String.format(java.util.Locale.ROOT, "%+.1f c", c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 16.sp)
-                        }
-                    }
-                    A4Bell(hz = hz, aimHz = aim, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(70.dp))
-                }
+                // the A4 string as one bell against the pitch wanted; Set A4 takes the string as it stands
+                if (view == null) A4Bell(hz = hz, aimHz = aim, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(70.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
@@ -191,3 +190,7 @@ private val ORDERS = listOf(
     "Then across the piano: two notes per octave, up to C7.",
     "Each key struck: check it, Accept.",
 )
+
+/** A pitch to the tenth of a hertz, within the reference's range. */
+private fun tenths(hz: Double): Double =
+    (kotlin.math.round(hz * 10) / 10).coerceIn(TuningController.MIN_REFERENCE_HZ, TuningController.MAX_REFERENCE_HZ)
