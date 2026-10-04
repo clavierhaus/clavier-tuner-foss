@@ -22,7 +22,7 @@ private fun cents(a: Double, b: Double) = TuningSession.centsOff(a, b)
 
 class TuningSessionTest {
     private val a4 = 443.0
-    private val foss = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = true)    // F0, plain wire from E2; the temperament-first way, the tuner's choice since 4 Oct 2026
+    private val foss = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = true)    // F0, plain wire from E2; the temperament octave walked first — the route only, since 4 Oct 2026 it samples like any other
     private val pro = foss.copy(temperamentFirst = false)
 
     private fun et(midi: Int) = TuningSession.targetF1(midi, a4)
@@ -204,33 +204,25 @@ class TuningSessionTest {
 
     @Test
     fun aNewSessionSamplesThenTunes() {
-        // FOSS: exactly its set — the temperament octave, three bass and three treble notes
-        val s = TuningSession(a4, foss)
-        assertTrue(s.sampling)
-        assertFalse(s.recordsOnLeaving)
-        assertEquals(TunerSettings.SAMPLE_NOTES, s.sampleNotes)
-        assertTrue(24 in s.sampleNotes && 57 in s.sampleNotes && 93 in s.sampleNotes && 69 !in s.sampleNotes)
-        assertEquals(18, s.samplesNeeded)
-        s.record(measuredString(69, a4, 8e-4))
-        assertFalse(s.samplingReady)
-        for (m in s.sampleNotes.drop(1)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
-        assertFalse(s.samplingReady, "one of the set still missing: ${s.samplesLeft}")
-        s.record(measuredString(s.sampleNotes.first(), et(s.sampleNotes.first()), 1e-4))
-        assertTrue(s.samplingReady)
-        s.finishSampling()
-        assertFalse(s.sampling)
-        assertTrue(s.curve.ready)
-        assertEquals(68, s.current, "the tuning begins at A4's neighbour")
-
-        // Pro: no set — any six strings besides A4, as the tuner sees fit
-        val p = TuningSession(a4, pro)
-        assertTrue(p.sampleNotes.isEmpty())
-        assertEquals(TunerSettings.MIN_SAMPLES, p.samplesNeeded)
-        p.record(measuredString(69, a4, 8e-4))
-        for (m in listOf(20, 33, 45, 52, 76)) p.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
-        assertFalse(p.samplingReady); assertEquals(5, p.samplesIn)
-        p.record(measuredString(88, et(88), 3e-3))
-        assertTrue(p.samplingReady)
+        // one sampling law (4 Oct 2026): any six strings besides A4, where the tuner sees fit —
+        // the same whether he then walks the temperament octave first or not
+        for (way in listOf(foss, pro)) {
+            val s = TuningSession(a4, way)
+            assertTrue(s.sampling)
+            assertFalse(s.recordsOnLeaving)
+            assertEquals(TunerSettings.MIN_SAMPLES, s.samplesNeeded, "no set is prescribed, temperamentFirst=${way.temperamentFirst}")
+            s.record(measuredString(69, a4, 8e-4))
+            assertFalse(s.samplingReady)
+            // none of these is in the temperament octave; none was in the set of 25 Sept but C1 and A6
+            for (m in listOf(24, 33, 45, 52, 76)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+            assertFalse(s.samplingReady, "five in, six needed"); assertEquals(5, s.samplesIn)
+            s.record(measuredString(93, et(93), 3e-3))
+            assertTrue(s.samplingReady, "six strings, wherever they stand, end the sampling")
+            s.finishSampling()
+            assertFalse(s.sampling)
+            assertTrue(s.curve.ready)
+            assertEquals(68, s.current, "the tuning begins at A4's neighbour")
+        }
     }
 
     @Test

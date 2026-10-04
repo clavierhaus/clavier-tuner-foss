@@ -41,13 +41,14 @@ data class TunerSettings(
     /** Lowest note of the temperament octave; the session runs from A4 down to here. */
     val temperamentLowMidi: Int = 57,          // A3
     /**
-     * The temperament octave is walked first and each of its notes asks for
-     * Done (leaving one does not register it), and sampling asks for the set
-     * of [SAMPLE_NOTES]; off, leaving any note registers it and the tuner
-     * samples where he sees fit, at least [MIN_SAMPLES] strings. The tuner's
-     * choice in both editions since 4 Oct 2026 (it was the free app's pin);
-     * neither way restricts where he may go. Off by default: the
-     * professional's way.
+     * The order of working: on, the temperament octave is walked first and
+     * each of its notes asks for Done (leaving one does not register it);
+     * off, leaving any note registers it. A preference of the route only —
+     * what a tuning samples before it starts is the same either way, at
+     * least [MIN_SAMPLES] strings where the tuner sees fit (the prescribed
+     * set of 25 Sept left with it on 4 Oct 2026, Peter's word: one sampling
+     * law in both editions). Whether this preference stays at all is
+     * Peter's open question. Off by default: the professional's way.
      */
     val temperamentFirst: Boolean = false,
     // STRETCH
@@ -176,22 +177,13 @@ data class TunerSettings(
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MAX_WIDTH_CENTS = 20.0
         /**
-         * The prescribed sample set (25 September): the temperament octave
-         * A3–A4 (A4 is the hub's), three bass notes and three treble notes —
-         * what a tuning with [temperamentFirst] samples before it starts.
+         * The one sampling law (docs/ENGINE.md §1): sampling, where the tuner
+         * sees fit, may end once this many strings besides A4 are in. No note
+         * is prescribed — the set of 25 Sept (A3–A4 with C1 G2 C3 and G5 C6
+         * A6) left the engine on 4 Oct 2026.
          */
-        val SAMPLE_NOTES: List<Int> = listOf(24, 43, 48) + (57..68).toList() + listOf(79, 84, 93)   // C1 G2 C3 · A3..G#4 · G5 C6 A6
-        /** Sampling where the tuner sees fit may end once this many strings besides A4 are in. */
         const val MIN_SAMPLES = 6
     }
-
-    /**
-     * The strings a tuning must have sampled before it starts (docs/ENGINE.md
-     * §1): with [temperamentFirst] exactly [SAMPLE_NOTES]; otherwise none —
-     * the tuner samples the instrument as he sees fit, at least [MIN_SAMPLES].
-     */
-    val sampleNotes: List<Int>
-        get() = if (temperamentFirst) SAMPLE_NOTES.filter { it >= lowestKeyMidi } else emptyList()
 
     /** True for a wound string: below the lowest plain one. */
     fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi

@@ -377,9 +377,6 @@ class TuningController(
     /** Null on the hub, before A4 is set; the note being tuned after. */
     val tuning: StateFlow<TuningView?> = _tuning.asStateFlow()
 
-    /** The strings proposed for sampling, lowest first. */
-    fun sampleNotes(): List<Int> = session?.sampleNotes ?: _settings.value.sampleNotes
-
     /** The session's measurements so far (A4 first). */
     fun measurements(): Map<Int, NoteMeasurement> = session?.measurements ?: emptyMap()
 

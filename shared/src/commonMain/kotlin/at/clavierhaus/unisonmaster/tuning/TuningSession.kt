@@ -118,7 +118,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** True once every note of the temperament octave has been measured. */
     val temperamentComplete: Boolean get() = temperamentNotes.all { it in measured }
 
-    /** True while the session walks the temperament octave first (FOSS, until it is complete). */
+    /** True while the session walks the temperament octave first (the tuner's preference, until the octave is complete). */
     val gated: Boolean get() = !sampling && settings.temperamentFirst && !temperamentComplete
 
     // ---- Sampling ----
@@ -126,27 +126,21 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /**
      * True while the strings are being sampled (docs/ENGINE.md §1): the
      * tuner strikes whatever key he chooses, the key is caught and Accept
-     * keeps it; Done ends the sampling once [samplingReady]. FOSS needs
-     * exactly [TunerSettings.sampleNotes]; Pro any [TunerSettings.MIN_SAMPLES]
-     * strings besides A4.
+     * keeps it; Done ends the sampling once [samplingReady] — any
+     * [TunerSettings.MIN_SAMPLES] strings besides A4, in both editions. No
+     * note is prescribed (the set of 25 Sept left on 4 Oct 2026).
      */
     var sampling: Boolean = sampling
         private set
 
-    /** The notes a sampling must have (FOSS), lowest first; none in Pro. */
-    val sampleNotes: List<Int> get() = settings.sampleNotes.filter { it in notes }
-
-    /** Of [sampleNotes], those not sampled yet. */
-    val samplesLeft: List<Int> get() = sampleNotes.filter { it !in measured }
-
     /** How many strings besides A4 have been sampled. */
     val samplesIn: Int get() = measured.keys.count { it != MIDI_A4 }
 
-    /** How many a sampling needs: the FOSS set, or Pro's minimum. */
-    val samplesNeeded: Int get() = if (sampleNotes.isNotEmpty()) sampleNotes.size else TunerSettings.MIN_SAMPLES
+    /** How many a sampling needs: the minimum, the same for every tuner. */
+    val samplesNeeded: Int get() = TunerSettings.MIN_SAMPLES
 
-    /** True once the sampling may end: the FOSS set complete, or Pro's minimum in. */
-    val samplingReady: Boolean get() = if (sampleNotes.isNotEmpty()) samplesLeft.isEmpty() else samplesIn >= TunerSettings.MIN_SAMPLES
+    /** True once the sampling may end: the minimum is in. */
+    val samplingReady: Boolean get() = samplesIn >= TunerSettings.MIN_SAMPLES
 
     /** Ends the sampling (Done): the curve stands on what is in, and the tuning begins at A4's neighbour. */
     fun finishSampling() {
@@ -161,10 +155,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
 
     /**
      * True when leaving a note registers it as done with what was heard of
-     * it, so that the walk needs no Done: everywhere in Pro, and in FOSS
-     * once the temperament octave is complete. Inside that octave FOSS asks
-     * for Done on every note, because the octave is what everything else is
-     * built on.
+     * it, so that the walk needs no Done: always, unless the tuner walks the
+     * temperament octave first and it is not yet complete — inside that
+     * octave the walk asks for Done on every note, because the octave is
+     * what everything else is built on.
      */
     val recordsOnLeaving: Boolean get() = !gated && !sampling
 

@@ -8,6 +8,13 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **One sampling law.** No note is prescribed any more: the sampling ends
+  once six strings besides A4 are in, struck where the tuner sees fit — in
+  both editions and whichever way he then walks. The set of 25 September
+  (the temperament octave A3–A4 with C1, G2, C3 and G5, C6, A6) has left
+  the engine. "Temperament first" remains the walk's preference only — the
+  octave first, each note asking Done — and whether it stays at all is
+  Peter's open question.
 - **One hub.** The hub is the library's too (`TunerHub`): Continue Tuning
   while one is saved, New Tuning, Unisons, Recordings — the same words in both
   editions; Pro adds its door, *Pianos*, after New Tuning.
