@@ -143,7 +143,7 @@ class MainActivity : ComponentActivity() {
                     Strings.use(settings.language.ifEmpty { java.util.Locale.getDefault().toLanguageTag() })
                 }
                 LaunchedEffect(settings) {
-                    // FOSS: the temperament octave is always A3-A4 (selectable in Pro only)
+                    // the temperament octave is A3-A4 in both editions; the setting is kept for the day it is offered
                     controller.applySettings(settings.copy(temperamentLowMidi = TunerSettings.MAX_TEMPERAMENT_LOW))
                 }
                 LaunchedEffect(screen) {
