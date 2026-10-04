@@ -12,9 +12,10 @@ import at.clavierhaus.unisonmaster.ui.formatHz
  * it puts on the screen is the saved tuning's own two numbers — the day it
  * was last used and its A4, read back from the sealed session — and the
  * doors: *Continue Tuning* while one is saved, *New Tuning*, an edition's own
- * doors ([extra] — Pro's *My Pianos* / *My Customers*), *The Unisons*, and *Recordings* where the
- * edition keeps recordings ([onRecordings]; Pro's, since the reference
- * recording belongs to the piano's record — blueprint §18, 4 Oct 2026). The
+ * doors ([extra] — Pro's *My Pianos* / *My Customers*), and where the
+ * edition has them *The Unisons* ([onUnisons]; Pro's — Peter, 4 Oct 2026,
+ * "a USP for Pro only") and *Recordings* ([onRecordings]; Pro's, since the
+ * reference recording belongs to the piano's record — blueprint §18). The
  * words are written here once; an app only says what happens behind each
  * door.
  */
@@ -23,7 +24,7 @@ fun TunerHub(
     last: SessionStore.Load,
     onContinue: (SessionSnapshot) -> Unit,
     onNew: () -> Unit,
-    onUnisons: () -> Unit,
+    onUnisons: (() -> Unit)? = null,
     onRecordings: (() -> Unit)? = null,
     onSettings: () -> Unit,
     extra: List<HomeHubItem> = emptyList(),
@@ -40,7 +41,7 @@ fun TunerHub(
             ),
         )
         addAll(extra)
-        add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", lead = "The", onClick = onUnisons))
+        if (onUnisons != null) add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", lead = "The", onClick = onUnisons))
         if (onRecordings != null) add(HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies", onClick = onRecordings))
     }
     HomeHub(entries = entries, onSettings = onSettings)

@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **The unison screen is Pro's.** Peter: the unison display is Pro's own
+  (this morning it had come here with "one tuner"); the free app's hub has
+  no Unisons door, and the screen and its analyser live in Pro again. The
+  engine's per-partial unison reading stays here.
 - **One bass.** The stretch has three regions — bass, middle, treble; the
   wound strings are the bass's, not a region of their own (Peter: two
   sections there made no sense). The bass width still slides from an octave

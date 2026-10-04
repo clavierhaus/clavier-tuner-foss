@@ -29,9 +29,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.audio.AudioTap
-import at.clavierhaus.unisonmaster.unison.CongruenceScope
-import at.clavierhaus.unisonmaster.unison.UnisonSync
 import at.clavierhaus.unisonmaster.audio.FeedableAudioSource
 import at.clavierhaus.unisonmaster.audio.WavPcm
 import at.clavierhaus.unisonmaster.audio.createAudioSource
@@ -55,17 +52,6 @@ class MainActivity : ComponentActivity() {
     /** The microphone off. */
     private fun stopListening() {
         controller.stopLive()
-    }
-
-    /** The unison screen's microphone: the source pumped to its analysers while the tuning controller rests. */
-    private val pump by lazy { AudioTap(audioSource) }
-    /** The congruence display's analyser, a tap on the pump. */
-    private val congruence by lazy {
-        CongruenceScope(pump.sampleRateHz).also { pump.add(it::push) }
-    }
-    /** The unison screen's sync row: every partial read by phase, steady or beating (docs/UNISON-SYNC.md). */
-    private val unisonSync by lazy {
-        UnisonSync(pump.sampleRateHz, { controller.referenceA4Hz.value }).also { pump.add(it::push) }
     }
 
     /** What the probe last said, for the settings screen to show. */
@@ -164,18 +150,6 @@ class MainActivity : ComponentActivity() {
                                 open = settingsOpen,
                             )
                         }
-                        "congruence" -> {
-                            BackHandler { screen = "hub" }
-                            CongruenceScreen(
-                                scope = congruence,
-                                pump = pump,
-                                controller = controller,
-                                recorder = null,                 // the recording is the piano's record, Pro's (blueprint §18.5)
-                                sync = unisonSync,
-                                onSettings = { openSettings() },
-                                onHome = { screen = "hub" },
-                            )
-                        }
                         "tune" -> {
                             BackHandler { backToHub() }
                             BasicHub(
@@ -204,7 +178,6 @@ class MainActivity : ComponentActivity() {
                                     controller.resetSession()
                                     screen = "tune"
                                 },
-                                onUnisons = { screen = "congruence" },
                                 onSettings = { openSettings() },
                             )
                         }
@@ -227,7 +200,6 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         controller.snapshot()?.let { sessionStore.save(it) }
         stopListening()
-        pump.stop()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

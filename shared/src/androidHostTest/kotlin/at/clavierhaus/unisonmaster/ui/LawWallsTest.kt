@@ -36,9 +36,6 @@ class LawWallsTest {
         "ui/HubParts.kt" to 4,
         "ui/BasicHub.kt" to 1,
         "ui/RecordStrikesScreen.kt" to 2,
-        // moved in from Pro on 4 Oct 2026 with its nine one-line caps standing (one tuner, two editions);
-        // they go with the revamp's unison pass, and the number only comes down
-        "ui/CongruenceScreen.kt" to 9,
     )
 
     private fun repoRoot(): File {
