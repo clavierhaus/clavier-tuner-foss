@@ -39,7 +39,8 @@ private class PlayedSource : AudioSource {
 
 class TuningControllerTest {
     private val a4 = 443.1
-    private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40)
+    // the temperament-first way, once the free app's pin and since 4 Oct 2026 the tuner's choice: the tests below describe it
+    private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = true)
 
     private fun et(midi: Int) = TuningSession.targetF1(midi, a4)
 
@@ -358,7 +359,7 @@ class TuningControllerTest {
         c.acceptLive()
         val t = c.tuning.value!!
         assertTrue(t.sampling); assertEquals(18, t.samplesNeeded)
-        assertEquals(TunerSettings.FOSS_SAMPLE_NOTES, c.sampleNotes())
+        assertEquals(TunerSettings.SAMPLE_NOTES, c.sampleNotes())
         // a key outside the set is caught and may be kept, but does not count towards Done
         c.hear(src, SyntheticString.strike(et(33), 8e-5, 3.0))
         assertEquals(33, c.tuning.value!!.caught)

@@ -32,9 +32,12 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * one line saying the rest, nothing scrolling.
  *
  * - Tuning: Temperament · Reading
- * - Stretch: Wound · Bass · Middle · Treble
+ * - Stretch: Wound · Bass · Middle · Treble · Breaks
  * - Piano: Compass
  * - App: Language · Probe · About
+ *
+ * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
+ * Pro mounts these and adds the book's own tabs.
  *
  * A4 is not here: it is the piano's, set at the hub where the session starts.
  * [open] names a tab and page to start on — the tuning screen reaches the
@@ -102,6 +105,10 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             SettingsSection("Temperament")
             // unequal temperaments are not offered until they run: nothing on a screen that does nothing
             ReadOnlyRow("Temperament octave", "A3–A4")
+        },
+        right = {
+            SettingsSection("The order of work")
+            SwitchRow("Temperament first", s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
         }),
     SettingsPage(t(K.settings_page_reading), READING_NOTE,
         left = {
@@ -152,6 +159,20 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
         SettingsPage(t(K.settings_page_treble), "Above A4, up to C8. The width at C8 is where the slide ends.",
             left = { RegionLeft(octaves, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
+        SettingsPage(t(K.settings_page_breaks), BREAKS_NOTE,
+            left = {
+                SettingsSection("The curve's breaks")
+                val breaks = s.curveBreaks.sorted()
+                if (breaks.isEmpty()) ReadOnlyRow("Breaks", "none")
+                for (b in breaks.take(5)) ReadOnlyRow("Break at", Notes.name(b))
+            },
+            right = {
+                val rest = s.curveBreaks.sorted().drop(5)
+                if (rest.isNotEmpty()) {
+                    SettingsSection("…")
+                    for (b in rest.take(5)) ReadOnlyRow("Break at", Notes.name(b))
+                }
+            }),
     )
 }
 
@@ -186,8 +207,13 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 @Composable
 private fun CompassRows(s: TunerSettings, model: SettingsModel) {
     SettingsSection("The piano")
-    // the lowest key is pinned to A0 in foss (SettingsModel.pin); a compass below it is Pro's
-    ReadOnlyRow("Lowest key", Notes.name(s.lowestKeyMidi))
+    StepperRow(
+        "Lowest key", Notes.name(s.lowestKeyMidi),
+        canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
+        canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
+        onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
+        onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
+    )
     StepperRow(
         "Lowest unwound string", Notes.name(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
@@ -211,6 +237,7 @@ private const val WIDTH_STEP = 0.5
 /** The pages' one-line notes. */
 private const val TEMPERAMENT_NOTE = "Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here."
 private const val READING_NOTE = "The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent."
-private const val COMPASS_NOTE = "A real piano is A0–C8; the first plain wire is where the wound strings' curve ends."
+private const val COMPASS_NOTE = "A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends."
+private const val BREAKS_NOTE = "A break starts a new segment of the curve; set at the keyboard with the break gesture."
 private const val PROBE_NOTE = "For testing away from a piano: a WAV at 48 kHz, read exactly as the string would be. Leave it on Microphone at the instrument."
 private const val ABOUT_NOTE = "Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository."

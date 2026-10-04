@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **One tuner, two editions.** Peter's decision: the free app and Pro are
+  identical in everything that is tuning; Pro adds the book — a tuning saved
+  to a piano and the ledger around it. The pins the free app carried since
+  25 September are lifted: the lowest key is a setting here too (F0 on a
+  Bösendorfer 225, C0 on an Imperial), "Temperament first" is a switch — the
+  temperament octave walked first with the prescribed sample set, or the
+  piano sampled where the tuner sees fit — off by default, and the curve's
+  breaks have their page under Stretch.
 - **The stretch is one tap from the tuning screen.** A tap on the "partial N"
   line of the picture opens Settings at the stretch page of the region the
   note is in — wound, bass, middle or treble — the octave type the tuner is

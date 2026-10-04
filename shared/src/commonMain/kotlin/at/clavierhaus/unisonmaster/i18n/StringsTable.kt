@@ -47,6 +47,7 @@ object K {
     const val settings_page_middle = "settings.page.middle"
     const val settings_page_treble = "settings.page.treble"
     const val settings_page_compass = "settings.page.compass"
+    const val settings_page_breaks = "settings.page.breaks"
     const val settings_page_language = "settings.page.language"
     const val settings_page_probe = "settings.page.probe"
     const val settings_page_about = "settings.page.about"
@@ -102,6 +103,7 @@ internal object StringsTable : Catalog {
         "settings.page.middle" to arrayOf("Middle", "Mitte"),
         "settings.page.treble" to arrayOf("Treble", "Diskant"),
         "settings.page.compass" to arrayOf("Compass", "Umfang"),
+        "settings.page.breaks" to arrayOf("Breaks", "Brüche"),
         "settings.page.language" to arrayOf("Language", "Sprache"),
         "settings.page.probe" to arrayOf("Probe", "Sonde"),
         "settings.page.about" to arrayOf("About", "Über"),

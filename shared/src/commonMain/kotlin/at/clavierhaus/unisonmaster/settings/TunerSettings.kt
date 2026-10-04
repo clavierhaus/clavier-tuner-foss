@@ -42,11 +42,14 @@ data class TunerSettings(
     val temperamentLowMidi: Int = 57,          // A3
     /**
      * The temperament octave is walked first and each of its notes asks for
-     * Done (leaving one does not register it): FOSS pins this true. Pro sets
-     * it false: leaving any note registers it. Neither restricts where the
-     * tuner may go.
+     * Done (leaving one does not register it), and sampling asks for the set
+     * of [SAMPLE_NOTES]; off, leaving any note registers it and the tuner
+     * samples where he sees fit, at least [MIN_SAMPLES] strings. The tuner's
+     * choice in both editions since 4 Oct 2026 (it was the free app's pin);
+     * neither way restricts where he may go. Off by default: the
+     * professional's way.
      */
-    val temperamentFirst: Boolean = true,
+    val temperamentFirst: Boolean = false,
     // STRETCH
     /** The wound strings, below the lowest plain one. */
     val octaveWound: OctaveType = OctaveType.O6_3,
@@ -173,23 +176,22 @@ data class TunerSettings(
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MAX_WIDTH_CENTS = 20.0
         /**
-         * The FOSS sample set (25 September): the temperament octave A3–A4
-         * (A4 is the hub's), three bass notes and three treble notes — the
-         * compromise a free tuner makes, the professional's Pro samples where
-         * he sees fit.
+         * The prescribed sample set (25 September): the temperament octave
+         * A3–A4 (A4 is the hub's), three bass notes and three treble notes —
+         * what a tuning with [temperamentFirst] samples before it starts.
          */
-        val FOSS_SAMPLE_NOTES: List<Int> = listOf(24, 43, 48) + (57..68).toList() + listOf(79, 84, 93)   // C1 G2 C3 · A3..G#4 · G5 C6 A6
-        /** Pro: sampling may end once this many strings besides A4 are in. */
+        val SAMPLE_NOTES: List<Int> = listOf(24, 43, 48) + (57..68).toList() + listOf(79, 84, 93)   // C1 G2 C3 · A3..G#4 · G5 C6 A6
+        /** Sampling where the tuner sees fit may end once this many strings besides A4 are in. */
         const val MIN_SAMPLES = 6
     }
 
     /**
      * The strings a tuning must have sampled before it starts (docs/ENGINE.md
-     * §1): FOSS exactly [FOSS_SAMPLE_NOTES]; Pro names none — the tuner
-     * samples the instrument as he sees fit, at least [MIN_SAMPLES] strings.
+     * §1): with [temperamentFirst] exactly [SAMPLE_NOTES]; otherwise none —
+     * the tuner samples the instrument as he sees fit, at least [MIN_SAMPLES].
      */
     val sampleNotes: List<Int>
-        get() = if (temperamentFirst) FOSS_SAMPLE_NOTES.filter { it >= lowestKeyMidi } else emptyList()
+        get() = if (temperamentFirst) SAMPLE_NOTES.filter { it >= lowestKeyMidi } else emptyList()
 
     /** True for a wound string: below the lowest plain one. */
     fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi
@@ -239,44 +241,35 @@ data class TunerSettings(
 
 /**
  * Holds the settings, persists every change, and exposes them as a flow.
- *
- * [edition] carries what the app is rather than what the tuner chose:
- * FOSS finishes the temperament octave first, Pro samples freely. Those
- * values are never written to the store, so they cannot be changed from
- * the settings screen and cannot leak from one edition to the other.
+ * [defaults] is what an unset value is; nothing is pinned by edition — foss
+ * and Pro are one tuner since 4 Oct 2026, and what the tuner may set in one
+ * he may set in the other (the compass and the temperament's order were the
+ * free app's pins from 25 Sept to then).
  */
 class SettingsModel(
     private val store: KeyValueStore,
-    private val edition: TunerSettings = TunerSettings(),
+    private val defaults: TunerSettings = TunerSettings(),
 ) {
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
 
     fun update(change: (TunerSettings) -> TunerSettings) {
-        val s = pin(change(_settings.value))
+        val s = change(_settings.value)
         _settings.value = s
         save(s)
     }
 
-    /**
-     * What the edition fixes: FOSS is the free tuner for the piano as it is
-     * built, A0 to C8; the compass is a Pro setting, for the few instruments
-     * that go lower (the Bösendorfer 225 and Imperial, the Érard).
-     */
-    private fun pin(s: TunerSettings): TunerSettings =
-        if (edition.temperamentFirst) s.copy(temperamentFirst = true, lowestKeyMidi = 21) else s.copy(temperamentFirst = false)
-
-    private fun load(): TunerSettings = pin(loadStored())
+    private fun load(): TunerSettings = loadStored()
 
     private fun loadStored(): TunerSettings {
-        val d = edition
+        val d = defaults
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
         fun fOrNull(k: String) = store.get(k)?.toDoubleOrNull()?.coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS)
         fun b(k: String, v: Boolean) = store.get(k)?.toBooleanStrictOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
-            temperamentFirst = d.temperamentFirst,
+            temperamentFirst = b("temperamentFirst", d.temperamentFirst),
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
             octaveWound = o("octaveWound", d.octaveWound),
             octaveBass = o("octaveBass", d.octaveBass),
@@ -327,6 +320,7 @@ class SettingsModel(
         store.put("lowestUnwoundMidi", s.lowestUnwoundMidi.toString())
         store.put("lowestKeyMidi", s.lowestKeyMidi.toString())
         store.put("autoNote", s.autoNote.toString())
+        store.put("temperamentFirst", s.temperamentFirst.toString())
         store.put("cleanPartials", s.cleanPartials.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)

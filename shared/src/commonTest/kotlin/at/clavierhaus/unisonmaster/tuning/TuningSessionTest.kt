@@ -22,7 +22,7 @@ private fun cents(a: Double, b: Double) = TuningSession.centsOff(a, b)
 
 class TuningSessionTest {
     private val a4 = 443.0
-    private val foss = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40)    // F0, plain wire from E2
+    private val foss = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = true)    // F0, plain wire from E2; the temperament-first way, the tuner's choice since 4 Oct 2026
     private val pro = foss.copy(temperamentFirst = false)
 
     private fun et(midi: Int) = TuningSession.targetF1(midi, a4)
@@ -208,7 +208,7 @@ class TuningSessionTest {
         val s = TuningSession(a4, foss)
         assertTrue(s.sampling)
         assertFalse(s.recordsOnLeaving)
-        assertEquals(TunerSettings.FOSS_SAMPLE_NOTES, s.sampleNotes)
+        assertEquals(TunerSettings.SAMPLE_NOTES, s.sampleNotes)
         assertTrue(24 in s.sampleNotes && 57 in s.sampleNotes && 93 in s.sampleNotes && 69 !in s.sampleNotes)
         assertEquals(18, s.samplesNeeded)
         s.record(measuredString(69, a4, 8e-4))
