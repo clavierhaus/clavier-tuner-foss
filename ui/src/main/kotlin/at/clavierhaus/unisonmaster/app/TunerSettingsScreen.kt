@@ -81,11 +81,9 @@ fun TunerSettingsScreen(
                         ChoiceRow("Input", listOf("Microphone", "A recording…"), if (feeding == null) 0 else 1) { i -> if (i == 0) onUseMicrophone() else onPickRecording() }
                         if (feedNote != null) SettingsNote(feedNote)
                     },
-                    right = {
-                        SettingsSection("On the tuning screen")
-                        SwitchRow("Play button", s.probe) { on -> model.update { it.copy(probe = on) } }
-                        SwitchRow("Recording button", s.recordPcm) { on -> model.update { it.copy(recordPcm = on) } }
-                    }),
+                    // the Play and Recording buttons of the tuning screen are Pro's rows (blueprint §18.5):
+                    // the recording belongs to the piano's record, which the free edition does not keep
+                    right = null),
                 SettingsPage(t(K.settings_page_about), ABOUT_NOTE,
                     left = {
                         SettingsSection("Clavier Tuner")

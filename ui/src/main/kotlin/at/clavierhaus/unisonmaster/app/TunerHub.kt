@@ -12,8 +12,11 @@ import at.clavierhaus.unisonmaster.ui.formatHz
  * it puts on the screen is the saved tuning's own two numbers — the day it
  * was last used and its A4, read back from the sealed session — and the
  * doors: *Continue Tuning* while one is saved, *New Tuning*, an edition's own
- * doors ([extra] — Pro's *Pianos*), *Unisons*, *Recordings*. The words are
- * written here once; an app only says what happens behind each door.
+ * doors ([extra] — Pro's *Pianos*), *Unisons*, and *Recordings* where the
+ * edition keeps recordings ([onRecordings]; Pro's, since the reference
+ * recording belongs to the piano's record — blueprint §18, 4 Oct 2026). The
+ * words are written here once; an app only says what happens behind each
+ * door.
  */
 @Composable
 fun TunerHub(
@@ -21,7 +24,7 @@ fun TunerHub(
     onContinue: (SessionSnapshot) -> Unit,
     onNew: () -> Unit,
     onUnisons: () -> Unit,
-    onRecordings: () -> Unit,
+    onRecordings: (() -> Unit)? = null,
     onSettings: () -> Unit,
     extra: List<HomeHubItem> = emptyList(),
     edition: String? = null,
@@ -39,7 +42,7 @@ fun TunerHub(
         )
         addAll(extra)
         add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", onUnisons))
-        add(HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies", onRecordings))
+        if (onRecordings != null) add(HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies", onRecordings))
     }
     HomeHub(entries = entries, onSettings = onSettings, edition = edition)
 }

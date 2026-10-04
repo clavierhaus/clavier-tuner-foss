@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **No recorder in the free edition.** The red button, the play button and
+  the Recordings door are Pro's: a reference recording belongs to the
+  piano's record, which only Pro keeps. The probe under App · Probe stays —
+  it is how the engine is fed a recording for checking, not playback.
 - **One sampling law.** No note is prescribed any more: the sampling ends
   once six strings besides A4 are in, struck where the tuner sees fit — in
   both editions and whichever way he then walks. The set of 25 September

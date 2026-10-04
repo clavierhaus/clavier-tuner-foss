@@ -29,7 +29,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.audio.AndroidAudioSource
 import at.clavierhaus.unisonmaster.audio.AudioTap
 import at.clavierhaus.unisonmaster.unison.CongruenceScope
 import at.clavierhaus.unisonmaster.unison.UnisonSync
@@ -53,14 +52,8 @@ class MainActivity : ComponentActivity() {
         SessionStore(PrivateSaveFile(java.io.File(filesDir, "session")), KeystoreSealer())
     }
     private val lastTuning = mutableStateOf<SessionStore.Load>(SessionStore.Load.None)
-    /** The red button's recorder: hears every buffer of the live screen, writes only between its taps. */
-    private val recorder by lazy {
-        SessionRecorder(this, audioSource.sampleRateHz) { (audioSource.live as? AndroidAudioSource)?.usedUnprocessed ?: false }
-    }
-
-    /** The microphone off, and with it any recording. */
+    /** The microphone off. */
     private fun stopListening() {
-        recorder.stop()
         controller.stopLive()
     }
 
@@ -68,11 +61,7 @@ class MainActivity : ComponentActivity() {
     private val pump by lazy { AudioTap(audioSource) }
     /** The congruence display's analyser, a tap on the pump. */
     private val congruence by lazy {
-        CongruenceScope(pump.sampleRateHz).also {
-            pump.add(it::push)
-            // the unison screen's red button hears the same raw buffers
-            pump.add { chunk -> recorder.push(chunk) }
-        }
+        CongruenceScope(pump.sampleRateHz).also { pump.add(it::push) }
     }
     /** The unison screen's sync row: every partial read by phase, steady or beating (docs/UNISON-SYNC.md). */
     private val unisonSync by lazy {
@@ -121,7 +110,6 @@ class MainActivity : ComponentActivity() {
         hideSystemBars()
         lastTuning.value = sessionStore.load()
         controller.onSessionChanged = { snap -> sessionStore.save(snap) }
-        controller.tap = { chunk -> recorder.push(chunk) }
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -181,17 +169,9 @@ class MainActivity : ComponentActivity() {
                                 scope = congruence,
                                 pump = pump,
                                 controller = controller,
-                                recorder = if (settings.recordPcm) recorder else null,
+                                recorder = null,                 // the recording is the piano's record, Pro's (blueprint §18.5)
                                 sync = unisonSync,
                                 onSettings = { openSettings() },
-                                onBack = { screen = "hub" },
-                            )
-                        }
-                        "record" -> {
-                            BackHandler { screen = "hub" }
-                            RecordStrikesScreen(
-                                firstPlainMidi = settings.lowestUnwoundMidi,
-                                micGranted = hasMic(),
                                 onBack = { screen = "hub" },
                             )
                         }
@@ -199,11 +179,14 @@ class MainActivity : ComponentActivity() {
                             BackHandler { backToHub() }
                             BasicHub(
                                 controller = controller,
-                                recorder = if (settings.recordPcm) recorder else null,
+                                // no record and no play button in the free edition (blueprint §18.5): the reference
+                                // recording belongs to the piano's record, which only Pro keeps; the probe itself
+                                // stays — App · Probe feeds the engine a recording where the microphone's buffers arrive
+                                recorder = null,
                                 onSettings = { openSettings() },
                                 onBack = { backToHub() },
                                 feeding = audioSource.feeding.collectAsState().value,
-                                onPickRecording = if (settings.probe) ({ pickRecording() }) else null,
+                                onPickRecording = null,
                                 onUseMicrophone = { useMicrophone() },
                                 onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                                 onStretch = { region -> openSettings(1 to region) },
@@ -221,7 +204,6 @@ class MainActivity : ComponentActivity() {
                                     screen = "tune"
                                 },
                                 onUnisons = { screen = "congruence" },
-                                onRecordings = { screen = "record" },
                                 onSettings = { openSettings() },
                             )
                         }

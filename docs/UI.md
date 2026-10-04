@@ -43,6 +43,15 @@ after *New Tuning*; its own screens hang off that door. The hub's words are
 written once, in `TunerHub`; an app only says what happens behind each door.
 A tuning feature is built here, once.
 
+The recorder is Pro's (blueprint §18.5, 4 Oct 2026): the red button on the
+tuning and unison screens, the play button, the *Recordings* door and the
+`RecordStrikesScreen` behind it — the reference recording belongs to the
+piano's record, which only Pro keeps. The screen and `SessionRecorder` stay
+in this library (built once) and the free app does not mount them:
+`recorder = null`, `onPickRecording = null`, no `onRecordings`. The probe
+(App · Probe) is not playback: it feeds the engine a recording where the
+microphone's buffers arrive (`PROBE.md`) and stays in both editions.
+
 ## Four layers, one direction
 
 ```
