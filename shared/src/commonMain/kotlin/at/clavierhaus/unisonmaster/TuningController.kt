@@ -279,7 +279,12 @@ class TuningController(
      * on three unmuted strings. The finder only says which partials are
      * there to be tapped.
      */
-    private class WantedSet(val targets: Map<Int, Double>, val generation: Int)
+    /**
+     * The shown partials: what each aims at ([targets]) and where its reader
+     * listens ([listen]). The two are the same until the strike says the
+     * string stands somewhere else — see [heardHz].
+     */
+    private class WantedSet(val targets: Map<Int, Double>, val generation: Int, val listen: Map<Int, Double> = targets)
     @Volatile private var wantedSet: WantedSet? = null
     private var shownGen = 0
 
@@ -287,14 +292,26 @@ class TuningController(
         val t = _tuning.value ?: run { wantedSet = null; return }
         val active = _activePartial.value
         val map = _shownPartials.value.filter { it != active }.associateWith { targetOf(t, it) }
-        wantedSet = WantedSet(map, ++shownGen)
+        wantedSet = WantedSet(map, ++shownGen, map.mapValues { (k, hz) -> heardHz[k] ?: hz })
     }
 
     private fun setActive(k: Int) {
         _activePartial.value = k
         val t = _tuning.value ?: return
-        wanted = Wanted(targetOf(t, k), k, ++generation)
+        val target = targetOf(t, k)
+        wanted = Wanted(target, k, ++generation, heardHz[k] ?: target)
     }
+
+    /**
+     * Where this note's partials were last heard to stand, by k — not what
+     * they are tuned to. A reader has to listen where the string is or it
+     * hears nothing: at 45 cents below its target a string lies outside every
+     * reader's band, and the screen had nothing to draw but the coarse word
+     * "flat" (Peter at the piano, 4 Oct 2026, 17:11). This is a place to
+     * listen and never a reading: what the tuner sees is read from the sound
+     * now sounding, and these places are forgotten when the note changes.
+     */
+    private var heardHz: Map<Int, Double> = emptyMap()
 
     /**
      * The predicted partials moved bodily so that partial [k] lands on [targetHz]:
@@ -455,15 +472,43 @@ class TuningController(
     }
 
     /**
-     * While sampling, the reader goes where the string is: a string as it
-     * stands may lie outside the band around the curve's place for it.
+     * The reader goes where the string is: a string as it stands may lie
+     * outside the band around the place its target asks for, and a reader
+     * aimed at the target then hears nothing at all.
+     *
+     * While sampling there is no target — the string is what is being
+     * measured — so the whole aim moves to it. While tuning the target
+     * stands, because the target is what the tuner is pulling the string
+     * towards, and only the place the readers listen at moves; the cents on
+     * screen are worked out from the two absolute frequencies and so say how
+     * far the string is from its target, however far away it stands. Every
+     * partial of a string standing this far flat stands that far flat
+     * (Rule 1: a bell is not pitch dependent), so they are all moved by the
+     * one ratio, and the strike's own measured series replaces these places
+     * with where it actually heard each partial as soon as it arrives. A
+     * place to listen is not a reading and never reaches the screen.
+     *
+     * Earned at the Samick, 4 Oct 2026, 17:11 (Peter): "In the beginning
+     * there was nothing except 'flat'. Only when tuning up did the bells
+     * appear" — a string 45 cents below its target was outside every one of
+     * the ±25 cent bands, so the picture had nothing to draw.
      */
     private fun followCoarse(w: Wanted, coarseCents: Double) {
         val t = _tuning.value ?: return
-        if (!t.sampling) return
-        val hz = w.hz * 2.0.pow(coarseCents / 1200.0)
-        wanted = Wanted(hz, w.k, ++generation)
-        _reading.value = Reading(w.k, null, hz, live = false, settling = false, coarseCents = null)
+        val f = 2.0.pow(coarseCents / 1200.0)
+        if (t.sampling) {
+            val hz = w.hz * f
+            wanted = Wanted(hz, w.k, ++generation)
+            _reading.value = Reading(w.k, null, hz, live = false, settling = false, coarseCents = null)
+            return
+        }
+        val place = w.hz * f
+        // already listening where the string is: nothing to move, and moving every hop
+        // would restart the readers' memory for as long as the string stood off its target
+        if (abs(TuningSession.centsOff(place, w.listenHz)) <= PhaseReader.DEFAULT_BAND_CENTS / 2) return
+        heardHz = (_shownPartials.value + w.k).associateWith { targetOf(t, it) * f }
+        wanted = Wanted(w.hz, w.k, ++generation, place)
+        wantShown()
     }
 
     private fun publish(s: TuningSession) {
@@ -537,8 +582,10 @@ class TuningController(
             _activePartial.value = listening.k
         }
         val k = _activePartial.value
-        wanted = Wanted(targetOf(view, k), k, ++generation)
-        _reading.value = Reading(k, null, wanted!!.hz, live = false, settling = false, coarseCents = null)
+        if (noteChanged) heardHz = emptyMap()
+        val target = targetOf(view, k)
+        wanted = Wanted(target, k, ++generation, heardHz[k] ?: target)
+        _reading.value = Reading(k, null, target, live = false, settling = false, coarseCents = null)
         if (noteChanged) { _livePartials.value = emptyList(); _liveAudible.value = emptySet(); levels = emptyMap() }
         wantShown()
         onSessionChanged?.let { save -> snapshot()?.let(save) }
@@ -677,7 +724,7 @@ class TuningController(
             ?: return null
         val list = m.partials.mapNotNull { p -> m.partialHz(p.k)?.let { PredictedPartial(p.k, it, p.levelDb) } }
         if (list.none { it.k == k }) return null
-        return anchored(list, k, target)
+        return list
     }
 
     /**
@@ -712,7 +759,8 @@ class TuningController(
     val heardMidi: StateFlow<Int?> = _heardMidi.asStateFlow()
 
     /** What the reader is to be set on: [hz] of partial [k]; [generation] changes with every note or partial. */
-    private class Wanted(val hz: Double, val k: Int, val generation: Int)
+    /** The partial being read: [hz] is what it is tuned to, [listenHz] where its reader listens for it. */
+    private class Wanted(val hz: Double, val k: Int, val generation: Int, val listenHz: Double = hz)
 
     @Volatile private var wanted: Wanted? = null
     @Volatile private var generation = 0
@@ -896,7 +944,7 @@ class TuningController(
                 // the tuning screen: the reader is set on the partial listened to
                 if (readerGeneration != w.generation) {
                     val r = reader
-                    if (r == null) reader = PhaseReader(sr, w.hz, memoryS = _settings.value.readingMemoryS) else r.retarget(w.hz)
+                    if (r == null) reader = PhaseReader(sr, w.listenHz, memoryS = _settings.value.readingMemoryS) else r.retarget(w.listenHz)
                     readerGeneration = w.generation
                     coarse = null
                 }
@@ -953,7 +1001,11 @@ class TuningController(
                     since == livePartialsHops(sr) && livePartialsStrike != strikeHop
                 ) {
                     livePartialsStrike = strikeHop
-                    livePartials(tv)?.let { series ->
+                    livePartials(tv)?.let { heardSeries ->
+                        // where this strike put the partials: the readers listen there from now on, so a
+                        // string standing far from its target is still read and drawn
+                        heardHz = heardSeries.associate { it.k to it.hz }
+                        val series = anchored(heardSeries, tv.listening.k, tv.listening.targetHz)
                         _targets.value = series
                         // the strike said which partials the string carries: read them all, up to
                         // the highest the tuner's setting offers, less what he hid
@@ -1006,7 +1058,8 @@ class TuningController(
                     shownHeld.keys.retainAll(ws.targets.keys)
                     shownAt.keys.retainAll(ws.targets.keys)
                     shownSpread.keys.retainAll(ws.targets.keys + w.k)
-                    for ((k, hz) in ws.targets) {
+                    for ((k, target) in ws.targets) {
+                        val hz = ws.listen[k] ?: target
                         val r = shownReaders[k]
                         // a reader is remade only when its target leaves the band it reads in: a
                         // retarget starts its memory afresh, and the strike's own series arriving a

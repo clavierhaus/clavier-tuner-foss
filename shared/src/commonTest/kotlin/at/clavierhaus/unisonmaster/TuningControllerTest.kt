@@ -187,6 +187,31 @@ class TuningControllerTest {
      * cleared at a strike: a string whose fundamental beat on the strike
      * before must not lend that width to the clean string struck next.
      */
+    /**
+     * The bells show the string, not its distance from the target: a string
+     * standing well below where it is to be tuned has partials to show, and
+     * they stack on the anchor wherever the pitch stands (the blueprint's §2).
+     * Peter at the piano, 4 Oct 2026, 17:11: at 45 and 31 cents flat the screen
+     * said only "flat" and drew no bell at all; the bells appeared when he had
+     * pulled the string to within ten cents.
+     */
+    @Test
+    fun aStringFarBelowItsTargetStillShowsItsPartials() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = c.tuning.value!!
+        val b = 2.1e-4
+        val off = -45.0
+        // the string as it stands: its target's own f1, pulled 45 cents down
+        val f1 = t.listening.targetHz / (t.listening.k * Inharmonicity.ratio(t.listening.k, b)) * 2.0.pow(off / 1200)
+        c.hear(src, SyntheticString.strike(f1, b, 4.0))
+        val partials = c.livePartials.value
+        assertTrue(partials.size >= 3, "the strike's partials are there to be drawn: ${partials.map { it.k }}")
+        for (p in partials) assertEquals(off, p.cents, 3.0, "partial ${p.k} stands with the string, ${p.cents} c")
+        val r = assertNotNull(c.reading.value)
+        assertEquals(off, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0, "and the reading says how far the string is from its target")
+    }
+
     @Test
     fun aPartialsWidthSaysHowWellItIsReadAndStartsAfreshAtAStrike() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
@@ -260,15 +285,25 @@ class TuningControllerTest {
         assertTrue(abs(m.b - b) / b < 0.2, "and the string's own B: %.2e".format(m.b))
     }
 
+    /**
+     * Superseded 4 Oct 2026. This test asserted the opposite — that a string
+     * 70 cents off its target is *not* read and only placed coarsely by the
+     * finder ("70 cents off is outside the band"). At the Samick that evening
+     * Peter found what that costs: "In the beginning there was nothing except
+     * 'flat'. Only when tuning up did the bells appear." The band is the
+     * reader's, around where it listens, and is no statement about what the
+     * piano is allowed to stand at (Rule 0); the reader now goes to the
+     * string and the cents are worked out against the target that stands.
+     */
     @Test
-    fun aStringFarOffIsNotReadButSaidToBeFarOff() {
+    fun aStringFarOffIsReadWhereItStands() {
         val (c, src) = controller()
         c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-70.0 / 1200), 7e-4, 3.0))
         val r = c.reading.value!!
-        assertFalse(r.live, "70 cents off is outside the band")
-        val coarse = assertNotNull(r.coarseCents, "the finder places it")
-        assertEquals(-70.0, coarse, 3.0)
+        assertTrue(r.live, "the string is read where it stands, not merely called flat")
+        assertEquals(-70.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
+        assertFalse(c.matchedNow(), "and 70 cents off is not a match")
     }
 
     @Test
