@@ -242,6 +242,6 @@ private const val WIDTH_STEP = 0.5
 private const val TEMPERAMENT_NOTE = "Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here."
 private const val READING_NOTE = "The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent."
 private const val COMPASS_NOTE = "A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends."
-private const val BREAKS_NOTE = "A break starts a new segment of the curve; set at the keyboard with the break gesture."
+private const val BREAKS_NOTE = "The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro)."
 private const val PROBE_NOTE = "For testing away from a piano: a WAV at 48 kHz, read exactly as the string would be. Leave it on Microphone at the instrument."
 private const val ABOUT_NOTE = "Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository."
