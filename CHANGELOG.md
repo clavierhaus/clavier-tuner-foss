@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **Unisons.** The unison screen — a note's strings read apart, partial by
+  partial, the congruence display and the sync row — is here now, from the hub,
+  as in Pro; and so is the recorder of the studies (Recordings). The hub has
+  the same entries in both editions.
 - **One tuner, two editions.** Peter's decision: the free app and Pro are
   identical in everything that is tuning; Pro adds the book — a tuning saved
   to a piano and the ledger around it. The pins the free app carried since
