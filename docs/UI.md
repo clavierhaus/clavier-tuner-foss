@@ -57,6 +57,17 @@ in this library (built once) and the free app does not mount them:
 (App · Probe) is not playback: it feeds the engine a recording where the
 microphone's buffers arrive (`PROBE.md`) and stays in both editions.
 
+## Piano Sampling (4 Oct 2026)
+
+The start of a tuning — the hub's A4 and the sampling — is one page,
+`SamplingPage` (Peter's word): left, *Piano Sampling* / *Retrieve the
+piano's inharmonicity* and the orders in a box; right, A4 (live, then set,
+green), the temperament octave's low note (C3…A3, a setting no longer
+pinned), the key caught from the last strike with Accept, the count with
+Done; along the bottom `SamplingKeyboard`, the whole compass. A tap on a
+sampled key offers Strike again or Remove (`TuningController.forgetSample`);
+on A4, setting it again starts the sampling over. No spectrum, no partials.
+
 ## The corners of every screen (4 Oct 2026)
 
 Blueprint §18–§19, Peter's word. `ui/Corners.kt` draws them, every screen

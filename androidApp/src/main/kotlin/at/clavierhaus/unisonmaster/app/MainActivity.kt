@@ -11,7 +11,6 @@ import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.settings.SettingsModel
-import at.clavierhaus.unisonmaster.settings.TunerSettings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -117,8 +116,8 @@ class MainActivity : ComponentActivity() {
                     Strings.use(settings.language.ifEmpty { java.util.Locale.getDefault().toLanguageTag() })
                 }
                 LaunchedEffect(settings) {
-                    // the temperament octave is A3-A4 in both editions; the setting is kept for the day it is offered
-                    controller.applySettings(settings.copy(temperamentLowMidi = TunerSettings.MAX_TEMPERAMENT_LOW))
+                    // the temperament octave's low note is the tuner's, set on the sampling page (Peter, 4 Oct 2026)
+                    controller.applySettings(settings)
                 }
                 LaunchedEffect(screen) {
                     // the microphone runs only while tuning: nothing is measured unseen
@@ -165,6 +164,7 @@ class MainActivity : ComponentActivity() {
                                 onUseMicrophone = { useMicrophone() },
                                 onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                                 onStretch = { region -> openSettings(1 to region) },
+                                onTemperamentLow = { low -> settingsModel.update { it.copy(temperamentLowMidi = low) } },
                             )
                         }
                         else -> {

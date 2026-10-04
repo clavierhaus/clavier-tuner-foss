@@ -2,7 +2,6 @@ package at.clavierhaus.unisonmaster.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,27 +28,20 @@ import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.tuning.Notes
-import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.TuningSession
-import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
-import at.clavierhaus.unisonmaster.ui.HubHint
 import at.clavierhaus.unisonmaster.ui.NotePicker
 import at.clavierhaus.unisonmaster.ui.PartialChips
-import at.clavierhaus.unisonmaster.ui.PartialRow
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
 import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
-import at.clavierhaus.unisonmaster.ui.CornerBand
 import at.clavierhaus.unisonmaster.ui.Corners
-import at.clavierhaus.unisonmaster.ui.SpectrumToggle
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
-import at.clavierhaus.unisonmaster.ui.ToneGraph
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
 import kotlin.math.abs
@@ -78,18 +70,16 @@ fun BasicHub(
     onUseMicrophone: () -> Unit = {},
     /** Switches TunerSettings.autoNote: off when the tuner names a key by hand, on when he taps the name again. */
     onAutoNote: ((Boolean) -> Unit)? = null,
+    /** Moves the temperament octave's low note (C3…A3) from the sampling page; null when the app does not offer it. */
+    onTemperamentLow: ((Int) -> Unit)? = null,
     /** Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf): the note's own octave type and width, one tap away. */
     onStretch: ((Int) -> Unit)? = null,
 ) {
-    val hz by controller.liveHz.collectAsState()
-    val level by controller.liveLevel.collectAsState()
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
-    val full by controller.fullSpectrum.collectAsState()
     var showProgress by remember { mutableStateOf(false) }
     // the one picture: built frame by frame from the engine's readings of the strike now sounding
     val pictureBuilder = remember { TuningPicture.Builder() }
-    val hidden by controller.hiddenPartials.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
     val tuning by controller.tuning.collectAsState()
     val shownTuning by controller.shownPartials.collectAsState()
@@ -106,43 +96,9 @@ fun BasicHub(
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
     Corners(onSettings = onSettings, onHome = onHome)
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
-        if (t == null) {
-            // ---- the hub: define A4 on one string ----
-            val shown = PartialSelection.shown(full, audible, hidden)
-            ToneGraph(
-                hz = hz,
-                centreHz = hz ?: a4,
-                level = level.toFloat(),
-                fullSpectrum = full,
-                partials = partials,
-                shown = shown,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 80.dp),
-            )
-            Column(Modifier.align(Alignment.TopStart).width(300.dp)) {
-                CornerBand()
-                Spacer(Modifier.height(18.dp))
-                HubHint("Define your A4 here by tuning a single string to the desired pitch.", maxLines = 3)
-                Spacer(Modifier.height(18.dp))
-                SpectrumToggle(fullSpectrum = full, onClick = { controller.toggleFullSpectrum() })
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth(),
-            ) {
-                PartialRow(
-                    a4Hz = a4,
-                    shown = shown,
-                    tappable = if (full) audible else emptySet(),
-                    onTap = { k -> controller.tapPartial(k) },
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(10.dp))
-                DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
-            }
+        // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
+        if (t == null || t.sampling) {
+            SamplingPage(controller, t, onTemperamentLow)
             return@Box
         }
 
@@ -281,14 +237,6 @@ fun BasicHub(
         ) {
             ProgressButton(showingProgress = showProgress, onClick = { showProgress = !showProgress })
             Spacer(Modifier.width(10.dp))
-            if (t.sampling) {
-                // sampling: the tuner chooses the key at the keyboard, not here
-                Spacer(Modifier.weight(1f))
-                AcceptButton(accepted = t.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
-                Spacer(Modifier.width(10.dp))
-                DoneButton(onClick = { controller.finishSampling() }, enabled = t.samplingReady)
-                return@Row
-            }
             if (!showProgress) {
                 // the partials to tap: one row that always fits; a false one is violet, and a
                 // tap on it takes it out of the bells

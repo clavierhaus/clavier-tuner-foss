@@ -605,6 +605,20 @@ class TuningController(
         return hz
     }
 
+    /**
+     * Undo of a sampled note (the sampling page's keyboard): its measurement
+     * leaves the session; struck again, the key is caught afresh and Accept
+     * keeps it. A4, the reference, is not taken back here. True when a
+     * sample was removed.
+     */
+    fun forgetSample(midi: Int): Boolean {
+        val s = session ?: return false
+        if (!s.forget(midi)) return false
+        if (caught?.midi == midi) caught = null
+        publish(s)
+        return true
+    }
+
     /** Done while sampling: the sampling ends, the curve stands on what is in, the tuning begins. */
     fun finishSampling() {
         val s = session ?: return

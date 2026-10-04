@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **Piano Sampling, one page.** The start of a tuning is its own page: set
+  A4, choose the temperament octave (A3–A4 by default, down to C3), sample
+  across the keyboard. The whole keyboard runs along the bottom, every
+  sampled key orange; a tap on one offers its undo — remove it, or strike it
+  anew. Short orders on the left. The spectrum and the partials to tap are
+  gone from this page.
 - **The unison screen is Pro's.** Peter: the unison display is Pro's own
   (this morning it had come here with "one tuner"); the free app's hub has
   no Unisons door, and the screen and its analyser live in Pro again. The

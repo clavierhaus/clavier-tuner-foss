@@ -390,6 +390,18 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         return true
     }
 
+    /**
+     * A sample taken back while sampling (Peter, 4 Oct 2026: every sampled
+     * note has its undo — out of the sampling, or struck anew): the string's
+     * measurement leaves the session and the curve stands on the rest. A4
+     * is the reference and is not taken back here; outside sampling nothing
+     * is taken back. True when a sample was removed.
+     */
+    fun forget(midi: Int): Boolean {
+        if (!sampling || midi == MIDI_A4) return false
+        return measured.remove(midi) != null
+    }
+
     fun select(midi: Int) {
         require(midi in notes) { "note $midi is outside the session" }
         current = midi

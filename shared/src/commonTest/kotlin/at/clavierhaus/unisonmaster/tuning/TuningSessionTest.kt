@@ -204,6 +204,22 @@ class TuningSessionTest {
     // ---- sampling and the curve ----
 
     @Test
+    fun aSampleTakenBackLeavesTheSamplingAndA4StaysTheReference() {
+        val s = TuningSession(a4, pro)
+        s.record(measuredString(69, a4, 8e-4))
+        for (m in listOf(24, 33, 45, 52, 76, 93)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        assertTrue(s.samplingReady)
+        assertTrue(s.forget(33), "a sampled string is taken back")
+        assertFalse(33 in s.measurements); assertEquals(5, s.samplesIn); assertFalse(s.samplingReady, "five again: Done waits")
+        assertFalse(s.forget(33), "nothing left to take back")
+        assertFalse(s.forget(69), "A4 is the reference, not a sample")
+        s.record(measuredString(33, et(33), 8e-5))
+        assertTrue(s.samplingReady, "struck anew, it counts again")
+        s.finishSampling()
+        assertFalse(s.forget(52), "the tuning has begun: nothing is taken back")
+    }
+
+    @Test
     fun aNewSessionSamplesThenTunes() {
         // one sampling law (4 Oct 2026): any six strings besides A4, where the tuner sees fit —
         // the same whether he then walks the temperament octave first or not
