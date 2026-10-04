@@ -89,7 +89,8 @@ class TuningSessionTest {
 
     @Test
     fun theOctaveWidthLowersTheLowerNoteAndRaisesTheUpper() {
-        val s = TuningSession(a4, pro.copy(widthMiddle = 2.0, widthTreble = 3.0), sampling = false)
+        // the treble as 4:1 here, chosen: the double octave is the case that reaches A#2 (the default is 4:2 since 4 Oct 2026)
+        val s = TuningSession(a4, pro.copy(widthMiddle = 2.0, widthTreble = 3.0, octaveTreble = OctaveType.O4_1), sampling = false)
         val gs4 = measuredString(68, et(68), 7e-4)
         s.record(gs4)
         assertEquals(-2.0, cents(s.listening(56).targetHz, gs4.partialHz(2)!!), 1e-9)
@@ -112,11 +113,11 @@ class TuningSessionTest {
         assertEquals(4, s.listening(56).k)
         assertEquals(OctaveType.O6_3, s.listening(52).type)           // bass: within an octave of E2
         assertEquals(6, s.listening(52).k)
-        assertEquals(OctaveType.O6_3, s.listening(39).type)           // wound, below E2
-        val wound = TuningSession(a4, pro.copy(octaveWound = OctaveType.O8_4, widthWound = 10.0), sampling = false)
+        assertEquals(OctaveType.O6_3, s.listening(39).type)           // wound, below E2: the bass region's type, one bass since 4 Oct 2026
+        val bass = TuningSession(a4, pro.copy(octaveBass = OctaveType.O8_4, widthBass = 10.0), sampling = false)
         val e3 = measuredString(51, et(51), 5e-4)
-        wound.record(e3)
-        val l = wound.listening(39)
+        bass.record(e3)
+        val l = bass.listening(39)
         assertEquals(8, l.k)
         assertEquals(-10.0, cents(l.targetHz, e3.partialHz(4)!!), 1e-9)
     }
@@ -258,8 +259,8 @@ class TuningSessionTest {
         val l2 = s.listening(56)
         assertEquals(l.targetHz, l2.targetHz, 1e-6, "the curve stays the target")
         assertEquals(-1.0, l2.checkCents!!, 0.05, "the partner stands a cent sharp: the octave to it a cent narrower")
-        // the treble chains upward the same way
+        // the treble chains upward the same way: A5 over A4 as a 4:2 (the default since 4 Oct 2026)
         val t = s.listening(81)
-        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(57, t.refMidi)
+        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(69, t.refMidi); assertEquals(OctaveType.O4_2, t.type)
     }
 }

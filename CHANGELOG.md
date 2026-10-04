@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **One bass.** The stretch has three regions — bass, middle, treble; the
+  wound strings are the bass's, not a region of their own (Peter: two
+  sections there made no sense). The bass width still slides from an octave
+  above the lowest plain string down to the lowest key, so a wide low bass
+  over a near-beatless plain bass is one setting, not two. The treble's
+  octave is 4:2 by default; the double octave 4:1 stays a choice.
+- **The hub's words.** *The* Unisons; in Pro *My* Pianos or *My* Customers,
+  as the book is kept — the lead word white, the door orange.
 - **The settings' tabs are words.** The tabs stand as a line of serif words,
   the open one orange, as the hub writes its doors; under a tab with more
   than one page its pages as a line of small words, the open one underlined.

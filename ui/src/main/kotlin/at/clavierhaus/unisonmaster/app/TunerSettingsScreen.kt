@@ -155,12 +155,9 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
     val octaves = OctaveType.entries
     return listOf(
-        SettingsPage(t(K.settings_page_wound), "Below the lowest plain string. The octave type says which partials meet; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.",
-            left = { RegionLeft(octaves, s.octaveWound, s.widthWound, { t -> model.update { it.copy(octaveWound = t) } }, { w -> model.update { it.copy(widthWound = w) } }) },
-            right = { RegionRight(s.widthWound, s.widthWoundFar, "the lowest key") { w -> model.update { it.copy(widthWoundFar = w) } } }),
-        SettingsPage(t(K.settings_page_bass), "From the lowest plain string, one octave up. Every note here is tuned by an octave to a note already tuned: its partial meets the partner's measured partial.",
+        SettingsPage(t(K.settings_page_bass), "From the lowest key to an octave above the lowest plain string, wound and plain alike. The octave type says which partials meet; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.",
             left = { RegionLeft(octaves, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
-            right = { RegionRight(s.widthBass, s.widthBassFar, "the lowest plain string") { w -> model.update { it.copy(widthBassFar = w) } } }),
+            right = { RegionRight(s.widthBass, s.widthBassFar, "the lowest key") { w -> model.update { it.copy(widthBassFar = w) } } }),
         SettingsPage(t(K.settings_page_middle), "Up to the temperament octave. The width slides by key between the regions' values; the middle holds one.",
             left = { RegionLeft(octaves, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
         SettingsPage(t(K.settings_page_treble), "Above A4, up to C8. The width at C8 is where the slide ends.",

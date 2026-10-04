@@ -12,7 +12,7 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O6_3, octaveWound = OctaveType.O8_4, lowestUnwoundMidi = 40, widthWound = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
+        a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O6_3, octaveBass = OctaveType.O8_4, lowestUnwoundMidi = 40, widthBass = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(false, b.settings.value.autoNote)
@@ -23,9 +23,9 @@ class SettingsTest {
         assertEquals(true, SettingsModel(other).settings.value.temperamentFirst, "the temperament's order is the tuner's choice and is kept")
         assertEquals(0.3, b.settings.value.matchCents)
         assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
-        assertEquals(OctaveType.O8_4, b.settings.value.octaveWound)
+        assertEquals(OctaveType.O8_4, b.settings.value.octaveBass)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)
-        assertEquals(9.5, b.settings.value.widthWound)
+        assertEquals(9.5, b.settings.value.widthBass)
         assertEquals(2.0, b.settings.value.widthTreble)
         assertEquals(0.0, b.settings.value.widthMiddle)
     }
@@ -38,13 +38,15 @@ class SettingsTest {
     }
 
     @Test
-    fun theRegionsAreTheWoundStringsTheBassTheMiddleAndTheTreble() {
-        val s = TunerSettings(lowestUnwoundMidi = 40, octaveWound = OctaveType.O8_4, octaveBass = OctaveType.O6_3,
-            octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1, widthWound = 8.0, widthBass = 4.0, widthMiddle = 1.0, widthTreble = 2.0)
-        assertEquals(OctaveType.O8_4, s.octaveTypeFor(39)); assertEquals(8.0, s.widthFor(39))
-        assertEquals(OctaveType.O6_3, s.octaveTypeFor(40)); assertEquals(4.0, s.widthFor(52))
+    fun theRegionsAreTheBassTheMiddleAndTheTreble() {
+        // one bass, wound and plain alike (4 Oct 2026): E3 (52) is its top on a piano whose plain wire starts at E2
+        val s = TunerSettings(lowestUnwoundMidi = 40, octaveBass = OctaveType.O8_4,
+            octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1, widthBass = 4.0, widthMiddle = 1.0, widthTreble = 2.0)
+        assertEquals(OctaveType.O8_4, s.octaveTypeFor(39)); assertEquals(4.0, s.widthFor(39))
+        assertEquals(OctaveType.O8_4, s.octaveTypeFor(40)); assertEquals(4.0, s.widthFor(52))
         assertEquals(OctaveType.O4_2, s.octaveTypeFor(53)); assertEquals(1.0, s.widthFor(69))
         assertEquals(OctaveType.O4_1, s.octaveTypeFor(70)); assertEquals(2.0, s.widthFor(108))
+        assertEquals(OctaveType.O4_2, TunerSettings().octaveTreble, "4:2 above A4 by default (Peter, 4 Oct 2026)")
     }
 
     @Test
@@ -88,24 +90,25 @@ class SettingsTest {
 
     @Test
     fun theWidthSlidesFromTheRegionsNearEndToItsFarEndWhenOneIsSet() {
-        val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40, widthWound = 4.0, widthWoundFar = 12.0, widthTreble = 1.0, widthTrebleFar = 5.0)
-        assertEquals(4.0, s.widthFor(39), 1e-9)                 // the top of the wound region: the near width
+        // one bass region (4 Oct 2026): from an octave above the plain-wire floor (E3, 52) down to the lowest key
+        val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40, widthBass = 4.0, widthBassFar = 12.0, widthTreble = 1.0, widthTrebleFar = 5.0)
+        assertEquals(4.0, s.widthFor(52), 1e-9)                 // the top of the bass: the near width
         assertEquals(12.0, s.widthFor(21), 1e-9)                // A0: the far width
-        assertEquals(8.0, s.widthFor(30), 1e-9)                 // halfway between 39 and 21
+        assertEquals(4.0 + 8.0 * 16 / 31, s.widthFor(36), 1e-9) // C2, wound, 16 of the 31 keys down: the slide runs through the floor
+        assertEquals(4.0 + 8.0 * 7 / 31, s.widthFor(45), 1e-9)  // A2, plain: on the same slide
         assertEquals(1.0, s.widthFor(70), 1e-9)                 // just above the temperament octave
         assertEquals(5.0, s.widthFor(108), 1e-9)                // C8
-        assertEquals(0.0, s.widthFor(45), 1e-9)                 // the plain bass: no far width set, constant
     }
 
     /** The region a note lies in is the order of the Stretch pages: the tuning screen opens the right one with one tap. */
     @Test
     fun theRegionOfANoteIsTheStretchPageItOpens() {
         val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 48)
-        assertEquals(0, s.regionOf(47), "below the lowest plain string: wound")
-        assertEquals(1, s.regionOf(48), "the lowest plain string: bass")
-        assertEquals(1, s.regionOf(60), "an octave above it: still bass")
-        assertEquals(2, s.regionOf(61), "then the middle")
-        assertEquals(2, s.regionOf(69), "A4 is the temperament's: middle")
-        assertEquals(3, s.regionOf(70), "above A4: treble")
+        assertEquals(0, s.regionOf(47), "below the lowest plain string: the bass, wound and plain one region since 4 Oct 2026")
+        assertEquals(0, s.regionOf(48), "the lowest plain string: bass")
+        assertEquals(0, s.regionOf(60), "an octave above it: still bass")
+        assertEquals(1, s.regionOf(61), "then the middle")
+        assertEquals(1, s.regionOf(69), "A4 is the temperament's: middle")
+        assertEquals(2, s.regionOf(70), "above A4: treble")
     }
 }

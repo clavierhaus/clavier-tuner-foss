@@ -51,31 +51,30 @@ data class TunerSettings(
      * 14:34. Off by default: the professional's way.
      */
     val temperamentFirst: Boolean = false,
-    // STRETCH
-    /** The wound strings, below the lowest plain one. */
-    val octaveWound: OctaveType = OctaveType.O6_3,
-    /** The plain-wire bass: from the lowest plain string to an octave above it. */
+    // STRETCH — three regions: the bass (the lowest key up to an octave above the lowest plain
+    // string, wound and plain alike — one region since 4 Oct 2026, Peter's word), the middle, the treble
     val octaveBass: OctaveType = OctaveType.O6_3,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
-    val octaveTreble: OctaveType = OctaveType.O4_1,
+    /** 4:2 by default (Peter, 4 Oct 2026); the double octave 4:1 stays a choice. */
+    val octaveTreble: OctaveType = OctaveType.O4_2,
     /**
      * How wide the octave is tuned beyond the partials' coincidence, cents
      * at the partial read (0 = beatless). Wide means the lower note flatter,
      * the upper sharper. On the 225 as its tuner left it, the wound bass
-     * stood some 8–12 cents wide of 6:3; that is his choice, not a default.
+     * stood some 8–12 cents wide of 6:3 and the plain bass near beatless;
+     * that is his choice, not a default — and the far width below is how
+     * one bass region says it.
      */
-    val widthWound: Double = 0.0,
     val widthBass: Double = 0.0,
     val widthMiddle: Double = 0.0,
     val widthTreble: Double = 0.0,
     /**
      * The width at the far end of each region — the lowest key for the
-     * three lower regions, C8 for the treble — interpolated by key from the
-     * region's width at the end nearest the temperament octave (the value
-     * above). Null: the same at both ends. A tuner's ear may want the low
-     * bass wider the lower it goes (the 225's, 30 Sept): this is that.
+     * bass, C8 for the treble — interpolated by key from the region's width
+     * at the end nearest the temperament octave (the value above). Null:
+     * the same at both ends. A tuner's ear may want the low bass wider the
+     * lower it goes (the 225's, 30 Sept): this is that.
      */
-    val widthWoundFar: Double? = null,
     val widthBassFar: Double? = null,
     val widthMiddleFar: Double? = null,
     val widthTrebleFar: Double? = null,
@@ -191,21 +190,19 @@ data class TunerSettings(
     /** Below this note the bass octave type applies: an octave above the lowest plain string. */
     val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
 
-    /**
-     * Which octave type links [midi] to an already tuned note: the wound
-     * strings, the bass within an octave of the plain-wire floor, the treble
-     * above the temperament octave, the middle in between.
-     */
-    /** The stretch region [midi] lies in, 0..3: wound, bass, middle, treble — the order of the Stretch pages in Settings. */
+    /** The stretch region [midi] lies in, 0..2: bass, middle, treble — the order of the Stretch pages in Settings. */
     fun regionOf(midi: Int): Int = when {
-        isWound(midi) -> 0
-        midi <= bassBoundaryMidi -> 1
-        midi > TEMPERAMENT_HIGH -> 3
-        else -> 2
+        midi <= bassBoundaryMidi -> 0
+        midi > TEMPERAMENT_HIGH -> 2
+        else -> 1
     }
 
+    /**
+     * Which octave type links [midi] to an already tuned note: the bass up
+     * to an octave above the plain-wire floor (the wound strings with it),
+     * the treble above the temperament octave, the middle in between.
+     */
     fun octaveTypeFor(midi: Int): OctaveType = when {
-        isWound(midi) -> octaveWound
         midi <= bassBoundaryMidi -> octaveBass
         midi > TEMPERAMENT_HIGH -> octaveTreble
         else -> octaveMiddle
@@ -214,12 +211,12 @@ data class TunerSettings(
     /**
      * The octave width for [midi], cents: its region's width at the end
      * nearest the temperament octave, sliding to the far end's where one is
-     * set ([widthWoundFar] …), by key.
+     * set ([widthBassFar] …), by key — the bass from an octave above the
+     * plain-wire floor down to the lowest key.
      */
     fun widthFor(midi: Int): Double {
         val (near, far, nearMidi, farMidi) = when {
-            isWound(midi) -> Region(widthWound, widthWoundFar, lowestUnwoundMidi - 1, lowestKeyMidi)
-            midi <= bassBoundaryMidi -> Region(widthBass, widthBassFar, bassBoundaryMidi, lowestUnwoundMidi)
+            midi <= bassBoundaryMidi -> Region(widthBass, widthBassFar, bassBoundaryMidi, lowestKeyMidi)
             midi > TEMPERAMENT_HIGH -> Region(widthTreble, widthTrebleFar, TEMPERAMENT_HIGH + 1, MIDI_C8)
             else -> Region(widthMiddle, widthMiddleFar, temperamentLowMidi - 1, bassBoundaryMidi + 1)
         }
@@ -263,15 +260,13 @@ class SettingsModel(
         return TunerSettings(
             temperamentFirst = b("temperamentFirst", d.temperamentFirst),
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
-            octaveWound = o("octaveWound", d.octaveWound),
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
             octaveTreble = o("octaveTreble", d.octaveTreble),
-            widthWound = f("widthWound", d.widthWound).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthBass = f("widthBass", d.widthBass).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthTreble = f("widthTreble", d.widthTreble).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
-            widthWoundFar = fOrNull("widthWoundFar"), widthBassFar = fOrNull("widthBassFar"),
+            widthBassFar = fOrNull("widthBassFar"),
             widthMiddleFar = fOrNull("widthMiddleFar"), widthTrebleFar = fOrNull("widthTrebleFar"),
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
@@ -293,15 +288,12 @@ class SettingsModel(
 
     private fun save(s: TunerSettings) {
         store.put("temperamentLowMidi", s.temperamentLowMidi.toString())
-        store.put("octaveWound", s.octaveWound.name)
         store.put("octaveBass", s.octaveBass.name)
         store.put("octaveMiddle", s.octaveMiddle.name)
         store.put("octaveTreble", s.octaveTreble.name)
-        store.put("widthWound", s.widthWound.toString())
         store.put("widthBass", s.widthBass.toString())
         store.put("widthMiddle", s.widthMiddle.toString())
         store.put("widthTreble", s.widthTreble.toString())
-        store.put("widthWoundFar", s.widthWoundFar?.toString() ?: "")
         store.put("widthBassFar", s.widthBassFar?.toString() ?: "")
         store.put("widthMiddleFar", s.widthMiddleFar?.toString() ?: "")
         store.put("widthTrebleFar", s.widthTrebleFar?.toString() ?: "")

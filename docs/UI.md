@@ -204,7 +204,9 @@ page's note says the rest, as on the camera's LCD. Nothing scrolls: the
 budget is five rows and a header per column on the reference pane (260 dp
 under a sub-tab row), and a context that needs more is two named pages.
 The open tab and the open page are the orange ones. foss's tabs: Tuning
-(Temperament · Reading), Stretch (Wound · Bass · Middle · Treble), Piano
+(Temperament · Reading), Stretch (Bass · Middle · Treble · Breaks — one
+bass, wound and plain alike, since 4 Oct 2026, its width sliding from an
+octave above the plain-wire floor down to the lowest key), Piano
 (Compass), App (Language · Probe · About); Pro adds its own from the same
 parts. A4 is not a setting.
 

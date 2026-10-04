@@ -48,11 +48,12 @@ import at.clavierhaus.unisonmaster.Brand
  * Each app assembles its own hub from this: the entries are its own.
  */
 
-/** One menu line: "[verb] rest", with an optional note written beneath it. */
+/** One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("The Unisons", "My Pianos") — with an optional note written beneath it. */
 data class HomeHubItem(
     val verb: String,
     val rest: String,
     val note: String? = null,
+    val lead: String = "",
     val onClick: () -> Unit,
 )
 
@@ -123,6 +124,7 @@ private fun HubEntry(e: HomeHubItem, tight: Boolean) {
     Column(Modifier.clickable(onClick = e.onClick).padding(vertical = 4.dp)) {
         BasicText(
             text = buildAnnotatedString {
+                if (e.lead.isNotEmpty()) append(e.lead + " ")
                 withStyle(SpanStyle(color = HubOrange)) { append(e.verb) }
                 append(e.rest)
             },

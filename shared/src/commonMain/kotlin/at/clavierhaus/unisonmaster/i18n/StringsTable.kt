@@ -42,7 +42,6 @@ object K {
     const val settings_tab_app = "settings.tab.app"
     const val settings_page_temperament = "settings.page.temperament"
     const val settings_page_reading = "settings.page.reading"
-    const val settings_page_wound = "settings.page.wound"
     const val settings_page_bass = "settings.page.bass"
     const val settings_page_middle = "settings.page.middle"
     const val settings_page_treble = "settings.page.treble"
@@ -98,7 +97,6 @@ internal object StringsTable : Catalog {
         "settings.tab.app" to arrayOf("App", "App"),
         "settings.page.temperament" to arrayOf("Temperament", "Temperatur"),
         "settings.page.reading" to arrayOf("Reading", "Ablesung"),
-        "settings.page.wound" to arrayOf("Wound", "Umsponnen"),
         "settings.page.bass" to arrayOf("Bass", "Bass"),
         "settings.page.middle" to arrayOf("Middle", "Mitte"),
         "settings.page.treble" to arrayOf("Treble", "Diskant"),
