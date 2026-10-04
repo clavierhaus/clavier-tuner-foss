@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -30,7 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -299,6 +302,26 @@ fun SwitchRow(name: String, checked: Boolean, onChange: (Boolean) -> Unit) {
 fun ReadOnlyRow(name: String, value: String) {
     SettingsRow(name) {
         FitText(value, 15.sp, color = Color(Brand.WHITE_MUTED), align = TextAlign.End)
+    }
+}
+
+/** A row with a line of text to edit at the right: one line, no wrap. */
+@Composable
+fun TextRow(name: String, value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    SettingsRow(name) {
+        BasicTextField(
+            value = value,
+            onValueChange = { onChange(it.replace("\n", "")) },
+            singleLine = true,
+            textStyle = TextStyle(color = Color(Brand.WHITE), fontSize = 14.sp),
+            cursorBrush = SolidColor(Color(Brand.ORANGE)),
+            modifier = modifier
+                .width(200.dp)
+                .height(32.dp)
+                .background(CONTROL, RoundedCornerShape(6.dp))
+                .padding(horizontal = 8.dp),
+            decorationBox = { inner -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) { inner() } },
+        )
     }
 }
 
