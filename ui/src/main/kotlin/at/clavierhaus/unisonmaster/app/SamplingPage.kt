@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,7 +42,6 @@ import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.FitText
 import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
-import at.clavierhaus.unisonmaster.ui.formatHz
 
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
@@ -71,11 +71,18 @@ internal fun SamplingPage(
     var strikeAgain by remember { mutableStateOf<Int?>(null) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
+    // A4 is what sounds when the last strike was caught as A4: only then is the live reading A4's own
+    val a4Sounding = view != null && view.caught == TuningSession.MIDI_A4
 
     Box(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 132.dp)) {
+        // The page is one band above the keyboard, and it is given its height rather than left to wrap
+        // (Peter's screen recording of 4 Oct 2026, 16:52: the column grew past the pane and Caught with
+        // its Accept and Sampled with its Done stood below the screen's edge, where they could not be
+        // tapped). The work of the page — what was caught, how many are in — sits at the foot of that
+        // band, pushed there by the spacer, so it is on the screen whatever stands above it.
+        Row(Modifier.fillMaxSize().padding(bottom = KEYBOARD_H + 8.dp)) {
             // ---- left: what this page is for, and the orders ----
-            Column(Modifier.width(380.dp)) {
+            Column(Modifier.width(380.dp).fillMaxHeight()) {
                 CornerBand()
                 Text("Piano Sampling", color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Text("Retrieve the piano's inharmonicity", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
@@ -88,13 +95,14 @@ internal fun SamplingPage(
                 }
             }
             Spacer(Modifier.width(28.dp))
-            // ---- right: A4, the temperament, the key caught, the count ----
-            Column(Modifier.weight(1f).padding(top = 52.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // ---- right: A4 and the temperament above, the work at the foot ----
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                CornerBand()
                 // A4 before it is set: the string as it sounds, and nothing else. There is no reference to
                 // compare it against — the tuner is making it — so the number does not change colour and no
-                // bell is drawn (Peter, 4 Oct 2026, 16:49). Done takes the string as it stands.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
+                // bell is drawn (Peter, 16:49). Done takes the string as it stands.
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
+                    Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
                     if (view == null) {
                         Text(
                             hz?.let { String.format(java.util.Locale.ROOT, "%.1f Hz", it) } ?: "strike A4, one string",
@@ -105,23 +113,27 @@ internal fun SamplingPage(
                     } else {
                         // set: now it is the reference, and the two steps move it by a tenth of a hertz —
                         // every target of the tuning follows it
-                        StepBox("−", true) { controller.setReference(tenths(a4 - 0.1)) }
+                        StepBox("−") { controller.setReference(tenths(a4 - 0.1)) }
                         Spacer(Modifier.width(6.dp))
-                        StepBox("+", true) { controller.setReference(tenths(a4 + 0.1)) }
+                        StepBox("+") { controller.setReference(tenths(a4 + 0.1)) }
                         Spacer(Modifier.width(12.dp))
                         Text(String.format(java.util.Locale.ROOT, "%.1f Hz", a4), color = Color(Brand.GO_GREEN), fontFamily = DejaVuSerif, fontSize = 26.sp)
-                        Spacer(Modifier.width(16.dp))
-                        hz?.let { f ->
-                            val c = 1200.0 * kotlin.math.ln(f / a4) / kotlin.math.ln(2.0)
-                            Text(String.format(java.util.Locale.ROOT, "%.1f Hz  %+.1f c", f, c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 15.sp)
+                        // the reading beside it is A4's only while A4 is the string sounding; the strike of any
+                        // other key is that key's and is never shown against this reference (16:52: 193.5 Hz
+                        // stood here, which was the key just struck, not A4)
+                        if (a4Sounding && hz != null) {
+                            val c = 1200.0 * kotlin.math.ln(hz!! / a4) / kotlin.math.ln(2.0)
+                            Spacer(Modifier.width(14.dp))
+                            Text(String.format(java.util.Locale.ROOT, "%.1f Hz  %+.1f c", hz!!, c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 15.sp)
                         }
                         Spacer(Modifier.weight(1f))
                         Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { undo = TuningSession.MIDI_A4 }.padding(6.dp))
                     }
                 }
-                // once A4 is the reference, the string against it as one bell
-                if (view != null) A4Bell(hz = hz, aimHz = a4, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(56.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // the A4 string against the reference as one bell, while A4 is what sounds
+                if (a4Sounding) A4Bell(hz = hz, aimHz = a4, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(52.dp))
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
                     Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
                     val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
@@ -129,9 +141,11 @@ internal fun SamplingPage(
                     Text("${Notes.name(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
                     Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
                 }
+                // the work of the page, at the foot of the band and so always on the screen
+                Spacer(Modifier.weight(1f))
                 if (view != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Caught", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
+                        Text("Caught", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                         val c = view.caught
                         Text(
                             when {
@@ -144,8 +158,8 @@ internal fun SamplingPage(
                         Spacer(Modifier.weight(1f))
                         AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive(); strikeAgain = null })
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Sampled", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
+                        Text("Sampled", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                         Text("${view.samplesIn} · at least ${view.samplesNeeded}", color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.finishSampling() }, enabled = view.samplingReady)
@@ -160,7 +174,7 @@ internal fun SamplingPage(
             caught = view?.caught,
             referenceSet = view != null,
             temperament = low..TuningSession.MIDI_A4,
-            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(120.dp),
+            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
             onKey = { m -> if (m in sampled || (m == TuningSession.MIDI_A4 && view != null)) undo = m },
         )
     }
@@ -186,6 +200,9 @@ internal fun SamplingPage(
     }
 }
 
+/** The keyboard's height along the foot of the page; the band above it is what is left. */
+private val KEYBOARD_H = 116.dp
+
 /** The orders, military-short (Peter, 4 Oct 2026). */
 private val ORDERS = listOf(
     "A4: one string, the others muted. Set it.",
@@ -200,15 +217,15 @@ private val ORDERS = listOf(
 private fun tenths(hz: Double): Double =
     (kotlin.math.round(hz * 10) / 10).coerceIn(TuningController.MIN_REFERENCE_HZ, TuningController.MAX_REFERENCE_HZ)
 
-/** A step of the pitch wanted: a box with its sign, to the left of the number it moves; dim until a string has been heard. */
+/** A step of the reference: a box with its sign, to the left of the number it moves. */
 @Composable
-private fun StepBox(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun StepBox(label: String, onClick: () -> Unit) {
     Box(
         Modifier.size(width = 40.dp, height = 34.dp)
-            .background(Color(if (enabled) 0xFF2A2A2A else 0xFF181818), RoundedCornerShape(6.dp))
-            .clickable(enabled = enabled, onClick = onClick),
+            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = Color(if (enabled) Brand.WHITE else 0xFF444444), fontSize = 20.sp)
+        Text(label, color = Color(Brand.WHITE), fontSize = 20.sp)
     }
 }

@@ -8,6 +8,15 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **Accept and Done are on the screen.** The sampling page's column grew
+  past the pane and put the caught key with its Accept, and the count with
+  its Done, below the screen's edge — they could not be tapped at all. The
+  page now has a given height and that work sits at its foot, above the
+  keyboard, whatever stands above it.
+- **No other string's reading is shown against A4.** Beside the reference
+  stood the reading of whatever key had just been struck (193.5 Hz against
+  A4 at 441.0). The reading and the bell are A4's, and appear only while A4
+  is the string sounding.
 - **A4 belongs to the piano, and is set on the sampling page alone.** No
   440 stands on the screen waiting to be a reference. Before it is set there
   is nothing to compare the string against, so the reading is plain: a
