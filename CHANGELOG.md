@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **The screens are a library.** The tuning screens moved from the app into
+  the `ui` module, so that the free app and Pro mount the same screens
+  instead of carrying copies; the app is a shell around them.
 - **Unisons.** The unison screen — a note's strings read apart, partial by
   partial, the congruence display and the sync row — is here now, from the hub,
   as in Pro; and so is the recorder of the studies (Recordings). The hub has

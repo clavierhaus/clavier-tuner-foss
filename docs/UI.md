@@ -30,6 +30,16 @@ go down, and lowering it is part of the commit that mends the file. The test
 runs on the JVM and needs no device. Landscape only: the app does not try to
 be both orientations.
 
+## Where the screens live (4 Oct 2026)
+
+One tuner, two editions: the screens — `BasicHub`, `TunerSettingsScreen`,
+`CongruenceScreen`, `RecordStrikesScreen`, `SessionRecorder`, `PrefsStore` —
+live in the `ui` library (package `at.clavierhaus.unisonmaster.app`), and
+both apps' `MainActivity` mount them. Nothing is copied by hand any more.
+Pro adds the book beside them: its own tabs and pages go into the settings
+screen through `extraPianoPages` and `extraTabs`, its own screens hang off
+its own hub entries. A tuning feature is built here, once.
+
 ## Four layers, one direction
 
 ```

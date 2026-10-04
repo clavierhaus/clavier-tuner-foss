@@ -34,11 +34,11 @@ class LawWallsTest {
     private val ALLOWED = mapOf(
         "ui/TuningScreenParts.kt" to 9,
         "ui/HubParts.kt" to 4,
-        "androidApp/BasicHub.kt" to 1,
-        "androidApp/RecordStrikesScreen.kt" to 2,
+        "ui/BasicHub.kt" to 1,
+        "ui/RecordStrikesScreen.kt" to 2,
         // moved in from Pro on 4 Oct 2026 with its nine one-line caps standing (one tuner, two editions);
         // they go with the revamp's unison pass, and the number only comes down
-        "androidApp/CongruenceScreen.kt" to 9,
+        "ui/CongruenceScreen.kt" to 9,
     )
 
     private fun repoRoot(): File {

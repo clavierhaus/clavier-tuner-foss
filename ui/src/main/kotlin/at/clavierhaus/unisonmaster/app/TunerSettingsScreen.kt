@@ -37,7 +37,8 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * - App: Language · Probe · About
  *
  * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
- * Pro mounts these and adds the book's own tabs.
+ * this screen lives in the ui library, both apps mount it, and Pro adds the
+ * book's own pages and tabs through [extraPianoPages] and [extraTabs].
  *
  * A4 is not here: it is the piano's, set at the hub where the session starts.
  * [open] names a tab and page to start on — the tuning screen reaches the
@@ -54,6 +55,10 @@ fun TunerSettingsScreen(
     onUseMicrophone: () -> Unit = {},
     onBack: () -> Unit,
     open: Pair<Int, Int>? = null,
+    /** Pages an edition adds to the Piano tab after Compass (Pro: the unison floors and the regimen a new piano starts from). */
+    extraPianoPages: List<SettingsPage> = emptyList(),
+    /** Tabs an edition adds before App (Pro: the customers book). */
+    extraTabs: List<SettingsTab> = emptyList(),
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
@@ -65,7 +70,8 @@ fun TunerSettingsScreen(
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), SettingsPage(t(K.settings_page_compass), COMPASS_NOTE, left = { CompassRows(s, model) })),
+            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), COMPASS_NOTE, left = { CompassRows(s, model) })) + extraPianoPages),
+        ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_app), listOf(
                 SettingsPage(t(K.settings_page_language), left = { LanguageRows(s, model) }),
                 SettingsPage(t(K.settings_page_probe), PROBE_NOTE,

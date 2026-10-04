@@ -3,8 +3,9 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
-// Core GUI parts shared by the foss and pro apps. Each app builds its own
-// screens from these; nothing app-specific lives here.
+// The screens and their parts, shared by the foss and pro apps: one tuner,
+// two editions (4 Oct 2026). The apps are shells that mount these; Pro adds
+// the book beside them. Nothing of the book lives here.
 android {
     namespace = "at.clavierhaus.unisonmaster.ui"
     compileSdk = 37
