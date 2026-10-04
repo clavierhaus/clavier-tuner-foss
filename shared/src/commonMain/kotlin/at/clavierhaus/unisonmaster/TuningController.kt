@@ -880,7 +880,8 @@ class TuningController(
                         }
                     }
                     readerGeneration = -1
-                    reader?.push(chunk)?.let { rd -> if (rd.shown) _liveHz.value = rd.hz }
+                    // the A4 string as it sounds now, and nothing once it is gone (Law 3): a shown reading or none
+                    reader?.push(chunk)?.let { rd -> _liveHz.value = if (rd.shown) rd.hz else null }
                     if (_fullSpectrum.value && finder != null) hubSpectrum(finder, _liveHz.value ?: _referenceA4Hz.value)
                     return@start
                 }

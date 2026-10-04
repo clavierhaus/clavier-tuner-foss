@@ -33,6 +33,7 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
+import at.clavierhaus.unisonmaster.ui.A4Bell
 import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.CornerBand
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
@@ -43,7 +44,8 @@ import at.clavierhaus.unisonmaster.ui.formatHz
 
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
- * function — set the reference A4, define the temperament octave (A3–A4 by
+ * function — set the reference A4 (the string's live reading to the
+ * hundredth and one bell against the pitch aimed at), define the temperament octave (A3–A4 by
  * default), and sample notes across the whole keyboard so the engine has the
  * piano's inharmonicity to compute the stretch from. No spectrum, no
  * partials to tap. Left, "Piano Sampling" and the short orders; right, A4,
@@ -66,6 +68,8 @@ internal fun SamplingPage(
     var strikeAgain by remember { mutableStateOf<Int?>(null) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
+    // the pitch aimed at for A4: the tuner's, on this page only; it starts at the last reference, to the half hertz
+    var aim by remember { mutableStateOf(kotlin.math.round(a4 * 2) / 2) }
 
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 132.dp)) {
@@ -88,7 +92,8 @@ internal fun SamplingPage(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     if (view == null) {
-                        Text(hz?.let { formatHz(it) } ?: "strike A4, one string", color = if (hz != null) white else muted, fontFamily = DejaVuSerif, fontSize = 22.sp)
+                        // the A4 string as it sounds now, to a hundredth; nothing when no string sounds
+                        Text(hz?.let { String.format(java.util.Locale.ROOT, "%.2f Hz", it) } ?: "strike A4, one string", color = if (hz != null) white else muted, fontFamily = DejaVuSerif, fontSize = 26.sp)
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
                     } else {
@@ -96,6 +101,21 @@ internal fun SamplingPage(
                         Spacer(Modifier.weight(1f))
                         Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { undo = TuningSession.MIDI_A4 }.padding(6.dp))
                     }
+                }
+                if (view == null) {
+                    // the A4 string as one bell against the pitch aimed at; Set A4 takes the string as it stands
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Aim", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                        Text("−", color = white, fontSize = 22.sp, modifier = Modifier.clickable { aim = (aim - 0.5).coerceAtLeast(TuningController.MIN_REFERENCE_HZ) }.padding(horizontal = 10.dp))
+                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", aim), color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
+                        Text("+", color = white, fontSize = 22.sp, modifier = Modifier.clickable { aim = (aim + 0.5).coerceAtMost(TuningController.MAX_REFERENCE_HZ) }.padding(horizontal = 10.dp))
+                        Spacer(Modifier.weight(1f))
+                        hz?.let { f ->
+                            val c = 1200.0 * kotlin.math.ln(f / aim) / kotlin.math.ln(2.0)
+                            Text(String.format(java.util.Locale.ROOT, "%+.1f c", c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 16.sp)
+                        }
+                    }
+                    A4Bell(hz = hz, aimHz = aim, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(70.dp))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))

@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **A4 on the sampling page.** The A4 string's live reading to a hundredth of
+  a hertz, and one bell on a ±30 c strip against the pitch you aim at (set
+  in half hertz), green inside the match window. The reading dies with the
+  sound: it used to stand on screen after the string had stopped, at a value
+  the decay had pulled away (443.52 for a 443.12 string, in the test).
 - **Piano Sampling, one page.** The start of a tuning is its own page: set
   A4, choose the temperament octave (A3–A4 by default, down to C3), sample
   across the keyboard. The whole keyboard runs along the bottom, every

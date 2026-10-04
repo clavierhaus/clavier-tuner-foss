@@ -59,6 +59,17 @@ class TuningControllerTest {
     }
 
     @Test
+    fun theHubsA4ReadingDiesWithItsSound() {
+        // Law 3 on the sampling page (Peter, 4 Oct 2026: "a frequency display that actually reflects the A4 from the piano"):
+        // a string struck and gone leaves no number behind
+        val (c, src) = controller()
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 6.0, decayS = 0.3))
+        assertNull(c.liveHz.value, "the string has died away: no A4 is shown")
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertNotNull(c.liveHz.value, "struck and sounding: read")
+    }
+
+    @Test
     fun theHubReadsTheA4StringAndDoneMakesItTheReference() {
         val (c, src) = controller()
         c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
