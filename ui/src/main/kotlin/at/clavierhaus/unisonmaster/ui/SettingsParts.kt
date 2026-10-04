@@ -310,7 +310,7 @@ fun ReadOnlyRow(name: String, value: String) {
 
 /** A row with a line of text to edit at the right: one line, no wrap. */
 @Composable
-fun TextRow(name: String, value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun TextRow(name: String, value: String, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
     SettingsRow(name) {
         BasicTextField(
             value = value,
