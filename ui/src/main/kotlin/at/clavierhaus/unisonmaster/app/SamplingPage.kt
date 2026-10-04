@@ -46,8 +46,9 @@ import at.clavierhaus.unisonmaster.ui.formatHz
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
  * function — set this piano's A4, which is defined here and nowhere else
- * (the string's live reading to the tenth, the pitch wanted beside it and
- * one bell against it), define the temperament octave (A3–A4 by
+ * (the string's live reading to the tenth, with no reference to colour it;
+ * once set, the reference itself, movable by a tenth, with the string as one
+ * bell against it), define the temperament octave (A3–A4 by
  * default), and sample notes across the whole keyboard so the engine has the
  * piano's inharmonicity to compute the stretch from. No spectrum, no
  * partials to tap. Left, "Piano Sampling" and the short orders; right, A4,
@@ -70,11 +71,6 @@ internal fun SamplingPage(
     var strikeAgain by remember { mutableStateOf<Int?>(null) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
-    // The pitch wanted for A4 is this piano's and is defined on this page alone (Peter, 4 Oct 2026):
-    // it is not a reference kept anywhere — it starts at the string's own first reading, to the tenth
-    // of a hertz, and the two steps move it from there.
-    var aim by remember { mutableStateOf<Double?>(null) }
-    if (aim == null) hz?.let { aim = tenths(it) }
 
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 132.dp)) {
@@ -94,47 +90,37 @@ internal fun SamplingPage(
             Spacer(Modifier.width(28.dp))
             // ---- right: A4, the temperament, the key caught, the count ----
             Column(Modifier.weight(1f).padding(top = 52.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // A4 before it is set: the string as it sounds, and nothing else. There is no reference to
+                // compare it against — the tuner is making it — so the number does not change colour and no
+                // bell is drawn (Peter, 4 Oct 2026, 16:49). Done takes the string as it stands.
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                     if (view == null) {
-                        val a = aim
-                        // the two steps of the pitch wanted, as buttons to its left: a tenth of a hertz each
-                        // (Peter, 4 Oct 2026 — every string beats, a hundredth is no figure to aim at)
-                        StepBox("−", a != null) { aim = tenths(a!! - 0.1) }
-                        Spacer(Modifier.width(6.dp))
-                        StepBox("+", a != null) { aim = tenths(a!! + 0.1) }
-                        Spacer(Modifier.width(12.dp))
                         Text(
-                            a?.let { String.format(java.util.Locale.ROOT, "to %.1f Hz", it) } ?: "—",
-                            color = if (a != null) white else muted, fontFamily = DejaVuSerif, fontSize = 20.sp,
+                            hz?.let { String.format(java.util.Locale.ROOT, "%.1f Hz", it) } ?: "strike A4, one string",
+                            color = if (hz == null) muted else white, fontFamily = DejaVuSerif, fontSize = if (hz == null) 16.sp else 30.sp,
                         )
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
                     } else {
-                        Text(formatHz(a4), color = Color(Brand.GO_GREEN), fontFamily = DejaVuSerif, fontSize = 22.sp)
+                        // set: now it is the reference, and the two steps move it by a tenth of a hertz —
+                        // every target of the tuning follows it
+                        StepBox("−", true) { controller.setReference(tenths(a4 - 0.1)) }
+                        Spacer(Modifier.width(6.dp))
+                        StepBox("+", true) { controller.setReference(tenths(a4 + 0.1)) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", a4), color = Color(Brand.GO_GREEN), fontFamily = DejaVuSerif, fontSize = 26.sp)
+                        Spacer(Modifier.width(16.dp))
+                        hz?.let { f ->
+                            val c = 1200.0 * kotlin.math.ln(f / a4) / kotlin.math.ln(2.0)
+                            Text(String.format(java.util.Locale.ROOT, "%.1f Hz  %+.1f c", f, c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 15.sp)
+                        }
                         Spacer(Modifier.weight(1f))
                         Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { undo = TuningSession.MIDI_A4 }.padding(6.dp))
                     }
                 }
-                if (view == null) {
-                    // the string as it sounds now, to a tenth, and its cents from the pitch wanted; then the bell
-                    val a = aim
-                    val c = if (hz != null && a != null) 1200.0 * kotlin.math.ln(hz!! / a) / kotlin.math.ln(2.0) else null
-                    val inWindow = c != null && kotlin.math.abs(c) <= cfg.matchCents
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Spacer(Modifier.width(92.dp))
-                        Text(
-                            hz?.let { String.format(java.util.Locale.ROOT, "%.1f Hz", it) } ?: "strike A4, one string",
-                            color = if (hz == null) muted else if (inWindow) Color(Brand.GO_GREEN) else orange,
-                            fontFamily = DejaVuSerif, fontSize = if (hz == null) 16.sp else 30.sp,
-                        )
-                        if (c != null) {
-                            Spacer(Modifier.width(12.dp))
-                            Text(String.format(java.util.Locale.ROOT, "%+.1f c", c), color = if (inWindow) Color(Brand.GO_GREEN) else orange, fontSize = 16.sp)
-                        }
-                    }
-                    A4Bell(hz = hz, aimHz = aim, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(62.dp))
-                }
+                // once A4 is the reference, the string against it as one bell
+                if (view != null) A4Bell(hz = hz, aimHz = a4, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(56.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW

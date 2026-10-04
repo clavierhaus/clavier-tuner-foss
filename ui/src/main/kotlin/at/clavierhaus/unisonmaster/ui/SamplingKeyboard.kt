@@ -16,8 +16,8 @@ import at.clavierhaus.unisonmaster.Brand
 /**
  * The piano's keyboard on the sampling page (Peter, 4 Oct 2026): every key
  * from the lowest of the compass to C8, 88 on a real piano. A sampled key
- * stands orange, the key caught from the last strike and not yet kept is
- * outlined orange, A4 — the reference — is green once set, and the
+ * stands green, as A4 — the reference — does once it is set; the key caught
+ * from the last strike and not yet kept is outlined orange, and the
  * temperament octave is a line under its keys. A tap on a key says which:
  * the page offers the sampled one its undo. It draws what the engine holds
  * and keeps nothing of its own.
@@ -58,9 +58,11 @@ fun SamplingKeyboard(
         val labelBand = 30f
         val h = size.height - labelBand - 10f
         val orange = Color(Brand.ORANGE)
+        // a string kept is done, and done is green, as A4 is (Peter, 4 Oct 2026: orange on a sampled key
+        // said "look here" where nothing was wanted); orange is for the key caught and not yet kept, below
         fun fill(m: Int) = when {
             m == A4 && referenceSet -> Color(Brand.GO_GREEN)
-            m in sampled -> orange
+            m in sampled -> Color(Brand.GO_GREEN)
             black(m) -> Color(Brand.KEY_BLACK)
             else -> Color(Brand.KEY_WHITE)
         }

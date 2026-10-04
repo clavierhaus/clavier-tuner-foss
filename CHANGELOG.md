@@ -9,10 +9,13 @@ reconstructed from the commit history that day.
 
 ### 2026-10-04
 - **A4 belongs to the piano, and is set on the sampling page alone.** No
-  440 stands on the screen waiting to be a reference: the pitch you want
-  starts at the string's own first reading, to the tenth of a hertz, and the
-  two buttons beside it move it from there. The live reading has its own
-  line, so Set A4 keeps its place on the screen.
+  440 stands on the screen waiting to be a reference. Before it is set there
+  is nothing to compare the string against, so the reading is plain: a
+  number in hertz, to a tenth, and Done. Once set, it is the reference — the
+  two buttons move it by a tenth and every target follows, and the string
+  stands against it as one bell.
+- **A sampled key is green**, as A4 is: done is green on this screen. Orange
+  is left for the key caught and not yet kept.
 - **A4 in tenths.** The pitch you want for A4 stands in tenths of a hertz,
   with − and + beside it; the string's live reading stands next to it, also
   to a tenth — every string beats, a hundredth is not a figure to aim at.
