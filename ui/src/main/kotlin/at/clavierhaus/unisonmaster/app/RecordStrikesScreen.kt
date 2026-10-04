@@ -364,8 +364,9 @@ fun RecordStrikesScreen(
     }
 }
 
+/** A choice on a row of choices, orange when it is the one taken; a part of the library, so an edition's own screens draw the same chip (Pro's book does). */
 @Composable
-internal fun Chip(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+fun Chip(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .height(40.dp)
