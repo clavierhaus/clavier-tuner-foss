@@ -47,8 +47,8 @@ data class TunerSettings(
      * what a tuning samples before it starts is the same either way, at
      * least [MIN_SAMPLES] strings where the tuner sees fit (the prescribed
      * set of 25 Sept left with it on 4 Oct 2026, Peter's word: one sampling
-     * law in both editions). Whether this preference stays at all is
-     * Peter's open question. Off by default: the professional's way.
+     * law in both editions). The preference stays — Peter's word, 4 Oct 2026,
+     * 14:34. Off by default: the professional's way.
      */
     val temperamentFirst: Boolean = false,
     // STRETCH
