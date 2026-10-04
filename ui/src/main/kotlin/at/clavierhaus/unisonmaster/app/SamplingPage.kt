@@ -45,8 +45,9 @@ import at.clavierhaus.unisonmaster.ui.formatHz
 
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
- * function — set the reference A4 (the string's live reading to the
- * tenth beside the pitch wanted, and one bell against it), define the temperament octave (A3–A4 by
+ * function — set this piano's A4, which is defined here and nowhere else
+ * (the string's live reading to the tenth, the pitch wanted beside it and
+ * one bell against it), define the temperament octave (A3–A4 by
  * default), and sample notes across the whole keyboard so the engine has the
  * piano's inharmonicity to compute the stretch from. No spectrum, no
  * partials to tap. Left, "Piano Sampling" and the short orders; right, A4,
@@ -69,8 +70,11 @@ internal fun SamplingPage(
     var strikeAgain by remember { mutableStateOf<Int?>(null) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
-    // the pitch wanted for A4: the tuner's, on this page only; it starts at the last reference, in tenths of a hertz
-    var aim by remember { mutableStateOf(tenths(a4)) }
+    // The pitch wanted for A4 is this piano's and is defined on this page alone (Peter, 4 Oct 2026):
+    // it is not a reference kept anywhere — it starts at the string's own first reading, to the tenth
+    // of a hertz, and the two steps move it from there.
+    var aim by remember { mutableStateOf<Double?>(null) }
+    if (aim == null) hz?.let { aim = tenths(it) }
 
     Box(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 132.dp)) {
@@ -91,15 +95,19 @@ internal fun SamplingPage(
             // ---- right: A4, the temperament, the key caught, the count ----
             Column(Modifier.weight(1f).padding(top = 52.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                    Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                     if (view == null) {
-                        // the pitch wanted, in tenths of a hertz (Peter, 4 Oct 2026: every string beats, a hundredth
-                        // is not a figure a tuner can aim at), its two steps to its left as buttons
-                        StepBox("−") { aim = tenths(aim - 0.1) }
-                        Spacer(Modifier.width(8.dp))
-                        StepBox("+") { aim = tenths(aim + 0.1) }
-                        Spacer(Modifier.width(14.dp))
-                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", aim), color = white, fontFamily = DejaVuSerif, fontSize = 26.sp)
+                        val a = aim
+                        // the two steps of the pitch wanted, as buttons to its left: a tenth of a hertz each
+                        // (Peter, 4 Oct 2026 — every string beats, a hundredth is no figure to aim at)
+                        StepBox("−", a != null) { aim = tenths(a!! - 0.1) }
+                        Spacer(Modifier.width(6.dp))
+                        StepBox("+", a != null) { aim = tenths(a!! + 0.1) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            a?.let { String.format(java.util.Locale.ROOT, "to %.1f Hz", it) } ?: "—",
+                            color = if (a != null) white else muted, fontFamily = DejaVuSerif, fontSize = 20.sp,
+                        )
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
                     } else {
@@ -110,10 +118,11 @@ internal fun SamplingPage(
                 }
                 if (view == null) {
                     // the string as it sounds now, to a tenth, and its cents from the pitch wanted; then the bell
-                    val c = hz?.let { 1200.0 * kotlin.math.ln(it / aim) / kotlin.math.ln(2.0) }
+                    val a = aim
+                    val c = if (hz != null && a != null) 1200.0 * kotlin.math.ln(hz!! / a) / kotlin.math.ln(2.0) else null
                     val inWindow = c != null && kotlin.math.abs(c) <= cfg.matchCents
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Spacer(Modifier.width(120.dp))
+                        Spacer(Modifier.width(92.dp))
                         Text(
                             hz?.let { String.format(java.util.Locale.ROOT, "%.1f Hz", it) } ?: "strike A4, one string",
                             color = if (hz == null) muted else if (inWindow) Color(Brand.GO_GREEN) else orange,
@@ -197,7 +206,7 @@ private val ORDERS = listOf(
     "Sample the lowest note.",
     "First and last bichord: one string muted.",
     "First plain-wire trichord: two strings muted.",
-    "Then across the piano: two notes per octave, up to C7.",
+    "Then: Two notes per octave, up to C7.",
     "Each key struck: check it, Accept.",
 )
 
@@ -205,15 +214,15 @@ private val ORDERS = listOf(
 private fun tenths(hz: Double): Double =
     (kotlin.math.round(hz * 10) / 10).coerceIn(TuningController.MIN_REFERENCE_HZ, TuningController.MAX_REFERENCE_HZ)
 
-/** A step of the pitch wanted: a box with its sign, to the left of the number it moves. */
+/** A step of the pitch wanted: a box with its sign, to the left of the number it moves; dim until a string has been heard. */
 @Composable
-private fun StepBox(label: String, onClick: () -> Unit) {
+private fun StepBox(label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
-        Modifier.size(width = 44.dp, height = 36.dp)
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick),
+        Modifier.size(width = 40.dp, height = 34.dp)
+            .background(Color(if (enabled) 0xFF2A2A2A else 0xFF181818), RoundedCornerShape(6.dp))
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = Color(Brand.WHITE), fontSize = 22.sp)
+        Text(label, color = Color(if (enabled) Brand.WHITE else 0xFF444444), fontSize = 20.sp)
     }
 }

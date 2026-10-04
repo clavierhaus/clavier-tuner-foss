@@ -14,7 +14,8 @@ import kotlin.math.ln
 
 /**
  * The A4 string as one bell on the sampling page (Peter, 4 Oct 2026): a
- * linear ±[SPAN_C] cent strip around the pitch aimed at, the match window
+ * linear ±[SPAN_C] cent strip around the pitch wanted ([aimHz]; nothing is
+ * drawn before the tuner has one), the match window
  * drawn at its true width, and the string's live reading as a single bell —
  * green inside the window, orange outside, nothing at all when no string
  * sounds (the reading dies with its sound). It draws the engine's reading
@@ -22,8 +23,9 @@ import kotlin.math.ln
  * between them.
  */
 @Composable
-fun A4Bell(hz: Double?, aimHz: Double, matchCents: Double, modifier: Modifier = Modifier) {
+fun A4Bell(hz: Double?, aimHz: Double?, matchCents: Double, modifier: Modifier = Modifier) {
     Canvas(modifier) {
+        val aim = aimHz ?: return@Canvas
         val w = size.width; val h = size.height
         val mid = w / 2f
         val perCent = w / (2 * SPAN_C).toFloat()
@@ -36,7 +38,7 @@ fun A4Bell(hz: Double?, aimHz: Double, matchCents: Double, modifier: Modifier = 
         drawRect(Color(Brand.WHITE_MUTED), Offset(mid - 0.5f, 0f), Size(1f, base))
         // the bell, where the string stands
         val f = hz ?: return@Canvas
-        val cents = 1200.0 * ln(f / aimHz) / ln(2.0)
+        val cents = 1200.0 * ln(f / aim) / ln(2.0)
         val x = mid + (cents.coerceIn(-SPAN_C, SPAN_C) * perCent).toFloat()
         val colour = if (kotlin.math.abs(cents) <= matchCents) Color(Brand.GO_GREEN) else Color(Brand.ORANGE)
         val sigma = (BELL_C * perCent).toFloat()
