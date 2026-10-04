@@ -202,6 +202,14 @@ data class TunerSettings(
      * strings, the bass within an octave of the plain-wire floor, the treble
      * above the temperament octave, the middle in between.
      */
+    /** The stretch region [midi] lies in, 0..3: wound, bass, middle, treble — the order of the Stretch pages in Settings. */
+    fun regionOf(midi: Int): Int = when {
+        isWound(midi) -> 0
+        midi <= bassBoundaryMidi -> 1
+        midi > TEMPERAMENT_HIGH -> 3
+        else -> 2
+    }
+
     fun octaveTypeFor(midi: Int): OctaveType = when {
         isWound(midi) -> octaveWound
         midi <= bassBoundaryMidi -> octaveBass

@@ -95,4 +95,16 @@ class SettingsTest {
         assertEquals(5.0, s.widthFor(108), 1e-9)                // C8
         assertEquals(0.0, s.widthFor(45), 1e-9)                 // the plain bass: no far width set, constant
     }
+
+    /** The region a note lies in is the order of the Stretch pages: the tuning screen opens the right one with one tap. */
+    @Test
+    fun theRegionOfANoteIsTheStretchPageItOpens() {
+        val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 48)
+        assertEquals(0, s.regionOf(47), "below the lowest plain string: wound")
+        assertEquals(1, s.regionOf(48), "the lowest plain string: bass")
+        assertEquals(1, s.regionOf(60), "an octave above it: still bass")
+        assertEquals(2, s.regionOf(61), "then the middle")
+        assertEquals(2, s.regionOf(69), "A4 is the temperament's: middle")
+        assertEquals(3, s.regionOf(70), "above A4: treble")
+    }
 }

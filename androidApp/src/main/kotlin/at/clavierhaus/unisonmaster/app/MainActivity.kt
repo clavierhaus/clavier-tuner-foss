@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
@@ -134,7 +135,9 @@ class MainActivity : ComponentActivity() {
                     micWanted = screen == "tune"
                     if (micWanted && hasMic()) controller.startLive() else stopListening()
                 }
-                fun openSettings() { settingsFrom = screen; screen = "settings" }
+                // where Settings opens: null = where it last was; the tuning screen asks for the stretch's page (tab 1)
+                var settingsOpen by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+                fun openSettings(at: Pair<Int, Int>? = null) { settingsOpen = at; settingsFrom = screen; screen = "settings" }
                 fun backToHub() {
                     controller.snapshot()?.let { sessionStore.save(it) }
                     lastTuning.value = sessionStore.load()
@@ -153,6 +156,7 @@ class MainActivity : ComponentActivity() {
                                 onUseMicrophone = { useMicrophone() },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
+                                open = settingsOpen,
                             )
                         }
                         "record" -> {
@@ -174,6 +178,7 @@ class MainActivity : ComponentActivity() {
                                 onPickRecording = if (settings.probe) ({ pickRecording() }) else null,
                                 onUseMicrophone = { useMicrophone() },
                                 onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
+                                onStretch = { region -> openSettings(1 to region) },
                             )
                         }
                         else -> {

@@ -49,6 +49,8 @@ fun TuningPictureView(
     modifier: Modifier = Modifier,
     follows: Boolean = true,
     onNoteTap: (() -> Unit)? = null,
+    /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
+    onStretchTap: (() -> Unit)? = null,
 ) {
     val on = p.state == State.ON
     Pane(modifier) {
@@ -67,7 +69,11 @@ fun TuningPictureView(
         }
         Place(0.17f, 0.08f, 0.30f, 0.10f) {
             val anchorNote = if (p.anchor != p.listened) " · bells on ${p.anchor}" else ""
-            FitText("partial ${p.listened}$anchorNote", 13.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE_MUTED))
+            FitText(
+                "partial ${p.listened}$anchorNote", 13.sp,
+                Modifier.fillMaxSize().then(if (onStretchTap != null) Modifier.clickable(onClick = onStretchTap) else Modifier),
+                color = Color(Brand.WHITE_MUTED),
+            )
         }
         Place(0.00f, 0.34f, 0.47f, 0.40f) { CentsScale(p.pointerCents, matchCents, on, p.state != State.SILENT) }
         // right: the bells, and nothing else

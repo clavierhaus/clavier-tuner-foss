@@ -8,6 +8,10 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-04
+- **The stretch is one tap from the tuning screen.** A tap on the "partial N"
+  line of the picture opens Settings at the stretch page of the region the
+  note is in — wound, bass, middle or treble — the octave type the tuner is
+  living with never three taps deep (the F3 affair's lesson).
 - **Settings without scroll.** Four tabs by what they are for — Tuning,
   Stretch, Piano, App — each with named pages on a second strip (◀ ▶, or a
   swipe) where it has more than one; a page is two columns of rows that say

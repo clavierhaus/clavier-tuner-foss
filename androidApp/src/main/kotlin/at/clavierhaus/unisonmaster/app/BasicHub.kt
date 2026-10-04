@@ -75,6 +75,8 @@ fun BasicHub(
     onUseMicrophone: () -> Unit = {},
     /** Switches TunerSettings.autoNote: off when the tuner names a key by hand, on when he taps the name again. */
     onAutoNote: ((Boolean) -> Unit)? = null,
+    /** Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf): the note's own octave type and width, one tap away. */
+    onStretch: ((Int) -> Unit)? = null,
 ) {
     val hz by controller.liveHz.collectAsState()
     val level by controller.liveLevel.collectAsState()
@@ -254,6 +256,7 @@ fun BasicHub(
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                     follows = follows,
                     onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
+                    onStretchTap = onStretch?.let { open -> { open(cfg.regionOf(t.midi)) } },
                 )
                 if (pickingNote) NotePicker(
                     lowMidi = t.stepLowMidi,
