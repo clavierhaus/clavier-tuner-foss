@@ -52,9 +52,15 @@ import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
  * default), and sample notes across the whole keyboard so the engine has the
  * piano's inharmonicity to compute the stretch from. No spectrum, no
  * partials to tap. Left, "Piano Sampling" and the short orders; right, A4,
- * the temperament, the key caught from the last strike with Accept, the
- * count and Done; along the bottom the piano's keyboard, every sampled key
- * orange — a tap on one offers its undo: out of the sampling, or struck anew.
+ * the temperament, the key caught from the last strike with its Undo and its
+ * Accept, the count and Done; along the bottom the piano's keyboard, every
+ * sampled key green.
+ *
+ * The right side is the only interactive area (Peter, 5 Oct 2026). The
+ * keyboard indicates the key and shows the progress and takes no touch: a key
+ * is 17 dp wide on a 891 dp screen, so a tap on it could not be aimed, and
+ * what it used to offer — a sample out of the sampling, or struck anew — is
+ * the Undo button beside the caught key and striking that key again.
  */
 @Composable
 internal fun SamplingPage(
@@ -67,8 +73,8 @@ internal fun SamplingPage(
     val a4 by controller.referenceA4Hz.collectAsState()
     val cfg by controller.settings.collectAsState()
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED); val orange = Color(Brand.ORANGE)
-    var undo by remember { mutableStateOf<Int?>(null) }
-    var strikeAgain by remember { mutableStateOf<Int?>(null) }
+    // the one thing this page asks before doing: A4 set again, which starts the sampling over
+    var resetA4 by remember { mutableStateOf(false) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
     // A4 is what sounds when the last strike was caught as A4: only then is the live reading A4's own
@@ -127,7 +133,7 @@ internal fun SamplingPage(
                             Text(String.format(java.util.Locale.ROOT, "%.1f Hz  %+.1f c", hz!!, c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 15.sp)
                         }
                         Spacer(Modifier.weight(1f))
-                        Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { undo = TuningSession.MIDI_A4 }.padding(6.dp))
+                        Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
                     }
                 }
                 // the A4 string against the reference as one bell, while A4 is what sounds
@@ -148,15 +154,20 @@ internal fun SamplingPage(
                         Text("Caught", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                         val c = view.caught
                         Text(
-                            when {
-                                c != null -> Notes.name(c)
-                                strikeAgain != null -> "strike ${Notes.name(strikeAgain!!)} again"
-                                else -> "strike a key"
-                            },
+                            if (c != null) Notes.name(c) else "strike a key",
                             color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
                         Spacer(Modifier.weight(1f))
-                        AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive(); strikeAgain = null })
+                        // Undo stands beside the key it takes back and names it, so nothing is asked
+                        // twice: the sample goes, and striking that key again puts a new one in its
+                        // place, which is what the engine does with any key struck a second time. The
+                        // keyboard takes no touch — the right side of this page is the only interactive
+                        // area (Peter, 5 Oct 2026) — and a 17 dp key could not be aimed at anyway.
+                        c?.takeIf { it != TuningSession.MIDI_A4 && it in sampled }?.let { back ->
+                            Chip("Undo ${Notes.name(back)}", selected = false, enabled = true) { controller.forgetSample(back) }
+                            Spacer(Modifier.width(10.dp))
+                        }
+                        AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
                         Text("Sampled", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
@@ -175,25 +186,19 @@ internal fun SamplingPage(
             referenceSet = view != null,
             temperament = low..TuningSession.MIDI_A4,
             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
-            onKey = { m -> if (m in sampled || (m == TuningSession.MIDI_A4 && view != null)) undo = m },
         )
     }
 
-    // the undo of a sampled key: out of the sampling, or struck anew; A4's is the session begun again
-    undo?.let { m ->
-        Dialog(onDismissRequest = { undo = null }) {
+    // Setting A4 again throws every sample away, so it is asked before it is done. Nothing else on
+    // this page asks: Undo names the key it takes back, and the key can simply be struck again.
+    if (resetA4) {
+        Dialog(onDismissRequest = { resetA4 = false }) {
             Column(Modifier.background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(Notes.name(m), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                if (m == TuningSession.MIDI_A4) {
-                    Text("Setting A4 again starts the sampling over: every sample goes.", color = muted, fontSize = 14.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Chip("Set A4 again", selected = true, enabled = true) { undo = null; controller.resetSession() }
-                        Chip("Keep", selected = false, enabled = true) { undo = null }
-                    }
-                } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Chip("Strike again", selected = true, enabled = true) { controller.forgetSample(m); strikeAgain = m; undo = null }
-                    Chip("Remove", selected = false, enabled = true) { controller.forgetSample(m); undo = null }
-                    Chip("Keep", selected = false, enabled = true) { undo = null }
+                Text(Notes.name(TuningSession.MIDI_A4), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Setting A4 again starts the sampling over: every sample goes.", color = muted, fontSize = 14.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Chip("Set A4 again", selected = true, enabled = true) { resetA4 = false; controller.resetSession() }
+                    Chip("Keep", selected = false, enabled = true) { resetA4 = false }
                 }
             }
         }

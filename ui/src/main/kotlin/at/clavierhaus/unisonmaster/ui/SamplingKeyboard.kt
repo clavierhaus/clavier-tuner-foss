@@ -1,7 +1,6 @@
 package at.clavierhaus.unisonmaster.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -10,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.pointerInput
 import at.clavierhaus.unisonmaster.Brand
 
 /**
@@ -18,9 +16,14 @@ import at.clavierhaus.unisonmaster.Brand
  * from the lowest of the compass to C8, 88 on a real piano. A sampled key
  * stands green, as A4 — the reference — does once it is set; the key caught
  * from the last strike and not yet kept is outlined orange, and the
- * temperament octave is a line under its keys. A tap on a key says which:
- * the page offers the sampled one its undo. It draws what the engine holds
- * and keeps nothing of its own.
+ * temperament octave is a line under its keys.
+ *
+ * It takes no touch. A key is 17 dp wide on a 891 dp screen — a sixth of
+ * what a finger wants — and a picture that answers a tap invites one it
+ * cannot place: the keyboard is the indicator of the key and the picture of
+ * the progress, and nothing else (Peter, 5 Oct 2026, "the right side of the
+ * sampling screen is the only interactive area"). Undo is a button there.
+ * It draws what the engine holds and keeps nothing of its own.
  */
 @Composable
 fun SamplingKeyboard(
@@ -30,7 +33,6 @@ fun SamplingKeyboard(
     referenceSet: Boolean,
     temperament: IntRange,
     modifier: Modifier = Modifier,
-    onKey: (Int) -> Unit = {},
 ) {
     val lowest = lowestMidi.coerceAtMost(A0)
     val keys = lowest..C8
@@ -39,21 +41,7 @@ fun SamplingKeyboard(
         color = Color(Brand.WHITE_MUTED).toArgb(); textSize = 22f
         textAlign = android.graphics.Paint.Align.CENTER; isAntiAlias = true
     }
-    Canvas(
-        modifier.pointerInput(lowest) {
-            detectTapGestures { p ->
-                val w = size.width.toFloat() / whites
-                val labelBand = 30f
-                val h = size.height - labelBand - 10f
-                // a black key wins where it covers the white one
-                val hitBlack = if (p.y <= h * 0.62f) keys.firstOrNull { m ->
-                    black(m) && kotlin.math.abs(p.x - whitesBelow(lowest, m) * w) <= w * 0.31f
-                } else null
-                val key = hitBlack ?: keys.firstOrNull { m -> !black(m) && p.x >= whitesBelow(lowest, m) * w && p.x < (whitesBelow(lowest, m) + 1) * w }
-                if (key != null) onKey(key)
-            }
-        },
-    ) {
+    Canvas(modifier) {
         val w = size.width / whites
         val labelBand = 30f
         val h = size.height - labelBand - 10f
