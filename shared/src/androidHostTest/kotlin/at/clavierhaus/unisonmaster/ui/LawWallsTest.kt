@@ -32,10 +32,11 @@ class LawWallsTest {
 
     /** The violations standing on 2 October 2026, per file. Lower, never raise. */
     private val ALLOWED = mapOf(
-        "ui/TuningScreenParts.kt" to 9,
+        // TuningScreenParts lost one with RecordButton, and RecordStrikesScreen's two
+        // left with the file, when the recorder went to Pro on 5 Oct 2026
+        "ui/TuningScreenParts.kt" to 8,
         "ui/HubParts.kt" to 4,
         "ui/BasicHub.kt" to 1,
-        "ui/RecordStrikesScreen.kt" to 2,
     )
 
     private fun repoRoot(): File {

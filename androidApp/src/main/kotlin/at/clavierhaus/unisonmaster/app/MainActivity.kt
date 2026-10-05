@@ -159,10 +159,10 @@ class MainActivity : ComponentActivity() {
                             BackHandler { backToHub() }
                             BasicHub(
                                 controller = controller,
-                                // no record and no play button in the free edition (blueprint §18.5): the reference
-                                // recording belongs to the piano's record, which only Pro keeps; the probe itself
-                                // stays — App · Probe feeds the engine a recording where the microphone's buffers arrive
-                                recorder = null,
+                                // no record and no play button in the free edition (blueprint §18.5): the recorder
+                                // and the reference recording belong to the piano's record, which only Pro keeps, and
+                                // since 5 Oct 2026 the recorder's own code lives in Pro too; the probe stays —
+                                // App · Probe feeds the engine a recording where the microphone's buffers arrive
                                 onSettings = { openSettings() },
                                 onHome = { backToHub() },
                                 feeding = audioSource.feeding.collectAsState().value,

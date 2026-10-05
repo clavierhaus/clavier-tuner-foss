@@ -383,38 +383,3 @@ fun ProbeButton(feeding: String?, onPick: () -> Unit, onStop: () -> Unit, modifi
         }
     }
 }
-
-/**
- * The recording button, top right: a red ring while idle, a red disc with
- * the duration as mm:ss while the session is being written. Shown only when
- * recording is switched on in the settings.
- */
-@Composable
-fun RecordButton(recording: Boolean, seconds: Int, onToggle: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .clickable(onClick = onToggle)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-    ) {
-        if (recording) {
-            Text(
-                String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60),
-                color = Color(Brand.ALERT_RED),
-                fontFamily = DejaVuSerif,
-                fontSize = 22.sp,
-                maxLines = 1,
-            )
-            Spacer(Modifier.width(10.dp))
-        }
-        Box(
-            Modifier
-                .size(RECORD_DOT)
-                .background(if (recording) Color(Brand.ALERT_RED) else Color.Transparent, CircleShape)
-                .border(3.dp, Color(Brand.ALERT_RED), CircleShape),
-        )
-    }
-}
-
-private val RECORD_DOT = 26.dp

@@ -36,7 +36,6 @@ import at.clavierhaus.unisonmaster.ui.PartialChips
 import at.clavierhaus.unisonmaster.ui.ProgressButton
 import at.clavierhaus.unisonmaster.ui.ProgressKeyboard
 import at.clavierhaus.unisonmaster.ui.ProbeButton
-import at.clavierhaus.unisonmaster.ui.RecordButton
 import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
 import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.StateWord
@@ -56,12 +55,18 @@ import kotlin.math.abs
  * every screen's (ui/Corners.kt): the gear top left, the name and home top
  * right; no back arrow (blueprint §18–§19). In the band between them, the
  * state word and — in Pro, switched on in the settings — the red recording
- * button and the play button.
+ * button ([recordButton], Pro's own) and the play button.
  */
 @Composable
 fun BasicHub(
     controller: TuningController,
-    recorder: SessionRecorder?,
+    /**
+     * Pro's red recording button, drawn by the edition that owns a recorder;
+     * null in the free edition, which has none. The band the button sits in is
+     * drawn here, once, for both editions; what goes in it, and the recorder
+     * behind it, are Pro's (Peter, 5 Oct 2026: the recorder leaves foss).
+     */
+    recordButton: (@Composable () -> Unit)? = null,
     onSettings: () -> Unit,
     /** Home: the hub, from the corner every screen shares. */
     onHome: () -> Unit,
@@ -177,13 +182,9 @@ fun BasicHub(
         // the band between the corners: the state word, and Pro's two buttons
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = CORNER_RIGHT_WIDTH)) {
             if (!t.sampling) StateWord(state.first, state.second)
-            if (recorder != null && !t.sampling) {
-                val recording by recorder.recording.collectAsState()
-                val seconds by recorder.seconds.collectAsState()
+            if (recordButton != null && !t.sampling) {
                 Spacer(Modifier.width(18.dp))
-                RecordButton(recording = recording, seconds = seconds, onToggle = {
-                    if (recording) recorder.stop() else recorder.start()
-                })
+                recordButton()
             }
             if (onPickRecording != null && !t.sampling) {
                 Spacer(Modifier.width(4.dp))

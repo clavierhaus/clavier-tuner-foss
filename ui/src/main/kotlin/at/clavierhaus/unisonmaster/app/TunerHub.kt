@@ -14,10 +14,10 @@ import at.clavierhaus.unisonmaster.ui.formatHz
  * doors: *Continue Tuning* while one is saved, *New Tuning*, an edition's own
  * doors ([extra] — Pro's *My Pianos* / *My Customers*), and where the
  * edition has them *The Unisons* ([onUnisons]; Pro's — Peter, 4 Oct 2026,
- * "a USP for Pro only") and *Recordings* ([onRecordings]; Pro's, since the
- * reference recording belongs to the piano's record — blueprint §18). The
- * words are written here once; an app only says what happens behind each
- * door.
+ * "a USP for Pro only"). The recorder's door went with the recorder to Pro on
+ * 5 Oct 2026 and arrives through [extra] like the book's. The words of the
+ * doors kept here are written here once; an app only says what happens behind
+ * each door.
  */
 @Composable
 fun TunerHub(
@@ -25,7 +25,6 @@ fun TunerHub(
     onContinue: (SessionSnapshot) -> Unit,
     onNew: () -> Unit,
     onUnisons: (() -> Unit)? = null,
-    onRecordings: (() -> Unit)? = null,
     onSettings: () -> Unit,
     extra: List<HomeHubItem> = emptyList(),
 ) {
@@ -42,7 +41,6 @@ fun TunerHub(
         )
         addAll(extra)
         if (onUnisons != null) add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", lead = "The", onClick = onUnisons))
-        if (onRecordings != null) add(HomeHubItem("Recordings", "", "every string alone, the drift, the compass: the studies", onClick = onRecordings))
     }
     HomeHub(entries = entries, onSettings = onSettings)
 }
