@@ -95,26 +95,30 @@ private fun Bells(p: TuningPicture) {
         drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
         drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
         val paint = android.graphics.Paint().apply { color = white; textSize = h * 0.07f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER }
-        // Each partial's number stands over its own bell. It used to stand in a row of evenly spaced
-        // numbers across the panel, so that two labels could never overprint — and that row said five
-        // partials stood at five places when all five were stacked on the anchor (Peter's screen
-        // recording of 4 Oct 2026, 17:02: "the bells speak a totally different language"). A label is
-        // moved sideways only as far as it must be to clear the one before it, and a hairline runs from
-        // it down to the bell it belongs to, so the eye is never told a position the string does not hold.
-        val shown = p.bells.filter { it.k !in p.dropped }.sortedBy { it.offsetCents }
-        val gap = h * 0.075f
-        val lx = FloatArray(shown.size) { xOf(shown[it].offsetCents) }
-        for (i in 1 until lx.size) if (lx[i] - lx[i - 1] < gap) lx[i] = lx[i - 1] + gap
-        for (i in lx.indices.reversed()) {
-            if (lx[i] > w - gap / 2) lx[i] = w - gap / 2
-            if (i > 0 && lx[i] - lx[i - 1] < gap) lx[i - 1] = lx[i] - gap
-        }
+        // The numbers of the partials, in a row above the bells, each joined to its own bell by a
+        // hairline.
+        //
+        // Until 4 Oct 2026 the row was evenly spaced and said nothing about where a partial stood, so
+        // it showed five partials at five places while all five were stacked on the anchor (Peter,
+        // 17:02: "the bells speak a totally different language"). That evening each number was moved
+        // over its own bell instead, which cured that and caused the fault below.
+        // The row stands in the partials' own order, k ascending, and never in the order of their
+        // positions. On a clean string every partial stands on one line — that is what the display is
+        // for (Rule 1) — so which bell is leftmost is noise: on the Samick's clean F3 a bell moves
+        // 0.01 to 0.09 cents from one hop to the next, a hundredth of the space between two labels.
+        // Ordering the row by position therefore re-shuffled the numbers on every frame while the
+        // string stood still: Peter's recording of a clean G#4 (5 Oct 2026, 15:33) reads 2 4 3 5 1,
+        // then 2 3 4 5 1, then 5 2 3 4, then 3 4 2, inside a second and a half. A number says which
+        // partial it is; the hairline below it says where that partial stands. Only the hairline moves.
+        val shown = p.bells.filter { it.k !in p.dropped }.sortedBy { it.k }
+        val step = w / (shown.size + 1)
         shown.forEachIndexed { i, b ->
             val c = colourOf(b, p)
             paint.color = c.toArgb()
-            drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx[i].coerceIn(gap / 2, w - gap / 2), h * 0.10f, paint)
+            val lx = step * (i + 1)
+            drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx, h * 0.10f, paint)
             val bx = xOf(b.offsetCents)
-            if (abs(lx[i] - bx) > 1f) drawLine(c.copy(alpha = 0.5f), Offset(lx[i], h * 0.12f), Offset(bx, h * 0.17f), 1f)
+            if (abs(lx - bx) > 1f) drawLine(c.copy(alpha = 0.5f), Offset(lx, h * 0.12f), Offset(bx, h * 0.17f), 1f)
         }
         // the bells: height says level, place says distance from the anchor, width says how well
         // the partial is read — its own measured spread (a loud partial a needle, one at the room's
