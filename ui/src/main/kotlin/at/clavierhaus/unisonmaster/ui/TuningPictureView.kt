@@ -32,9 +32,9 @@ const val SCALE_SPAN_C = 30.0
 /**
  * Draws a [TuningPicture] and nothing else (docs/UI.md): a split window. Left,
  * the tuning — the note, the partial, the linear scale with its gate. Right,
- * nothing but the bells on their centre line, the partial numbers in one row
- * above them. Every position is a fraction of the pane. The picture decides
- * what is shown; this decides only how.
+ * nothing but the bells on their centre line — no numbers over them, the chip
+ * row below naming the partials instead. Every position is a fraction of the
+ * pane. The picture decides what is shown; this decides only how.
  *
  * The note name is the one control on the picture: the screen follows the key
  * struck by default, and a tap on the name ([onNoteTap]) lets the tuner name
@@ -87,7 +87,8 @@ private fun Bells(p: TuningPicture) {
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
         val base = h * 0.92f
-        val top = h * 0.16f
+        // the band the numbers used to take is the bells' now (5 Oct 2026)
+        val top = h * 0.06f
         val cx = w / 2f
         val half = w / 2f * 0.9f
         fun xOf(cents: Double): Float = (cx + (cents / BELLS_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
@@ -95,31 +96,15 @@ private fun Bells(p: TuningPicture) {
         drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
         drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
         val paint = android.graphics.Paint().apply { color = white; textSize = h * 0.07f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER }
-        // The numbers of the partials, in a row above the bells, each joined to its own bell by a
-        // hairline.
-        //
-        // Until 4 Oct 2026 the row was evenly spaced and said nothing about where a partial stood, so
-        // it showed five partials at five places while all five were stacked on the anchor (Peter,
-        // 17:02: "the bells speak a totally different language"). That evening each number was moved
-        // over its own bell instead, which cured that and caused the fault below.
-        // The row stands in the partials' own order, k ascending, and never in the order of their
-        // positions. On a clean string every partial stands on one line — that is what the display is
-        // for (Rule 1) — so which bell is leftmost is noise: on the Samick's clean F3 a bell moves
-        // 0.01 to 0.09 cents from one hop to the next, a hundredth of the space between two labels.
-        // Ordering the row by position therefore re-shuffled the numbers on every frame while the
-        // string stood still: Peter's recording of a clean G#4 (5 Oct 2026, 15:33) reads 2 4 3 5 1,
-        // then 2 3 4 5 1, then 5 2 3 4, then 3 4 2, inside a second and a half. A number says which
-        // partial it is; the hairline below it says where that partial stands. Only the hairline moves.
-        val shown = p.bells.filter { it.k !in p.dropped }.sortedBy { it.k }
-        val step = w / (shown.size + 1)
-        shown.forEachIndexed { i, b ->
-            val c = colourOf(b, p)
-            paint.color = c.toArgb()
-            val lx = step * (i + 1)
-            drawContext.canvas.nativeCanvas.drawText(b.k.toString(), lx, h * 0.10f, paint)
-            val bx = xOf(b.offsetCents)
-            if (abs(lx - bx) > 1f) drawLine(c.copy(alpha = 0.5f), Offset(lx, h * 0.12f), Offset(bx, h * 0.17f), 1f)
-        }
+        // No numbers over the bells. They named every partial on every frame, and on a clean string
+        // — where all of them stand on one line, which is what this picture exists to show — the name
+        // said nothing the screen did not already carry: the line above names the partial being tuned
+        // and the one the bells are anchored on, and the chip row below names every partial, paints a
+        // false one red-violet and takes it out of the bells and the reading when it is tapped
+        // (PartialChips). Numbering them here a second time only gave the eye something to read that
+        // measured nothing, and while the row was ordered by position it also made them permute on
+        // every frame while the string stood still (Peter, 5 Oct 2026: "What's the point of the
+        // number?" — "We do not need the numbers for that"). The bells stand alone.
         // the bells: height says level, place says distance from the anchor, width says how well
         // the partial is read — its own measured spread (a loud partial a needle, one at the room's
         // floor a wide low bell), never narrower than MIN_BELL_WIDTH_C so a needle does not vanish
