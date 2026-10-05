@@ -143,6 +143,8 @@ class SessionStoreTest {
         val saved = ArrayList<SessionSnapshot>()
         val first = TuningController(Queue(listOf(strike(a4, 4e-4, 3.0), strike(a0, 1e-4, 3.0))), clock = { 42L })
         first.onSessionChanged = { saved.add(it) }
+        // the pitch is chosen before the string is brought to it (5 Oct 2026): Done keeps the choice
+        first.setReference(a4)
         first.startLive(); first.acceptLive(); first.stopLive()
         assertTrue(first.tuning.value!!.sampling)
         first.startLive(); first.stopLive()                 // A0 struck: caught

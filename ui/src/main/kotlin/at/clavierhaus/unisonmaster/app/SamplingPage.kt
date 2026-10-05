@@ -35,9 +35,10 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
-import at.clavierhaus.unisonmaster.ui.A4Bell
 import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.CornerBand
+import at.clavierhaus.unisonmaster.ui.TuningPictureView
+import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.FitText
@@ -78,7 +79,26 @@ internal fun SamplingPage(
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
     // A4 is what sounds when the last strike was caught as A4: only then is the live reading A4's own
-    val a4Sounding = view != null && view.caught == TuningSession.MIDI_A4
+    // A4 is what sounds: before the session there is nothing else for the hub's reader to be reading,
+    // and after it the strike must have been caught as A4 — the strike of any other key is that key's
+    // and is never shown against this pitch (4 Oct 2026, 16:52, where 193.5 Hz stood here)
+    val a4Live = hz != null && (view == null || view.caught == TuningSession.MIDI_A4)
+    val a4Builder = remember { TuningPicture.Builder() }
+    val a4Picture = a4Builder.build(
+        TuningPicture.Frame(
+            note = "A4",
+            listened = 1,
+            live = a4Live,
+            listenedHz = hz,
+            listenedTargetHz = a4,
+            partials = if (hz == null) emptyMap() else mapOf(1 to TuningPicture.Frame.Partial(hz!!, 1.0, null, null)),
+            targets = mapOf(1 to a4),
+            falsePartials = emptySet(),
+            dropped = emptySet(),
+            matchCents = cfg.matchCents,
+            nowMs = System.currentTimeMillis(),
+        ),
+    )
 
     Box(Modifier.fillMaxSize()) {
         // The page is one band above the keyboard, and it is given its height rather than left to wrap
@@ -104,40 +124,23 @@ internal fun SamplingPage(
             // ---- right: A4 and the temperament above, the work at the foot ----
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 CornerBand()
-                // A4 before it is set: the string as it sounds, and nothing else. There is no reference to
-                // compare it against — the tuner is making it — so the number does not change colour and no
-                // bell is drawn (Peter, 16:49). Done takes the string as it stands.
+                // The pitch A4 is to be tuned to is chosen here, and the string is brought to it.
+                // It starts at the engine's 440.0 Hz and the two steps move it by a tenth of a hertz;
+                // until 5 Oct 2026 this page read the string and took it as the reference, which gave
+                // the tuner nothing to aim at (Peter, 15:55: "we define the initial pitch for A4").
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
-                    if (view == null) {
-                        Text(
-                            hz?.let { String.format(java.util.Locale.ROOT, "%.1f Hz", it) } ?: "strike A4, one string",
-                            color = if (hz == null) muted else white, fontFamily = DejaVuSerif, fontSize = if (hz == null) 16.sp else 30.sp,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        DoneButton(onClick = { controller.acceptLive() }, enabled = hz != null)
-                    } else {
-                        // set: now it is the reference, and the two steps move it by a tenth of a hertz —
-                        // every target of the tuning follows it
-                        StepBox("−") { controller.setReference(tenths(a4 - 0.1)) }
-                        Spacer(Modifier.width(6.dp))
-                        StepBox("+") { controller.setReference(tenths(a4 + 0.1)) }
-                        Spacer(Modifier.width(12.dp))
-                        Text(String.format(java.util.Locale.ROOT, "%.1f Hz", a4), color = Color(Brand.GO_GREEN), fontFamily = DejaVuSerif, fontSize = 26.sp)
-                        // the reading beside it is A4's only while A4 is the string sounding; the strike of any
-                        // other key is that key's and is never shown against this reference (16:52: 193.5 Hz
-                        // stood here, which was the key just struck, not A4)
-                        if (a4Sounding && hz != null) {
-                            val c = 1200.0 * kotlin.math.ln(hz!! / a4) / kotlin.math.ln(2.0)
-                            Spacer(Modifier.width(14.dp))
-                            Text(String.format(java.util.Locale.ROOT, "%.1f Hz  %+.1f c", hz!!, c), color = if (kotlin.math.abs(c) <= cfg.matchCents) Color(Brand.GO_GREEN) else orange, fontSize = 15.sp)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
-                    }
+                    StepBox("−") { controller.setReference(tenths(a4 - 0.1)) }
+                    Text(
+                        String.format(java.util.Locale.ROOT, "%.1f Hz", a4),
+                        color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                    )
+                    StepBox("+") { controller.setReference(tenths(a4 + 0.1)) }
+                    Spacer(Modifier.weight(1f))
+                    if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
+                    else Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
                 }
-                // the A4 string against the reference as one bell, while A4 is what sounds
-                if (a4Sounding) A4Bell(hz = hz, aimHz = a4, matchCents = cfg.matchCents, modifier = Modifier.fillMaxWidth().height(52.dp))
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
                     Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
@@ -147,8 +150,14 @@ internal fun SamplingPage(
                     Text("${Notes.name(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
                     Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
                 }
-                // the work of the page, at the foot of the band and so always on the screen
-                Spacer(Modifier.weight(1f))
+                // The tuning session's own display, so that hitting the pitch here looks exactly as it
+                // looks on every other note and green means the same thing (Peter, 15:56). It is given
+                // the band between the temperament and the work, and so pushes the work to the foot as
+                // the spacer used to.
+                TuningPictureView(
+                    a4Picture, cfg.matchCents,
+                    modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
+                )
                 if (view != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
                         Text("Caught", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))

@@ -31,6 +31,39 @@ class TuningPictureTest {
     }
 
     /**
+     * The anchor belongs to the note and not to the strike.
+     *
+     * It used to be dropped the moment the sound stopped, so each blow chose
+     * a line to stand on afresh; on a clean string, where the partials sit
+     * within a cent or two of one another, that choice is decided by noise and
+     * changed from strike to strike. Peter's recording of a clean G#4 (5 Oct
+     * 2026, 15:47) alternates "bells on 3" and "bells on 2", and because every
+     * bell's offset is measured from the anchor the whole picture slid sideways
+     * each time, with nothing but its reference moving.
+     */
+    @Test
+    fun theAnchorStandsWhileTheNoteDoesAndFallsWithIt() {
+        val b = TuningPicture.Builder()
+        // the first strike: partial 1 is the narrowest line to stand on, so the bells stand on it
+        var p = b.build(frame(0.0, 0, widths = mapOf(1 to 0.2, 4 to 1.9), listened = 4))
+        assertEquals(1, p.anchor)
+        // the string dies away: the picture is empty, and nothing of the strike is shown
+        p = b.build(frame(0.0, 600, live = false))
+        assertEquals(State.SILENT, p.state)
+        assertTrue(p.bells.isEmpty(), "nothing of the old strike is drawn")
+        assertEquals(1, p.anchor, "but the line the bells stand on is the note's, not the strike's")
+        // struck again, and this time partial 4 reads a shade narrower: the line does not move for that
+        p = b.build(frame(0.0, 1200, widths = mapOf(1 to 0.25, 4 to 0.2), listened = 4))
+        assertEquals(1, p.anchor, "the anchor held across the silence")
+        // a new note starts with no line of its own
+        val other = frame(0.0, 1800, widths = mapOf(1 to 0.2, 4 to 1.9), listened = 4)
+        p = b.build(TuningPicture.Frame("G3", other.listened, true, other.listenedHz, other.listenedTargetHz,
+            other.partials, other.targets, emptySet(), emptySet(), 1.5, 1800))
+        assertEquals("G3", p.note)
+        assertEquals(1, p.anchor, "chosen afresh for the new note")
+    }
+
+    /**
      * The width is how well a partial is read. A bell much wider than the
      * narrowest is wide: it neither anchors the line nor vetoes "on" — a
      * needle outranks a wide bell (blueprint §14, 3 Oct 2026). Measured on the

@@ -69,13 +69,24 @@ class TuningControllerTest {
         assertNotNull(c.liveHz.value, "struck and sounding: read")
     }
 
+    /**
+     * Superseded 5 Oct 2026. Until then Done took the A4 string as it stood
+     * and made *that* the reference, so the tuner had nothing to tune A4 to:
+     * the pitch was whatever the string happened to be. Peter, 15:55: "we
+     * define the initial pitch for A4" — it starts at 440.0 Hz, the two steps
+     * move it by a tenth, and the string is brought to it. Done keeps the
+     * pitch that was chosen and records the string as it was measured.
+     */
     @Test
-    fun theHubReadsTheA4StringAndDoneMakesItTheReference() {
+    fun theHubReadsTheA4StringAndDoneKeepsTheChosenPitch() {
         val (c, src) = controller()
+        assertEquals(TuningController.DEFAULT_REFERENCE_HZ, c.referenceA4Hz.value, 1e-9, "the pitch starts at 440")
+        c.setReference(441.0)
         c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
         val hz = assertNotNull(c.liveHz.value, "the A4 string is read")
         assertTrue(abs(hz - 443.12) < 0.02, "read %.3f".format(hz))
-        assertEquals(443.1, c.acceptLive()!!, 1e-9)
+        assertEquals(441.0, c.acceptLive()!!, 1e-9, "the pitch chosen, not the string as it stands")
+        assertEquals(441.0, c.referenceA4Hz.value, 1e-9)
         val m = assertNotNull(c.measurements()[69])
         assertTrue(abs(m.b - 8e-4) / 8e-4 < 0.15, "A4 measured with its inharmonicity: B %.2e".format(m.b))
         assertTrue(m.partials.size >= 4)

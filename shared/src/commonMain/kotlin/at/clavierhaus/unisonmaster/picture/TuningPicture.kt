@@ -115,19 +115,32 @@ class TuningPicture(
 
     /**
      * Builds the picture frame by frame, keeping only what a hold needs: when
-     * the gate was first held and which anchor is waiting to take over. Both
-     * are forgotten the moment the sound stops.
+     * the gate was first held and which anchor is waiting to take over; both
+     * are forgotten the moment the sound stops. The anchor itself is not: it
+     * belongs to the note and is dropped when the note changes (5 Oct 2026).
      */
     class Builder {
         private var onSinceMs: Long? = null
         private var pendingAnchor: Int? = null
         private var pendingSinceMs: Long = 0L
         private var anchor: Int? = null
+        private var anchorNote: String? = null
 
         fun build(f: Frame): TuningPicture {
+            // The anchor belongs to the note, not to the strike. It used to be forgotten the moment
+            // the sound stopped, so every blow chose a line to stand on afresh, and on a clean string —
+            // where the partials sit within a cent or two of one another and the choice is therefore
+            // decided by noise — it changed from strike to strike: Peter's recording of a clean G#4
+            // (5 Oct 2026, 15:47) reads "bells on 3", then "bells on 2", then "bells on 3" again, and
+            // since every bell's offset is measured from the anchor, the whole picture slid sideways
+            // each time while nothing but its reference had moved. The anchor now stands as long as
+            // the note does. It is a choice of what to measure against and not a reading, so it does
+            // not outlive its sound in the sense Rule 3 forbids: nothing of the old strike is shown,
+            // the picture is empty while the string is silent, and the gate's hold is still dropped.
+            if (f.note != anchorNote) { anchorNote = f.note; anchor = null; pendingAnchor = null }
             if (!f.live || f.listenedHz == null) {
-                onSinceMs = null; pendingAnchor = null; anchor = null
-                return TuningPicture(f.note, f.listened, f.listened, emptyList(), null, State.SILENT, emptySet(), emptySet())
+                onSinceMs = null; pendingAnchor = null
+                return TuningPicture(f.note, f.listened, anchor ?: f.listened, emptyList(), null, State.SILENT, emptySet(), emptySet())
             }
             val errors = HashMap<Int, Double>()
             for ((k, p) in f.partials) {

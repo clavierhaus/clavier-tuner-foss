@@ -5,6 +5,7 @@ import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.ReadingSpread
 import at.clavierhaus.unisonmaster.measure.PartialFinder
 import at.clavierhaus.unisonmaster.measure.CleanReading
+import at.clavierhaus.unisonmaster.measure.FalseBeatTally
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
@@ -314,6 +315,13 @@ class TuningController(
     private var heardHz: Map<Int, Double> = emptyMap()
 
     /**
+     * Which partials of this note have been heard beating, and on how many
+     * separate strikes. A single strike's judgement is not a false beat
+     * (FalseBeatTally): emptied when the note changes.
+     */
+    private val falseBeats = FalseBeatTally()
+
+    /**
      * The predicted partials moved bodily so that partial [k] lands on [targetHz]:
      * the string's own partial ratios kept, the note placed where it is being tuned.
      * Scaling every partial by one factor keeps the ratios exact, which is what a
@@ -592,7 +600,7 @@ class TuningController(
             _activePartial.value = listening.k
         }
         val k = _activePartial.value
-        if (noteChanged) heardHz = emptyMap()
+        if (noteChanged) { heardHz = emptyMap(); falseBeats.clear() }
         val target = targetOf(view, k)
         wanted = Wanted(target, k, ++generation, heardHz[k] ?: target)
         _reading.value = Reading(k, null, target, live = false, settling = false, coarseCents = null)
@@ -635,7 +643,9 @@ class TuningController(
         val t = _tuning.value
         if (t == null) {
             val hz = _liveHz.value ?: return null
-            setReference(TuningSession.roundToTenth(hz))
+            // the reference is the pitch the tuner chose on the sampling page and tuned the string to,
+            // not the string as it happens to stand: until 5 Oct 2026 this overwrote his choice with
+            // the reading, so there was never a pitch to aim at (Peter, 15:55)
             val s = TuningSession(_referenceA4Hz.value, _settings.value)
             val m = StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, TuningSession.MIDI_A4, hz, timeMs = clock())
                 ?: NoteMeasurement(TuningSession.MIDI_A4, hz, 0.0, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock())
@@ -1051,7 +1061,11 @@ class TuningController(
                     } else if (cleanStrike != strikeHop) { clean.strike(); cleanStrike = strikeHop }
                     val cr = clean.push(chunk, w.k, combine = s.isMeasured())
                     used = cr.used
-                    falseOnes = cr.falseBeating
+                    // a false beat is claimed only when it repeats across strikes, never from one
+                    // (FalseBeatTally, and the corpus rule of three strikes): what this strike hears is
+                    // evidence towards the claim, and the claim is what the screen is told
+                    for (k in cr.falseBeating) falseBeats.heard(k, strikeHop)
+                    falseOnes = falseBeats.claimed()
                     cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
                 }
                 _reading.value = Reading(
