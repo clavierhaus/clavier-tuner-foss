@@ -502,6 +502,16 @@ class TuningController(
             _reading.value = Reading(w.k, null, hz, live = false, settling = false, coarseCents = null)
             return
         }
+        // and only once the engine has named the sounding key as the note on screen.
+        // COARSE_CENTS is 120, wider than a semitone, so a peak that far from the target is
+        // as likely to be the neighbouring key sounding as this string standing flat: left
+        // to follow it the reader locks onto the neighbour, reads it as this note
+        // (Amendment 3), and the screen stops following to the key actually struck, because
+        // it follows only while the note on screen is not being read. The key identifier is
+        // what tells the two apart, so nothing moves until it has positively named this
+        // note. Measured on the 22 Sept walk across the compass: 79 of 80 keys followed
+        // before 4 Oct, 65 with the readers following any coarse peak, 79 again with this.
+        if (_heardMidi.value != session?.current) return
         val place = w.hz * f
         // already listening where the string is: nothing to move, and moving every hop
         // would restart the readers' memory for as long as the string stood off its target
@@ -1003,8 +1013,9 @@ class TuningController(
                     livePartialsStrike = strikeHop
                     livePartials(tv)?.let { heardSeries ->
                         // where this strike put the partials: the readers listen there from now on, so a
-                        // string standing far from its target is still read and drawn
-                        heardHz = heardSeries.associate { it.k to it.hz }
+                        // string standing far from its target is still read and drawn — but only when it is
+                        // this note's string that sounds, never a neighbour's (see followCoarse)
+                        if (_heardMidi.value == s.current) heardHz = heardSeries.associate { it.k to it.hz }
                         val series = anchored(heardSeries, tv.listening.k, tv.listening.targetHz)
                         _targets.value = series
                         // the strike said which partials the string carries: read them all, up to

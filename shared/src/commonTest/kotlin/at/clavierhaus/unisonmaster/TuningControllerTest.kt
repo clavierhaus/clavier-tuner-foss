@@ -295,15 +295,41 @@ class TuningControllerTest {
      * piano is allowed to stand at (Rule 0); the reader now goes to the
      * string and the cents are worked out against the target that stands.
      */
+    /**
+     * Superseded 4 Oct 2026. This test asserted the opposite — that a string
+     * 70 cents off its target is *not* read and only placed coarsely by the
+     * finder ("70 cents off is outside the band"). At the Samick that evening
+     * Peter found what that costs: "In the beginning there was nothing except
+     * 'flat'. Only when tuning up did the bells appear." The reader's band is
+     * the reader's and says nothing about what the piano may be standing at
+     * (Rule 0), so the reader now goes to the string.
+     *
+     * The limit is no longer the band but half a semitone, and it is not a
+     * figure anyone chose: past 50 cents the key identifier names the
+     * neighbouring key, because that is the nearer string, and the engine
+     * cannot tell "G#4 pulled 70 cents flat" from "G4 struck" from the sound
+     * alone. Measured here on 4 Oct 2026, G#4 with B = 7e-4: read exactly,
+     * on all five partials, at 20, 30, 40 and 45 cents off; from 50 cents the
+     * identifier says G4 and the screen has the coarse word only.
+     */
     @Test
-    fun aStringFarOffIsReadWhereItStands() {
+    fun aStringIsReadWhereItStandsUntilItIsNearerTheNextKey() {
         val (c, src) = controller()
         c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
-        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-70.0 / 1200), 7e-4, 3.0))
-        val r = c.reading.value!!
-        assertTrue(r.live, "the string is read where it stands, not merely called flat")
-        assertEquals(-70.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
-        assertFalse(c.matchedNow(), "and 70 cents off is not a match")
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-45.0 / 1200), 7e-4, 3.0))
+        val r = assertNotNull(c.reading.value)
+        assertTrue(r.live, "45 cents flat is read where it stands, not merely called flat")
+        assertEquals(-45.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
+        assertFalse(c.matchedNow(), "and 45 cents off is not a match")
+        assertTrue(c.livePartials.value.size >= 4, "with its partials to draw: ${c.livePartials.value.map { it.k }}")
+
+        // past half a semitone the nearer string is the next key, and the engine says so
+        val (c2, src2) = controller()
+        c2.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c2.hear(src2, SyntheticString.strike(et(68) * 2.0.pow(-60.0 / 1200), 7e-4, 3.0))
+        val r2 = assertNotNull(c2.reading.value)
+        assertFalse(r2.live, "60 cents flat stands nearer G4 than G#4 and is not claimed as a reading")
+        assertEquals(-60.0, assertNotNull(r2.coarseCents, "the finder still places it"), 3.0)
     }
 
     @Test
