@@ -36,7 +36,9 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.AcceptButton
+import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
 import at.clavierhaus.unisonmaster.ui.CornerBand
+import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
@@ -69,6 +71,12 @@ internal fun SamplingPage(
     view: TuningController.TuningView?,
     /** Moves the temperament octave's low note (C3…A3); null when the app does not offer it. */
     onTemperamentLow: ((Int) -> Unit)?,
+    /** The recording being fed to the engine in place of the microphone, or null; see docs/PROBE.md. */
+    feeding: String? = null,
+    /** Opens the probe's file picker; null when the app does not offer the probe. */
+    onPickRecording: (() -> Unit)? = null,
+    /** Back to the microphone. */
+    onUseMicrophone: () -> Unit = {},
 ) {
     val hz by controller.liveHz.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
@@ -196,6 +204,15 @@ internal fun SamplingPage(
             temperament = low..TuningSession.MIDI_A4,
             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
         )
+        // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording is the only
+        // way to see what the display makes of a string when the piano is out of reach. It stands in
+        // the band between the corners, where the tuning screen keeps it.
+        if (onPickRecording != null) {
+            ProbeButton(
+                feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = CORNER_RIGHT_WIDTH),
+            )
+        }
     }
 
     // Setting A4 again throws every sample away, so it is asked before it is done. Nothing else on

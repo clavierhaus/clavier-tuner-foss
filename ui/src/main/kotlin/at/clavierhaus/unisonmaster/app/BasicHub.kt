@@ -103,7 +103,7 @@ fun BasicHub(
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
         if (t == null || t.sampling) {
-            SamplingPage(controller, t, onTemperamentLow)
+            SamplingPage(controller, t, onTemperamentLow, feeding, onPickRecording, onUseMicrophone)
             return@Box
         }
 
