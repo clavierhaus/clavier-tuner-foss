@@ -75,6 +75,42 @@ class TuningPicture(
         val overNoiseDb: Double? = null,
     )
 
+    companion object {
+        /**
+         * The four bands auto mode draws (Peter, 6 Oct 2026): the fundamental, the
+         * two next loudest partials, and — always included — the highest partial
+         * that is both **well audible** and **well defined**.
+         *
+         * Defined is [Builder.ANCHOR_DEPTH_DB] over the noise beside it, the same
+         * depth at which a reading is already trusted to anchor the line; a partial
+         * whose depth is not known is not called defined. Audible is a level within
+         * [AUDIBLE_LEVEL] of the loudest partial of the strike — about thirty
+         * decibels down, which is the order at which a partial stops being heard
+         * inside the note (a split 44 dB down was measured inaudible, 1 Oct 2026).
+         *
+         * Both figures are starting values on Peter's word of 6 Oct — "take mean
+         * values that make sense and we will refine from there" — and are the
+         * house's own numbers rather than new ones. The tuner is never held to this
+         * choice: he goes to Measure and takes the partials he wants.
+         *
+         * Fewer than four partials over the floor yields fewer than four bands; it
+         * never invents one.
+         */
+        fun autoFour(bells: List<Bell>): List<Int> {
+            if (bells.isEmpty()) return emptyList()
+            val audible = bells.filter { it.level >= AUDIBLE_LEVEL }
+            if (audible.isEmpty()) return bells.map { it.k }.sorted().take(1)
+            val highest = audible.filter { (it.overNoiseDb ?: 0.0) >= Builder.ANCHOR_DEPTH_DB }.maxByOrNull { it.k }?.k
+            val first = audible.minByOrNull { it.k }!!.k
+            val rest = audible.filter { it.k != first && it.k != highest }
+                .sortedByDescending { it.level }.take(if (highest == null) 3 else 2).map { it.k }
+            return (listOfNotNull(first, highest) + rest).distinct().sorted()
+        }
+
+        /** A partial quieter than this share of the loudest is not drawn a band of its own: about 30 dB down. */
+        const val AUDIBLE_LEVEL = 0.375
+    }
+
     enum class State {
         /** No reading: nothing is drawn but the note and its target. */
         SILENT,

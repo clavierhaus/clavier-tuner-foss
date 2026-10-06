@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -12,6 +15,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +56,6 @@ fun TuningPictureView(
     /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
     onStretchTap: (() -> Unit)? = null,
 ) {
-    val on = p.state == State.ON
     Pane(modifier) {
         // left: the tuning
         Place(0.00f, 0.00f, 0.16f, 0.22f) {
@@ -64,7 +67,7 @@ fun TuningPictureView(
                         if (!follows) drawLine(Color(Brand.WHITE_MUTED), Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 3f)
                     },
             ) {
-                FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(if (on) Brand.GO_GREEN else Brand.WHITE), fontWeight = FontWeight.Bold)
+                FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE), fontWeight = FontWeight.Bold)
             }
         }
         Place(0.17f, 0.08f, 0.30f, 0.10f) {
@@ -75,73 +78,54 @@ fun TuningPictureView(
                 color = Color(Brand.WHITE_MUTED),
             )
         }
-        Place(0.00f, 0.34f, 0.47f, 0.40f) { CentsScale(p.pointerCents, matchCents, on, p.state != State.SILENT) }
-        // right: the bells, and nothing else
-        Place(0.52f, 0.00f, 0.48f, 0.98f) { Bells(p) }
+        Place(0.00f, 0.34f, 0.47f, 0.40f) { CentsScale(p.pointerCents, matchCents, p.state != State.SILENT) }
+        // right: the bands, and nothing else
+        Place(0.52f, 0.00f, 0.48f, 0.98f) { Bands(p) }
     }
 }
 
 @Composable
-private fun Bells(p: TuningPicture) {
-    val white = Color(Brand.WHITE).toArgb()
+private fun Bands(p: TuningPicture) {
+    // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
+    // speed must be the string's own beat and nothing else.
+    val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
-        val base = h * 0.92f
-        // the band the numbers used to take is the bells' now (5 Oct 2026)
-        val top = h * 0.06f
-        val cx = w / 2f
-        val half = w / 2f * 0.9f
-        fun xOf(cents: Double): Float = (cx + (cents / BELLS_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
-        // the anchor line, fixed in the pane
-        drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
-        drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
-        val paint = android.graphics.Paint().apply { color = white; textSize = h * 0.07f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER }
-        // No numbers over the bells. They named every partial on every frame, and on a clean string
-        // — where all of them stand on one line, which is what this picture exists to show — the name
-        // said nothing the screen did not already carry: the line above names the partial being tuned
-        // and the one the bells are anchored on, and the chip row below names every partial, paints a
-        // false one red-violet and takes it out of the bells and the reading when it is tapped
-        // (PartialChips). Numbering them here a second time only gave the eye something to read that
-        // measured nothing, and while the row was ordered by position it also made them permute on
-        // every frame while the string stood still (Peter, 5 Oct 2026: "What's the point of the
-        // number?" — "We do not need the numbers for that"). The bells stand alone.
-        // the bells: height says level, place says distance from the anchor, width says how well
-        // the partial is read — its own measured spread (a loud partial a needle, one at the room's
-        // floor a wide low bell), never narrower than MIN_BELL_WIDTH_C so a needle does not vanish
-        val perCent = half / BELLS_SPAN_C.toFloat()
-        for (b in p.bells.filter { it.k !in p.dropped }.sortedBy { it.level }) {
-            val x = xOf(b.offsetCents)
-            val height = (base - top) * (0.25f + 0.75f * b.level.toFloat())
-            val sigma = perCent * (b.widthCents ?: MIN_BELL_WIDTH_C).coerceIn(MIN_BELL_WIDTH_C, BELLS_SPAN_C).toFloat()
-            val path = Path().apply {
-                moveTo(x - 3 * sigma, base)
-                cubicTo(x - sigma, base, x - sigma * 0.8f, base - height, x, base - height)
-                cubicTo(x + sigma * 0.8f, base - height, x + sigma, base, x + 3 * sigma, base)
-                close()
+        val top = h * 0.05f; val base = h * 0.93f
+        val ks = TuningPicture.autoFour(p.bells)
+        if (ks.isEmpty()) return@Canvas
+        val cw = w / ks.size
+        val seconds = millis / 1000.0
+        for ((i, k) in ks.withIndex()) {
+            val b = p.bells.firstOrNull { it.k == k } ?: continue
+            // The drift **is** the beat: the partial as read against the partial as asked, in hertz.
+            // Band k carries k segments, so the pattern rate is Δf/k — the same for every partial of a
+            // string uniformly off, which makes a clean string one moving object and a false partial
+            // the only thing out of step. Law 1 drawn rather than asserted (blueprint, 6 Oct 2026).
+            val rate = (b.hz - b.targetHz) / k
+            val bw = cw * 0.52f
+            val bx = i * cw + (cw - bw) / 2f
+            val bh = base - top
+            val sh = bh / k
+            // down is flat: a string under its target carries the segments downward
+            val phase = (((-rate * seconds) % 1.0) + 1.0) % 1.0
+            val shift = (phase * sh).toFloat()
+            val c = (if (k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE))
+                .copy(alpha = if (k in p.dropped) 0.20f else 1f)
+            clipRect(bx, top, bx + bw, base) {
+                for (seg in 0..k) {
+                    val y = top + seg * sh + shift - sh
+                    drawRect(c, Offset(bx, y), Size(bw, sh * 0.46f))
+                }
             }
-            val c = colourOf(b, p)
-            drawPath(path, c.copy(alpha = 0.22f))
-            drawPath(path, c, style = Stroke(width = 2f))
+            drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.30f), Offset(bx, top), Size(bw, bh), style = Stroke(1f))
         }
-        // the span
-        paint.color = Color(Brand.WHITE_MUTED).toArgb(); paint.textSize = h * 0.06f
-        paint.textAlign = android.graphics.Paint.Align.LEFT
-        drawContext.canvas.nativeCanvas.drawText("−${BELLS_SPAN_C.toInt()}", 4f, h * 0.99f, paint)
-        paint.textAlign = android.graphics.Paint.Align.CENTER
-        drawContext.canvas.nativeCanvas.drawText("0 c from the anchor", cx, h * 0.99f, paint)
-        paint.textAlign = android.graphics.Paint.Align.RIGHT
-        drawContext.canvas.nativeCanvas.drawText("+${BELLS_SPAN_C.toInt()}", w - 4f, h * 0.99f, paint)
     }
-}
-
-private fun colourOf(b: TuningPicture.Bell, p: TuningPicture): Color = when {
-    b.k in p.falseMarked || b.k in p.dropped -> Color(Brand.FALSE_VIOLET)
-    else -> Color(Brand.ORANGE)
 }
 
 /** Linear, ±[SCALE_SPAN_C]: equal distance, equal cents. The gate at the window's true width; green across when on. */
 @Composable
-private fun CentsScale(pointerCents: Double?, matchCents: Double, on: Boolean, sounding: Boolean) {
+private fun CentsScale(pointerCents: Double?, matchCents: Double, sounding: Boolean) {
     val labelColor = Color(Brand.WHITE_MUTED).toArgb()
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
@@ -150,12 +134,13 @@ private fun CentsScale(pointerCents: Double?, matchCents: Double, on: Boolean, s
         val m = matchCents.coerceIn(0.02, SCALE_SPAN_C)
         fun xOf(cents: Double): Float = (cx + (cents / SCALE_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
         val axisY = h * 0.45f
-        val green = Color(Brand.GO_GREEN)
-        if (on) drawRect(green.copy(alpha = 0.18f), Offset(0f, 0f), Size(w, h * 0.8f))
+        // No wash, and no green: the screen reports and does not pronounce. A tuner reads stillness
+        // and calls the arrival himself, and in the bass he may leave a string flat on purpose
+        // (Peter, 6 Oct 2026). The gate is drawn because its width is a measurement, never a verdict.
         val left = xOf(-m); val right = xOf(m)
         val top = axisY - h * 0.30f; val bot = axisY + h * 0.30f
-        val edge = if (on) green else Color(Brand.WHITE_MUTED)
-        drawRect(green.copy(alpha = if (on) 0.30f else 0.08f), Offset(left, top), Size((right - left).coerceAtLeast(2f), bot - top))
+        val edge = Color(Brand.WHITE_MUTED)
+        drawRect(edge.copy(alpha = 0.10f), Offset(left, top), Size((right - left).coerceAtLeast(2f), bot - top))
         for (x in listOf(left, right)) {
             val inward = if (x == left) 1f else -1f
             drawLine(edge, Offset(x, top), Offset(x, bot), 4f)
@@ -184,7 +169,7 @@ private fun CentsScale(pointerCents: Double?, matchCents: Double, on: Boolean, s
         drawContext.canvas.nativeCanvas.drawText(String.format(Locale.ROOT, "±%.1f", m), right + h * 0.12f, top + h * 0.16f, paint)
         if (pointerCents != null) {
             val x = xOf(pointerCents)
-            val c = (if (on) green else Color(Brand.ORANGE)).copy(alpha = if (sounding) 1f else 0.45f)
+            val c = Color(Brand.ORANGE).copy(alpha = if (sounding) 1f else 0.45f)
             val tri = Path().apply {
                 moveTo(x, axisY - h * 0.42f); lineTo(x + h * 0.09f, axisY - h * 0.26f); lineTo(x - h * 0.09f, axisY - h * 0.26f); close()
             }

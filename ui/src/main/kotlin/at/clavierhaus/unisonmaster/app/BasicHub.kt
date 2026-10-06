@@ -161,9 +161,10 @@ fun BasicHub(
             heard != null && heard != t.midi && !live -> t(K.state_heardOther, Notes.name(heard!!)) to Color(Brand.ORANGE)
             read?.settling == true -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
             !live || shownHz == null -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
-            // near is not on: "on" is the picture's, earned by the hold
-            picture.state == TuningPicture.State.ON -> t(K.state_matches) to Color(Brand.GO_GREEN)
-            picture.state == TuningPicture.State.NEAR -> t(K.state_near) to Color(Brand.ORANGE)
+            // The screen does not say the string has arrived. A tuner reads the stillness of the bands
+            // and calls it himself, and in the bass he may leave a string flat on purpose (Peter,
+            // 6 Oct 2026). The word says which way the string stands, and nothing more; "matches" and
+            // "near", and the green they were said in, are gone with the hold that earned them.
             shownHz > shownTarget -> t(K.state_sharp) to Color(Brand.ORANGE)
             else -> t(K.state_flat) to Color(Brand.ORANGE)
         }
