@@ -96,14 +96,42 @@ fun BasicHub(
     val reading by controller.reading.collectAsState()
     val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
     val heard by controller.heardMidi.collectAsState()
+    val hubHz by controller.liveHz.collectAsState()          // before the session: A4's first partial, by the hub's reader
 
     val t = tuning
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
     Corners(onSettings = onSettings, onHome = onHome)
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
+        // The one picture, built here once for every state of the screen -- one place puts the number
+        // on it (Amendment 3). Before the session: A4's first partial as the hub's reader hears it,
+        // against the pitch chosen, and only that partial, because without a measured B no other
+        // partial has a lawful target (Rule 0). From the session on, sampling or tuning: the engine's
+        // reading of the note on screen -- its partials as read, their targets placed from the
+        // measured B, its false claims from the three-strike tally -- the frame the tuning screen has
+        // always had. Until 6 Oct 2026 the sampling page built a frame of its own beside this one, a
+        // synthetic partial 1 with the false set hardcoded empty, and so could never show a false
+        // beat, which is what the sampling pass is for (Peter's word for "b", 22:42).
+        fun engineFrame(t: TuningController.TuningView): TuningPicture.Frame {
+            val read = reading; val l = t.listening
+            return TuningPicture.Frame(
+                note = Notes.name(t.midi), listened = read?.k ?: l.k, live = read?.live == true,
+                listenedHz = read?.hz, listenedTargetHz = read?.targetHz ?: l.targetHz,
+                partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
+                targets = targets.associate { it.k to it.hz },
+                falsePartials = read?.falsePartials?.toSet() ?: emptySet(), dropped = emptySet(),
+                matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+            )
+        }
+        fun hubFrame(): TuningPicture.Frame = TuningPicture.Frame(
+            note = "A4", listened = 1, live = hubHz != null, listenedHz = hubHz, listenedTargetHz = a4,
+            partials = hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap(),
+            targets = mapOf(1 to a4), falsePartials = emptySet(), dropped = emptySet(),
+            matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+        )
+        val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
         if (t == null || t.sampling) {
-            SamplingPage(controller, t, onTemperamentLow, feeding, onPickRecording, onUseMicrophone)
+            SamplingPage(controller, t, picture, onTemperamentLow, feeding, onPickRecording, onUseMicrophone)
             return@Box
         }
 
@@ -134,24 +162,8 @@ fun BasicHub(
         // is said here, always, whatever it is and wherever it came from.
         val originLine = "A4 ${formatHz(a4)} \u00b7 $origin"
         val coarse = read?.coarseCents
-        // The one picture: everything on it is the engine's reading of the strike now sounding,
-        // mapped to a frame; the picture decides what is shown, the view how (docs/UI.md).
-        // Built here, once, so the header's state word and the picture say the same thing.
-        val picture = pictureBuilder.build(
-            TuningPicture.Frame(
-                note = name,
-                listened = read?.k ?: l.k,
-                live = live,
-                listenedHz = shownHz,
-                listenedTargetHz = shownTarget,
-                partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
-                targets = targets.associate { it.k to it.hz },
-                falsePartials = read?.falsePartials?.toSet() ?: emptySet(),
-                dropped = emptySet(),
-                matchCents = cfg.matchCents,
-                nowMs = System.currentTimeMillis(),
-            ),
-        )
+        // the picture is `picture`, built above for every state of the screen so the header's state
+        // word and the picture say the same thing; the picture decides what is shown, the view how (docs/UI.md)
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)

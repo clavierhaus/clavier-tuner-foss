@@ -68,6 +68,14 @@ import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
 internal fun SamplingPage(
     controller: TuningController,
     view: TuningController.TuningView?,
+    /**
+     * The one picture, built by the hub for every state of the screen: before the session A4's
+     * first partial against the pitch chosen; from the session on the engine's reading of the note
+     * on screen, its partials placed from the measured B and its false beats claimed by the tally.
+     * Until 6 Oct 2026 this page built a frame of its own here -- a synthetic partial 1 with the
+     * false set hardcoded empty -- and could never show a false beat (Peter's word for "b").
+     */
+    picture: TuningPicture,
     /** Moves the temperament octave's low note (C3…A3); null when the app does not offer it. */
     onTemperamentLow: ((Int) -> Unit)?,
     /** The recording being fed to the engine in place of the microphone, or null; see docs/PROBE.md. */
@@ -85,27 +93,11 @@ internal fun SamplingPage(
     var resetA4 by remember { mutableStateOf(false) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
-    // A4 is what sounds when the last strike was caught as A4: only then is the live reading A4's own
     // A4 is what sounds: before the session there is nothing else for the hub's reader to be reading,
-    // and after it the strike must have been caught as A4 — the strike of any other key is that key's
-    // and is never shown against this pitch (4 Oct 2026, 16:52, where 193.5 Hz stood here)
+    // and after it the strike must have been caught as A4 -- the strike of any other key is that key's
+    // and is never taken for this pitch (4 Oct 2026, 16:52, where 193.5 Hz stood here). Done and
+    // Accept go by this; the picture itself is the hub's and already follows the note on screen.
     val a4Live = hz != null && (view == null || view.caught == TuningSession.MIDI_A4)
-    val a4Builder = remember { TuningPicture.Builder() }
-    val a4Picture = a4Builder.build(
-        TuningPicture.Frame(
-            note = "A4",
-            listened = 1,
-            live = a4Live,
-            listenedHz = hz,
-            listenedTargetHz = a4,
-            partials = if (hz == null) emptyMap() else mapOf(1 to TuningPicture.Frame.Partial(hz!!, 1.0, null, null)),
-            targets = mapOf(1 to a4),
-            falsePartials = emptySet(),
-            dropped = emptySet(),
-            matchCents = cfg.matchCents,
-            nowMs = System.currentTimeMillis(),
-        ),
-    )
 
     Box(Modifier.fillMaxSize()) {
         // The page is one band above the keyboard, and it is given its height rather than left to wrap
@@ -172,7 +164,7 @@ internal fun SamplingPage(
                 // the band between the temperament and the work, and so pushes the work to the foot as
                 // the spacer used to.
                 TuningPictureView(
-                    a4Picture, cfg.matchCents,
+                    picture, cfg.matchCents,
                     modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
                 )
                 if (view != null) {

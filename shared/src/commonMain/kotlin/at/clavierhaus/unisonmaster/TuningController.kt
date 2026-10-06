@@ -884,6 +884,8 @@ class TuningController(
         // the clean partials read together (CleanReading): targets follow the note, readings the strike
         val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS, holdHops = holdHops(sr))
         var cleanGeneration = -1
+        // the string and the anchor partial the clean window was last built for; a change of either resets it
+        var cleanMidi = -1; var cleanK = -1
         var memoryInForce = _settings.value.readingMemoryS
         var cleanStrike = -1L
         val shownHeld = HashMap<Int, PhaseReader.Reading>()
@@ -959,7 +961,7 @@ class TuningController(
                     memoryInForce = _settings.value.readingMemoryS
                     reader = null; readerGeneration = -1
                     shownReaders.clear(); shownHeld.clear(); shownSpread.clear(); shownGeneration = -1
-                    clean.memoryS = memoryInForce; cleanGeneration = -1
+                    clean.memoryS = memoryInForce; cleanGeneration = -1; cleanMidi = -1
                 }
                 // the tuning screen: the reader is set on the partial listened to
                 if (readerGeneration != w.generation) {
@@ -1049,15 +1051,35 @@ class TuningController(
                 val held = lastShown?.takeIf { it.generation == w.generation && hop - it.hop <= holdHops(sr) }?.hz
                 val t = _tuning.value
                 // the clean partials together: only on the partial being tuned (a tapped partial is read alone),
-                // only while tuning, and only when the setting says so
+                // and only when the setting says so. While sampling as well as while tuning: this is also
+                // the detector that feeds the false-beat tally, and the sampling pass is where the string's
+                // false beats are measured (Peter, 6 Oct 2026, 10:26: "in measurement we only measure
+                // inharmonicity and partial truth/false beats"). It ran "only while tuning" from 28 Sept
+                // (dfe615a, written about the combined hz, before the sampling page had a picture to put a
+                // false beat on), and so the page could never mark one -- the Samick's left A4 string beats
+                // at E6 at 0.67 Hz on all three strikes of 30 Sept and the screen had nowhere to say so.
+                // Nothing kept depends on the reading here: while sampling, Accept keeps the strike's own
+                // StringMeasure and the key is caught by the identifier, not read from _liveHz.
                 var combinedHz: Double? = null
                 var used: List<Int> = emptyList()
                 var falseOnes: List<Int> = emptyList()
-                if (_settings.value.cleanPartials && t != null && w.k == t.listening.k && s != null && !s.sampling) {
+                if (_settings.value.cleanPartials && t != null && w.k == t.listening.k && s != null) {
                     if (cleanGeneration != w.generation) {
-                        clean.target(_targets.value.filter { it.k <= CleanReading.PARTIALS }.associate { it.k to it.hz }, reset = true)
+                        // A new generation resets the window only when it is a different string or a
+                        // different anchor partial; the same string published again keeps what it has
+                        // read, said against the new targets (CleanReading.target's own shift). While
+                        // sampling, a strike is published twice -- caught, then remeasured with the
+                        // decay in -- and each publish minted a generation; with reset on every one the
+                        // window was wiped mid-strike, partial 3 of the Samick's left A4 left the
+                        // presence gate before a window could stand again, and no false beat was ever
+                        // tallied in sampling (the probe of 6 Oct 2026: k3 spread 0.19 c at 2.1 s,
+                        // gone at 3.0 s on every strike; partial 1 tallied on 2 strikes of 3 where it
+                        // reaches 0.56-0.65 c on all three read without the resets).
+                        val sameString = cleanMidi == t.midi && cleanK == w.k
+                        clean.target(_targets.value.filter { it.k <= CleanReading.PARTIALS }.associate { it.k to it.hz }, reset = !sameString)
                         cleanGeneration = w.generation
-                        cleanStrike = strikeHop
+                        cleanMidi = t.midi; cleanK = w.k
+                        if (!sameString) cleanStrike = strikeHop
                     } else if (cleanStrike != strikeHop) { clean.strike(); cleanStrike = strikeHop }
                     val cr = clean.push(chunk, w.k, combine = s.isMeasured())
                     used = cr.used
