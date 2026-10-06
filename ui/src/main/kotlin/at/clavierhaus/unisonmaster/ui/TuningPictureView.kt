@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.picture.BandPhase
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.picture.TuningPicture.State
 import java.util.Locale
@@ -89,27 +91,34 @@ private fun Bands(p: TuningPicture) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
+    // Where the segments stand is carried forward frame by frame and is never computed from the
+    // frame clock's absolute time. The phase says nothing on its own — only the speed at which it
+    // changes is the beat — and multiplying a live rate by an hours-old clock tied the whole
+    // elapsed session to every whisper in the reading, so the pattern teleported between frames
+    // and stillness at the target could not be drawn (picture/BandPhase.kt has the measurement).
+    val carried = remember(p.note) { BandPhase() }
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
         val top = h * 0.05f; val base = h * 0.93f
         val ks = p.bands
         if (ks.isEmpty()) return@Canvas
         val cw = w / ks.size
-        val seconds = millis / 1000.0
+        // The drift **is** the beat: the partial as read against the partial as asked, in hertz.
+        // Band k carries k segments, so the pattern rate is Δf/k — the same for every partial of a
+        // string uniformly off, which makes a clean string one moving object and a false partial
+        // the only thing out of step. Law 1 drawn rather than asserted (blueprint, 6 Oct 2026).
+        // Negated once, here: down is flat, so a string under its target carries the segments down.
+        val rates = ks.mapNotNull { k ->
+            p.bells.firstOrNull { it.k == k }?.let { k to -(it.hz - it.targetHz) / k }
+        }.toMap()
+        val phases = carried.advance(millis, rates)
         for ((i, k) in ks.withIndex()) {
             val b = p.bells.firstOrNull { it.k == k } ?: continue
-            // The drift **is** the beat: the partial as read against the partial as asked, in hertz.
-            // Band k carries k segments, so the pattern rate is Δf/k — the same for every partial of a
-            // string uniformly off, which makes a clean string one moving object and a false partial
-            // the only thing out of step. Law 1 drawn rather than asserted (blueprint, 6 Oct 2026).
-            val rate = (b.hz - b.targetHz) / k
             val bw = cw * 0.52f
             val bx = i * cw + (cw - bw) / 2f
             val bh = base - top
             val sh = bh / k
-            // down is flat: a string under its target carries the segments downward
-            val phase = (((-rate * seconds) % 1.0) + 1.0) % 1.0
-            val shift = (phase * sh).toFloat()
+            val shift = ((phases[k] ?: 0.0) * sh).toFloat()
             // The width law, drawn at last. A partial read near the room's floor has a jittery
             // frequency, so its band would drift at a jittery rate and could stand out of step on a
             // perfectly clean string — the very false indication ReadingSpread was built to confess
