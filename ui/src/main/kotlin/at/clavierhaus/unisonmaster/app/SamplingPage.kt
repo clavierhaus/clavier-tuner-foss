@@ -36,7 +36,6 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.AcceptButton
-import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
 import at.clavierhaus.unisonmaster.ui.CornerBand
 import at.clavierhaus.unisonmaster.ui.ProbeButton
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
@@ -157,6 +156,16 @@ internal fun SamplingPage(
                     Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
                     Text("${Notes.name(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
                     Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
+                    // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording
+                    // is the only way to see what the display makes of a string when the piano is out
+                    // of reach. It stood in the corner band first and was drawn over the wordmark
+                    // (his screenshot, 20:55), because that band is the brand's and not a place for a
+                    // control; it sits at the end of this row instead, which is the right side — the
+                    // only interactive area of this page — and has the width for the file's name.
+                    if (onPickRecording != null) {
+                        Spacer(Modifier.weight(1f))
+                        ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
+                    }
                 }
                 // The tuning session's own display, so that hitting the pitch here looks exactly as it
                 // looks on every other note and green means the same thing (Peter, 15:56). It is given
@@ -204,15 +213,6 @@ internal fun SamplingPage(
             temperament = low..TuningSession.MIDI_A4,
             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
         )
-        // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording is the only
-        // way to see what the display makes of a string when the piano is out of reach. It stands in
-        // the band between the corners, where the tuning screen keeps it.
-        if (onPickRecording != null) {
-            ProbeButton(
-                feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone,
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = CORNER_RIGHT_WIDTH),
-            )
-        }
     }
 
     // Setting A4 again throws every sample away, so it is asked before it is done. Nothing else on
