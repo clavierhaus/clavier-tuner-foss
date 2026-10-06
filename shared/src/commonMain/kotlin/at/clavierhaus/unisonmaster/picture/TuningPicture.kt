@@ -59,6 +59,12 @@ class TuningPicture(
     val dropped: Set<Int>,
     /** Bells read much less well than the narrowest: they neither anchor nor veto. */
     val wide: Set<Int> = emptySet(),
+    /**
+     * The bands drawn, left to right: auto mode's four, chosen by [autoFour] with its hysteresis.
+     * The picture decides them once so that no screen works the choice out a second time
+     * (Amendment 3: two places that can put a number on one screen means one of them is wrong).
+     */
+    val bands: List<Int> = emptyList(),
 ) {
     /**
      * One partial of the sounding string. [offsetCents] is its distance from
@@ -96,19 +102,39 @@ class TuningPicture(
          * Fewer than four partials over the floor yields fewer than four bands; it
          * never invents one.
          */
-        fun autoFour(bells: List<Bell>): List<Int> {
+        fun autoFour(bells: List<Bell>, previous: Set<Int> = emptySet()): List<Int> {
             if (bells.isEmpty()) return emptyList()
-            val audible = bells.filter { it.level >= AUDIBLE_LEVEL }
+            // A band already on screen keeps its seat until it falls a margin below the line it
+            // entered at. Without that, a partial sitting on the threshold enters and leaves on
+            // alternate frames and the whole row reflows mid-note — the eye loses its seats exactly
+            // when it is trying to read motion (Mistral, 6 Oct 2026). The anchor has had its
+            // hysteresis since 3 Oct; this is the same law for the band set.
+            fun audibleEnough(b: Bell) =
+                b.level >= (if (b.k in previous) AUDIBLE_LEVEL - HYSTERESIS_LEVEL else AUDIBLE_LEVEL)
+            fun definedEnough(b: Bell) = (b.overNoiseDb ?: 0.0) >=
+                (if (b.k in previous) Builder.ANCHOR_DEPTH_DB - HYSTERESIS_DB else Builder.ANCHOR_DEPTH_DB)
+            val audible = bells.filter { audibleEnough(it) }
             if (audible.isEmpty()) return bells.map { it.k }.sorted().take(1)
-            val highest = audible.filter { (it.overNoiseDb ?: 0.0) >= Builder.ANCHOR_DEPTH_DB }.maxByOrNull { it.k }?.k
+            val highest = audible.filter { definedEnough(it) }.maxByOrNull { it.k }?.k
             val first = audible.minByOrNull { it.k }!!.k
             val rest = audible.filter { it.k != first && it.k != highest }
                 .sortedByDescending { it.level }.take(if (highest == null) 3 else 2).map { it.k }
             return (listOfNotNull(first, highest) + rest).distinct().sorted()
         }
 
-        /** A partial quieter than this share of the loudest is not drawn a band of its own: about 30 dB down. */
+        /**
+         * A partial quieter than this share of the loudest is not drawn a band of its own.
+         *
+         * The share is the engine's own level scale, `1 + (db − loudest) / LEVEL_RANGE_DB` with
+         * `LEVEL_RANGE_DB = 48`, so **0.375 is exactly 30 dB below the loudest partial** — the order
+         * at which a partial stops being heard inside the note (a split 44 dB down was measured
+         * inaudible, 1 Oct 2026). It is not an amplitude ratio.
+         */
         const val AUDIBLE_LEVEL = 0.375
+
+        /** The margin a band already drawn keeps its seat by, in dB and in the level scale above. */
+        const val HYSTERESIS_DB = 4.0
+        const val HYSTERESIS_LEVEL = HYSTERESIS_DB / 48.0
     }
 
     enum class State {
@@ -161,6 +187,7 @@ class TuningPicture(
         private var pendingSinceMs: Long = 0L
         private var anchor: Int? = null
         private var anchorNote: String? = null
+        private var bands: List<Int> = emptyList()
 
         fun build(f: Frame): TuningPicture {
             // The anchor belongs to the note, not to the strike. It used to be forgotten the moment
@@ -173,7 +200,7 @@ class TuningPicture(
             // the note does. It is a choice of what to measure against and not a reading, so it does
             // not outlive its sound in the sense Rule 3 forbids: nothing of the old strike is shown,
             // the picture is empty while the string is silent, and the gate's hold is still dropped.
-            if (f.note != anchorNote) { anchorNote = f.note; anchor = null; pendingAnchor = null }
+            if (f.note != anchorNote) { anchorNote = f.note; anchor = null; pendingAnchor = null; bands = emptyList() }
             if (!f.live || f.listenedHz == null) {
                 onSinceMs = null; pendingAnchor = null
                 return TuningPicture(f.note, f.listened, anchor ?: f.listened, emptyList(), null, State.SILENT, emptySet(), emptySet())
@@ -223,8 +250,9 @@ class TuningPicture(
                     if (f.nowMs - since >= (HOLD_S * 1000).toLong()) State.ON else State.NEAR
                 }
             }
+            bands = autoFour(bells, bands.toSet())
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
-                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide)
+                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands)
         }
 
         companion object {

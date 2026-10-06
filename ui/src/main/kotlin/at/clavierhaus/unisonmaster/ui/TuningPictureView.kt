@@ -92,7 +92,7 @@ private fun Bands(p: TuningPicture) {
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
         val top = h * 0.05f; val base = h * 0.93f
-        val ks = TuningPicture.autoFour(p.bells)
+        val ks = p.bands
         if (ks.isEmpty()) return@Canvas
         val cw = w / ks.size
         val seconds = millis / 1000.0
@@ -110,12 +110,26 @@ private fun Bands(p: TuningPicture) {
             // down is flat: a string under its target carries the segments downward
             val phase = (((-rate * seconds) % 1.0) + 1.0) % 1.0
             val shift = (phase * sh).toFloat()
+            // The width law, drawn at last. A partial read near the room's floor has a jittery
+            // frequency, so its band would drift at a jittery rate and could stand out of step on a
+            // perfectly clean string — the very false indication ReadingSpread was built to confess
+            // (Mistral, 6 Oct 2026). Rule 0 forbids dropping it for being quiet, so instead the band
+            // says how well it was read: a needle is crisp and full, a partial at the floor is pale
+            // with soft ends. "I am quiet" — not "the string moved".
+            val sharp = (MIN_BELL_WIDTH_C / (b.widthCents ?: MIN_BELL_WIDTH_C)
+                .coerceAtLeast(MIN_BELL_WIDTH_C)).toFloat().coerceIn(0.18f, 1f)
             val c = (if (k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE))
-                .copy(alpha = if (k in p.dropped) 0.20f else 1f)
+                .copy(alpha = (if (k in p.dropped) 0.20f else 0.35f + 0.65f * sharp))
             clipRect(bx, top, bx + bw, base) {
+                val solid = sh * 0.46f
+                val feather = solid * (1f - sharp) * 0.6f
                 for (seg in 0..k) {
                     val y = top + seg * sh + shift - sh
-                    drawRect(c, Offset(bx, y), Size(bw, sh * 0.46f))
+                    drawRect(c, Offset(bx, y), Size(bw, solid))
+                    if (feather > 0.5f) {
+                        drawRect(c.copy(alpha = c.alpha * 0.35f), Offset(bx, y - feather), Size(bw, feather))
+                        drawRect(c.copy(alpha = c.alpha * 0.35f), Offset(bx, y + solid), Size(bw, feather))
+                    }
                 }
             }
             drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.30f), Offset(bx, top), Size(bw, bh), style = Stroke(1f))
