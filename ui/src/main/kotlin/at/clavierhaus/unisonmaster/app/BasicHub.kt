@@ -57,6 +57,14 @@ import kotlin.math.abs
  * state word and — in Pro, switched on in the settings — the red recording
  * button ([recordButton], Pro's own) and the play button.
  */
+/**
+ * Whether the tuning screen colours a partial by the engine's false-beat claim. Off since 7 Oct
+ * 2026, 15:56: the claim is a spread in cents and the ear's criterion is a rate in hertz, and the
+ * two disagree in both directions on the corpus (SAMICK-2026-09-30-FINDINGS §20, §21). On again
+ * when CleanReading measures the rate.
+ */
+private const val FALSE_MARKS_ON_TUNING = false
+
 /** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
 private val SAMPLING_SEATS: List<Int> = (1..5).toList()
 
@@ -181,9 +189,10 @@ fun BasicHub(
         }
         val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
         // which partials the reading is made of, when the clean partials are read together; a false one is named
-        val partialsLine = read?.takeIf { it.combined || it.falsePartials.isNotEmpty() }?.let { r ->
+        // the same claim in words waits with the colour (FALSE_MARKS_ON_TUNING)
+        val partialsLine = read?.takeIf { it.combined || (FALSE_MARKS_ON_TUNING && it.falsePartials.isNotEmpty()) }?.let { r ->
             (if (r.combined) "partials " + r.usedPartials.joinToString(" ") else "partial ${r.k}") +
-                (if (r.falsePartials.isNotEmpty()) " · not " + r.falsePartials.joinToString(" ") else "")
+                (if (FALSE_MARKS_ON_TUNING && r.falsePartials.isNotEmpty()) " · not " + r.falsePartials.joinToString(" ") else "")
         }
         val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
             !cfg.temperamentFirst -> "leaving a note keeps it"
@@ -214,6 +223,16 @@ fun BasicHub(
                     matchCents = cfg.matchCents,
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                     follows = follows,
+                    // No red-violet on the tuning screen until the engine measures a rate. The claim
+                    // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
+                    // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,
+                    // under the audible floor, so the line catches the inaudible polarisation doublets
+                    // and coloured a clean string on three strikes (Peter at the piano, 7 Oct 2026,
+                    // 15:53-15:56: "the sudden change to red-blue made the whole thing moot"); on the
+                    // Samick's A4 it missed an audible 0.67 Hz (SAMICK findings §20). The detection
+                    // and the tally run on and the claim stays in the picture; only the colour waits
+                    // for a verdict that is a measurement.
+                    marks = FALSE_MARKS_ON_TUNING,
                     onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
                     onStretchTap = onStretch?.let { open -> { open(cfg.regionOf(t.midi)) } },
                 )
@@ -258,7 +277,7 @@ fun BasicHub(
                     baseHz = liveTarget,
                     count = controller.highestPartial(liveTarget),
                     shown = shownTuning,
-                    falseMarked = picture.falseMarked,
+                    falseMarked = if (FALSE_MARKS_ON_TUNING) picture.falseMarked else emptySet(),
                     tappable = (targets.map { it.k }.toSet() + audible) - t.listening.k,
                     onTap = { k -> controller.tapPartial(k) },
                     modifier = Modifier.weight(1f),
