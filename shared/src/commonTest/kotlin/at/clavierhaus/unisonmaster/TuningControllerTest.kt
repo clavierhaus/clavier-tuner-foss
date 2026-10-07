@@ -335,10 +335,13 @@ class TuningControllerTest {
         assertTrue(c.livePartials.value.size >= 4, "with its partials to draw: ${c.livePartials.value.map { it.k }}")
 
         // past half a semitone the nearer string is the next key, and the engine says so
-        val (c2, src2) = controller()
+        // the note pinned by hand: with the key followed the screen would go to G4, as the identifier
+        // names it, and read the string there (7 Oct 2026: following is unrestricted after sampling)
+        val (c2, src2) = controller(settings.copy(autoNote = false))
         c2.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
         c2.hear(src2, SyntheticString.strike(et(68) * 2.0.pow(-60.0 / 1200), 7e-4, 3.0))
         val r2 = assertNotNull(c2.reading.value)
+        assertEquals(68, c2.tuning.value?.midi, "pinned, the screen stays on G#4")
         assertFalse(r2.live, "60 cents flat stands nearer G4 than G#4 and is not claimed as a reading")
         assertEquals(-60.0, assertNotNull(r2.coarseCents, "the finder still places it"), 3.0)
     }

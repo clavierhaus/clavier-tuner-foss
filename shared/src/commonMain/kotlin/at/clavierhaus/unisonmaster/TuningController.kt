@@ -529,6 +529,26 @@ class TuningController(
         wantShown()
     }
 
+    /**
+     * A note recorded from the still strobe reaches the view -- measured, its deviation, the
+     * compass complete or not -- without a publish: a publish would mint a generation and place
+     * this note's targets from its own measured B while the tuner is still on it, moving the
+     * listened partial's target by the B difference (8.5 c on the F3 of the test) and resetting
+     * the shown readers mid-strike. The measured B takes effect when the note is next selected,
+     * as every measured note's does.
+     */
+    private fun recorded(s: TuningSession) {
+        _tuning.value = _tuning.value?.copy(
+            measured = s.measurements.keys.toSet(),
+            deviations = deviationsOf(s),
+            complete = s.nextUnmeasured() == null,
+        )
+        onSessionChanged?.let { save -> snapshot()?.let(save) }
+    }
+
+    private fun deviationsOf(s: TuningSession): Map<Int, Double> =
+        s.measurements.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) }
+
     private fun publish(s: TuningSession) {
         val midi = s.current
         val listening = s.listening(midi)
@@ -542,7 +562,7 @@ class TuningController(
             b = b,
             lowestMidi = s.lowMidi,
             measured = s.measurements.keys.toSet(),
-            deviations = s.measurements.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) },
+            deviations = deviationsOf(s),
             // The tuning this piano's own inharmonicity asks for, every key of the
             // compass, in cents from equal temperament. It is the curve the targets
             // are already taken from -- built from the B of the strings that were
@@ -884,6 +904,9 @@ class TuningController(
         // the clean partials read together (CleanReading): targets follow the note, readings the strike
         val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS, holdHops = holdHops(sr))
         var cleanGeneration = -1
+        // the still strobe: since which hop the listened partial has read inside the match window,
+        // which strike was recorded for it, and for which note (a change of either starts over)
+        var stillSince = -1L; var stillRecorded = -1L; var stillNote = -1
         // the string and the anchor partial the clean window was last built for; a change of either resets it
         var cleanMidi = -1; var cleanK = -1
         var memoryInForce = _settings.value.readingMemoryS
@@ -930,7 +953,7 @@ class TuningController(
                 val loudest = recent.max()
                 // a strike; the attack's own rising hops are the same strike, not new ones
                 val strike = db - loudest >= PhaseReader.ONSET_DB && rms >= SILENCE_RMS && hop - strikeHop > STRIKE_HOPS
-                if (strike) { strikeHop = hop; strikePeakDb = db; candidate = null; run = 0; followed = false; early = null; decided = false; _heardMidi.value = null; shownSpread.values.forEach { it.clear() } }
+                if (strike) { strikeHop = hop; strikePeakDb = db; candidate = null; run = 0; followed = false; early = null; decided = false; _heardMidi.value = null; shownSpread.values.forEach { it.clear() }; stillSince = -1L }
                 if (strike || db > peakDb) peakDb = db
                 if (db > strikePeakDb) strikePeakDb = db
                 recent[(hop % recent.size).toInt()] = db
@@ -966,7 +989,11 @@ class TuningController(
                 // the tuning screen: the reader is set on the partial listened to
                 if (readerGeneration != w.generation) {
                     val r = reader
-                    if (r == null) reader = PhaseReader(sr, w.listenHz, memoryS = _settings.value.readingMemoryS) else r.retarget(w.listenHz)
+                    // a new generation at the same place leaves the reader alone: a retarget starts
+                    // its memory afresh, and the note recorded from a still strobe is published
+                    // without the place moving (7 Oct 2026) -- the reading must not blink for that
+                    if (r == null) reader = PhaseReader(sr, w.listenHz, memoryS = _settings.value.readingMemoryS)
+                    else if (r.targetHz != w.listenHz) r.retarget(w.listenHz)
                     readerGeneration = w.generation
                     coarse = null
                 }
@@ -1041,9 +1068,15 @@ class TuningController(
                         clean.target(series.filter { it.k <= CleanReading.PARTIALS }.associate { it.k to it.hz }, reset = false)
                     }
                 }
-                // (never while sampling: the string just kept is still ringing when the screen moves on)
-                if (!followed && heard != null && s != null && heard != s.current && rd?.shown != true &&
-                    _settings.value.autoNote && !s.gated && !s.sampling && s.selectable(heard)) {
+                // The screen follows the key the identifier has positively named, and nothing else
+                // holds it back (Peter, 7 Oct 2026, 16:29: after sampling, auto note detection must
+                // fully work without restrictions -- the A3-A4 sequence is a suggestion, and a pro
+                // tuner's order is not our business). Two restrictions left here that day: the
+                // temperament-first gate, and the wait for the note on screen to stop reading, which
+                // held the screen on the last key while it still rang. Never while sampling: the
+                // string just kept is still ringing when the screen moves on.
+                if (!followed && heard != null && s != null && heard != s.current &&
+                    _settings.value.autoNote && !s.sampling && s.selectable(heard)) {
                     followed = true
                     selectNote(heard)
                 }
@@ -1097,6 +1130,24 @@ class TuningController(
                     coarseCents = coarse, usedPartials = used, falsePartials = falseOnes,
                 )
                 _liveHz.value = combinedHz ?: held
+                // The still strobe is the tuner's verdict, and the engine notices it. The listened
+                // partial read inside the match window for HOLD_S without a break, and the note is
+                // measured from this strike and recorded -- once per strike, the next strike still
+                // again replacing it -- with no Done to tap: "it's done when the strobe is still, and
+                // that's for the tuner to decide" (Peter at the piano, 7 Oct 2026, 16:20). The screen
+                // does not move: with the key followed, the next strike is the next note. A string
+                // left flat on purpose is never still inside the window and is never recorded by this.
+                if (t != null && s != null && !s.sampling) {
+                    if (stillNote != t.midi) { stillNote = t.midi; stillSince = -1L; stillRecorded = -1L }
+                    if (matchedNow()) {
+                        if (stillSince < 0) stillSince = hop
+                        else if (hop - stillSince >= holdHops(sr) && stillRecorded != strikeHop) {
+                            _reading.value?.hz?.let { hz -> measureNote(t, w.k, hz) }?.let { m ->
+                                if (s.record(m)) { stillRecorded = strikeHop; recorded(s) }
+                            }
+                        }
+                    } else stillSince = -1L
+                }
                 // the other shown partials, each by its own reader
                 val ws = wantedSet
                 if (ws != null && ws.generation != shownGeneration) {

@@ -30,7 +30,6 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
-import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.NotePicker
 import at.clavierhaus.unisonmaster.ui.PartialChips
 import at.clavierhaus.unisonmaster.ui.ProgressButton
@@ -156,7 +155,6 @@ fun BasicHub(
         val shownHz = read?.hz
         val shownTarget = read?.targetHz ?: l.targetHz
         val live = read?.live == true
-        val matched = live && TuningSession.matched(shownHz, shownTarget, cfg.matchCents)
         val origin = when (l.source) {
             TuningSession.Source.REFERENCE -> t(K.origin_reference)
             TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
@@ -286,8 +284,8 @@ fun BasicHub(
                 Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 Spacer(Modifier.weight(1f))
             }
-            Spacer(Modifier.width(10.dp))
-            DoneButton(onClick = { controller.acceptLive() }, enabled = matched)
+            // No Done while tuning: the strobe still is the verdict and the engine records the note
+            // from it (Peter, 7 Oct 2026, 16:20). Done stays on the sampling page, where it ends a pass.
         }
     }
     }
