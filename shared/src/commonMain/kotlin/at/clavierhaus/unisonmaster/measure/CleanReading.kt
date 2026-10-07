@@ -66,6 +66,17 @@ class CleanReading(
         val clean: Boolean,
         /** Present and steady, but not where the others put the string. */
         val disagrees: Boolean,
+        /**
+         * Beating on its own: the spread of its readings over the strike stands over OWN_CENTS, and
+         * stays called until it falls under OWN_CLEAR_CENTS -- the one hysteresis, the same in both
+         * ways of reading. Until 7 Oct 2026 the false list was derived from "neither clean nor
+         * disagreeing", which in the uncombined reading (an unmeasured string) is every steady
+         * partial but the one read, so a clean partial with 0.3 c of spread was called false there:
+         * on the Samick's clean F3, nine takes, the combined reading called none and the uncombined
+         * called k2 on two, at exactly 0.30 c; on a clean G#4 at the piano, three strikes, the tally
+         * claimed k2 and k4 and coloured them (Peter, 7 Oct, 15:22: both strings clean).
+         */
+        val beats: Boolean = false,
     )
 
     data class Result(
@@ -74,8 +85,8 @@ class CleanReading(
         val partials: List<Partial>,
     ) {
         val used: List<Int> get() = partials.filter { it.clean }.map { it.k }
-        /** Partials present but beating on their own. */
-        val falseBeating: List<Int> get() = partials.filter { it.present && !it.clean && !it.disagrees && it.spreadCents != null && it.spreadCents >= OWN_CLEAR_CENTS }.map { it.k }
+        /** Partials present but beating on their own, by the one hysteresis, however the string was read. */
+        val falseBeating: List<Int> get() = partials.filter { it.present && it.beats }.map { it.k }
     }
 
     private val readers = arrayOfNulls<PhaseReader>(count + 1)
@@ -173,7 +184,7 @@ class CleanReading(
                     if (spread >= OWN_CENTS) falseNow[k] = true else if (spread < OWN_CLEAR_CENTS) falseNow[k] = false
                 } else falseNow[k] = false
             } else falseNow[k] = false
-            parts += Partial(k, rd.shown, mean, spread, rd.levelDbfs, clean = false, disagrees = false)
+            parts += Partial(k, rd.shown, mean, spread, rd.levelDbfs, clean = false, disagrees = false, beats = falseNow[k])
         }
         // the steady partials; where the string is, the partial being tuned says — or, when it
         // beats on its own, the median of the steady ones

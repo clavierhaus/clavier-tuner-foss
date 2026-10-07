@@ -31,9 +31,21 @@ class CleanReadingRecordingsTest {
     }
 
     @Test
-    fun noPartialOfTheSamicksCleanF3IsCalledFalseOnAnyStrike() {
+    fun noPartialOfTheSamicksCleanF3IsCalledFalseOnAnyStrike() = cleanF3CallsNothing(combine = true)
+
+    /**
+     * The same takes read the way an unmeasured string is read -- the partial being tuned alone,
+     * the others judged but not combined. Until 7 Oct 2026 this way called k2 false on two of the
+     * nine takes at exactly 0.30 c, the hysteresis floor, because the false list was taken from
+     * "neither clean nor disagreeing" and that is every steady partial but one here; at the piano
+     * a clean G#4 had k2 and k4 claimed and coloured after three strikes (Peter, 15:22).
+     */
+    @Test
+    fun noPartialOfTheSamicksCleanF3IsCalledFalseWhenReadUncombined() = cleanF3CallsNothing(combine = false)
+
+    private fun cleanF3CallsNothing(combine: Boolean) {
         val files = takes()
-        if (files.isEmpty()) return
+        if (files.isEmpty()) { println("CleanReadingRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
         assertTrue(files.size == 9, "nine takes of F3: ${files.map { it.name }}")
         val hop = 1024
         val called = LinkedHashMap<String, String>()
@@ -48,13 +60,13 @@ class CleanReadingRecordingsTest {
             var present = 0
             var i = 0
             while (i + hop <= pcm.samples.size) {
-                val res = r.push(pcm.samples.copyOfRange(i, i + hop), 4, combine = true)
+                val res = r.push(pcm.samples.copyOfRange(i, i + hop), 4, combine = combine)
                 present = maxOf(present, res.partials.count { it.present })
                 for (k in res.falseBeating) called.putIfAbsent("${f.name.substringBefore("_unproc")} k$k", "at %.2f s, spread %.2f c".format(i.toDouble() / sr, res.partials.first { it.k == k }.spreadCents))
                 i += hop
             }
             assertTrue(present >= 6, "${f.name}: the partials were read while they stood ($present present at most)")
         }
-        assertTrue(called.isEmpty(), "a clean string was called false: $called")
+        assertTrue(called.isEmpty(), "a clean string was called false (combine = $combine): $called")
     }
 }
