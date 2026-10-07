@@ -98,7 +98,6 @@ fun BasicHub(
     val liveTarget by controller.targetHz.collectAsState()
     val reading by controller.reading.collectAsState()
     val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
-    val heard by controller.heardMidi.collectAsState()
     val hubHz by controller.liveHz.collectAsState()          // before the session: A4's first partial, by the hub's reader
 
     val t = tuning
@@ -166,24 +165,19 @@ fun BasicHub(
         // piano on 1 Oct 2026 went into deducing it from where the bells landed. It
         // is said here, always, whatever it is and wherever it came from.
         val originLine = "A4 ${formatHz(a4)} \u00b7 $origin"
-        val coarse = read?.coarseCents
         // the picture is `picture`, built above for every state of the screen so the header's state
         // word and the picture say the same thing; the picture decides what is shown, the view how (docs/UI.md)
+        // The word above the picture says only whether the engine hears the string: nothing about
+        // where it stands. "33 cents sharp", "That's F5", "flat" -- every word about pitch is gone
+        // (Peter, 7 Oct 2026, 15:33: irritating, serving no purpose): the strobe says which way and
+        // how far, the bells say where the partials agree, and a word beside them was a third
+        // place saying the same thing. "Complete" stays, said once when the compass is done.
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)
-            coarse != null && !live ->
-                t(K.state_off, String.format(Locale.ROOT, "%.0f", abs(coarse)), if (coarse < 0) t(K.state_flat) else t(K.state_sharp)) to Color(Brand.ORANGE)
-            // another key struck, and the screen does not follow (off, or the temperament octave first)
-            heard != null && heard != t.midi && !live -> t(K.state_heardOther, Notes.name(heard!!)) to Color(Brand.ORANGE)
             read?.settling == true -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
             !live || shownHz == null -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
-            // The screen does not say the string has arrived. A tuner reads the stillness of the bands
-            // and calls it himself, and in the bass he may leave a string flat on purpose (Peter,
-            // 6 Oct 2026). The word says which way the string stands, and nothing more; "matches" and
-            // "near", and the green they were said in, are gone with the hold that earned them.
-            shownHz > shownTarget -> t(K.state_sharp) to Color(Brand.ORANGE)
-            else -> t(K.state_flat) to Color(Brand.ORANGE)
+            else -> "" to Color(Brand.WHITE_MUTED)
         }
         val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
         // which partials the reading is made of, when the clean partials are read together; a false one is named

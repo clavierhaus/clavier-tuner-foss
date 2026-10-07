@@ -31,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
@@ -52,8 +53,14 @@ val CORNER_INSET = 16.dp
 val CORNER_BAND = 44.dp
 /** Width the top-left corner takes (the gear): content in the band starts right of it. */
 val CORNER_LEFT_WIDTH = 60.dp
-/** Width the top-right corner takes (the name and the home button): content in the band ends left of it. */
-val CORNER_RIGHT_WIDTH = 250.dp
+/**
+ * Width the top-right corner takes (the name and the home button): content in the band ends
+ * left of it. It depends on the edition: "clavier tuner" with the home door
+ * takes 250 dp, and the Pro mark in script after it another 70 (Peter, 7 Oct 2026, 15:33: the
+ * probe button and the record button stood under the inscription, because the band was measured
+ * for the free app's name). Read when a screen lays out, so the mark set at start is counted.
+ */
+val CORNER_RIGHT_WIDTH: Dp get() = if (Edition.mark == null) 250.dp else 320.dp
 
 /** The edition's mark beside the name, in script: null in the free app, "Pro" in Pro. Set once by the app before its first screen. */
 object Edition {

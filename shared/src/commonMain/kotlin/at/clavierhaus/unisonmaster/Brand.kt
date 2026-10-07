@@ -13,6 +13,8 @@ object Brand {
     const val ORANGE: Long = 0xFFFF9630
     const val BLACK: Long = 0xFF000000
     const val NEAR_BLACK: Long = 0xFF0D0D0D // panels, one step off pure black
+    /** The tuning picture's two regions, bells and strobe: a box on the ground, lighter than it by a step the eye finds and the plate's brightness does not swallow (Peter, 7 Oct 2026). */
+    const val PANEL: Long = 0xFF1C1C1C
     const val WHITE: Long = 0xFFFFFFFF
     const val WHITE_MUTED: Long = 0xB3FFFFFF // 70 % white for secondary text
 

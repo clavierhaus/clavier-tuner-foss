@@ -24,20 +24,22 @@ import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.picture.BandPhase
 import at.clavierhaus.unisonmaster.picture.TuningPicture
-import at.clavierhaus.unisonmaster.picture.TuningPicture.State
-import java.util.Locale
 import kotlin.math.abs
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 
 /** The bells' span either side of the anchor, cents: narrow enough that a bell's movement is seen undistorted. */
 const val BELLS_SPAN_C = 6.0
 /** A bell is never drawn narrower than this, cents, whatever its width says: a needle must stay visible. */
 const val MIN_BELL_WIDTH_C = 0.2
-/** The scale's span either side of the target, cents: linear, one strip. */
-const val SCALE_SPAN_C = 30.0
+/** The panels' corner radius, dp: the two regions of the picture are boxes on the ground, not areas of it. */
+private const val PANEL_RADIUS_DP = 12
 
 /**
  * Draws a [TuningPicture] and nothing else (docs/UI.md): a split window. Left,
- * the tuning — the note, the partial, the linear scale with its gate. Right,
+ * the tuning — the note, the partial, the bells in their panel. Right,
  * nothing but the bells on their centre line — no numbers over them, the chip
  * row below naming the partials instead. Every position is a fraction of the
  * pane. The picture decides what is shown; this decides only how.
@@ -87,9 +89,70 @@ fun TuningPictureView(
                 color = Color(Brand.WHITE_MUTED),
             )
         }
-        Place(0.00f, 0.34f, 0.47f, 0.40f) { CentsScale(p.pointerCents, matchCents, p.state != State.SILENT) }
-        // right: the bands, and nothing else
-        Place(0.52f, 0.00f, 0.48f, 0.98f) { Bands(p, marks) }
+        // Two regions, two panels (Peter, 7 Oct 2026, 15:29): the strobe says when the string has
+        // arrived -- it stops -- and the bells say where it stands and whether its partials agree,
+        // a clean string's bells stacked on the anchor. The linear scale and its arrow said the
+        // same as the bells with less, and are gone. Each region is a box with round corners on a
+        // ground one step lighter than the page, so the eye finds it as a region; all black read as
+        // unordered.
+        Place(0.00f, 0.26f, 0.48f, 0.72f) { Panel { Bells(p, marks) } }
+        Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
+    }
+}
+
+/** A region of the picture: a rounded box on a ground one step off the page's. */
+@Composable
+private fun Panel(content: @Composable () -> Unit) {
+    Box(
+        Modifier.fillMaxSize()
+            .background(Color(Brand.PANEL), RoundedCornerShape(PANEL_RADIUS_DP.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+    ) { content() }
+}
+
+/**
+ * The bells: one string seen several ways. Each partial a bell on one baseline, its place its
+ * distance from the anchor in cents, its height its level, its width how well it was read (its own
+ * measured spread, never narrower than MIN_BELL_WIDTH_C). A clean string's bells stand on one line
+ * (Law 1); a false partial's bell stands out of it, and is coloured when [marks] is on. Drawn as
+ * they were until 6 Oct 2026, back by Peter's word of 7 Oct, 15:29, beside the strobe instead of
+ * instead of it.
+ */
+@Composable
+private fun Bells(p: TuningPicture, marks: Boolean) {
+    Canvas(Modifier.fillMaxSize()) {
+        val w = size.width; val h = size.height
+        val base = h * 0.90f
+        val top = h * 0.06f
+        val cx = w / 2f
+        val half = w / 2f * 0.9f
+        fun xOf(cents: Double): Float = (cx + (cents / BELLS_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
+        // the anchor line, fixed in the panel
+        drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
+        drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
+        val perCent = half / BELLS_SPAN_C.toFloat()
+        for (b in p.bells.filter { it.k !in p.dropped }.sortedBy { it.level }) {
+            val x = xOf(b.offsetCents)
+            val height = (base - top) * (0.25f + 0.75f * b.level.toFloat())
+            val sigma = perCent * (b.widthCents ?: MIN_BELL_WIDTH_C).coerceIn(MIN_BELL_WIDTH_C, BELLS_SPAN_C).toFloat()
+            val path = Path().apply {
+                moveTo(x - 3 * sigma, base)
+                cubicTo(x - sigma, base, x - sigma * 0.8f, base - height, x, base - height)
+                cubicTo(x + sigma * 0.8f, base - height, x + sigma, base, x + 3 * sigma, base)
+                close()
+            }
+            val c = if (marks && b.k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE)
+            drawPath(path, c.copy(alpha = 0.22f))
+            drawPath(path, c, style = Stroke(width = 2f))
+        }
+        // the span, in the panel's foot
+        val paint = android.graphics.Paint().apply { color = Color(Brand.WHITE_MUTED).toArgb(); textSize = h * 0.07f; isAntiAlias = true }
+        paint.textAlign = android.graphics.Paint.Align.LEFT
+        drawContext.canvas.nativeCanvas.drawText("−${BELLS_SPAN_C.toInt()}", 2f, h * 0.99f, paint)
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        drawContext.canvas.nativeCanvas.drawText("0 c from the anchor", cx, h * 0.99f, paint)
+        paint.textAlign = android.graphics.Paint.Align.RIGHT
+        drawContext.canvas.nativeCanvas.drawText("+${BELLS_SPAN_C.toInt()}", w - 2f, h * 0.99f, paint)
     }
 }
 
@@ -161,58 +224,3 @@ private fun Bands(p: TuningPicture, marks: Boolean) {
     }
 }
 
-/** Linear, ±[SCALE_SPAN_C]: equal distance, equal cents. The gate at the window's true width; green across when on. */
-@Composable
-private fun CentsScale(pointerCents: Double?, matchCents: Double, sounding: Boolean) {
-    val labelColor = Color(Brand.WHITE_MUTED).toArgb()
-    Canvas(Modifier.fillMaxSize()) {
-        val w = size.width; val h = size.height
-        val cx = w / 2f
-        val half = (w / 2f - 8f).toDouble()
-        val m = matchCents.coerceIn(0.02, SCALE_SPAN_C)
-        fun xOf(cents: Double): Float = (cx + (cents / SCALE_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
-        val axisY = h * 0.45f
-        // No wash, and no green: the screen reports and does not pronounce. A tuner reads stillness
-        // and calls the arrival himself, and in the bass he may leave a string flat on purpose
-        // (Peter, 6 Oct 2026). The gate is drawn because its width is a measurement, never a verdict.
-        val left = xOf(-m); val right = xOf(m)
-        val top = axisY - h * 0.30f; val bot = axisY + h * 0.30f
-        val edge = Color(Brand.WHITE_MUTED)
-        drawRect(edge.copy(alpha = 0.10f), Offset(left, top), Size((right - left).coerceAtLeast(2f), bot - top))
-        for (x in listOf(left, right)) {
-            val inward = if (x == left) 1f else -1f
-            drawLine(edge, Offset(x, top), Offset(x, bot), 4f)
-            drawLine(edge, Offset(x, top), Offset(x + inward * h * 0.08f, top), 4f)
-            drawLine(edge, Offset(x, bot), Offset(x + inward * h * 0.08f, bot), 4f)
-        }
-        drawLine(Color(Brand.WHITE).copy(alpha = 0.35f), Offset(8f, axisY), Offset(w - 8f, axisY), 2f)
-        val paint = android.graphics.Paint().apply { color = labelColor; textSize = h * 0.18f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER }
-        var t = -SCALE_SPAN_C
-        while (t <= SCALE_SPAN_C + 1e-9) {
-            val x = xOf(t)
-            val labelled = abs(t) % 10.0 < 1e-9
-            drawLine(Color(Brand.WHITE).copy(alpha = if (labelled) 0.5f else 0.3f), Offset(x, axisY - h * 0.1f), Offset(x, axisY + h * 0.1f), 2f)
-            if (labelled) {
-                val label = when {
-                    t == 0.0 -> "0"
-                    t == SCALE_SPAN_C -> String.format(Locale.ROOT, "+%.0f c", t)
-                    t > 0 -> String.format(Locale.ROOT, "+%.0f", t)
-                    else -> String.format(Locale.ROOT, "−%.0f", abs(t))
-                }
-                drawContext.canvas.nativeCanvas.drawText(label, x, h * 0.95f, paint)
-            }
-            t += 5.0
-        }
-        paint.color = edge.toArgb(); paint.textAlign = android.graphics.Paint.Align.LEFT
-        drawContext.canvas.nativeCanvas.drawText(String.format(Locale.ROOT, "±%.1f", m), right + h * 0.12f, top + h * 0.16f, paint)
-        if (pointerCents != null) {
-            val x = xOf(pointerCents)
-            val c = Color(Brand.ORANGE).copy(alpha = if (sounding) 1f else 0.45f)
-            val tri = Path().apply {
-                moveTo(x, axisY - h * 0.42f); lineTo(x + h * 0.09f, axisY - h * 0.26f); lineTo(x - h * 0.09f, axisY - h * 0.26f); close()
-            }
-            drawPath(tri, c)
-            drawLine(c, Offset(x, axisY - h * 0.26f), Offset(x, axisY + h * 0.3f), 5f)
-        }
-    }
-}
