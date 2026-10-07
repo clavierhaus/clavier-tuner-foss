@@ -177,4 +177,24 @@ class TuningPictureTest {
         assertEquals(State.SILENT, gone.state); assertTrue(gone.bells.isEmpty()); assertNull(gone.pointerCents)
         assertEquals(State.NEAR, bld.build(frame(0.2, 800)).state, "a new strike earns its own hold")
     }
+
+    /**
+     * Seats fixed by the page stand whatever sounds: while sampling the picture shows
+     * partials 1-5 in their seats, a quiet partial's seat empty and a loud high one's
+     * absent, where autoFour would seat the loud ones (Peter, 7 Oct 2026, 10:18).
+     */
+    @Test
+    fun seatsFixedByThePageOverrideAutoFour() {
+        val b = TuningPicture.Builder()
+        // partials 1, 4, 7 loud, the rest at the floor: autoFour would not seat 2, 3, 5
+        val extra = emptyMap<Int, Double>()
+        val loud = setOf(1, 4, 7)
+        val partials = targets.mapValues { (k, t) -> TuningPicture.Frame.Partial(t, if (k in loud) 1.0 else 0.05, null, if (k in loud) 40.0 else 5.0) }
+        fun f(seats: List<Int>?) = TuningPicture.Frame("A4", 1, true, partials[1]!!.hz, targets[1]!!,
+            partials, targets, emptySet(), emptySet(), 1.5, 1000L, seats = seats)
+        val free = b.build(f(null)).bands
+        assertTrue(2 !in free && 3 !in free, "autoFour seats the loud ones, not 2 and 3: $free")
+        val fixed = TuningPicture.Builder().build(f(listOf(1, 2, 3, 4, 5))).bands
+        assertEquals(listOf(1, 2, 3, 4, 5), fixed)
+    }
 }

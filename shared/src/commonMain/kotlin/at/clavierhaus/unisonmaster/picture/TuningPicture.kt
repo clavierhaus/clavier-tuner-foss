@@ -170,6 +170,14 @@ class TuningPicture(
         val matchCents: Double,
         /** The clock, ms. */
         val nowMs: Long,
+        /**
+         * The bands' seats fixed by the page, or null to let [autoFour] choose from what sounds.
+         * While sampling the picture shows partials 1-5 in their seats whatever stands in them --
+         * the string is being measured, not tuned, and a row that reflows with the strike is
+         * noise there (Peter, 7 Oct 2026, 10:18). A seat with no partial in it stays empty; it
+         * never closes up.
+         */
+        val seats: List<Int>? = null,
     ) {
         /** One live partial: as read, its level 0..1 of the loudest, its width and its depth over the noise when known. */
         class Partial(val hz: Double, val level: Double, val widthCents: Double? = null, val overNoiseDb: Double? = null)
@@ -250,7 +258,7 @@ class TuningPicture(
                     if (f.nowMs - since >= (HOLD_S * 1000).toLong()) State.ON else State.NEAR
                 }
             }
-            bands = autoFour(bells, bands.toSet())
+            bands = f.seats ?: autoFour(bells, bands.toSet())
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
                 f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands)
         }

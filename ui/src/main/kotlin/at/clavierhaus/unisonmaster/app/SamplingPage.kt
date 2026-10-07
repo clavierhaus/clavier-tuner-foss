@@ -44,6 +44,13 @@ import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.FitText
 import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 /*
  * The sampling page (Peter, 4 Oct 2026): the start of a tuning has one
@@ -149,6 +156,15 @@ internal fun SamplingPage(
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                     StepBox("+") { controller.setReference(tenths(a4 + 0.1)) }
+                    if (view == null) {
+                        // The string's own reading taken as the pitch to tune to, by one tap, for the
+                        // piano that stays where it is. Until 5 Oct this happened by itself and was
+                        // wrong, because the display was being tuned and not the string; now the pitch
+                        // is defined first and the string tuned to it, and taking the reading as that
+                        // pitch is the tuner's choice (Peter, 7 Oct 2026, 10:18).
+                        Spacer(Modifier.width(14.dp))
+                        Chip("as it stands", selected = false, enabled = a4Live) { hz?.let { controller.setReference(tenths(it)) } }
+                    }
                     Spacer(Modifier.weight(1f))
                     if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
                     else Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
@@ -179,6 +195,8 @@ internal fun SamplingPage(
                 TuningPictureView(
                     picture, cfg.matchCents,
                     modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
+                    // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
+                    marks = false,
                 )
                 if (view != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
@@ -256,12 +274,33 @@ private fun tenths(hz: Double): Double =
 /** A step of the reference: a box with its sign, to the left of the number it moves. */
 @Composable
 private fun StepBox(label: String, onClick: () -> Unit) {
+    // A tap steps once. A finger held steps again after STEP_HOLD_MS and then every STEP_REPEAT_MS
+    // until it lifts: 439.2 from 440.0 was eight taps. Not too fast, but visible (Peter, 7 Oct 2026,
+    // 10:18): about six tenths a second, so a hertz takes a little under two seconds and the eye
+    // can stop it on the tenth it wants.
+    val scope = rememberCoroutineScope()
+    val step by rememberUpdatedState(onClick)
     Box(
         Modifier.size(width = 40.dp, height = 34.dp)
             .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick),
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    step()
+                    val running = scope.launch {
+                        delay(STEP_HOLD_MS)
+                        while (isActive) { step(); delay(STEP_REPEAT_MS) }
+                    }
+                    tryAwaitRelease()
+                    running.cancel()
+                })
+            },
         contentAlignment = Alignment.Center,
     ) {
         Text(label, color = Color(Brand.WHITE), fontSize = 20.sp)
     }
 }
+
+/** A held step box waits this long before it runs, ms. */
+private const val STEP_HOLD_MS = 450L
+/** ... and then steps this often, ms: a tenth of a hertz every 160 ms. */
+private const val STEP_REPEAT_MS = 160L

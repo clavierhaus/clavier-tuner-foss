@@ -57,6 +57,9 @@ import kotlin.math.abs
  * state word and — in Pro, switched on in the settings — the red recording
  * button ([recordButton], Pro's own) and the play button.
  */
+/** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
+private val SAMPLING_SEATS: List<Int> = (1..5).toList()
+
 @Composable
 fun BasicHub(
     controller: TuningController,
@@ -121,6 +124,8 @@ fun BasicHub(
                 targets = targets.associate { it.k to it.hz },
                 falsePartials = read?.falsePartials?.toSet() ?: emptySet(), dropped = emptySet(),
                 matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+                // while sampling the stripes are partials 1-5 in fixed seats (Peter, 7 Oct 2026)
+                seats = if (t.sampling) SAMPLING_SEATS else null,
             )
         }
         fun hubFrame(): TuningPicture.Frame = TuningPicture.Frame(

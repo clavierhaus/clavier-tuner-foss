@@ -54,6 +54,13 @@ fun TuningPictureView(
     matchCents: Double,
     modifier: Modifier = Modifier,
     follows: Boolean = true,
+    /**
+     * Whether a band is coloured by what the engine claims of its partial -- red-violet for a
+     * measured false beat, greyed for one the tuner took out. Off while sampling: the string is
+     * being measured there, not tuned, and the stripes keep one colour (Peter, 7 Oct 2026, 10:18);
+     * the claims themselves are the picture's and are untouched.
+     */
+    marks: Boolean = true,
     onNoteTap: (() -> Unit)? = null,
     /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
     onStretchTap: (() -> Unit)? = null,
@@ -82,12 +89,12 @@ fun TuningPictureView(
         }
         Place(0.00f, 0.34f, 0.47f, 0.40f) { CentsScale(p.pointerCents, matchCents, p.state != State.SILENT) }
         // right: the bands, and nothing else
-        Place(0.52f, 0.00f, 0.48f, 0.98f) { Bands(p) }
+        Place(0.52f, 0.00f, 0.48f, 0.98f) { Bands(p, marks) }
     }
 }
 
 @Composable
-private fun Bands(p: TuningPicture) {
+private fun Bands(p: TuningPicture, marks: Boolean) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
@@ -112,11 +119,19 @@ private fun Bands(p: TuningPicture) {
             p.bells.firstOrNull { it.k == k }?.let { k to -(it.hz - it.targetHz) / k }
         }.toMap()
         val phases = carried.advance(millis, rates)
+        // the gaps are what keep bands apart; a lone band has nothing to keep apart from and takes
+        // more of its column (Peter, 7 Oct 2026: the one band of the A4 screen, larger)
+        val bandShare = if (ks.size == 1) 0.72f else 0.52f
         for ((i, k) in ks.withIndex()) {
-            val b = p.bells.firstOrNull { it.k == k } ?: continue
-            val bw = cw * 0.52f
+            val bw = cw * bandShare
             val bx = i * cw + (cw - bw) / 2f
             val bh = base - top
+            val b = p.bells.firstOrNull { it.k == k }
+            if (b == null) {
+                // a fixed seat with nothing in it: its frame stands, so the row never closes up
+                drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.18f), Offset(bx, top), Size(bw, bh), style = Stroke(1f))
+                continue
+            }
             val sh = bh / k
             val shift = ((phases[k] ?: 0.0) * sh).toFloat()
             // The width law, drawn at last. A partial read near the room's floor has a jittery
@@ -127,8 +142,8 @@ private fun Bands(p: TuningPicture) {
             // with soft ends. "I am quiet" — not "the string moved".
             val sharp = (MIN_BELL_WIDTH_C / (b.widthCents ?: MIN_BELL_WIDTH_C)
                 .coerceAtLeast(MIN_BELL_WIDTH_C)).toFloat().coerceIn(0.18f, 1f)
-            val c = (if (k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE))
-                .copy(alpha = (if (k in p.dropped) 0.20f else 0.35f + 0.65f * sharp))
+            val c = (if (marks && k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE))
+                .copy(alpha = (if (marks && k in p.dropped) 0.20f else 0.35f + 0.65f * sharp))
             clipRect(bx, top, bx + bw, base) {
                 val solid = sh * 0.46f
                 val feather = solid * (1f - sharp) * 0.6f
