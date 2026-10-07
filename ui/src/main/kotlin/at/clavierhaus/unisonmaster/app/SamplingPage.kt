@@ -58,6 +58,12 @@ import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
  * Accept, the count and Done; along the bottom the piano's keyboard, every
  * sampled key green.
  *
+ * Two screens, one file (Peter, 7 Oct 2026, 09:23: "this initial screen
+ * serves only one purpose"). Before the session the page is the A4 screen:
+ * the pitch chooser, the temperament, the picture of the string against the
+ * pitch chosen, Done -- and nothing else, no title, no orders, no keyboard.
+ * From Done on it is the sampling page described above.
+ *
  * The right side is the only interactive area (Peter, 5 Oct 2026). The
  * keyboard indicates the key and shows the progress and takes no touch: a key
  * is 17 dp wide on a 891 dp screen, so a tap on it could not be aimed, and
@@ -105,21 +111,28 @@ internal fun SamplingPage(
         // its Accept and Sampled with its Done stood below the screen's edge, where they could not be
         // tapped). The work of the page — what was caught, how many are in — sits at the foot of that
         // band, pushed there by the spacer, so it is on the screen whatever stands above it.
-        Row(Modifier.fillMaxSize().padding(bottom = KEYBOARD_H + 8.dp)) {
-            // ---- left: what this page is for, and the orders ----
-            Column(Modifier.width(380.dp).fillMaxHeight()) {
-                CornerBand()
-                Text("Piano Sampling", color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Text("Retrieve the piano's inharmonicity", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
-                Spacer(Modifier.height(10.dp))
-                Column(
-                    Modifier.fillMaxWidth().border(1.dp, Color(0xFF3A3A3A), RoundedCornerShape(8.dp)).padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    for (line in ORDERS) FitText(line, 14.sp, Modifier.fillMaxWidth(), color = white)
+        // Two screens share this file and are told apart by the session (Peter, 7 Oct 2026, 09:23):
+        // before it, the page serves one purpose -- A4 set to the pitch the tuner wants -- and carries
+        // nothing else: no title, no orders, no keyboard; the picture has the width. From Done on it
+        // is the sampling page, with the orders on the left and the compass along the bottom.
+        val settingA4 = view == null
+        Row(Modifier.fillMaxSize().padding(bottom = if (settingA4) 0.dp else KEYBOARD_H + 8.dp)) {
+            if (!settingA4) {
+                // ---- left: what this page is for, and the orders ----
+                Column(Modifier.width(380.dp).fillMaxHeight()) {
+                    CornerBand()
+                    Text("Piano Sampling", color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("Retrieve the piano's inharmonicity", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Column(
+                        Modifier.fillMaxWidth().border(1.dp, Color(0xFF3A3A3A), RoundedCornerShape(8.dp)).padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        for (line in ORDERS) FitText(line, 14.sp, Modifier.fillMaxWidth(), color = white)
+                    }
                 }
+                Spacer(Modifier.width(28.dp))
             }
-            Spacer(Modifier.width(28.dp))
             // ---- right: A4 and the temperament above, the work at the foot ----
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 CornerBand()
@@ -196,12 +209,12 @@ internal fun SamplingPage(
                 }
             }
         }
-        // ---- along the bottom: the whole keyboard ----
-        SamplingKeyboard(
+        // ---- along the bottom: the whole keyboard, once there is a sampling to show on it ----
+        if (!settingA4) SamplingKeyboard(
             lowestMidi = cfg.lowestKeyMidi,
             sampled = sampled,
             caught = view?.caught,
-            referenceSet = view != null,
+            referenceSet = true,
             temperament = low..TuningSession.MIDI_A4,
             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
         )
