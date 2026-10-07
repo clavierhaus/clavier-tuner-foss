@@ -258,7 +258,14 @@ class TuningPicture(
                     if (f.nowMs - since >= (HOLD_S * 1000).toLong()) State.ON else State.NEAR
                 }
             }
-            bands = f.seats ?: autoFour(bells, bands.toSet())
+            // The seats hold for the note. autoFour chooses from what sounds now, and a partial that
+            // has decayed under the audible line leaves its seat -- so the row reflowed after the
+            // decay: four stripes at the strike, two at four seconds, one at six, and the picture of a
+            // string still sounding emptied in front of the tuner (Peter, 7 Oct 2026, 15:22: "a string
+            // that still sounds should never go away"). A seat once taken stays for the note; its
+            // partial gone, the seat stands empty; the row never closes up (the blueprint's stable
+            // seats). A note change clears the seats with the rest.
+            bands = f.seats ?: (bands + autoFour(bells, bands.toSet())).distinct().sorted()
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
                 f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands)
         }

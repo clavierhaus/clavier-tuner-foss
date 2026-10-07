@@ -197,4 +197,25 @@ class TuningPictureTest {
         val fixed = TuningPicture.Builder().build(f(listOf(1, 2, 3, 4, 5))).bands
         assertEquals(listOf(1, 2, 3, 4, 5), fixed)
     }
+
+    /**
+     * A seat once taken holds for the note. Four partials at the strike, then only the
+     * fundamental over the audible line as the others decay: the row keeps its four seats and
+     * does not close up to one (Peter, 7 Oct 2026, 15:22).
+     */
+    @Test
+    fun seatsHoldForTheNoteWhileThePartialsDecay() {
+        val b = TuningPicture.Builder()
+        fun f(levels: Map<Int, Double>) = TuningPicture.Frame("G#4", 1, true, targets[1]!!, targets[1]!!,
+            targets.filterKeys { it in levels }.mapValues { (k, t) -> TuningPicture.Frame.Partial(t, levels[k]!!, null, 40.0) },
+            targets, emptySet(), emptySet(), 1.5, 1000L)
+        val atStrike = b.build(f(mapOf(1 to 1.0, 2 to 0.9, 3 to 0.8, 4 to 0.7))).bands
+        assertEquals(listOf(1, 2, 3, 4), atStrike)
+        val decayed = b.build(f(mapOf(1 to 1.0, 2 to 0.1, 3 to 0.05, 4 to 0.02))).bands
+        assertEquals(atStrike, decayed, "the seats closed up as the partials decayed")
+        // a new note starts its own row
+        val next = b.build(TuningPicture.Frame("A4", 1, true, targets[1]!!, targets[1]!!,
+            mapOf(1 to TuningPicture.Frame.Partial(targets[1]!!, 1.0, null, 40.0)), targets, emptySet(), emptySet(), 1.5, 2000L)).bands
+        assertEquals(listOf(1), next)
+    }
 }
