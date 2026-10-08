@@ -201,9 +201,8 @@ private fun Bands(p: TuningPicture, marks: Boolean) {
             // for its motion and two kinds of band in it read as two kinds of thing (Peter, 7 Oct
             // 2026, 16:10: "two different colours and thus sizes"). How well a partial was read is
             // the bells' to say, as a bell's width, in the other panel. A partial the tuner took out
-            // himself stays drawn and greyed, because that is his act and not a verdict.
-            val c = (if (marks && k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE))
-                .copy(alpha = if (k in p.dropped) 0.20f else 1f)
+            // is not here at all: the picture gives it no seat (8 Oct 2026).
+            val c = if (marks && k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE)
             clipRect(bx, top, bx + bw, base) {
                 val solid = sh * 0.46f
                 for (seg in 0..k) {

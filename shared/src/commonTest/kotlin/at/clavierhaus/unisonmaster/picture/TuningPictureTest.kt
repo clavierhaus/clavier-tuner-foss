@@ -218,4 +218,19 @@ class TuningPictureTest {
             mapOf(1 to TuningPicture.Frame.Partial(targets[1]!!, 1.0, null, 40.0)), targets, emptySet(), emptySet(), 1.5, 2000L)).bands
         assertEquals(listOf(1), next)
     }
+
+    /** A partial the tuner took out has no seat, and the seats it stood among close up (8 Oct 2026). */
+    @Test
+    fun aDroppedPartialLeavesTheRow() {
+        val b = TuningPicture.Builder()
+        fun f(dropped: Set<Int>) = TuningPicture.Frame("A3", 1, true, targets[1]!!, targets[1]!!,
+            targets.filterKeys { it <= 4 }.mapValues { (_, t) -> TuningPicture.Frame.Partial(t, 1.0, null, 40.0) },
+            targets, emptySet(), dropped, 1.5, 1000L)
+        assertEquals(listOf(1, 2, 3, 4), b.build(f(emptySet())).bands)
+        assertEquals(listOf(1, 2, 4), b.build(f(setOf(3))).bands, "the dropped partial's seat is gone")
+        assertEquals(listOf(1, 2, 4), b.build(f(setOf(3))).bands, "and it does not come back while the note stands")
+        // fixed seats lose it the same way
+        assertEquals(listOf(1, 2, 4, 5), TuningPicture.Builder().build(TuningPicture.Frame("A3", 1, true, targets[1]!!, targets[1]!!,
+            emptyMap(), targets, emptySet(), setOf(3), 1.5, 1000L, seats = listOf(1, 2, 3, 4, 5))).bands)
+    }
 }

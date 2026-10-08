@@ -265,7 +265,13 @@ class TuningPicture(
             // that still sounds should never go away"). A seat once taken stays for the note; its
             // partial gone, the seat stands empty; the row never closes up (the blueprint's stable
             // seats). A note change clears the seats with the rest.
-            bands = f.seats ?: (bands + autoFour(bells, bands.toSet())).distinct().sorted()
+            // A partial the tuner took out leaves the row -- its seat with it -- and does not come
+            // back while the note stands: the tuner dismissed it and the picture is to be clean after
+            // his act, not to carry the dismissed thing greyed (Peter, 8 Oct 2026, 20:48: "once
+            // eliminated, those false beats must not turn up in the scope"). The reflow is his, not
+            // the decay's. Seats fixed by the page lose the dropped ones the same way.
+            val kept = bells.filter { it.k !in f.dropped }
+            bands = (f.seats ?: (bands + autoFour(kept, bands.toSet())).distinct().sorted()).filter { it !in f.dropped }
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
                 f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands)
         }
