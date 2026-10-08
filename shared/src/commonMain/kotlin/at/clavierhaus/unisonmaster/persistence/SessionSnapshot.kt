@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.persistence
 
+import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
@@ -27,6 +28,7 @@ data class SessionSnapshot(
  *     sampling <0|1>                          (optional)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
+ *     f <k> <rateHz> <depthDb>                  (the string's false beats, any number; since 8 Oct 2026)
  *     end
  */
 object SessionCodec {
@@ -51,6 +53,13 @@ object SessionCodec {
             levelDb.isFinite() && levelDb in -200.0..0.0 &&
             sustainS.isFinite() && sustainS in 0.0..600.0
 
+    // a false beat the engine can claim: a rate the ear can follow (BeatMeasure's own bounds,
+    // with room), a second plane no deeper than the measure's own floor of 60 dB
+    private fun falseBeatInRange(k: Int, rateHz: Double, depthDb: Double) =
+        k in 1..Partials.MAX &&
+            rateHz.isFinite() && rateHz > 0.0 && rateHz <= 50.0 &&
+            depthDb.isFinite() && depthDb in 0.0..60.0
+
     fun encode(s: SessionSnapshot): String = buildString {
         append("$HEADER $VERSION\n")
         append("saved ${s.savedAtMs}\n")
@@ -62,6 +71,7 @@ object SessionCodec {
             val ps = m.partials.filter { partialInRange(it.k, it.cents, it.levelDb, it.sustainS) }
             append("note ${m.midi} ${m.f1Hz} ${m.b} ${m.residualCents} ${m.timeMs} ${ps.size}\n")
             for (p in ps) append("p ${p.k} ${p.cents} ${p.levelDb} ${p.sustainS}\n")
+            for (f in m.falseBeats) if (falseBeatInRange(f.k, f.rateHz, f.depthDb)) append("f ${f.k} ${f.rateHz} ${f.depthDb}\n")
         }
         append("end\n")
     }
@@ -129,6 +139,16 @@ object SessionCodec {
                     partials.add(MeasuredPartial(k, cents, levelDb, sustainS))
                 }
             }
+            // the string's false beats follow its partials, by prefix: a file from before 8 Oct
+            // 2026 has none and reads as it did; one out of range is dropped like a partial
+            val falseBeats = ArrayList<FalseBeat>()
+            while (i < lines.size && lines[i].startsWith("f ")) {
+                val f = tokens("f", 3)
+                val k = f[0].toIntOrNull() ?: continue
+                val rateHz = f[1].toDoubleOrNull() ?: continue
+                val depthDb = f[2].toDoubleOrNull() ?: continue
+                if (falseBeatInRange(k, rateHz, depthDb) && falseBeats.none { it.k == k }) falseBeats.add(FalseBeat(k, rateHz, depthDb))
+            }
             val midi = n[0].toIntOrNull() ?: continue
             val f1Hz = n[1].toDoubleOrNull() ?: continue
             val b = n[2].toDoubleOrNull() ?: continue
@@ -136,7 +156,7 @@ object SessionCodec {
             val timeMs = n[4].toLongOrNull() ?: continue
             if (!noteInRange(midi, f1Hz, b, residual, timeMs)) continue
             if (!seen.add(midi)) continue
-            notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs))
+            notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs, falseBeats))
         }
         if (i != lines.size) fail("data after end")
         return SessionSnapshot(saved, a4, current, notes, sampling)

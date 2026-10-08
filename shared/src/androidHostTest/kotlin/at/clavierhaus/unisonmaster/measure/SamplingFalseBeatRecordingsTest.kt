@@ -33,18 +33,12 @@ import kotlin.test.fail
  *     publishes a strike twice (caught, then remeasured), so the window was
  *     wiped mid-strike before a spread could stand.
  *
- * What the engine claims on this corpus with both mended, written by this
- * check's own first run and not typed: **partial 2**, on all three strikes.
- * It agrees with the sound. Partial 3 it does not claim: its spread reads
- * 0.39 / 0.42 / 0.35 c against CleanReading's 0.5 c line. 0.67 Hz at 1321 Hz
- * is a plane separation of 0.88 c, and a phase reader on two planes 3.5 dB
- * apart reads a swing of about 0.4 of the separation -- 0.35 c, as measured.
- * The spread-in-cents proxy is a fraction of the separation that shrinks with
- * the level difference, so it is blind to exactly the class the ear hears.
- * That is the open item of the blueprint's §33 (the live verdict lacks the
- * two-plane measurement false_beats.py makes) and is not asserted here either
- * way: when the detector is mended this doc changes in writing, not this
- * check's expectation of a miss.
+ * What the engine claims on this corpus, since 8 Oct 2026 by the beat measured from the band
+ * power (BeatMeasure: rate 0.5-8 Hz, second plane within 10 dB, the findings' own line): partials
+ * 2 and 3 on all three strikes -- the §8 answer -- and not 1 (0.25 Hz, too slow), not 4-6 (no
+ * second plane). From 7 Oct to 8 Oct the verdict was a spread over 0.5 c and claimed only 2;
+ * 3 read 0.39 / 0.42 / 0.35 c against that line (§20) and the doc here said why in words rather
+ * than assert the miss. The miss is gone, and so are the words.
  *
  * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
  */
@@ -129,7 +123,24 @@ class SamplingFalseBeatRecordingsTest {
         assertTrue(hopsInSampling > 0, "the controller never ran in sampling")
         assertTrue(claimedOver.isNotEmpty(), "nothing was ever claimed false while sampling: the detector is not running there, or its window does not survive the sampling republishes")
         assertTrue(2 in claimedOver, "the left string's A5 (partial 2, 0.55 Hz by the corpus) was not claimed false while sampling; claimed: $claimedOver")
+        assertTrue(3 in claimedOver, "the left string's E6 (partial 3, 0.67 Hz, planes 3.5 dB apart by the corpus -- the audible one) was not claimed false; claimed: $claimedOver")
+        assertTrue(1 !in claimedOver, "partial 1 beats at 0.25 Hz by the corpus, too slow to hear, and was claimed false")
         for (k in 4..6) assertTrue(k !in claimedOver, "partial $k is clean by the corpus (second plane does not sustain) but was claimed false")
-        if (3 !in claimedOver) println("   E6 (partial 3, 0.67 Hz, planes 3.5 dB apart by the corpus) not claimed: the spread proxy reads under 0.5 c on it -- blueprint §33, open")
+
+        // The claims are the string's facts and are kept with its measurement (since 8 Oct 2026):
+        // A4 is the reference and the strikes do not re-measure it, so the facts must reach the
+        // measurement the session already holds. The rates against §8's ESPRIT figures, within the
+        // tally's own agreement factor (a two-second window reads 0.635 for both where ESPRIT reads
+        // 0.549 and 0.685); the depths within the ear's line, which is what the claim says of them
+        // -- as a figure they stand 2.8 and 6.4 dB where ESPRIT puts 9.2 and 3.5, and the findings
+        // of 8 Oct 2026 say so rather than this check pretending to a precision the window has not.
+        val facts = c.snapshot()?.measurements?.firstOrNull { it.midi == TuningSession.MIDI_A4 }?.falseBeats ?: emptyList()
+        println("A4's false beats as kept: " + facts.joinToString { "k%d %.3f Hz %.1f dB".format(it.k, it.rateHz, it.depthDb) })
+        val k2 = facts.firstOrNull { it.k == 2 } ?: fail("partial 2's false beat was claimed but not kept with A4's measurement: $facts")
+        val k3 = facts.firstOrNull { it.k == 3 } ?: fail("partial 3's false beat was claimed but not kept with A4's measurement: $facts")
+        assertTrue(k2.rateHz in 0.549 / FalseBeatTally.RATE_AGREE..0.549 * FalseBeatTally.RATE_AGREE, "partial 2 kept at %.3f Hz; §8 says 0.533-0.551".format(k2.rateHz))
+        assertTrue(k3.rateHz in 0.685 / FalseBeatTally.RATE_AGREE..0.685 * FalseBeatTally.RATE_AGREE, "partial 3 kept at %.3f Hz; §8 says 0.659-0.690".format(k3.rateHz))
+        assertTrue(k2.depthDb <= 10.0 && k3.depthDb <= 10.0, "a claimed partial's planes stand within the ear's 10 dB: k2 %.1f, k3 %.1f".format(k2.depthDb, k3.depthDb))
+        assertTrue(facts.none { it.k == 1 || it.k in 4..6 }, "a partial not claimed was kept as a fact: $facts")
     }
 }

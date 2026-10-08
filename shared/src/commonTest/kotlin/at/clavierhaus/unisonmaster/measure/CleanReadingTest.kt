@@ -15,10 +15,11 @@ class CleanReadingTest {
 
     /**
      * A struck string whose partial [falseK] is two components [splitHz]
-     * apart at equal strength — a false beat — the rest clean; the whole
-     * string [detuneCents] from the targets it is read against.
+     * apart — a false beat — at equal strength unless [secondPlane] says
+     * otherwise (the second's amplitude relative to the first), the rest
+     * clean; the whole string [detuneCents] from the targets it is read against.
      */
-    private fun string(f1: Double, b: Double, detuneCents: Double, falseK: Int, splitHz: Double, seconds: Double = 3.0): FloatArray {
+    private fun string(f1: Double, b: Double, detuneCents: Double, falseK: Int, splitHz: Double, seconds: Double = 3.0, secondPlane: Double = 1.0): FloatArray {
         val n = (seconds * sr).toInt()
         val out = FloatArray(n)
         val f1d = f1 * 2.0.pow(detuneCents / 1200)
@@ -35,7 +36,7 @@ class CleanReadingTest {
                     val a = 0.2 * env * 10.0.pow(-3.0 * (k - 1) / 20)
                     if (k == falseK) {
                         phase[k] += 2 * PI * (hz - splitHz / 2) / sr; phase2[k] += 2 * PI * (hz + splitHz / 2) / sr
-                        x += a / 2 * sin(phase[k]) + a / 2 * sin(phase2[k])
+                        x += a / (1 + secondPlane) * sin(phase[k]) + a * secondPlane / (1 + secondPlane) * sin(phase2[k])
                     } else {
                         phase[k] += 2 * PI * hz / sr
                         x += a * sin(phase[k])
@@ -49,10 +50,10 @@ class CleanReadingTest {
 
     private fun targets(f1: Double, b: Double) = (1..8).associateWith { SyntheticString.partialHz(f1, b, it) }
 
-    private fun readAll(x: FloatArray, r: CleanReading, anchorK: Int, combine: Boolean): CleanReading.Result {
+    private fun readAll(x: FloatArray, r: CleanReading, anchorK: Int, combine: Boolean, alone: Boolean = true, known: Set<Int> = emptySet()): CleanReading.Result {
         var res: CleanReading.Result? = null
         var i = 0
-        while (i + hop <= x.size) { res = r.push(x.copyOfRange(i, i + hop), anchorK, combine); i += hop }
+        while (i + hop <= x.size) { res = r.push(x.copyOfRange(i, i + hop), anchorK, combine, alone, known); i += hop }
         return res!!
     }
 
@@ -155,5 +156,32 @@ class CleanReadingTest {
         assertEquals(1, res.used.size)
         assertTrue(res.used.single() != 2)
         assertEquals(1.0, res.cents!!, 0.15)
+    }
+
+    /**
+     * The unison sounding (tuning, the mutes out): a beat at the partial being tuned may be the
+     * partner's and not the string's, and the partial is read all the same -- the beat measured
+     * and reported, nothing done with it. Only the partials the string's own facts name false
+     * (measured in sampling, with the string alone) stay out. The split here is a slow, shallow
+     * one, 0.6 Hz with the second plane 9.6 dB down, as a unison a hair apart beats: the
+     * partial reads within 0.5 c and the beat measure alone calls it.
+     */
+    @Test
+    fun withTheUnisonSoundingABeatingPartialIsReadUnlessTheStringsFactsNameIt() {
+        val f1 = 440.0; val b = 4e-4
+        val x = string(f1, b, detuneCents = 1.0, falseK = 2, splitHz = 0.6, seconds = 4.0, secondPlane = 0.33)
+        val r = CleanReading(sr)
+        r.target(targets(f1, b), reset = true)
+        val res = readAll(x, r, anchorK = 2, combine = false, alone = false)
+        assertTrue(2 in res.falseBeating, "the beat is measured whoever's it is: ${res.partials}")
+        assertEquals(listOf(2), res.used, "with the unison sounding the partial being tuned is read: ${res.partials}")
+        // the reading is the beating partial's own and wobbles with the beat, about ±0.6 c here
+        assertEquals(1.0, res.cents!!, 0.8)
+        // the same strike, with the string's facts naming partial 2 false: it stays out
+        val r2 = CleanReading(sr)
+        r2.target(targets(f1, b), reset = true)
+        val res2 = readAll(x, r2, anchorK = 2, combine = false, alone = false, known = setOf(2))
+        assertEquals(1, res2.used.size, "${res2.partials}")
+        assertTrue(res2.used.single() != 2, "a partial the facts name false is not read: ${res2.used}")
     }
 }

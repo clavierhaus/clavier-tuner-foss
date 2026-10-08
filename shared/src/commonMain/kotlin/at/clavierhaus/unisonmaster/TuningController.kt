@@ -5,6 +5,7 @@ import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.ReadingSpread
 import at.clavierhaus.unisonmaster.measure.PartialFinder
 import at.clavierhaus.unisonmaster.measure.CleanReading
+import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.measure.FalseBeatTally
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
@@ -320,6 +321,27 @@ class TuningController(
      * (FalseBeatTally): emptied when the note changes.
      */
     private val falseBeats = FalseBeatTally()
+    /** The tally's claims as last kept on the note's measurement, so a claim is written once when it appears. */
+    private var keptClaims: List<FalseBeat> = emptyList()
+
+    /**
+     * The string's false beats as sampling has claimed them so far, for [midi] when it is the
+     * note the tally is kept on; nothing for any other.
+     */
+    private fun factsOf(midi: Int): List<FalseBeat> =
+        if (_tuning.value?.midi == midi) falseBeats.claims() else emptyList()
+
+    /**
+     * The claims made while sampling become the string's facts the moment they are made. The
+     * caught string's measurement carries them (Accept keeps it), and a note the session already
+     * holds -- an accepted sample, or A4 the reference, which the strikes do not re-measure --
+     * is kept again with them on its own f1 and B. Nothing else of the measurement changes.
+     */
+    private fun keepFacts(s: TuningSession, midi: Int, claims: List<FalseBeat>) {
+        caught?.takeIf { it.midi == midi }?.let { c -> c.measurement = c.measurement?.copy(falseBeats = claims) }
+        s.measurements[midi]?.let { s.record(it.copy(falseBeats = claims)) }
+        onSessionChanged?.let { save -> snapshot()?.let(save) }
+    }
 
     /**
      * The predicted partials moved bodily so that partial [k] lands on [targetHz]:
@@ -620,7 +642,7 @@ class TuningController(
             _activePartial.value = listening.k
         }
         val k = _activePartial.value
-        if (noteChanged) { heardHz = emptyMap(); falseBeats.clear() }
+        if (noteChanged) { heardHz = emptyMap(); falseBeats.clear(); keptClaims = emptyList() }
         val target = targetOf(view, k)
         wanted = Wanted(target, k, ++generation, heardHz[k] ?: target)
         _reading.value = Reading(k, null, target, live = false, settling = false, coarseCents = null)
@@ -834,9 +856,10 @@ class TuningController(
 
     /** The caught string measured from the ring, from its strike ([StringMeasure]); at least its fundamental as the fit read it. */
     private fun measureCaught(c: Caught): NoteMeasurement =
-        StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, c.midi, c.f1, c.b, timeMs = clock())
+        (StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, c.midi, c.f1, c.b, timeMs = clock())
             ?.takeIf { Notes.nearestMidi(it.f1Hz, _referenceA4Hz.value) == c.midi }
-            ?: NoteMeasurement(c.midi, c.f1, c.b, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock())
+            ?: NoteMeasurement(c.midi, c.f1, c.b, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock()))
+            .copy(falseBeats = factsOf(c.midi))
 
     /** With the decay in, the caught string measured again; an accepted one is kept anew. */
     private fun remeasureCaught() {
@@ -1114,13 +1137,34 @@ class TuningController(
                         cleanMidi = t.midi; cleanK = w.k
                         if (!sameString) cleanStrike = strikeHop
                     } else if (cleanStrike != strikeHop) { clean.strike(); cleanStrike = strikeHop }
-                    val cr = clean.push(chunk, w.k, combine = s.isMeasured())
+                    // The string's facts: what sampling measured of its false beats, kept with the
+                    // note (NoteMeasurement.falseBeats). While sampling they are being made; while
+                    // tuning they are what the screen marks.
+                    val facts = s.measurements[t.midi]?.falseBeats ?: emptyList()
+                    val cr = clean.push(chunk, w.k, combine = s.isMeasured(), alone = s.sampling, known = facts.map { it.k }.toSet())
                     used = cr.used
-                    // a false beat is claimed only when it repeats across strikes, never from one
-                    // (FalseBeatTally, and the corpus rule of three strikes): what this strike hears is
-                    // evidence towards the claim, and the claim is what the screen is told
-                    for (k in cr.falseBeating) falseBeats.heard(k, strikeHop)
-                    falseOnes = falseBeats.claimed()
+                    if (s.sampling) {
+                        // The string sounds alone (the mutes are in, by the orders of the sampling
+                        // page), so a beat heard is the string's own. A false beat is claimed only
+                        // when it repeats across strikes at one rate, never from one (FalseBeatTally,
+                        // and the corpus rule of three strikes): what this strike hears is evidence
+                        // towards the claim; the claim is what the screen is told and, the moment it
+                        // is made, what the note's measurement keeps.
+                        for (k in cr.falseBeating) {
+                            val b = cr.partials.firstOrNull { it.k == k }?.beat
+                            falseBeats.heard(k, strikeHop, b?.rateHz ?: 0.0, b?.fit ?: 0.0, b?.depthDb ?: 0.0)
+                        }
+                        val claims = falseBeats.claims()
+                        falseOnes = claims.map { it.k }
+                        if (claims != keptClaims) { keptClaims = claims; keepFacts(s, t.midi, claims) }
+                    } else {
+                        // With the unison sounding, a beat at one partial is the unison's or the
+                        // string's and the microphone cannot say which (FALSE-BEATS §15): nothing is
+                        // tallied here, and the violet is the string's facts from sampling. Until
+                        // 8 Oct 2026 the tuning strikes fed the tally too, and the Samick's A4 was
+                        // called false at a partial beating against its partner.
+                        falseOnes = facts.map { it.k }
+                    }
                     cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
                 }
                 _reading.value = Reading(

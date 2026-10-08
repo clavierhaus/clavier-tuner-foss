@@ -2,6 +2,7 @@ package at.clavierhaus.unisonmaster.persistence
 
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.audio.AudioSource
+import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -75,7 +76,9 @@ private val sample = SessionSnapshot(
     a4Hz = 443.0,
     currentMidi = 66,
     measurements = listOf(
-        NoteMeasurement(69, 443.02, 4.1e-4, 0.12, listOf(MeasuredPartial(1, 0.0, 0.0, 3.2), MeasuredPartial(2, 0.713, -4.5, 2.9)), 1_789_000_000_000L),
+        NoteMeasurement(69, 443.02, 4.1e-4, 0.12, listOf(MeasuredPartial(1, 0.0, 0.0, 3.2), MeasuredPartial(2, 0.713, -4.5, 2.9)), 1_789_000_000_000L,
+            // the string's false beats as sampling claimed them: the Samick's left A4 (findings §8)
+            falseBeats = listOf(FalseBeat(2, 0.549, 9.2), FalseBeat(3, 0.685, 3.5))),
         NoteMeasurement(68, 418.11, 3.9e-4, 0.31, listOf(MeasuredPartial(1, 0.0, 0.0, 2.7)), 1_789_000_100_000L),
     ),
 )
@@ -96,6 +99,21 @@ class SessionStoreTest {
         assertFailsWith<SessionCodec.FormatException> { SessionCodec.decode(good.replace("end\n", "")) }
         assertFailsWith<SessionCodec.FormatException> { SessionCodec.decode(good + "extra\n") }
         assertFailsWith<SessionCodec.FormatException> { SessionCodec.decode(good.replace(" 2\np 1", " 3\np 1")) }
+        assertFailsWith<SessionCodec.FormatException> { SessionCodec.decode(good.replace("f 2 0.549 9.2", "f 2 0.549")) }
+    }
+
+    /**
+     * A session saved before 8 Oct 2026 has no false-beat lines and reads as it did, with none;
+     * a false beat out of the engine's range is dropped as a partial is, the note kept.
+     */
+    @Test
+    fun theFalseBeatsAreOptionalAndRangeChecked() {
+        val good = SessionCodec.encode(sample)
+        assertTrue("f 2 0.549 9.2\nf 3 0.685 3.5\n" in good, good)
+        val old = good.replace("f 2 0.549 9.2\n", "").replace("f 3 0.685 3.5\n", "")
+        assertEquals(emptyList(), SessionCodec.decode(old).measurements.first { it.midi == 69 }.falseBeats)
+        val stray = good.replace("f 3 0.685 3.5", "f 3 0.685 99.0")
+        assertEquals(listOf(FalseBeat(2, 0.549, 9.2)), SessionCodec.decode(stray).measurements.first { it.midi == 69 }.falseBeats)
     }
 
     @Test

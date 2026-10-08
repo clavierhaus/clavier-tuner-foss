@@ -57,12 +57,14 @@ import kotlin.math.abs
  * button ([recordButton], Pro's own) and the play button.
  */
 /**
- * Whether the tuning screen colours a partial by the engine's false-beat claim. Off since 7 Oct
- * 2026, 15:56: the claim is a spread in cents and the ear's criterion is a rate in hertz, and the
+ * Whether the tuning screen colours a partial by the engine's false-beat claim. Off from 7 Oct
+ * 2026, 15:56: the claim was a spread in cents and the ear's criterion is a rate in hertz, and the
  * two disagree in both directions on the corpus (SAMICK-2026-09-30-FINDINGS §20, §21). On again
- * when CleanReading measures the rate.
+ * since 8 Oct 2026: the claim is the rate, measured from the band power (BeatMeasure) with the
+ * string alone while sampling and kept as the string's facts, and in tuning the colour is those
+ * facts -- never a beat heard with the unison sounding, which could be the unison's.
  */
-private const val FALSE_MARKS_ON_TUNING = false
+private const val FALSE_MARKS_ON_TUNING = true
 
 /** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
 private val SAMPLING_SEATS: List<Int> = (1..5).toList()

@@ -70,6 +70,14 @@ class PhaseReader(
         val phase: Double,
         val settling: Boolean = false,
         val noiseDbfs: Double = -200.0,
+        /**
+         * The partial's band power this hop, before the reading's memory: the demodulated
+         * amplitude squared. Two planes of a false-beating string make it swing at their beat
+         * rate -- a1² + a2² + 2·a1·a2·cos(2π·Δf·t) on the decay -- and CleanReading measures the
+         * beat from that swing; the memory would smooth it (at 2 Hz by half) and the dB would
+         * bend it, so the raw power is handed out beside the smoothed level (8 Oct 2026).
+         */
+        val rawPower: Double = 0.0,
     ) {
         val shown: Boolean get() = quality >= 0.5 && !settling
     }
@@ -223,7 +231,7 @@ class PhaseReader(
             // reading from before the strike, and it is not the string now sounding (3 Oct 2026:
             // shown for one hop, it spread a clean partial's window to a cent)
             val held = last ?: return null
-            return held.copy(levelDbfs = levelDbfs, noiseDbfs = noiseDbfs, quality = quality, settling = sample < skipUntil || !memoryFilled)
+            return held.copy(levelDbfs = levelDbfs, noiseDbfs = noiseDbfs, quality = quality, settling = sample < skipUntil || !memoryFilled, rawPower = pMain)
         }
         var sum = 0.0
         for (k in 0 until n) sum += rates[k]
@@ -232,7 +240,7 @@ class PhaseReader(
         memoryFilled = true
         val hz = targetHz + memory
         val cents = 1200.0 * ln(hz / targetHz) / ln(2.0)
-        return Reading(hz, cents, levelDbfs, quality, atan2(main.q, main.i), settling = false, noiseDbfs = noiseDbfs)
+        return Reading(hz, cents, levelDbfs, quality, atan2(main.q, main.i), settling = false, noiseDbfs = noiseDbfs, rawPower = pMain)
             .also { last = it }
     }
 
