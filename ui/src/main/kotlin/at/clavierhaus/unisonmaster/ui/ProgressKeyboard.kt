@@ -139,8 +139,8 @@ fun ProgressKeyboard(
             // blue, and the two read as one curve in two colours that disagree (Peter: "misleading
             // at best"). The prediction stays in the session and the targets are taken from it; it
             // is not drawn here, because a prediction must not share a line with a measurement, and
-            // drawn alone where nothing was measured it would be the misleading thing. Each measured
-            // note is also a dot, so the line's smoothing hides no reading.
+            // drawn alone where nothing was measured it would be the misleading thing. No dots at the
+            // notes either: a dot reads as a target, and this line is not one (Peter, 21:07).
             for (i in 1 until pts.size) {
                 val a = pts[i - 1]
                 val b = pts[i]
@@ -152,7 +152,6 @@ fun ProgressKeyboard(
                     strokeWidth = 2.5f,
                 )
             }
-            for (midi in pts) drawCircle(Color(Brand.WHITE), radius = 3f, center = Offset(xOf(midi), yOf(deviations.getValue(midi))))
             drawContext.canvas.nativeCanvas.drawText(
                 "%+.0f c".format(roomUp / pxPerCent), 2f, mid - roomUp + 14f, captionPaint,
             )
@@ -191,6 +190,6 @@ private const val CURVE_ZERO = 0.36f
  * Semitones either side of a note that its drawn value is smoothed over, triangular. Five since
  * 8 Oct 2026 (three before): the line is to show the piano's stretch, and strike-to-strike
  * repeatability in the bass is about 1.5 c (ENGINE.md), which three semitones left visible as
- * jitter. Every note's own reading is drawn as a dot beside the line, so nothing is hidden.
+ * jitter.
  */
 private const val CURVE_REACH = 5
