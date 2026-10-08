@@ -40,7 +40,7 @@ fun ProgressKeyboard(
     done: Set<Int>,
     current: Int?,
     deviations: Map<Int, Double> = emptyMap(),
-    /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. */
+    /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. Not drawn since 8 Oct 2026; kept so the band can still size itself when nothing is measured yet. */
     curve: Map<Int, Double> = emptyMap(),
     lowestMidi: Int = MIDI_A0,
     modifier: Modifier = Modifier,
@@ -119,8 +119,8 @@ fun ProgressKeyboard(
             val mid = curveBand * CURVE_ZERO
             val roomUp = curveBand * (CURVE_ZERO - 0.08f)
             val roomDown = curveBand * (1f - CURVE_ZERO - 0.10f)
-            // both lines share one scale, or they could not be compared by eye
-            val shown = smooth.values + curve.values
+            // the scale is the measured line's own; the curve is not drawn (8 Oct 2026)
+            val shown = smooth.values
             val up = maxOf(5.0, (shown.maxOrNull() ?: 0.0) * 1.15)
             val down = maxOf(5.0, -(shown.minOrNull() ?: 0.0) * 1.15)
             val pxPerCent = minOf(roomUp / up, roomDown / down).toFloat()
@@ -134,19 +134,13 @@ fun ProgressKeyboard(
                 topLeft = Offset(0f, mid),
                 size = Size(size.width, 1f),
             )
-            // The curve this piano asks for, from the inharmonicity of the strings
-            // that were sampled: unbroken across the whole compass, because it is
-            // computed for every key and not measured at a few. Drawn first and in
-            // the target colour, so that the measured line lies on it or does not.
-            val ck = curve.keys.sorted()
-            for (i in 1 until ck.size) {
-                drawLine(
-                    color = Color(Brand.TARGET_BLUE),
-                    start = Offset(xOf(ck[i - 1]), yOf(curve.getValue(ck[i - 1]))),
-                    end = Offset(xOf(ck[i]), yOf(curve.getValue(ck[i]))),
-                    strokeWidth = 2f,
-                )
-            }
+            // One line, one colour: the piano as tuned, note by note, smoothed over its neighbours.
+            // Until 8 Oct 2026 the curve the sampled inharmonicity predicts was drawn under it in
+            // blue, and the two read as one curve in two colours that disagree (Peter: "misleading
+            // at best"). The prediction stays in the session and the targets are taken from it; it
+            // is not drawn here, because a prediction must not share a line with a measurement, and
+            // drawn alone where nothing was measured it would be the misleading thing. Each measured
+            // note is also a dot, so the line's smoothing hides no reading.
             for (i in 1 until pts.size) {
                 val a = pts[i - 1]
                 val b = pts[i]
@@ -155,20 +149,17 @@ fun ProgressKeyboard(
                     color = Color(Brand.WHITE),
                     start = Offset(xOf(a), yOf(smooth.getValue(a))),
                     end = Offset(xOf(b), yOf(smooth.getValue(b))),
-                    strokeWidth = 2f,
+                    strokeWidth = 2.5f,
                 )
             }
+            for (midi in pts) drawCircle(Color(Brand.WHITE), radius = 3f, center = Offset(xOf(midi), yOf(deviations.getValue(midi))))
             drawContext.canvas.nativeCanvas.drawText(
                 "%+.0f c".format(roomUp / pxPerCent), 2f, mid - roomUp + 14f, captionPaint,
             )
             drawContext.canvas.nativeCanvas.drawText(
                 "%+.0f c".format(-roomDown / pxPerCent), 2f, mid + roomDown, captionPaint,
             )
-            drawContext.canvas.nativeCanvas.drawText(
-                if (curve.isEmpty()) "measured — a result, not a target"
-                else "blue: the curve this piano asks for · white: measured, a result",
-                2f, curveBand - 2f, captionPaint,
-            )
+            drawContext.canvas.nativeCanvas.drawText("measured — the piano as tuned, in cents from equal temperament", 2f, curveBand - 2f, captionPaint)
         }
 
         // where the session stands
@@ -196,5 +187,10 @@ fun ProgressKeyboard(
 /** Where equal temperament sits in the curve band, as a fraction of its height from the top. */
 private const val CURVE_ZERO = 0.36f
 
-/** Semitones either side of a note that its drawn value is smoothed over. */
-private const val CURVE_REACH = 3
+/**
+ * Semitones either side of a note that its drawn value is smoothed over, triangular. Five since
+ * 8 Oct 2026 (three before): the line is to show the piano's stretch, and strike-to-strike
+ * repeatability in the bass is about 1.5 c (ENGINE.md), which three semitones left visible as
+ * jitter. Every note's own reading is drawn as a dot beside the line, so nothing is hidden.
+ */
+private const val CURVE_REACH = 5
