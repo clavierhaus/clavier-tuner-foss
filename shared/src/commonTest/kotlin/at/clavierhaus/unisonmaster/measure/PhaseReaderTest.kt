@@ -100,10 +100,18 @@ class PhaseReaderStrikeTest {
         val afterSecond = rs.drop((2.0 * SR / 1024).toInt())
         assertTrue(afterSecond.take(3).all { it.settling }, "settling right after the strike")
         val firstShown = afterSecond.indexOfFirst { it.shown }
-        // the skip is five time constants of the four stages: a second at 220 Hz
-        // (the band is ±25 cents, 3.2 Hz), a quarter of that two octaves up
-        assertTrue(firstShown in 30..50, "shown again after $firstShown hops")
-        assertTrue(abs(afterSecond[firstShown].hz - 220.38) < 0.05, "the first reading is the new string: %.3f".format(afterSecond[firstShown].hz))
+        // The skip is SETTLE_TIME_CONSTANTS (five) time constants of each of the four stages, plus
+        // the memory: a second at 220 Hz (the band is ±25 cents, 3.2 Hz), a quarter of that two
+        // octaves up. Until 9 Oct 2026 this check pinned that number to 30-50 hops; what it is
+        // for is the loop below -- the readings shown after the skip are the new string, not the
+        // old one dragged through the memory and not the filter's transient -- so the range is
+        // left wide and the loop does the checking. Halving the skip was tried on 9 Oct and
+        // showed the transient on the Samick's B1 (+27 c for half a second): the five stay
+        // (PhaseReader.SETTLE_TIME_CONSTANTS, SAMICK findings §24).
+        assertTrue(firstShown in 15..50, "shown again after $firstShown hops")
+        for (i in firstShown until minOf(firstShown + 5, afterSecond.size)) {
+            assertTrue(abs(afterSecond[i].hz - 220.38) < 0.05, "reading ${i - firstShown} after the skip is the new string: %.3f".format(afterSecond[i].hz))
+        }
     }
 
     /**

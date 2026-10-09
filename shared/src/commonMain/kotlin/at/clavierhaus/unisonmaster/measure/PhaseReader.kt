@@ -255,7 +255,18 @@ class PhaseReader(
         /** A strike: the hop's level this far above the loudest of the last [ONSET_LOOKBACK] hops. */
         const val ONSET_DB = 6.0
         const val ONSET_LOOKBACK = 5
-        /** After a strike, rates are skipped for this many time constants of each filter stage, times the stages. */
+        /**
+         * After a strike, rates are skipped for this many time constants of each filter stage,
+         * times the stages: twenty in all, 3.2 / bandHz seconds -- 1.33 s at A0's sixth partial
+         * (165 Hz, band 2.4 Hz), 0.5 s at 220 Hz, 0.2 s at 525 Hz. This is the strike-to-strobe
+         * latency the tuner sees, measured on the Samick's unisons of 9 Oct 2026 as exactly this
+         * number plus the memory (SAMICK findings §24: 1.37 s at A0, 0.60 at C2, 0.36 from G#2 up).
+         * Halving it was tried that day: the first readings after the skip were then the
+         * transient and not the string -- +27 c decaying to +2 over half a second on B1, −13 to
+         * −1 on C2 -- a wrong number shown earlier in place of a right one later, which Amendment
+         * 3 forbids. The latency is the price of the band's width in hertz at low frequencies,
+         * and a change goes through the band, measured, not through this number.
+         */
         const val SETTLE_TIME_CONSTANTS = 5.0
         /** Where the noise is read: either side of the target, clear of the string, inside the semitone. */
         const val NEIGHBOUR_CENTS = 60.0
