@@ -82,14 +82,14 @@ Android 8.0 (API 26) or later. The app needs the microphone and nothing else.
 
 ## Contributing
 
-- **Issues** with a recording attached are worth ten without. The app records
-  nothing by itself; a phone recorder at 48 kHz with every effect off gives
-  the engine what it needs.
-- **Languages.** The app's words live in `i18n/strings.tsv`
-  (`scripts/i18n.py --check` refuses holes). English and German today; the
-  app follows the phone's language.
+- **Issues** with a recording attached are worth ten without. The engine
+  hears nothing but the microphone, and the app records nothing — so a
+  recording made beside it (a recorder app, 48 kHz, uncompressed, every
+  effect off) is the only way anyone else can hear what it heard.
+- **Languages.** Every word the app shows lives in `i18n/strings.tsv`, one
+  column per language; `scripts/i18n.py --check` refuses holes.
 - **Words.** The app speaks the technician's words; `docs/GLOSSARY.md`
-  decides each one once, in English and German, with its source.
+  decides each one once, with its source.
 - **Measurement.** A change to what is measured or how is a change to the
   documents it is judged by, in the same commit, with the recording that
   called for it.
