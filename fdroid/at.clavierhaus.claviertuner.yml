@@ -29,7 +29,7 @@ Binaries: https://github.com/clavierhaus/clavier-tuner-foss/releases/download/v%
 Builds:
   - versionName: 0.1.0
     versionCode: 1
-    commit: '0000000000000000000000000000000000000000'
+    commit: c54eff11a533378e7b470ae97b0f16f16ce150f4
     subdir: androidApp
     gradle:
       - yes
