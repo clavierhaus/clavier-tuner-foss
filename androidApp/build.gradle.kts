@@ -13,16 +13,24 @@ android {
     namespace = "at.clavierhaus.unisonmaster.app"
     compileSdk = 37
 
+    // Pinned: F-Droid's reproducible-build guidance asks for the exact build-tools, because a
+    // change of build-tools changes the XML and PNG output (f-droid.org/docs/Reproducible_Builds,
+    // read 10 Oct 2026). 36.0.0 is what the X1 has installed; the signing step uses apksigner
+    // from build-tools 34 separately (scripts/release.sh), as the same guidance asks.
+    buildToolsVersion = "36.0.0"
+
     defaultConfig {
         applicationId = "at.clavierhaus.claviertuner"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        // The commit the APK was built from, after the version: Settings shows it, so "is the
-        // phone running the latest build?" is answered by a glance and not by reasoning
+        // A plain version for the release: F-Droid's recipe names the versionName and it must
+        // equal the APK's exactly (Build Metadata Reference, Builds.versionName). The commit the
+        // APK was built from goes after it in DEBUG builds only (below): Settings shows it, so
+        // "is the phone running the latest build?" is answered by a glance and not by reasoning
         // (8 Oct 2026: a free APK on the Pixel did not do what the checkout's code does, and
         // nothing on the phone could say which code it was).
-        versionName = "0.1.0+$gitShortHash"
+        versionName = "0.1.0"
     }
 
     buildFeatures {
@@ -37,9 +45,27 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            versionNameSuffix = "+$gitShortHash"
         }
     }
+
+    // No dependency metadata block in the APK: it is a Google-signed blob F-Droid cannot
+    // reproduce, and F-Droid asks apps it verifies against the developer's APK to leave it out
+    // (fdroiddata issue 3330).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+
+// No ART baseline profile in the APK: the Compose libraries ship profiles, the merged
+// baseline.profm is not deterministic, and F-Droid's guidance disables the task for a build
+// that must reproduce (f-droid.org/docs/Reproducible_Builds, "baseline.prof").
+tasks.whenTaskAdded {
+    if (name.contains("ArtProfile")) enabled = false
 }
 
 dependencies {

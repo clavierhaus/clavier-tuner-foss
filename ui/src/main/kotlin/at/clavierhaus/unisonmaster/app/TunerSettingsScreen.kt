@@ -13,7 +13,6 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.ui.ChoiceRow
 import at.clavierhaus.unisonmaster.ui.ReadOnlyRow
-import at.clavierhaus.unisonmaster.ui.SettingsNote
 import at.clavierhaus.unisonmaster.ui.SettingsPage
 import at.clavierhaus.unisonmaster.ui.SettingsScreen
 import at.clavierhaus.unisonmaster.ui.SettingsSection
@@ -34,11 +33,16 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * - Tuning: Temperament · Reading
  * - Stretch: Wound · Bass · Middle · Treble · Breaks
  * - Piano: Compass
- * - App: Language · Probe · About
+ * - App: About
  *
  * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
  * this screen lives in the ui library, both apps mount it, and Pro adds the
- * book's own pages and tabs through [extraPianoPages] and [extraTabs].
+ * book's own pages and tabs through [extraPianoPages], [extraTabs] and
+ * [extraAppPages]. Language and Probe left the App tab on 10 Oct 2026 for the
+ * free edition's release (Peter: "remove the language tab, the probe tab --
+ * and that should be it"): the free app follows the phone's language, and the
+ * probe -- the engine fed a recording -- is a working tool of Pro's. Both are
+ * Pro's pages now (ProSettings.kt) and arrive through [extraAppPages].
  *
  * A4 is not here: it is the piano's, set at the hub where the session starts.
  * [open] names a tab and page to start on — the tuning screen reaches the
@@ -49,10 +53,6 @@ fun TunerSettingsScreen(
     controller: TuningController,
     model: SettingsModel,
     version: String,
-    feeding: String? = null,
-    feedNote: String? = null,
-    onPickRecording: () -> Unit = {},
-    onUseMicrophone: () -> Unit = {},
     /** The gear closes the settings: back to the screen they were opened from. */
     onBack: () -> Unit,
     /** Home: the hub, from the corner every screen shares. */
@@ -62,6 +62,8 @@ fun TunerSettingsScreen(
     extraPianoPages: List<SettingsPage> = emptyList(),
     /** Tabs an edition adds before App (Pro: the customers book). */
     extraTabs: List<SettingsTab> = emptyList(),
+    /** Pages an edition adds to the App tab before About (Pro: Language, Probe). */
+    extraAppPages: List<SettingsPage> = emptyList(),
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
@@ -75,18 +77,7 @@ fun TunerSettingsScreen(
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
             SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), COMPASS_NOTE, left = { CompassRows(s, model) })) + extraPianoPages),
         ) + extraTabs + listOf(
-            SettingsTab(t(K.settings_tab_app), listOf(
-                SettingsPage(t(K.settings_page_language), left = { LanguageRows(s, model) }),
-                SettingsPage(t(K.settings_page_probe), PROBE_NOTE,
-                    left = {
-                        SettingsSection("What the engine hears")
-                        ReadOnlyRow("Source", feeding ?: "Microphone")
-                        ChoiceRow("Input", listOf("Microphone", "A recording…"), if (feeding == null) 0 else 1) { i -> if (i == 0) onUseMicrophone() else onPickRecording() }
-                        if (feedNote != null) SettingsNote(feedNote)
-                    },
-                    // the Play and Recording buttons of the tuning screen are Pro's rows (blueprint §18.5):
-                    // the recording belongs to the piano's record, which the free edition does not keep
-                    right = null),
+            SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
                 SettingsPage(t(K.settings_page_about), ABOUT_NOTE,
                     left = {
                         SettingsSection("Clavier Tuner")
@@ -227,15 +218,6 @@ private fun CompassRows(s: TunerSettings, model: SettingsModel) {
     )
 }
 
-@Composable
-private fun LanguageRows(s: TunerSettings, model: SettingsModel) {
-    SettingsSection(t(K.settings_language))
-    val langs = listOf("") + Strings.languages
-    ChoiceRow(t(K.settings_language), langs.map { if (it.isEmpty()) t(K.settings_language_system) else it.uppercase() }, langs.indexOf(s.language).coerceAtLeast(0)) { i ->
-        model.update { c -> c.copy(language = langs[i]) }
-    }
-}
-
 private const val WIDTH_STEP = 0.5
 
 /** The pages' one-line notes. */
@@ -243,5 +225,4 @@ private const val TEMPERAMENT_NOTE = "Tuned first, downward from A4, to equal te
 private const val READING_NOTE = "The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent."
 private const val COMPASS_NOTE = "A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends."
 private const val BREAKS_NOTE = "The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro)."
-private const val PROBE_NOTE = "For testing away from a piano: a WAV at 48 kHz, read exactly as the string would be. Leave it on Microphone at the instrument."
 private const val ABOUT_NOTE = "Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository."

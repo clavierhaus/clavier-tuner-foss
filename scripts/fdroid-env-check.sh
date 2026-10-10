@@ -105,8 +105,10 @@ else fail "no java on PATH"; fi
 if [ -n "${JAVA_HOME:-}" ]; then
   [ -x "$JAVA_HOME/bin/java" ] && ok "JAVA_HOME=$JAVA_HOME ($("$JAVA_HOME/bin/java" -version 2>&1 | grep -m1 'version "'))" || warn "JAVA_HOME=$JAVA_HOME has no bin/java"
 else note "JAVA_HOME not set (gradle uses the java on PATH; fine if there is only one JDK)"; fi
-# the same JDK under two names (a symlink) counts once
-JDKS="$( { findq 5 -type f -path '*/bin/javac'; ls -d /usr/lib/jvm/*/bin/javac 2>/dev/null; } | while read -r j; do readlink -f "$j"; done | sed 's#/bin/javac##' | sort -u)"
+# the same JDK under two names (a symlink) counts once; the JDK on PATH and the one
+# JAVA_HOME names are counted wherever they live (the X1 keeps one under another user's
+# home, outside the search root, 10 Oct 2026)
+JDKS="$( { findq 5 -type f -path '*/bin/javac'; ls -d /usr/lib/jvm/*/bin/javac 2>/dev/null; command -v javac; [ -n "${JAVA_HOME:-}" ] && ls "$JAVA_HOME/bin/javac" 2>/dev/null; } | while read -r j; do readlink -f "$j"; done | sed 's#/bin/javac##' | sort -u)"
 NJ="$(printf '%s\n' "$JDKS" | grep -c . )"
 if [ "$NJ" -le 1 ]; then ok "one JDK found: ${JDKS:-none}"; else warn "$NJ JDKs found -- gradle may mix them (R: \"use only one JDK\"):"; printf '%s\n' "$JDKS" | sed 's/^/        /'; fi
 if [ -f gradle.properties ] && grep -q 'org.gradle.java.home' gradle.properties; then note "gradle.properties pins org.gradle.java.home: $(grep org.gradle.java.home gradle.properties)"; fi
@@ -143,11 +145,14 @@ fi
 sect "5. Gradle (R: build with ./gradlew assembleRelease, never through Android Studio; F-Droid downloads the wrapper's version from its own verified list)"
 [ -x gradlew ] && ok "gradlew is executable" || fail "gradlew missing or not executable"
 ok "wrapper asks for gradle $WRAPPER_VER"
-LIST_URL="https://gitlab.com/fdroid/fdroidserver/-/raw/master/gradlew-fdroid"
-if command -v curl >/dev/null && LIST="$(curl -fsSL --max-time 20 "$LIST_URL" 2>/dev/null)"; then
-  if printf '%s' "$LIST" | grep -q "$WRAPPER_VER"; then ok "gradle $WRAPPER_VER is in F-Droid's gradlew-fdroid list (fetched now)"
-  else fail "gradle $WRAPPER_VER is NOT in F-Droid's gradlew-fdroid list -- F-Droid cannot build until it is added (or the wrapper is moved to a listed version); newest listed: $(printf '%s' "$LIST" | grep -oE "'[0-9]+\.[0-9]+(\.[0-9]+)?'" | tr -d "'" | sort -V | tail -n1)"; fi
-else warn "could not fetch $LIST_URL to check gradle $WRAPPER_VER against F-Droid's list"; fi
+# F-Droid's build tools take gradle distributions only from their own log of
+# published URLs and checksums (f-droid.org/docs/All_our_APIs: the gradle
+# transparency log). The wrapper's version must be in it.
+LIST_URL="https://gitlab.com/fdroid/gradle-transparency-log/-/raw/master/checksums.json"
+if command -v curl >/dev/null && LIST="$(curl -fsSL --max-time 30 "$LIST_URL" 2>/dev/null)"; then
+  if printf '%s' "$LIST" | grep -q "gradle-$WRAPPER_VER-bin.zip\|gradle-$WRAPPER_VER-all.zip"; then ok "gradle $WRAPPER_VER is in F-Droid's gradle transparency log (fetched now)"
+  else fail "gradle $WRAPPER_VER is NOT in F-Droid's gradle transparency log -- F-Droid cannot build until it is logged (or the wrapper is moved to a logged version); newest logged: $(printf '%s' "$LIST" | grep -oE 'gradle-[0-9]+\.[0-9]+(\.[0-9]+)?-bin\.zip' | sed 's/gradle-//;s/-bin.zip//' | sort -V | tail -n1)"; fi
+else warn "could not fetch $LIST_URL to check gradle $WRAPPER_VER against F-Droid's log"; fi
 GHOME="${GRADLE_USER_HOME:-$HOME/.gradle}"
 [ -d "$GHOME" ] && note "gradle user home: $GHOME" || note "no gradle user home yet"
 

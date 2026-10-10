@@ -1,0 +1,16 @@
+Clavier Tuner ist eine Stimm-App von einem Klavierstimmer — frei, quelloffen und auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
+
+ZUERST MESSEN
+Einige Tasten anschlagen, die übrigen Saiten abgedämpft. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle.
+
+NACH DEM STROBOSKOP STIMMEN
+Die App folgt der angeschlagenen Taste und hört auf den Teilton, auf den ein Stimmer in dieser Lage hört. Das Stroboskop zeigt diesen Teilton gegen sein Ziel auf ein Zehntel Cent, 47-mal in der Sekunde — eine Saite, die schwankt, wird schwankend gezeigt. Daneben die Glocken: jeder Teilton der Saite für sich, sodass eine saubere Saite als ein Stapel erscheint und eine falsche Schwebung als das, was sie ist. Steht das Stroboskop, ist der Ton drin, und die App merkt ihn sich. Kein Assistent, kein als Zahl verkleidetes Urteil.
+
+IHR KLAVIER, IHR TELEFON
+Oktavtyp und Weite je Lage, der Umfang, der Übergang von umsponnenen zu blanken Saiten — die App führt sie als Einstellungen, die Messung entscheidet den Rest. Die Sitzung bleibt in einer versiegelten Datei auf dem Telefon; morgen geht es weiter, wo Sie aufgehört haben. Kein Konto, kein Server, nichts verlässt das Telefon. Das Mikrofon wird roh gelesen, jede Klangbearbeitung ist abgeschaltet.
+
+EHRLICH DARIN, WAS SIE NICHT IST
+Vorstimmen ist mit Absicht nicht vorgesehen: Ein Klavier weit weg von der Stimmhöhe braucht zuerst ein Vorstimmen. Chöre werden nach dem Gehör gestimmt, wie es sich gehört.
+
+OFFEN
+Die ganze Engine ist veröffentlicht, mit den Aufnahmen und Dokumenten, an denen sie geprüft wurde. Wer wissen will, wie eine Zahl auf dem Schirm zustande kam, kann es nachlesen.

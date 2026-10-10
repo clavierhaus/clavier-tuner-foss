@@ -1,0 +1,42 @@
+# The F-Droid recipe for Clavier Tuner, kept here as the reference the release script seeds
+# fdroiddata from on the first submission and appends to afterwards
+# (scripts/release-fdroid.sh). Field meanings: f-droid.org/docs/Build_Metadata_Reference.
+#
+# The build: F-Droid builds the tagged commit from source in its own environment, in the
+# androidApp subproject, with the repository's own gradle wrapper, and compares its unsigned
+# APK with the one we published on GitHub (Binaries:) signed by our key
+# (AllowedAPKSigningKeys:). Identical bytes -> F-Droid publishes OUR signed APK; otherwise
+# that version is not published and the job log says what differed.
+#
+# commit: is always the full hash of the tagged commit, never the tag's name (F-Droid's
+# review rule). AllowedAPKSigningKeys: is the SHA-256 of our signing certificate in lower-case
+# hex, printed by `apksigner verify --print-certs`; the release script fills it in from the
+# APK it signed.
+Categories:
+  - Multimedia
+License: Apache-2.0
+AuthorName: clavierhaus
+AuthorWebSite: https://clavierhaus.at
+WebSite: https://clavierhaus.at
+SourceCode: https://github.com/clavierhaus/clavier-tuner-foss
+IssueTracker: https://github.com/clavierhaus/clavier-tuner-foss/issues
+Changelog: https://github.com/clavierhaus/clavier-tuner-foss/blob/main/CHANGELOG.md
+
+RepoType: git
+Repo: https://github.com/clavierhaus/clavier-tuner-foss.git
+Binaries: https://github.com/clavierhaus/clavier-tuner-foss/releases/download/v%v/clavier-tuner-%v.apk
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: '0000000000000000000000000000000000000000'
+    subdir: androidApp
+    gradle:
+      - yes
+
+AllowedAPKSigningKeys: '0000000000000000000000000000000000000000000000000000000000000000'
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

@@ -28,14 +28,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.TuningController
-import at.clavierhaus.unisonmaster.audio.FeedableAudioSource
-import at.clavierhaus.unisonmaster.audio.WavPcm
 import at.clavierhaus.unisonmaster.audio.createAudioSource
 
 class MainActivity : ComponentActivity() {
 
     // the microphone, or a recording played in its place (the probe, docs/PROBE.md)
-    private val audioSource by lazy { FeedableAudioSource(createAudioSource()) }
+    // the microphone, and nothing that could stand in for it: the feedable source is Pro's
+    private val audioSource by lazy { createAudioSource() }
     private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
     private val settingsModel by lazy {
         SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
@@ -53,36 +52,9 @@ class MainActivity : ComponentActivity() {
         controller.stopLive()
     }
 
-    /** What the probe last said, for the settings screen to show. */
-    private val feedNote = mutableStateOf<String?>(null)
-
-    /** Picks a WAV anywhere the phone can reach — the recordings folder, Downloads, adb push. */
-    private val pickRecordingLauncher =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri == null) return@registerForActivityResult
-            val name = uri.lastPathSegment?.substringAfterLast('/') ?: "recording"
-            val listening = controller.live.value
-            runCatching {
-                val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                audioSource.feed(name, WavPcm.read(bytes))
-            }.onSuccess {
-                feedNote.value = null
-                // take it up at once if the tuning screen is already listening
-                if (listening) { controller.stopLive(); controller.startLive() }
-            }.onFailure { e -> feedNote.value = e.message ?: "That file could not be played." }
-        }
-
-    /** Opens the file dialog; the probe takes over from the next buffer. */
-    private fun pickRecording() =
-        pickRecordingLauncher.launch(arrayOf("audio/*", "application/octet-stream"))
-
-    /** Gives the microphone back, without leaving the tuning screen. */
-    private fun useMicrophone() {
-        val listening = controller.live.value
-        audioSource.useMicrophone()
-        feedNote.value = null
-        if (listening) { controller.stopLive(); controller.startLive() }
-    }
+    // No probe in the free edition (10 Oct 2026, for the release): the engine fed a recording
+    // through the file picker is Pro's working tool (core/docs/PROBE.md; Pro's MainActivity),
+    // and this activity only ever listens to the microphone.
 
     private val permissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -145,10 +117,6 @@ class MainActivity : ComponentActivity() {
                             TunerSettingsScreen(
                                 controller = controller,
                                 model = settingsModel,
-                                feeding = audioSource.feeding.collectAsState().value,
-                                feedNote = feedNote.value,
-                                onPickRecording = { pickRecording() },
-                                onUseMicrophone = { useMicrophone() },
                                 version = packageManager.getPackageInfo(packageName, 0).versionName ?: "dev",
                                 onBack = { screen = settingsFrom },
                                 onHome = { screen = "hub" },
@@ -161,13 +129,10 @@ class MainActivity : ComponentActivity() {
                                 controller = controller,
                                 // no record and no play button in the free edition (blueprint §18.5): the recorder
                                 // and the reference recording belong to the piano's record, which only Pro keeps, and
-                                // since 5 Oct 2026 the recorder's own code lives in Pro too; the probe stays —
-                                // App · Probe feeds the engine a recording where the microphone's buffers arrive
+                                // since 5 Oct 2026 the recorder's own code lives in Pro too; since 10 Oct the probe
+                                // as well, so the hub's probe slots are left at their defaults here
                                 onSettings = { openSettings() },
                                 onHome = { backToHub() },
-                                feeding = audioSource.feeding.collectAsState().value,
-                                onPickRecording = null,
-                                onUseMicrophone = { useMicrophone() },
                                 onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                                 onStretch = { region -> openSettings(1 to region) },
                                 onTemperamentLow = { low -> settingsModel.update { it.copy(temperamentLowMidi = low) } },

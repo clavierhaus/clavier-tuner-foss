@@ -7,3 +7,7 @@ local.properties
 androidApp/.cxx/
 .kotlin/
 .DS_Store
+androidApp/keystore.properties
+*.jks
+*.keystore
+tmp/

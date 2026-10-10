@@ -1,0 +1,1 @@
+First release: measure the piano's inharmonicity from a few sampled strings, tune every note by the strobe and the bells against the string's own target, follow the key as you play, keep the session on the phone.
