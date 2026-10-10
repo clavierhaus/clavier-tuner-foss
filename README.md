@@ -12,6 +12,18 @@ anyone to check how.
 Made by [clavierhaus.at](https://clavierhaus.at), Vienna, by a piano tuner who
 wanted to see what his instruments actually do.
 
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100%" alt="Tuning B1 on its sixth partial: the strobe and each partial's bell">
+</p>
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="Sampling the piano: a single string measured">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="49%" alt="The stretch computed from this piano">
+</p>
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="49%" alt="The hub">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="49%" alt="Settings">
+</p>
+
 ## What it does
 
 - **Measures first.** Strike a handful of keys, single strings, mutes in. From
