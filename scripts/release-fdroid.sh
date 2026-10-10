@@ -190,16 +190,22 @@ if [ "$RESUME" -eq 0 ]; then
     if git -C "$FDROIDDATA" show "upstream/master:metadata/$APPID.yml" 2>/dev/null | grep -q "versionCode: $NEW_CODE\$"; then
       die "--retag: $VERSION ($NEW_CODE) is already in fdroiddata upstream -- F-Droid has it; a fix is a new version"
     fi
+    # the release first, then the tag: GitHub turns a release whose tag is deleted into a
+    # draft, and the first run of this (10 Oct 2026) then stumbled over its own cleanup
+    if gh release view "$TAG" >/dev/null 2>&1; then
+      gh release delete "$TAG" --yes >/dev/null 2>&1 || true
+      gh release view "$TAG" >/dev/null 2>&1 && die "--retag: could not delete GitHub release $TAG"
+      ok "retag: deleted GitHub release $TAG (the refused reference APK)"
+    fi
     if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
       OLD_SHA="$(git rev-list -n1 "$TAG")"
       [ "$OLD_SHA" != "$(git rev-parse HEAD)" ] || die "--retag: $TAG is already on HEAD -- nothing changed since; fix the build first"
       git tag -d "$TAG" >/dev/null
-      git push -q origin ":refs/tags/$TAG" 2>/dev/null || true
-      ok "retag: dropped $TAG from $(printf '%s' "$OLD_SHA" | cut -c1-7) (local and origin)"
+      ok "retag: dropped $TAG from $(printf '%s' "$OLD_SHA" | cut -c1-7) (local)"
     fi
-    if gh release view "$TAG" >/dev/null 2>&1; then
-      gh release delete "$TAG" --yes --cleanup-tag >/dev/null 2>&1 || gh release delete "$TAG" --yes
-      ok "retag: deleted GitHub release $TAG (the refused reference APK)"
+    if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+      git push -q origin ":refs/tags/$TAG"
+      ok "retag: dropped $TAG from origin"
     fi
   fi
   prove_reproducible HEAD
