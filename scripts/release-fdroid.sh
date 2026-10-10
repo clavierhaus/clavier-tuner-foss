@@ -200,6 +200,12 @@ if [ ! -f "$META" ]; then
 import sys, yaml
 p = sys.argv[1]
 d = yaml.safe_load(open(p))
+for b in d.get("Builds", []):
+    b["commit"] = str(b["commit"])
+    if "gradle" in b:
+        b["gradle"] = ["yes" if g is True else g for g in b["gradle"]]   # the string, as F-Droid's schema wants it
+if "AllowedAPKSigningKeys" in d:
+    d["AllowedAPKSigningKeys"] = str(d["AllowedAPKSigningKeys"])
 yaml.safe_dump(d, open(p, "w"), sort_keys=False, allow_unicode=True, default_flow_style=False, width=120)
 PY
 else

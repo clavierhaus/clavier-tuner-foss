@@ -39,6 +39,11 @@ def main(recipe, version, code, sha, reference):
         data["AllowedAPKSigningKeys"] = str(data["AllowedAPKSigningKeys"])
     for b in builds:
         b["commit"] = str(b["commit"])
+        # F-Droid's schema wants the string 'yes' in gradle:, and YAML 1.1 reads a bare yes as
+        # True (the fork's CI, 10 Oct 2026: "'yes' was expected"); said as the string wherever it
+        # came in as the boolean
+        if "gradle" in b:
+            b["gradle"] = ["yes" if g is True else g for g in b["gradle"]]
     data["CurrentVersion"] = version
     data["CurrentVersionCode"] = code
     codes = [int(b["versionCode"]) for b in builds]

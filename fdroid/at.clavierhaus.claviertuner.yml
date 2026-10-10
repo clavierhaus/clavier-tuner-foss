@@ -32,7 +32,7 @@ Builds:
     commit: c54eff11a533378e7b470ae97b0f16f16ce150f4
     subdir: androidApp
     gradle:
-      - yes
+      - 'yes'       # the string, quoted: a bare yes is a YAML boolean and F-Droid's schema refuses it
 
 AllowedAPKSigningKeys: 367c17e5719674d6c50511b6e41de8026cf762a63d065ed003775285333ab5e3
 
