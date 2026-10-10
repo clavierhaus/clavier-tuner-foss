@@ -191,7 +191,9 @@ fi
 git remote get-url upstream >/dev/null 2>&1 || git remote add upstream https://gitlab.com/fdroid/fdroiddata.git
 git fetch -q upstream master
 git checkout -q -B "$BUILD_BRANCH" upstream/master
+NEW_APP=0
 if [ ! -f "$META" ]; then
+  NEW_APP=1
   cp "$ROOT/fdroid/$APPID.yml" "$META"           # first submission: the reference, as it is
   # fdroiddata carries no comments of ours
   python3 - "$META" <<'PY'
@@ -203,8 +205,17 @@ PY
 else
   python3 "$ROOT/scripts/fdroid-recipe-append.py" "$META" "$VERSION" "$NEW_CODE" "$TAG_SHA" "$ROOT/fdroid/$APPID.yml" || die "recipe update failed"
 fi
+# fdroidserver, when installed, formats and lints the recipe before it goes up: the Quick
+# Start Guide's own sequence (rewritemeta, lint); the fork's CI runs the same lint anyway
+if command -v fdroid >/dev/null; then
+  fdroid rewritemeta "$APPID" >/dev/null 2>&1 || warn "fdroid rewritemeta failed (left as written)"
+  fdroid lint "$APPID" || die "fdroid lint found something in $META -- fix it in fdroid/$APPID.yml"
+  ok "fdroid lint clean"
+fi
 git add "$META"
-git commit -q -m "$APPID $VERSION ($NEW_CODE)" || true
+# the commit message fdroiddata's reviewers expect: "New App: <id>" the first time, an update after
+if [ "$NEW_APP" -eq 1 ]; then git commit -q -m "New App: $APPID" || true
+else git commit -q -m "Update $APPID to $VERSION ($NEW_CODE)" || true; fi
 git push -q -f "$FORK_REMOTE" "$BUILD_BRANCH"
 SHA="$(git rev-parse HEAD)"
 cd "$ROOT"
@@ -244,5 +255,9 @@ case "$JOB_STATUS" in
   *) die "CI job did not finish in time (status: $JOB_STATUS). Re-run with --resume later." ;;
 esac
 hr
-ok "released $VERSION -- verified by F-Droid's CI. First release: open the merge request from branch $BUILD_BRANCH of the fork; its pipeline is already green. Later releases: F-Droid's bot picks the tag up by itself (AutoUpdateMode: Version)."
+if [ "$NEW_APP" -eq 1 ]; then
+  ok "released $VERSION -- verified by F-Droid's CI. Now open the merge request on gitlab.com from branch $BUILD_BRANCH of the fork to fdroid/fdroiddata master (template: New App); its pipeline is already green. Then wait for the packagers and answer them; 24-48 h after the merge the app is on F-Droid."
+else
+  ok "released $VERSION -- verified by F-Droid's CI. F-Droid's bot picks the tag up by itself (AutoUpdateMode: Version); the fork branch is there if it does not."
+fi
 hr
