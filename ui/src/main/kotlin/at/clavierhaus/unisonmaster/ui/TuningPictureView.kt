@@ -131,6 +131,12 @@ private fun Bells(p: TuningPicture, marks: Boolean) {
         drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
         drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
         val perCent = half / BELLS_SPAN_C.toFloat()
+        // Every bell is drawn inside its panel (Peter, 10 Oct 2026: bells left the box). A bell's
+        // centre is held to the span, but its skirt reaches 3 widths either side of it and a wide
+        // bell near the edge, or one at the edge, ran past the panel's sides; a Canvas does not
+        // clip by itself. Only the drawing is cut at the panel's edge: where each bell stands, how
+        // high and how wide, is what the picture says, as before.
+        clipRect(0f, 0f, w, h) {
         for (b in p.bells.filter { it.k !in p.dropped }.sortedBy { it.level }) {
             val x = xOf(b.offsetCents)
             val height = (base - top) * (0.25f + 0.75f * b.level.toFloat())
@@ -144,6 +150,7 @@ private fun Bells(p: TuningPicture, marks: Boolean) {
             val c = if (marks && b.k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE)
             drawPath(path, c.copy(alpha = 0.22f))
             drawPath(path, c, style = Stroke(width = 2f))
+        }
         }
         // the span, in the panel's foot
         val paint = android.graphics.Paint().apply { color = Color(Brand.WHITE_MUTED).toArgb(); textSize = h * 0.07f; isAntiAlias = true }
