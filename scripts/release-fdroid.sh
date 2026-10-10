@@ -269,7 +269,7 @@ SHA="$(git rev-parse HEAD)"
 cd "$ROOT"
 ok "fork recipe pushed ($SHA) -- CI building in F-Droid's environment"
 
-# --- 4. wait for the 'fdroid build' job ----------------------------------------------------------
+# --- 4. wait for the 'fdroid build' job: the proof ------------------------------------------------
 printf '  waiting for CI (up to %s min): ' "$((POLL_SECS * POLL_MAX / 60))"
 JOB_ID=""; JOB_STATUS=""
 for _ in $(seq 1 "$POLL_MAX"); do
@@ -303,6 +303,34 @@ case "$JOB_STATUS" in
     die "release $TAG is NOT verified; do not open the fdroiddata merge request" ;;
   *) die "CI job did not finish in time (status: $JOB_STATUS). Re-run with --resume later." ;;
 esac
+
+# --- 5. the REST of the pipeline: lint, rewritemeta, checkupdates, check apk ... ------------------
+# The build is the proof; the other jobs are what the packagers look at before they merge, and
+# a merge request with a red one waits for a human (10 Oct 2026: checkupdates wanted AutoName,
+# an hour after the build had already passed). So the whole pipeline is waited for and every
+# red job named with its log.
+printf '  waiting for the rest of the pipeline: '
+PIPE_STATUS=""
+for _ in $(seq 1 "$POLL_MAX"); do
+  PIPE_STATUS="$(curl -sf "$GL_HOST/api/v4/projects/$GL_PROJ/pipelines/$PIPE_ID" | python3 -c "import json,sys; print(json.load(sys.stdin)['status'])" 2>/dev/null || true)"
+  case "$PIPE_STATUS" in success|failed|canceled) break ;; esac
+  printf '.'; sleep "$POLL_SECS"
+done
+printf '\n'
+if [ "$PIPE_STATUS" != "success" ]; then
+  hr
+  printf '  x  pipeline %s (status: %s) -- these jobs are red:\n' "$PIPE_ID" "$PIPE_STATUS" >&2
+  curl -sf "$GL_HOST/api/v4/projects/$GL_PROJ/pipelines/$PIPE_ID/jobs?per_page=50" | python3 -c "
+import json,sys
+host, proj = sys.argv[1], sys.argv[2]
+for j in json.load(sys.stdin):
+    if j['status'] not in ('success', 'skipped', 'manual'):
+        print(f\"     {j['name']:<22} {j['status']:<9} {host}/{proj}/-/jobs/{j['id']}\")" "$GL_HOST" "$(printf '%s' "$GL_PROJ" | sed 's/%2F/\//g')" >&2
+  printf '     The build matched; the recipe wants what the red job says (its log ends with the diff it\n' >&2
+  printf '     would make). Fix fdroid/%s.yml, commit, then: ./scripts/release-fdroid.sh --version %s --resume\n' "$APPID" "$VERSION" >&2
+  die "release $TAG is verified, but the fork pipeline is not green -- do not open the merge request yet"
+fi
+ok "the whole fork pipeline is green"
 hr
 if [ "$NEW_APP" -eq 1 ]; then
   ok "released $VERSION -- verified by F-Droid's CI. Now open the merge request on gitlab.com from branch $BUILD_BRANCH of the fork to fdroid/fdroiddata master (template: New App); its pipeline is already green. Then wait for the packagers and answer them; 24-48 h after the merge the app is on F-Droid."
