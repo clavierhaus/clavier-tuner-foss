@@ -7,6 +7,8 @@
 #   ./scripts/release-fdroid.sh --version 0.2.0 --summary "..."   the release
 #   ./scripts/release-fdroid.sh --dry-run ...                      preflight + proof + plan only
 #   ./scripts/release-fdroid.sh --resume ...                       redo steps 4-5 after an abort
+#   ./scripts/release-fdroid.sh --version X.Y.Z --retag            F-Droid's CI refused the tag:
+#                                                                  drop tag + GitHub release, redo
 #
 # The cycle:
 #   0. preflight: clean tree on main in sync with origin, gh authenticated, the signing key,
@@ -51,7 +53,7 @@ warn() { printf '  %s!!%s %s\n' "$B" "$X" "$*"; }
 die()  { printf '  %sx%s  %s\n' "$B" "$X" "$*" >&2; exit 1; }
 hr()   { printf -- '----------------------------------------------------------\n'; }
 
-VERSION=""; SUMMARY=""; DRY=0; RESUME=0
+VERSION=""; SUMMARY=""; DRY=0; RESUME=0; RETAG=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --version) VERSION="$2"; shift 2 ;;
@@ -61,6 +63,10 @@ while [ $# -gt 0 ]; do
     # redo only the fdroiddata push and the CI wait. Refuses unless the tree is AT --version
     # and the tag resolves, so a plain re-run cannot bump the version a second time.
     --resume) RESUME=1; shift ;;
+    # --retag: F-Droid's CI did not reproduce the tagged build and the fix is committed on main;
+    # the tag and the GitHub release of --version are dropped and made again from HEAD. Refused
+    # once the version is in fdroiddata upstream -- from then on a fix is a new version.
+    --retag) RETAG=1; shift ;;
     *) die "unknown argument: $1" ;;
   esac
 done
@@ -99,6 +105,21 @@ for helper in scripts/verify-reproducible.sh scripts/fdroid-recipe-append.py scr
 done
 [ -f "fdroid/$APPID.yml" ] || die "reference recipe fdroid/$APPID.yml missing"
 [ -d "$FDROIDDATA/.git" ] || die "fdroiddata clone not found at $FDROIDDATA (set FDROIDDATA=...)"
+# fdroidserver is required, and the CI's own: the recipe goes up in the format `fdroid
+# rewritemeta` writes, because the fork's CI rewrites it and fails the MR on any difference
+# (10 Oct 2026: the rewritemeta and checkupdates jobs, on a recipe PyYAML had written). The
+# format is ruamel.yaml's and changes with its version: 0.17 keeps a long Binaries: line on
+# its line, 0.18 folds it onto the next, 0.19 folds AllowedAPKSigningKeys: too. The CI is
+# fdroidserver master on Debian trixie, ruamel 0.18.10 (fdroiddata .gitlab-ci.yml), so that is
+# what runs here -- the PyPI release pins ruamel below 0.17.22 and is of no use:
+#   pipx install git+https://gitlab.com/fdroid/fdroidserver.git
+#   pipx inject fdroidserver 'ruamel.yaml==0.18.10'
+FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject fdroidserver 'ruamel.yaml==0.18.10'"
+command -v fdroid >/dev/null || die "fdroidserver (fdroid) not on PATH -- $FDROID_INSTALL"
+FD_PY="$(dirname "$(readlink -f "$(command -v fdroid)")")/python"; [ -x "$FD_PY" ] || FD_PY=python3
+RUAMEL="$("$FD_PY" -c 'import ruamel.yaml as r; print(r.__version__)' 2>/dev/null || echo 0)"
+case "$RUAMEL" in 0.18.*) ;; *) die "fdroid's ruamel.yaml is $RUAMEL; F-Droid's CI writes recipes with 0.18.10 and a recipe in another version's layout fails its rewritemeta job -- $FDROID_INSTALL" ;; esac
+ok "fdroidserver $(fdroid --version 2>/dev/null | head -n1) with ruamel.yaml $RUAMEL"
 # Self-check FIRST, before anything that costs CPU: the appender must succeed on a scratch
 # copy and yield a valid recipe with one block for the new code.
 if [ -f "$FDROIDDATA/metadata/$APPID.yml" ]; then cp "$FDROIDDATA/metadata/$APPID.yml" tmp/recipe_selfcheck.yml; else cp "fdroid/$APPID.yml" tmp/recipe_selfcheck.yml; fi
@@ -164,6 +185,23 @@ if [ "$RESUME" -eq 0 ]; then
   ok "version $VERSION (code $NEW_CODE) committed and pushed"
 
   # --- 2. the proof on THE commit release.sh builds, then the GitHub release ---------------------
+  if [ "$RETAG" -eq 1 ]; then
+    git -C "$FDROIDDATA" fetch -q upstream master 2>/dev/null || true
+    if git -C "$FDROIDDATA" show "upstream/master:metadata/$APPID.yml" 2>/dev/null | grep -q "versionCode: $NEW_CODE\$"; then
+      die "--retag: $VERSION ($NEW_CODE) is already in fdroiddata upstream -- F-Droid has it; a fix is a new version"
+    fi
+    if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+      OLD_SHA="$(git rev-list -n1 "$TAG")"
+      [ "$OLD_SHA" != "$(git rev-parse HEAD)" ] || die "--retag: $TAG is already on HEAD -- nothing changed since; fix the build first"
+      git tag -d "$TAG" >/dev/null
+      git push -q origin ":refs/tags/$TAG" 2>/dev/null || true
+      ok "retag: dropped $TAG from $(printf '%s' "$OLD_SHA" | cut -c1-7) (local and origin)"
+    fi
+    if gh release view "$TAG" >/dev/null 2>&1; then
+      gh release delete "$TAG" --yes --cleanup-tag >/dev/null 2>&1 || gh release delete "$TAG" --yes
+      ok "retag: deleted GitHub release $TAG (the refused reference APK)"
+    fi
+  fi
   prove_reproducible HEAD
   EXPECT_UNSIGNED_SHA="$REPRO_SHA" ./scripts/release.sh || die "release.sh failed"
   git pull -q --ff-only origin main   # release.sh may have committed the signing certificate
@@ -211,13 +249,11 @@ PY
 else
   python3 "$ROOT/scripts/fdroid-recipe-append.py" "$META" "$VERSION" "$NEW_CODE" "$TAG_SHA" "$ROOT/fdroid/$APPID.yml" || die "recipe update failed"
 fi
-# fdroidserver, when installed, formats and lints the recipe before it goes up: the Quick
-# Start Guide's own sequence (rewritemeta, lint); the fork's CI runs the same lint anyway
-if command -v fdroid >/dev/null; then
-  fdroid rewritemeta "$APPID" >/dev/null 2>&1 || warn "fdroid rewritemeta failed (left as written)"
-  fdroid lint "$APPID" || die "fdroid lint found something in $META -- fix it in fdroid/$APPID.yml"
-  ok "fdroid lint clean"
-fi
+# The recipe goes up as fdroidserver writes it -- the Quick Start Guide's own sequence
+# (rewritemeta, lint), and what the fork's CI checks it against.
+fdroid rewritemeta "$APPID" >/dev/null 2>&1 || die "fdroid rewritemeta failed on $META"
+fdroid lint "$APPID" || die "fdroid lint found something in $META -- fix it in fdroid/$APPID.yml"
+ok "recipe in fdroidserver's format, lint clean"
 git add "$META"
 # the commit message fdroiddata's reviewers expect: "New App: <id>" the first time, an update after
 if [ "$NEW_APP" -eq 1 ]; then git commit -q -m "New App: $APPID" || true
@@ -255,8 +291,9 @@ case "$JOB_STATUS" in
     printf '     Job: %s/%s/-/jobs/%s\n' "$GL_HOST" "$(printf '%s' "$GL_PROJ" | sed 's/%2F/\//g')" "$JOB_ID" >&2
     printf '     Read the job log. Build failed before comparing = the recipe or the environment.\n' >&2
     printf '     Built and differed = download the artifact and diffoscope it against\n' >&2
-    printf '     androidApp/build/outputs/apk/release/*-unsigned.apk; the differing file names the cause.\n' >&2
-    printf '     Nothing is replaced on the GitHub release: the claim is fixed in the build and re-tagged.\n' >&2
+    printf '     tmp/clavier-tuner-%s-unsigned.apk; the differing file names the cause.\n' "$VERSION" >&2
+    printf '     Nothing is replaced on the GitHub release. Fix the build, commit, then:\n' >&2
+    printf '       ./scripts/release-fdroid.sh --version %s --retag\n' "$VERSION" >&2
     die "release $TAG is NOT verified; do not open the fdroiddata merge request" ;;
   *) die "CI job did not finish in time (status: $JOB_STATUS). Re-run with --resume later." ;;
 esac

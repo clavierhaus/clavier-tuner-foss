@@ -168,10 +168,25 @@ for t in apksigcopier diffoscope zipalign; do
     [ -n "$F" ] && ok "$t found: $F (not on PATH)" || warn "$t not found   (R: apksigcopier verifies the signature copy, diffoscope names the differing file)"
   fi
 done
-if command -v fdroid >/dev/null; then ok "fdroidserver: $(fdroid --version 2>/dev/null | head -n1)"
+# fdroidserver is REQUIRED: the recipe goes to fdroiddata in the format `fdroid rewritemeta`
+# writes, and the fork's CI fails the MR on any other (10 Oct 2026). The format is
+# ruamel.yaml's and changes with its version (0.17: a long Binaries: stays on its line; 0.18:
+# it folds; 0.19: AllowedAPKSigningKeys: folds too). The CI is fdroidserver master on Debian
+# trixie with ruamel 0.18.10; the PyPI release pins ruamel below 0.17.22. So, from git:
+#   pipx install git+https://gitlab.com/fdroid/fdroidserver.git
+#   pipx inject fdroidserver 'ruamel.yaml==0.18.10'
+FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject fdroidserver 'ruamel.yaml==0.18.10'"
+if command -v fdroid >/dev/null; then
+  FD_PY="$(dirname "$(readlink -f "$(command -v fdroid)")")/python"; [ -x "$FD_PY" ] || FD_PY=python3
+  RUAMEL="$("$FD_PY" -c 'import ruamel.yaml as r; print(r.__version__)' 2>/dev/null || echo 0)"
+  case "$RUAMEL" in
+    0.18.*) ok "fdroidserver $(fdroid --version 2>/dev/null | head -n1), ruamel.yaml $RUAMEL (writes recipes as F-Droid's CI does)" ;;
+    *) fail "fdroidserver found but its ruamel.yaml is $RUAMEL, not 0.18.x: recipes come out in another layout than the CI's -- $FDROID_INSTALL" ;;
+  esac
 else
   F="$(findq 6 -type f -name fdroid -path '*/bin/*' | head -n1)"
-  [ -n "$F" ] && ok "fdroidserver found: $F (not on PATH; a venv?)" || warn "fdroidserver (fdroid) not found -- needed for 'fdroid build' / 'fdroid signatures' locally; optional if F-Droid's CI does the verifying"
+  [ -n "$F" ] && warn "fdroidserver found at $F but not on PATH -- the release script needs 'fdroid' on PATH" \
+    || fail "fdroidserver (fdroid) not found -- the release script formats and lints the recipe with it: $FDROID_INSTALL"
 fi
 if command -v podman >/dev/null || command -v docker >/dev/null; then ok "container runtime: $(command -v podman || command -v docker) (can run F-Droid's buildserver image for a local verification build)"; else note "no podman/docker: a local run of F-Droid's own build environment is not possible; the fork's CI can do it"; fi
 

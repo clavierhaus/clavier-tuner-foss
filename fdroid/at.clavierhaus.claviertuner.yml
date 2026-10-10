@@ -20,7 +20,7 @@ AuthorWebSite: https://clavierhaus.at
 WebSite: https://clavierhaus.at
 SourceCode: https://github.com/clavierhaus/clavier-tuner-foss
 IssueTracker: https://github.com/clavierhaus/clavier-tuner-foss/issues
-Changelog: https://github.com/clavierhaus/clavier-tuner-foss/blob/main/CHANGELOG.md
+Changelog: https://github.com/clavierhaus/clavier-tuner-foss/blob/HEAD/CHANGELOG.md
 
 RepoType: git
 Repo: https://github.com/clavierhaus/clavier-tuner-foss.git

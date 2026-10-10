@@ -46,6 +46,14 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // No META-INF/version-control-info.textproto: since AGP 8.3 the release APK carries the
+            // git revision it was built from, and that file was the ONE difference between our
+            // reference APK of v0.1.0 and F-Droid's rebuild of the same commit (fork CI job
+            // 17081469811, 10 Oct 2026): ours said revision c54eff1, theirs said
+            // NO_VALID_GIT_FOUND, because their build does not see a git tree. Two builds of one
+            // commit here agree on it, so the proof (scripts/verify-reproducible.sh) cannot catch
+            // it; the tag names the commit anyway.
+            vcsInfo { include = false }
         }
         debug {
             versionNameSuffix = "+$gitShortHash"

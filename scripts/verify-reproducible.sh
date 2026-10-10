@@ -15,6 +15,12 @@
 # reproduce here will not reproduce there, and the release script refuses to publish it
 # (scripts/release-fdroid.sh). Requirements: f-droid.org/docs/Reproducible_Builds.
 #
+# What two worktrees cannot see: content that depends on the ENVIRONMENT and not on the
+# commit. Both worktrees are git checkouts, so AGP's version-control-info.textproto agreed
+# here and differed against F-Droid's build (v0.1.0, 10 Oct 2026: NO_VALID_GIT_FOUND on their
+# side); vcsInfo is off in the release build type for that reason. The fork's CI is the proof
+# against the environment; this script is the proof against the tree.
+#
 set -euo pipefail
 REF="${1:-HEAD}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
