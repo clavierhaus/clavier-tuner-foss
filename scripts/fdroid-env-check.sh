@@ -174,8 +174,8 @@ done
 # it folds; 0.19: AllowedAPKSigningKeys: folds too). The CI is fdroidserver master on Debian
 # trixie with ruamel 0.18.10; the PyPI release pins ruamel below 0.17.22. So, from git:
 #   pipx install git+https://gitlab.com/fdroid/fdroidserver.git
-#   pipx inject fdroidserver 'ruamel.yaml==0.18.10'
-FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject fdroidserver 'ruamel.yaml==0.18.10'"
+#   pipx inject --force fdroidserver 'ruamel.yaml==0.18.10'
+FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject --force fdroidserver 'ruamel.yaml==0.18.10'"
 if command -v fdroid >/dev/null; then
   FD_PY="$(dirname "$(readlink -f "$(command -v fdroid)")")/python"; [ -x "$FD_PY" ] || FD_PY=python3
   RUAMEL="$("$FD_PY" -c 'import ruamel.yaml as r; print(r.__version__)' 2>/dev/null || echo 0)"

@@ -113,8 +113,8 @@ done
 # fdroidserver master on Debian trixie, ruamel 0.18.10 (fdroiddata .gitlab-ci.yml), so that is
 # what runs here -- the PyPI release pins ruamel below 0.17.22 and is of no use:
 #   pipx install git+https://gitlab.com/fdroid/fdroidserver.git
-#   pipx inject fdroidserver 'ruamel.yaml==0.18.10'
-FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject fdroidserver 'ruamel.yaml==0.18.10'"
+#   pipx inject --force fdroidserver 'ruamel.yaml==0.18.10'
+FDROID_INSTALL="pipx install git+https://gitlab.com/fdroid/fdroidserver.git && pipx inject --force fdroidserver 'ruamel.yaml==0.18.10'"
 command -v fdroid >/dev/null || die "fdroidserver (fdroid) not on PATH -- $FDROID_INSTALL"
 FD_PY="$(dirname "$(readlink -f "$(command -v fdroid)")")/python"; [ -x "$FD_PY" ] || FD_PY=python3
 RUAMEL="$("$FD_PY" -c 'import ruamel.yaml as r; print(r.__version__)' 2>/dev/null || echo 0)"
