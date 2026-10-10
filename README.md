@@ -68,15 +68,6 @@ every piano day are written down with the recording they came from. The
 engine (`shared/`) and the screens (`ui/`) are a Kotlin Multiplatform library
 with an iOS stub; only the Android app exists today.
 
-## Clavier Tuner Pro
-
-The free app and Clavier Tuner Pro are one tuner: the same engine, the same
-screens, the same measurement. Pro adds the book a working technician keeps —
-pianos and customers, a tuning saved to a piano and its history, the unison
-display that reads all strings of a note partial by partial, the recorder,
-letters and the business side. Nothing of the tuning is held back from the
-free app.
-
 ## Install
 
 - **F-Droid**: *Clavier Tuner* (`at.clavierhaus.claviertuner`) — once the
@@ -84,32 +75,16 @@ free app.
 - **GitHub releases**: the signed APK of every version, the same bytes
   F-Droid builds and verifies.
 
+The build is reproducible: F-Droid rebuilds every release from the tagged
+commit in its own environment and publishes it only when the bytes match.
+
 Android 8.0 (API 26) or later. The app needs the microphone and nothing else.
-
-## Build
-
-Android SDK (platform 37, build-tools 36.0.0) and a JDK 17 or later;
-`local.properties` pointing at the SDK.
-
-```
-./gradlew :shared:testAndroidHostTest     # the core tests, JVM only
-./gradlew :androidApp:assembleDebug       # the app, with the commit in its version
-./gradlew :androidApp:assembleRelease     # the release build, reproducible
-./scripts/deploy.sh                       # pull, test, build, install on the connected phone
-```
-
-The release is reproducible and F-Droid verifies it: `scripts/release-fdroid.sh`
-builds a tagged commit twice in independent worktrees, refuses to publish
-unless the two unsigned APKs are identical, signs the APK and publishes it,
-and hands the recipe to F-Droid, which rebuilds it in its own environment and
-compares the bytes. `scripts/fdroid-env-check.sh` says whether a machine meets
-F-Droid's requirements for that.
 
 ## Contributing
 
 - **Issues** with a recording attached are worth ten without. The app records
-  nothing by itself; a phone recorder at 48 kHz with every effect off, or the
-  Pro recorder, gives the engine what it needs.
+  nothing by itself; a phone recorder at 48 kHz with every effect off gives
+  the engine what it needs.
 - **Languages.** The app's words live in `i18n/strings.tsv`
   (`scripts/i18n.py --check` refuses holes). English and German today; the
   app follows the phone's language.
