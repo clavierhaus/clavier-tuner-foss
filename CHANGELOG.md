@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.1.0 -- 2026-10-10
+
 ### 2026-10-04
 - **A partial's number stands over its own bell.** The numbers used to sit in
   an evenly spaced row across the panel, so that none could overprint — and
