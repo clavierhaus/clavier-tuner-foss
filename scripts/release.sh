@@ -58,18 +58,29 @@ else
   ok "tagged $TAG"
 fi
 
-printf 'building %s (%s) from %s ...\n' "$VERSION" "$CODE" "$(git rev-parse --short HEAD)"
-./gradlew -q --no-daemon :androidApp:assembleRelease
-UNSIGNED="$(ls androidApp/build/outputs/apk/release/*-unsigned.apk | head -n1)"
-[ -n "$UNSIGNED" ] || die "no unsigned APK built"
+# The build is made in a FRESH worktree of HEAD, exactly as the proof builds and as F-Droid
+# builds: from a clean checkout, never incrementally. On 10 Oct 2026 (the first run of 0.1.0)
+# the proof's two worktrees agreed on 835357... and the build in the working tree, with its
+# build/, .gradle/ and .kotlin/ from the day's debug builds, gave 373745... of the same commit;
+# the working tree's bytes are nobody's reference.
+printf 'building %s (%s) from %s in a fresh worktree ...\n' "$VERSION" "$CODE" "$(git rev-parse --short HEAD)"
+WT="$(mktemp -d "${TMPDIR:-/tmp}/ct-release.XXXXXX")/src"
+git worktree add -q --detach "$WT" HEAD
+[ -f local.properties ] && cp local.properties "$WT/"
+( cd "$WT" && ./gradlew -q --no-daemon :androidApp:assembleRelease ) || die "the release build failed in $WT"
+UNSIGNED_WT="$(ls "$WT"/androidApp/build/outputs/apk/release/*-unsigned.apk | head -n1)"
+[ -n "$UNSIGNED_WT" ] || die "no unsigned APK built in $WT"
+mkdir -p tmp
+UNSIGNED="tmp/clavier-tuner-$VERSION-unsigned.apk"
+cp "$UNSIGNED_WT" "$UNSIGNED"
+git worktree remove --force "$WT"; rm -rf "$(dirname "$WT")"
 SHA="$(sha256sum "$UNSIGNED" | cut -d' ' -f1)"
-ok "unsigned APK $SHA"
+ok "unsigned APK $SHA ($UNSIGNED, the bytes F-Droid's build must match)"
 if [ -n "${EXPECT_UNSIGNED_SHA:-}" ] && [ "$EXPECT_UNSIGNED_SHA" != "$SHA" ]; then
   die "the APK built here ($SHA) is not the one the proof built ($EXPECT_UNSIGNED_SHA) -- nothing is published"
 fi
 
 # sign, as it is, with our key
-mkdir -p tmp
 OUT="tmp/clavier-tuner-$VERSION.apk"
 STORE="$(sed -n 's/^storeFile=//p' "$KS")"; [ -f "$STORE" ] || STORE="androidApp/$STORE"
 "$APKSIGNER" sign --ks "$STORE" \
