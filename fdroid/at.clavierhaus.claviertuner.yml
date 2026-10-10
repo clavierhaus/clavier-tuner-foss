@@ -21,6 +21,7 @@ WebSite: https://clavierhaus.at
 SourceCode: https://github.com/clavierhaus/clavier-tuner-foss
 IssueTracker: https://github.com/clavierhaus/clavier-tuner-foss/issues
 Changelog: https://github.com/clavierhaus/clavier-tuner-foss/blob/HEAD/CHANGELOG.md
+AutoName: Clavier Tuner      # the manifest's label, as fdroid checkupdates reads it (its CI job fails on any field it would add)
 
 RepoType: git
 Repo: https://github.com/clavierhaus/clavier-tuner-foss.git
