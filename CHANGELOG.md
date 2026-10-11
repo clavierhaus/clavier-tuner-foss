@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.1.1 -- 2026-10-11
+
 ### 2026-10-11
 - **The sampling's inharmonicity holds for the whole tuning.** When the
   sampling ends, the inharmonicity it measured becomes the basis of every
