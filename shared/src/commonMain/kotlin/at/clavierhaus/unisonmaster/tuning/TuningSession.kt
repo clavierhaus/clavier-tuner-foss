@@ -153,16 +153,41 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** True once the sampling may end: the minimum is in. */
     val samplingReady: Boolean get() = samplesIn >= TunerSettings.MIN_SAMPLES
 
-    /** Ends the sampling (Done): the curve stands on what is in, and the tuning begins at A4's neighbour. */
-    fun finishSampling() {
+    /**
+     * Ends the sampling (Done): the inharmonicity sampled so far becomes the basis of every
+     * target for the rest of the session ([basis]), and the tuning begins at A4's neighbour.
+     * [frozen] is a basis saved earlier, for a session continued; without one, the strings
+     * measured now are it.
+     */
+    fun finishSampling(frozen: Map<Int, Double>? = null) {
         if (!sampling) return
         sampling = false
+        sampledB = frozen ?: measured.mapValues { it.value.b }
         select(notes.first { it != MIDI_A4 })
     }
 
-    /** The instrument's inharmonicity curve from what has been measured. */
+    /**
+     * The inharmonicity of the sampled strings when the sampling ended, by key: the basis of
+     * every target from then on. The sampling measures the piano's inharmonicity once, and it
+     * does not depend on pitch; a note tuned afterwards is recorded ([record]) for the tuning's
+     * record -- the progress, the check against its partner -- but never moves a target (Peter,
+     * 11 Oct 2026: "What we measure initially in the sampling is a PITCH INDEPENDENT measurement
+     * and it is written in stone ... the calculated pitch of C2 needs to be where we tuned it").
+     * Until then every note tuned was a new sample of the curve, and a note tuned early stood
+     * off its target after twenty more (TuningSessionTest, theSamplingIsTheBasis...). Null while
+     * sampling, and in a session that never sampled: then what is measured is the basis.
+     */
+    private var sampledB: Map<Int, Double>? = null
+
+    /** The sampled inharmonicity saved with the session; null while sampling. */
+    val frozenBasis: Map<Int, Double>? get() = sampledB
+
+    /** The inharmonicity every target is computed from: the sampling's, once it has ended. */
+    private val basis: Map<Int, Double> get() = sampledB ?: measured.mapValues { it.value.b }
+
+    /** The instrument's inharmonicity curve from the sampling (from what is measured, while sampling). */
     val curve: InharmonicityCurve
-        get() = InharmonicityCurve(measured.mapValues { it.value.b }, settings.lowestUnwoundMidi, settings.curveBreaks)
+        get() = InharmonicityCurve(basis, settings.lowestUnwoundMidi, settings.curveBreaks)
 
     /**
      * True when leaving a note registers it as done with what was heard of
@@ -270,8 +295,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         return Listening(midi, ownK, hz, Source.OCTAVE, type, refMidi, refHz, width, refModelled = measuredHz == null)
     }
 
-    /** B for [midi]: its own measurement, else the curve's. */
-    private fun bOf(midi: Int, c: InharmonicityCurve): Double = measured[midi]?.b?.takeIf { it > 0 } ?: c.b(midi) ?: StringMeasure.DEFAULT_B
+    /** B for [midi]: its own as sampled, else the curve's. */
+    private fun bOf(midi: Int, c: InharmonicityCurve): Double = basis[midi]?.takeIf { it > 0 } ?: c.b(midi) ?: StringMeasure.DEFAULT_B
 
     private val curveCache = HashMap<Int, Double>()
     private var curveCacheKey: Any? = null
@@ -284,7 +309,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * curve's, or their own where measured.
      */
     fun curveTargetF1(midi: Int, c: InharmonicityCurve = curve): Double {
-        val key = Triple(a4Hz, settings, measured.size to measured.values.sumOf { it.b })
+        val key = Triple(a4Hz, settings, basis)
         if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
         curveCache[midi]?.let { return it }
         val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) targetF1(midi, a4Hz) else {
@@ -455,7 +480,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * that was not measured.
      */
     fun predictedB(midi: Int = current): Double {
-        measured[midi]?.b?.takeIf { it > 0.0 }?.let { return it }
+        basis[midi]?.takeIf { it > 0.0 }?.let { return it }
         val c = curve
         if (c.ready) c.b(midi)?.let { return it }
         val withB = measured.values.filter { it.midi != midi && it.b > 0.0 }

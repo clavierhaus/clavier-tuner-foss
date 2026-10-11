@@ -81,6 +81,8 @@ private val sample = SessionSnapshot(
             falseBeats = listOf(FalseBeat(2, 0.549, 9.2), FalseBeat(3, 0.685, 3.5))),
         NoteMeasurement(68, 418.11, 3.9e-4, 0.31, listOf(MeasuredPartial(1, 0.0, 0.0, 2.7)), 1_789_000_100_000L),
     ),
+    // the inharmonicity sampled before tuning: kept apart from the tuned notes' (11 Oct 2026)
+    basis = mapOf(69 to 4.0e-4, 36 to 1.1e-4),
 )
 
 class SessionStoreTest {

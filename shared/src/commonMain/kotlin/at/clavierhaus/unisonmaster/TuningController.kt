@@ -439,6 +439,7 @@ class TuningController(
             currentMidi = s.current,
             measurements = s.measurements.values.toList(),
             sampling = s.sampling,
+            basis = s.frozenBasis,
         )
     }
 
@@ -467,7 +468,9 @@ class TuningController(
         setReference(snap.a4Hz)
         val s = TuningSession(_referenceA4Hz.value, _settings.value)
         for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
-        if (!snap.sampling) s.finishSampling()
+        // the basis saved with the session; a file from before 11 Oct 2026 has none, and its
+        // measurements, tuned notes among them, become the basis -- the best that file can say
+        if (!snap.sampling) s.finishSampling(snap.basis)
         val resume = snap.currentMidi.takeIf { s.selectable(it) }
             ?: s.next()?.takeIf { s.selectable(it) }
             ?: TuningSession.MIDI_A4

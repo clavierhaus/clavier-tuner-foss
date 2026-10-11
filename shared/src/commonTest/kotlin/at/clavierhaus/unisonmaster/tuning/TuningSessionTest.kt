@@ -242,6 +242,34 @@ class TuningSessionTest {
         }
     }
 
+    /**
+     * The inharmonicity is measured once, while sampling, and is the basis of every target until
+     * the session ends (Peter, 11 Oct 2026): "What we measure initially in the sampling is a PITCH
+     * INDEPENDENT measurement and it is written in stone. ... I start tuning C2 according to initial
+     * sampling and then tune 20 notes all over the place -- the calculated pitch of C2 needs to be
+     * where we tuned it, to a 100th of a cent." Until then every note tuned was recorded into the
+     * table the curve is fitted to, and moved the targets of notes already tuned.
+     */
+    @Test
+    fun theSamplingIsTheBasisOfEveryTargetAndTuningDoesNotMoveIt() {
+        val s = TuningSession(a4, pro)
+        s.record(measuredString(69, a4, 8e-4))
+        val sampled = listOf(21, 28, 33, 38, 45, 52, 60, 76, 88, 96)
+        for (m in sampled) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        s.finishSampling()
+        val watched = listOf(24, 36, 53, 84)                 // C1, C2, F3, C6
+        val before = watched.associateWith { s.listening(it).targetHz }
+        // twenty notes tuned all over the place, each string measured at 1.6 times the sampled
+        // curve's inharmonicity -- and two of the sampled strings struck again, measured differently
+        for (m in listOf(23, 25, 27, 30, 31, 34, 36, 37, 40, 43, 47, 50, 53, 57, 64, 72, 80, 84, 90, 100))
+            s.record(measuredString(m, et(m), 1.6 * s.curve.b(m)!!))
+        for (m in listOf(28, 52)) s.record(measuredString(m, et(m), 0.7e-4 * 2.0.pow((m - 40) / 12.0)))
+        for (m in watched) {
+            val now = s.listening(m).targetHz
+            assertEquals(0.0, cents(now, before[m]!!), 1e-4, "midi $m: its target moved after the sampling")
+        }
+    }
+
     @Test
     fun theCurveFitsLnBPerSegmentAndBreaksAtTheFloor() {
         // plain wire doubling B every octave from 1e-4 at E2; wound strings flat at 6e-5
