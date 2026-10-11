@@ -13,7 +13,7 @@
 # hex, printed by `apksigner verify --print-certs`; the release script fills it in from the
 # APK it signed.
 Categories:
-  - Multimedia
+  - Music Practice Tool
 License: Apache-2.0
 AuthorName: clavierhaus
 AuthorWebSite: https://clavierhaus.at
