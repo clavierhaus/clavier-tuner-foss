@@ -7,6 +7,18 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-11
+- **The sampling's inharmonicity holds for the whole tuning.** When the
+  sampling ends, the inharmonicity it measured becomes the basis of every
+  target until the tuning is finished. A note tuned afterwards is recorded
+  for the progress, but no longer moves the targets of notes already tuned:
+  C2 tuned early stays where it was tuned, however many notes follow. So it
+  is worth sampling more than the minimum of six — ten to fifteen strings,
+  at the transitions (single to bichord, wound to plain, either side of the
+  struts).
+- **The bells stay inside their panel.** A wide bell, or one at the edge of
+  the span, was drawn past the side of the box.
+
 ## 0.1.0 -- 2026-10-10
 
 ### 2026-10-04

@@ -1,0 +1,1 @@
+The sampling's inharmonicity now holds for the whole tuning: a note tuned later never moves the target of one already tuned, so sample ten to fifteen strings at the transitions. The bells stay inside their panel.
