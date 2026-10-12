@@ -17,6 +17,11 @@ object Brand {
     const val PANEL: Long = 0xFF1C1C1C
     const val WHITE: Long = 0xFFFFFFFF
     const val WHITE_MUTED: Long = 0xB3FFFFFF // 70 % white for secondary text
+    // The greys every screen draws its lines, controls and dimmed words with, named once
+    // (UI-UNIFORMITY, 12 Oct 2026): until then the tuning side and the book each kept their own.
+    const val RULE: Long = 0xFF3A3A3A         // a line, a frame, a control that can be tapped
+    const val CONTROL: Long = 0xFF2A2A2A      // a control's ground, a row's divider
+    const val DIM: Long = 0xFF808080          // a word that is there but not now
 
     /**
      * Functional alert colour, deliberately OUTSIDE the CI palette. Reserved

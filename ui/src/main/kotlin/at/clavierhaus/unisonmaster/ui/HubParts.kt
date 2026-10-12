@@ -56,7 +56,7 @@ import kotlin.math.floor
 /** DejaVu Serif, bundled: the typeface of the clavierhaus title. */
 val DejaVuSerif = FontFamily(Font(R.font.dejavu_serif))
 
-private val GREY_ON = Color(0xFF3A3A3A)
+private val GREY_ON = Color(Brand.RULE)
 private val GREY_OFF = Color(0xFF1C1C1C)
 
 /** A line of guidance under the title. */

@@ -47,7 +47,7 @@ fun PartialChips(
             val fill = when {
                 isFalse -> Color(Brand.FALSE_VIOLET)
                 on -> Color(Brand.ORANGE)
-                canTap -> Color(0xFF3A3A3A)
+                canTap -> Color(Brand.RULE)
                 else -> Color(0xFF222222)
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {

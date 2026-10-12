@@ -60,9 +60,9 @@ import kotlin.math.abs
  * open. Each app assembles its own tabs from these parts.
  */
 
-private val CONTROL = Color(0xFF2A2A2A)
+private val CONTROL = Color(Brand.CONTROL)
 /** The hairline between the tabs and their pages. */
-private val RULE = Color(0xFF3A3A3A)
+private val RULE = Color(Brand.RULE)
 
 /**
  * One page of a tab: its name on the sub-tab strip, a [note] of one line at
@@ -150,8 +150,8 @@ fun SettingsScreen(
     }
 }
 
-/** A drag this long, in pixels, turns the page. */
-private const val SWIPE_PX = 120f
+/** A drag this long, in pixels, turns a page — every page that turns by a swipe, settings and book alike (UI-UNIFORMITY, 12 Oct 2026). */
+const val SWIPE_PX = 120f
 
 /** A tab's name: a serif word, orange and bold when it is the open one, white otherwise; the touch target taller than the word. */
 @Composable
@@ -229,7 +229,7 @@ private fun SettingsRow(name: String, control: @Composable () -> Unit) {
         Spacer(Modifier.width(12.dp))
         control()
     }
-    HorizontalDivider(color = Color(0xFF2A2A2A))
+    HorizontalDivider(color = CONTROL)
 }
 
 /** A row's height: five of them and a header fit a column of the reference pane. */
@@ -345,5 +345,5 @@ fun ActionRow(name: String, onClick: () -> Unit) {
         FitText(name, 15.sp, Modifier.weight(1f), color = Color(Brand.ORANGE))
         Text("›", color = Color(Brand.ORANGE), fontSize = 20.sp)
     }
-    HorizontalDivider(color = Color(0xFF2A2A2A))
+    HorizontalDivider(color = CONTROL)
 }

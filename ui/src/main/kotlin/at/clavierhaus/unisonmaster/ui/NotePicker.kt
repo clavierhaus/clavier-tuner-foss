@@ -44,7 +44,7 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
         Column(
             Modifier
                 .fillMaxSize(0.92f)
-                .background(Color(Brand.NEAR_BLACK), RoundedCornerShape(12.dp))
+                .background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp))
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {

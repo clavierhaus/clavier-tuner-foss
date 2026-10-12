@@ -132,7 +132,7 @@ internal fun SamplingPage(
                     Text("Retrieve the piano's inharmonicity", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
                     Spacer(Modifier.height(10.dp))
                     Column(
-                        Modifier.fillMaxWidth().border(1.dp, Color(0xFF3A3A3A), RoundedCornerShape(8.dp)).padding(12.dp),
+                        Modifier.fillMaxWidth().border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         for (line in ORDERS) FitText(line, 14.sp, Modifier.fillMaxWidth(), color = white)
@@ -282,7 +282,7 @@ private fun StepBox(label: String, onClick: () -> Unit) {
     val step by rememberUpdatedState(onClick)
     Box(
         Modifier.size(width = 40.dp, height = 34.dp)
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
+            .background(Color(Brand.CONTROL), RoundedCornerShape(6.dp))
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
                     step()
