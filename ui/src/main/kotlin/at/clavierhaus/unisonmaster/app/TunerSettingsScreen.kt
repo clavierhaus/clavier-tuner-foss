@@ -7,6 +7,9 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.ui.HelpText
+import at.clavierhaus.unisonmaster.ui.LocalHelpText
+import androidx.compose.runtime.CompositionLocalProvider
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.TunerSettings
@@ -72,6 +75,8 @@ fun TunerSettingsScreen(
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
 
+    // Help's text size reaches every help page, whichever edition built it (HelpParts.LocalHelpText)
+    CompositionLocalProvider(LocalHelpText provides HelpText(s.helpTextSp) { sp -> model.update { it.copy(helpTextSp = sp) } }) {
     SettingsScreen(
         onClose = onBack,
         onHome = onHome,
@@ -99,6 +104,7 @@ fun TunerSettingsScreen(
             )),
         ),
     )
+    }
 }
 
 /** The Tuning tab: what today's tuning does and how it reads. */

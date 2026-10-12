@@ -71,6 +71,8 @@ class SettingsPage(
     val note: String = "",
     val left: @Composable ColumnScope.() -> Unit,
     val right: (@Composable ColumnScope.() -> Unit)? = null,
+    /** Controls of the page itself, at its top right, on the line of the page words (Help: A− A+). */
+    val tools: (@Composable () -> Unit)? = null,
 )
 
 /** One tab of the settings screen: its title and its pages. The open tab and the open page are the orange ones. */
@@ -110,10 +112,16 @@ fun SettingsScreen(
         }
         Spacer(Modifier.height(4.dp))
         HorizontalDivider(color = RULE)
-        // the pages of the open tab: only where there is more than one; small words, the open one underlined
-        if (tab.pages.size > 1) {
+        // the pages of the open tab: only where there is more than one; small words, the open one underlined;
+        // at the right end of the line, the open page's own tools where it has them (Help: A− A+)
+        val tools = tab.pages[page].tools
+        if (tab.pages.size > 1 || tools != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-                tab.pages.forEachIndexed { i, p -> PageWord(p.title, open = i == page) { turnTo(i) } }
+                if (tab.pages.size > 1) tab.pages.forEachIndexed { i, p -> PageWord(p.title, open = i == page) { turnTo(i) } }
+                if (tools != null) {
+                    Spacer(Modifier.weight(1f))
+                    tools()
+                }
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -212,7 +220,7 @@ private fun SettingsRow(name: String, control: @Composable () -> Unit) {
 private val ROW_HEIGHT = 40.dp
 
 @Composable
-private fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+internal fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .size(32.dp)

@@ -99,6 +99,8 @@ data class TunerSettings(
     // LANGUAGE
     /** The language of the screens: a tag the strings table has, or "" for the system's. */
     val language: String = "",
+    /** The Help tab's text size, sp: A− and A+ on every Help page step it (Peter, 12 Oct 2026). Help only. */
+    val helpTextSp: Int = 14,
     // SAMPLING
     /**
      * Where the inharmonicity curve breaks: notes at which a new run of
@@ -160,6 +162,12 @@ data class TunerSettings(
     val probe: Boolean = false,
 ) {
     companion object {
+        /** Help's text size runs from [MIN_HELP_SP] to [MAX_HELP_SP] in steps of [HELP_SP_STEP] (Peter, 12 Oct 2026: 12 to 22). */
+        const val MIN_HELP_SP = 12
+        const val MAX_HELP_SP = 22
+        const val HELP_SP_STEP = 2
+        /** Help's text size one step up ([direction] +1, A+) or down (−1, A−), kept within its range. */
+        fun helpTextStep(sp: Int, direction: Int): Int = (sp + direction * HELP_SP_STEP).coerceIn(MIN_HELP_SP, MAX_HELP_SP)
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave: A4, the note the session is defined on. */
@@ -278,6 +286,7 @@ class SettingsModel(
             cleanPartials = b("cleanPartials", d.cleanPartials),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             language = store.get("language") ?: d.language,
+            helpTextSp = i("helpTextSp", d.helpTextSp).coerceIn(TunerSettings.MIN_HELP_SP, TunerSettings.MAX_HELP_SP),
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchCents = f("matchCents", d.matchCents),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
@@ -308,6 +317,7 @@ class SettingsModel(
         store.put("cleanPartials", s.cleanPartials.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)
+        store.put("helpTextSp", s.helpTextSp.toString())
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchCents", s.matchCents.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())

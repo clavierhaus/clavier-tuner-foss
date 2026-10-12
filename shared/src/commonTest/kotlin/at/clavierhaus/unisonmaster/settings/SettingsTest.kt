@@ -30,6 +30,20 @@ class SettingsTest {
         assertEquals(0.0, b.settings.value.widthMiddle)
     }
 
+    /** Help's text size (Peter, 12 Oct 2026): A− and A+ step it from 12 to 22 sp, and the phone keeps it. */
+    @Test
+    fun helpsTextSizeIsKeptAndStaysWithinItsSteps() {
+        val store = MemoryStore()
+        assertEquals(14, SettingsModel(store).settings.value.helpTextSp, "14 sp until the tuner changes it")
+        SettingsModel(store).update { it.copy(helpTextSp = 20) }
+        assertEquals(20, SettingsModel(store).settings.value.helpTextSp, "kept on the phone")
+        assertEquals(22, TunerSettings.helpTextStep(22, +1), "A+ stops at 22")
+        assertEquals(12, TunerSettings.helpTextStep(12, -1), "A− stops at 12")
+        assertEquals(16, TunerSettings.helpTextStep(14, +1)); assertEquals(12, TunerSettings.helpTextStep(14, -1))
+        store.put("helpTextSp", "40")
+        assertEquals(22, SettingsModel(store).settings.value.helpTextSp, "a stored size beyond the range is kept at its end")
+    }
+
     @Test
     fun aWidthBeyondTheLimitIsKeptAtTheLimit() {
         val store = MemoryStore()

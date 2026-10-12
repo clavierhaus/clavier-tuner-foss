@@ -3,7 +3,7 @@ package at.clavierhaus.unisonmaster.app
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.ui.SettingsPage
-import at.clavierhaus.unisonmaster.ui.HelpSteps
+import at.clavierhaus.unisonmaster.ui.helpPage
 
 /*
  * The Help tab's first page (Peter, 12 Oct 2026): the way through a tuning, from A4 to the
@@ -14,11 +14,11 @@ import at.clavierhaus.unisonmaster.ui.HelpSteps
  */
 
 /** The Quick start: left A4 and the sampling, right the octave types and the tuning. */
-internal fun quickStartPage(): SettingsPage = SettingsPage(
+internal fun quickStartPage(): SettingsPage = helpPage(
     t(K.settings_page_quickstart),
     QUICK_START_NOTE,
-    left = { HelpSteps("1 · A4" to A4_STEPS, "2 · Sampling" to SAMPLING_STEPS) },
-    right = { HelpSteps("3 · Octave types" to OCTAVE_STEPS, "4 · Tuning" to TUNING_STEPS) },
+    left = listOf("1 · A4" to A4_STEPS, "2 · Sampling" to SAMPLING_STEPS),
+    right = listOf("3 · Octave types" to OCTAVE_STEPS, "4 · Tuning" to TUNING_STEPS),
 )
 
 private val A4_STEPS = listOf(
