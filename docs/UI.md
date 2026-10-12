@@ -13,7 +13,10 @@ Four rules bind every screen. They are checked, not remembered.
 1. **Relative, never absolute.** A control sits at a fraction of its pane. No
    screen is drawn for one device and scaled.
 2. **Nothing scrolls.** A page that has more than fits splits into a second
-   page with a name of its own.
+   page with a name of its own. *Except Help* (Peter, 12 Oct 2026: "For all
+   stuff under Help, that rule does not apply" — its documents will be longer
+   than a page): the Help tab's text wraps and scrolls, drawn by `HelpSteps`
+   in `ui/HelpParts.kt`, the one file `LawWallsTest` exempts by name.
 3. **No text is ever cut.** No clipping, no ellipsis. A page's content is
    budgeted for the smallest supported pane at the smallest legible size;
    type that steps down is a safety net that must never fire on a supported

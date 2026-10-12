@@ -273,6 +273,40 @@ class TuningControllerTest {
         assertTrue(w1b < 0.3, "the clean string's fundamental starts afresh at %.2f s: %.2f c wide".format(first.first, w1b))
     }
 
+    /**
+     * Cancel on the sampling page (Peter, 12 Oct 2026): "cancel automatically resets data caught
+     * by a strike and requires new strike and new reading". What the last strike caught goes --
+     * its sample too, once Accept had taken it -- and nothing can be accepted until a key is
+     * struck again.
+     */
+    @Test
+    fun cancelDropsWhatTheStrikeCaughtAndWaitsForANewStrike() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 69, listOf(measuredString(69, a4, 8e-4)), sampling = true))
+        val c3 = 48
+        // caught and accepted, then cancelled: the sample goes with the catch
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught, "the strike is caught as C3")
+        assertNotNull(c.acceptLive(), "Accept keeps it")
+        assertTrue(c3 in c.measurements())
+        assertTrue(c.cancelCaught())
+        assertNull(c.tuning.value!!.caught, "nothing caught after Cancel")
+        assertFalse(c3 in c.measurements(), "the sample it took went with it")
+        assertFalse(c.acceptReady(), "nothing to accept until a new strike")
+        // caught and not accepted, then cancelled: the catch goes, the samples stay as they were
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught)
+        val before = c.measurements().keys
+        assertTrue(c.cancelCaught())
+        assertNull(c.tuning.value!!.caught)
+        assertEquals(before, c.measurements().keys)
+        assertFalse(c.acceptReady())
+        // a new strike is caught afresh
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught, "struck again, caught again")
+        assertTrue(c.acceptReady())
+    }
+
     @Test
     fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))

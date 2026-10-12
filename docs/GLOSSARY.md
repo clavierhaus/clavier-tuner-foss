@@ -96,8 +96,19 @@ studies *Every string · Drift · Compass · Reference · Wobble*.
 
 ## 5. Not decided yet
 
-"Accept" vs "Keep" for the measured string; "Progress" for the keyboard
+"Accept" vs "Keep" for the measured string *(settled 12 Oct 2026: Accept — §6)*; "Progress" for the keyboard
 picture — decided so far (28 Sept): *Verlauf* is History, so the keyboard
 picture is *Fortschritt* in German and keeps "Progress" in English until a
 better word is found; the German for the coinages in §3. These are settled when the screen
 that shows them is next touched, and the row is added here first.
+
+## 6. 12 October 2026 — the two answers to a value
+
+Peter, 12 Oct 2026: the button names its act; the other one says *Cancel*.
+
+| ours | the word | German | source | note |
+|---|---|---|---|---|
+| Accept | taking a measured value: a sample, a reading | Übernehmen ? | Peter, 12 Oct 2026 | settles §5; *Keep* is retired from the measuring screen (§4) |
+| Cancel | the other answer: what was caught is dropped and a new strike is wanted | Abbrechen | Peter, 12 Oct 2026 | on the sampling page it drops the strike's catch and its sample; on a window it leaves things as they were |
+| the act's own name | a confirming button says what it does: *Set A4 again*, *Save*, *Add entry* | — | Peter, 12 Oct 2026 | never *OK*, never *Keep* |
+

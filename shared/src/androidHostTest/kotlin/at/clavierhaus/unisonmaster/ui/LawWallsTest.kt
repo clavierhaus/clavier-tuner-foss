@@ -39,6 +39,13 @@ class LawWallsTest {
         "ui/BasicHub.kt" to 1,
     )
 
+    /**
+     * Files the walls do not stand in. Help scrolls and wraps by Peter's word of 12 Oct 2026 ("For
+     * all stuff under Help, that rule does not apply"); its parts live in this one file so that the
+     * exemption is a name and not a judgement, and a scroll in any other file still fails here.
+     */
+    private val EXEMPT = setOf("ui/HelpParts.kt")
+
     private fun repoRoot(): File {
         var d: File? = File(System.getProperty("user.dir")).absoluteFile
         while (d != null && !File(d, "settings.gradle.kts").exists()) d = d.parentFile
@@ -60,7 +67,7 @@ class LawWallsTest {
         for (module in listOf("ui", "androidApp")) {
             File(root, "$module/src/main").walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
                 val n = count(f.readText())
-                if (n > 0) found["$module/${f.name}"] = n
+                if (n > 0 && "$module/${f.name}" !in EXEMPT) found["$module/${f.name}"] = n
             }
         }
         val problems = ArrayList<String>()

@@ -207,13 +207,14 @@ internal fun SamplingPage(
                             color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
                         Spacer(Modifier.weight(1f))
-                        // Undo stands beside the key it takes back and names it, so nothing is asked
-                        // twice: the sample goes, and striking that key again puts a new one in its
-                        // place, which is what the engine does with any key struck a second time. The
+                        // Cancel and Accept, the two answers to a strike (Peter, 12 Oct 2026: the
+                        // button names its act, the other says Cancel). Cancel drops what the strike
+                        // caught -- its sample too, once taken -- and the page waits for a new strike
+                        // and a new reading; it replaced "Undo", which only took back a sample. The
                         // keyboard takes no touch — the right side of this page is the only interactive
                         // area (Peter, 5 Oct 2026) — and a 17 dp key could not be aimed at anyway.
-                        c?.takeIf { it != TuningSession.MIDI_A4 && it in sampled }?.let { back ->
-                            Chip("Undo ${Notes.name(back)}", selected = false, enabled = true) { controller.forgetSample(back) }
+                        if (c != null) {
+                            Chip("Cancel", selected = false, enabled = true) { controller.cancelCaught() }
                             Spacer(Modifier.width(10.dp))
                         }
                         AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
@@ -247,7 +248,7 @@ internal fun SamplingPage(
                 Text("Setting A4 again starts the sampling over: every sample goes.", color = muted, fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip("Set A4 again", selected = true, enabled = true) { resetA4 = false; controller.resetSession() }
-                    Chip("Keep", selected = false, enabled = true) { resetA4 = false }
+                    Chip("Cancel", selected = false, enabled = true) { resetA4 = false }
                 }
             }
         }

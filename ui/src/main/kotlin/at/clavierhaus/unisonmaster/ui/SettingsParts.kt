@@ -186,30 +186,6 @@ fun SettingsSection(title: String) {
     Spacer(Modifier.height(2.dp))
 }
 
-/**
- * A help page's column: sections, each a header and its lines, each line one row led by an
- * orange dash. Nothing scrolls and nothing is cut (docs/UI.md, LawWallsTest): a line is fitted to
- * its row, so a help page says in short lines what fits on it, as the sampling page gives its
- * orders -- a page that needs more is two pages. Every help page draws its text
- * with this and nothing else -- Quick start in both editions, the book's help in Pro -- so that the
- * Help tab reads as one hand wrote it (Peter, 12 Oct 2026: one UX throughout).
- */
-@Composable
-fun HelpSteps(vararg sections: Pair<String, List<String>>) {
-    Column(Modifier.fillMaxSize()) {
-        for ((title, lines) in sections) {
-            SettingsSection(title)
-            for (line in lines) {
-                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                    Text("–", color = Color(Brand.ORANGE), fontSize = 14.sp, modifier = Modifier.width(14.dp))
-                    FitText(line, 14.sp, Modifier.weight(1f), color = Color(Brand.WHITE))
-                }
-            }
-            Spacer(Modifier.height(6.dp))
-        }
-    }
-}
-
 /** A line of explanation inside a column, where a page's one-line note is not enough; measured, never cut. */
 @Composable
 fun SettingsNote(text: String) {

@@ -731,6 +731,24 @@ class TuningController(
         return true
     }
 
+    /**
+     * Cancel on the sampling page (Peter, 12 Oct 2026: "cancel automatically resets data caught by
+     * a strike and requires new strike and new reading"): what the last strike caught is dropped --
+     * its sample too, once Accept had taken it or a sampled key struck again had replaced its own
+     * (A4, the reference, is never taken back here) -- and the false-beat tally of that note with
+     * it, so the page waits for a new strike and a new reading. True when something was dropped.
+     */
+    fun cancelCaught(): Boolean {
+        val s = session ?: return false
+        if (!s.sampling) return false
+        val c = caught ?: return false
+        if (c.accepted && c.midi != TuningSession.MIDI_A4) s.forget(c.midi)
+        caught = null
+        falseBeats.clear(); keptClaims = emptyList()
+        publish(s)
+        return true
+    }
+
     /** Done while sampling: the sampling ends, the curve stands on what is in, the tuning begins. */
     fun finishSampling() {
         val s = session ?: return
