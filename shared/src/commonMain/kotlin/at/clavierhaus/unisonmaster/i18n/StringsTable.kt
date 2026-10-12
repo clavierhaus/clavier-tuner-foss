@@ -39,6 +39,7 @@ object K {
     const val settings_tab_tuning = "settings.tab.tuning"
     const val settings_tab_stretch = "settings.tab.stretch"
     const val settings_tab_piano = "settings.tab.piano"
+    const val settings_tab_help = "settings.tab.help"
     const val settings_tab_app = "settings.tab.app"
     const val settings_page_temperament = "settings.page.temperament"
     const val settings_page_reading = "settings.page.reading"
@@ -49,6 +50,7 @@ object K {
     const val settings_page_breaks = "settings.page.breaks"
     const val settings_page_language = "settings.page.language"
     const val settings_page_probe = "settings.page.probe"
+    const val settings_page_quickstart = "settings.page.quickstart"
     const val settings_page_about = "settings.page.about"
     const val settings_language = "settings.language"
     const val settings_language_system = "settings.language.system"
@@ -94,6 +96,7 @@ internal object StringsTable : Catalog {
         "settings.tab.tuning" to arrayOf("Tuning", "Stimmen"),
         "settings.tab.stretch" to arrayOf("Stretch", "Spreizung"),
         "settings.tab.piano" to arrayOf("Piano", "Klavier"),
+        "settings.tab.help" to arrayOf("Help", "Hilfe"),
         "settings.tab.app" to arrayOf("App", "App"),
         "settings.page.temperament" to arrayOf("Temperament", "Temperatur"),
         "settings.page.reading" to arrayOf("Reading", "Ablesung"),
@@ -104,6 +107,7 @@ internal object StringsTable : Catalog {
         "settings.page.breaks" to arrayOf("Breaks", "Brüche"),
         "settings.page.language" to arrayOf("Language", "Sprache"),
         "settings.page.probe" to arrayOf("Probe", "Sonde"),
+        "settings.page.quickstart" to arrayOf("Quick start", "Schnellstart"),
         "settings.page.about" to arrayOf("About", "Über"),
         "settings.language" to arrayOf("Language", "Sprache"),
         "settings.language.system" to arrayOf("System", "System"),

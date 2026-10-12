@@ -33,6 +33,8 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * - Tuning: Temperament · Reading
  * - Stretch: Wound · Bass · Middle · Treble · Breaks
  * - Piano: Compass
+ * - Help: Quick start (12 Oct 2026, Peter: between Piano and App; an edition adds its own
+ *   help after it, Pro the book's)
  * - App: About
  *
  * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
@@ -60,8 +62,10 @@ fun TunerSettingsScreen(
     open: Pair<Int, Int>? = null,
     /** Pages an edition adds to the Piano tab after Compass (Pro: the unison floors and the regimen a new piano starts from). */
     extraPianoPages: List<SettingsPage> = emptyList(),
-    /** Tabs an edition adds before App (Pro: the customers book). */
+    /** Tabs an edition adds after Piano, before Help (Pro: the customers book). */
     extraTabs: List<SettingsTab> = emptyList(),
+    /** Pages an edition adds to the Help tab after Quick start (Pro: the book's own help). */
+    extraHelpPages: List<SettingsPage> = emptyList(),
     /** Pages an edition adds to the App tab before About (Pro: Language, Probe). */
     extraAppPages: List<SettingsPage> = emptyList(),
 ) {
@@ -77,6 +81,7 @@ fun TunerSettingsScreen(
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
             SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), COMPASS_NOTE, left = { CompassRows(s, model) })) + extraPianoPages),
         ) + extraTabs + listOf(
+            SettingsTab(t(K.settings_tab_help), listOf(quickStartPage()) + extraHelpPages),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
                 SettingsPage(t(K.settings_page_about), ABOUT_NOTE,
                     left = {

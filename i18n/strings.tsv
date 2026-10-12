@@ -39,6 +39,7 @@ origin.untuned	equal temperament — {0} not tuned yet	gleichstufig — {0} noch
 settings.tab.tuning	Tuning	Stimmen
 settings.tab.stretch	Stretch	Spreizung
 settings.tab.piano	Piano	Klavier
+settings.tab.help	Help	Hilfe
 settings.tab.app	App	App
 settings.page.temperament	Temperament	Temperatur
 settings.page.reading	Reading	Ablesung
@@ -49,6 +50,7 @@ settings.page.compass	Compass	Umfang
 settings.page.breaks	Breaks	Brüche
 settings.page.language	Language	Sprache
 settings.page.probe	Probe	Sonde
+settings.page.quickstart	Quick start	Schnellstart
 settings.page.about	About	Über
 settings.language	Language	Sprache
 settings.language.system	System	System
