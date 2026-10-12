@@ -21,33 +21,34 @@ internal fun quickStartPage(): SettingsPage = SettingsPage(
     right = { HelpSteps("3 · Octave types" to OCTAVE_STEPS, "4 · Tuning" to TUNING_STEPS) },
 )
 
+// One row per line, each short enough to stand at its size (HelpSteps fits a line to its row).
 private val A4_STEPS = listOf(
-    "On the home screen: New Tuning.",
-    "Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or tap \"as it stands\" to keep the string where it is.",
-    "Tune the string until the strobe stands still, then Done.",
-    "The temperament octave is A3–A4; its low note can be moved on the same screen.",
+    "Home: New Tuning.",
+    "A4 on one string, the others muted.",
+    "Set its pitch with − and +, or tap \"as it stands\".",
+    "Tune until the strobe stands still, then Done.",
 )
 
 private val SAMPLING_STEPS = listOf(
-    "Strike single strings, the others muted. The app catches the key by itself: check it, Accept. Undo takes a sample back; a key struck again replaces it.",
-    "Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.",
-    "Six samples are the minimum; ten to fifteen give the better result.",
-    "Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.",
+    "Single strings, the others muted. Accept each.",
+    "The lowest note, first and last bichord, first trichord;",
+    "both sides of the struts; two notes per octave to C7.",
+    "Six at least, ten to fifteen better. Done ends it:",
+    "the inharmonicity then stays for the whole tuning.",
 )
 
 private val OCTAVE_STEPS = listOf(
-    "Settings › Stretch, for the bass, the middle and the treble.",
-    "An octave type names the partials made beatless: 4:2 puts the 4th partial of the lower note on the 2nd of the upper. The higher the numbers, the wider the octave. 4:1 is the double octave.",
-    "Set out: bass 6:3, middle 4:2, treble 4:2.",
-    "The width, in cents, widens the octave beyond beatless: the lower note flatter, the upper sharper.",
-    "Set them before you tune: every note's target is computed from them.",
+    "Settings › Stretch: bass, middle, treble.",
+    "4:2 puts partial 4 of the lower note on 2 of the upper.",
+    "Higher numbers, wider octave. 4:1 is the double octave.",
+    "Width: cents beyond beatless. Set all before tuning.",
 )
 
 private val TUNING_STEPS = listOf(
-    "Strike a key and the screen is on it. Tap the note's name to choose a key by hand; tap it again and the screen follows the strike once more.",
-    "Tune until the strobe on the right stands still. When it stands within your match window, the note is kept.",
-    "The bells on the left are the string's partials. A clean string's bells stand together; one standing apart beats on its own. They are no target to tune to.",
-    "Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.",
+    "Strike a key: the screen follows. Tap its name to choose.",
+    "Tune until the strobe stands still: the note is kept.",
+    "The bells are the string's partials, not a target.",
+    "Progress shows the tuning so far.",
     "Unisons are tuned by ear.",
 )
 
