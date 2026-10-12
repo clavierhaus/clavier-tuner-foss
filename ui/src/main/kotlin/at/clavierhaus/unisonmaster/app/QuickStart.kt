@@ -1,26 +1,9 @@
 package at.clavierhaus.unisonmaster.app
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.ui.SettingsPage
-import at.clavierhaus.unisonmaster.ui.SettingsSection
+import at.clavierhaus.unisonmaster.ui.HelpSteps
 
 /*
  * The Help tab's first page (Peter, 12 Oct 2026): the way through a tuning, from A4 to the
@@ -34,26 +17,9 @@ import at.clavierhaus.unisonmaster.ui.SettingsSection
 internal fun quickStartPage(): SettingsPage = SettingsPage(
     t(K.settings_page_quickstart),
     QUICK_START_NOTE,
-    left = { Steps(A4_STEPS to "1 · A4", SAMPLING_STEPS to "2 · Sampling") },
-    right = { Steps(OCTAVE_STEPS to "3 · Octave types", TUNING_STEPS to "4 · Tuning") },
+    left = { HelpSteps("1 · A4" to A4_STEPS, "2 · Sampling" to SAMPLING_STEPS) },
+    right = { HelpSteps("3 · Octave types" to OCTAVE_STEPS, "4 · Tuning" to TUNING_STEPS) },
 )
-
-/** Sections of numbered lines, wrapped, the column scrolling if a small screen needs it. */
-@Composable
-private fun Steps(vararg sections: Pair<List<String>, String>) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        for ((lines, title) in sections) {
-            SettingsSection(title)
-            for (line in lines) {
-                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                    Text("–", color = Color(Brand.ORANGE), fontSize = 14.sp, modifier = Modifier.width(14.dp))
-                    Text(line, color = Color(Brand.WHITE), fontSize = 14.sp, lineHeight = 18.sp)
-                }
-            }
-            Spacer(Modifier.height(6.dp))
-        }
-    }
-}
 
 private val A4_STEPS = listOf(
     "On the home screen: New Tuning.",

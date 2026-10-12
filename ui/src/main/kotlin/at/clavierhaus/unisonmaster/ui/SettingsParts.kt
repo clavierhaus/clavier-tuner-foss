@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -184,6 +186,28 @@ fun SettingsSection(title: String) {
     Spacer(Modifier.height(6.dp))
     Text(title.uppercase(), color = Color(Brand.WHITE_MUTED), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
     Spacer(Modifier.height(2.dp))
+}
+
+/**
+ * A help page's column: sections, each a header and its lines, each line wrapped and led by an
+ * orange dash, the column scrolling where a small screen needs it. Every help page draws its text
+ * with this and nothing else -- Quick start in both editions, the book's help in Pro -- so that the
+ * Help tab reads as one hand wrote it (Peter, 12 Oct 2026: one UX throughout).
+ */
+@Composable
+fun HelpSteps(vararg sections: Pair<String, List<String>>) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        for ((title, lines) in sections) {
+            SettingsSection(title)
+            for (line in lines) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                    Text("–", color = Color(Brand.ORANGE), fontSize = 14.sp, modifier = Modifier.width(14.dp))
+                    Text(line, color = Color(Brand.WHITE), fontSize = 14.sp, lineHeight = 18.sp)
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+    }
 }
 
 /** A line of explanation inside a column, where a page's one-line note is not enough; measured, never cut. */
