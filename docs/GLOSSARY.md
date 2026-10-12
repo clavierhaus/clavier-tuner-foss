@@ -27,7 +27,6 @@ German pass; a word marked ? is a proposal.
 | sample (a string) | measure (a string); a measured string | eine gemessene Saite | TL, PM | |
 | listening partial | the partial being tuned | der gestimmte Teilton | TL "partial number for each note" | |
 | Full Spectrum | Partials | Teiltöne | TL's "spectrum display" is a different picture (energy over frequency); ours shows partials read by phase | the button shows partials, so it says so |
-| congruence, Congruence display | unison display | Chor-Anzeige ? | ours; R "unison" | congruence is geometry |
 | Tune Unison | Unisons | Chöre | R "unison"; German "Chor" is the set of strings of one note | |
 | strings alone / as it stands | muted / unmuted | mit Keil / ohne Keil ? | R "mute"; TL "muting" | what the technician did |
 | wedge | mute, wedge mute; the felt strip is the temperament strip | Stimmkeil; Dämpfstreifen (Filzstreifen) | R "wedge mute", "temperament strip", "tuning mute" | |
@@ -82,7 +81,6 @@ German pass; a word marked ? is a proposal.
 |---|---|---|
 | reading | Anzeige / Messwert ? | what the display shows for the partial being tuned: its deviation, as measured, 47 times a second |
 | the partial's own beat (own beat) | Eigenschwebung ? | a partial that beats on a string alone — a false beat, named per partial |
-| in sync (N of M in sync) | im Gleichlauf ? | on the unison display: partials whose reading holds still |
 | string record | Saitenprotokoll ? | what one measured string leaves behind: partials, offsets, false beats |
 | the piano's fingerprint | — (prose only) | the partial ratios of all its strings, which only new wire changes |
 | measure while tuning | beim Stimmen messen | the minimal checklist: every note tuned is a note measured |
@@ -101,6 +99,5 @@ studies *Every string · Drift · Compass · Reference · Wobble*.
 "Accept" vs "Keep" for the measured string; "Progress" for the keyboard
 picture — decided so far (28 Sept): *Verlauf* is History, so the keyboard
 picture is *Fortschritt* in German and keeps "Progress" in English until a
-better word is found; what to call the best-compromise pull on the unison display when it
-exists; the German for the coinages in §3. These are settled when the screen
+better word is found; the German for the coinages in §3. These are settled when the screen
 that shows them is next touched, and the row is added here first.

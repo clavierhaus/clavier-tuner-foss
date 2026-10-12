@@ -44,9 +44,7 @@ written once, in `TunerHub`; an app only says what happens behind each door.
 A tuning feature is built here, once.
 
 The unison screen is Pro's (Peter, 4 Oct 2026, 15:26: "a USP for Pro
-only"): `CongruenceScreen` and its analyser `CongruenceScope` live in Pro,
-not here; `UnisonSync`, the engine's per-partial unison reading, stays in
-the engine. The free app has no *The Unisons* door.
+only") and lives in Pro, not here. The free app has no *The Unisons* door.
 
 The recorder is Pro's (blueprint §18.5, 4 Oct 2026): the red button on the
 tuning and unison screens, the play button, the *Recordings* door and the

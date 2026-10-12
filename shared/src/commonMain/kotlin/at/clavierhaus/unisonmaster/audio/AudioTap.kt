@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The microphone as a pump: opens the [AudioSource] and hands every buffer
  * to whoever has [add]ed themselves, in the order they came. Nothing is
- * analysed here; the analysers (Pro's unison screen, a recorder) are taps.
+ * analysed here; the analysers (another screen, a recorder) are taps.
  *
- * This is all the unison screen ever used of the retired PartialMonitor —
+ * This is all those analysers ever used of the retired PartialMonitor —
  * start, stop, add a tap, a listening flag — so this is all that remains of
  * it. One pump per microphone: the source cannot be open twice, so a screen
  * that pumps here must have the tuning controller's live capture stopped.
