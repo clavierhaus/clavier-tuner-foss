@@ -9,7 +9,7 @@ import kotlin.test.fail
 /**
  * Every word a screen shows comes from the string table (i18n/strings.tsv), in every language the
  * table has -- German first since 13 Oct 2026 (Peter: the app is developed for the German-speaking
- * trade). This reads the source of `ui` and `androidApp` and fails on a word written straight into
+ * trade). This reads the source of `ui` (and the free app's `androidApp`) and fails on a word written straight into
  * a screen: a string literal with a word in it, as the first argument of the calls that put text
  * on a screen. Names that are the same in every language -- the brand, a licence's name -- are
  * the only words allowed there, listed in [SAME_IN_EVERY_LANGUAGE].
@@ -31,8 +31,14 @@ class WordsWallTest {
     fun noScreenWritesAWordOfItsOwn() {
         val root = repoRoot()
         val found = ArrayList<String>()
-        for (module in listOf("ui", "androidApp")) {
-            File(root, "$module/src/main").walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
+        // The screens this repository's words are kept for: the ui library and, where this is the
+        // free app's repository (ui/ at the root), its app. Where the library arrives as core/ui
+        // (an edition that mounts it), the library is read and the edition's own screens are the
+        // edition's to wall.
+        val modules = if (File(root, "ui").isDirectory) listOf("ui" to File(root, "ui"), "androidApp" to File(root, "androidApp"))
+            else listOf("ui" to File(root, "core/ui"))
+        for ((module, dir) in modules) {
+            File(dir, "src/main").walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
                 f.readLines().forEachIndexed { i, line ->
                     if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*")) return@forEachIndexed
                     for (m in calls.findAll(line)) {
