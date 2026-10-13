@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.runtime.Composable
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.persistence.SessionStore
@@ -30,21 +32,21 @@ fun TunerHub(
 ) {
     val entries = buildList {
         (last as? SessionStore.Load.Ok)?.snapshot?.let { snap ->
-            add(HomeHubItem("Continue", " Tuning", "from ${lastUsed(snap.savedAtMs)}, A4 ${formatHz(snap.a4Hz)}") { onContinue(snap) })
+            add(HomeHubItem(t(K.hub_continue_verb), t(K.hub_continue_rest), t(K.hub_continue_note, lastUsed(snap.savedAtMs), formatHz(snap.a4Hz))) { onContinue(snap) })
         }
         add(
             HomeHubItem(
-                "New", " Tuning",
-                if (last is SessionStore.Load.Rejected) "the saved tuning could not be verified" else "starting from A4",
+                t(K.hub_new_verb), t(K.hub_new_rest),
+                if (last is SessionStore.Load.Rejected) t(K.hub_new_rejected) else t(K.hub_new_note),
                 onClick = onNew,
             ),
         )
         addAll(extra)
-        if (onUnisons != null) add(HomeHubItem("Unisons", "", "the strings of a note read apart, partial by partial", lead = "The", onClick = onUnisons))
+        if (onUnisons != null) add(HomeHubItem(t(K.hub_unisons_verb), "", t(K.hub_unisons_note), lead = t(K.hub_unisons_lead), onClick = onUnisons))
     }
     HomeHub(entries = entries, onSettings = onSettings)
 }
 
-/** "15 Sep" — the day the saved tuning was last used. */
+/** "15 Sep", "15. Sep." — the day the saved tuning was last used, in the language in force. */
 private fun lastUsed(ms: Long): String =
-    java.text.SimpleDateFormat("d MMM", java.util.Locale.ENGLISH).format(java.util.Date(ms))
+    java.text.SimpleDateFormat(t(K.hub_dateFormat), java.util.Locale.forLanguageTag(at.clavierhaus.unisonmaster.i18n.Strings.language.value)).format(java.util.Date(ms))

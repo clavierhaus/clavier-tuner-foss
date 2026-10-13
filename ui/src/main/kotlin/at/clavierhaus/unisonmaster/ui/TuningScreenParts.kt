@@ -118,7 +118,7 @@ fun NoteBlock(
             )
         }
         Text(
-            "target " + String.format(Locale.ROOT, "%.2f Hz", targetHz) + (if (partial != null) ", partial $partial" else ""),
+            t(K.tuning_target, num(targetHz, 2) + " Hz") + (if (partial != null) t(K.tuning_targetPartial, partial) else ""),
             color = Color(Brand.TARGET_BLUE),
             fontFamily = DejaVuSerif,
             fontSize = 18.sp,
@@ -147,7 +147,7 @@ fun MeasuredBlock(hz: Double?, partial: Int? = null, modifier: Modifier = Modifi
             maxLines = 1,
         )
         Text(
-            if (partial != null) "partial $partial" else "fundamental",
+            if (partial != null) t(K.tuning_partialOne, partial) else t(K.tuning_fundamental),
             color = Color(Brand.WHITE_MUTED),
             fontFamily = DejaVuSerif,
             fontSize = 15.sp,

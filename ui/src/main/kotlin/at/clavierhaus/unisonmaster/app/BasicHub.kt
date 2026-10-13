@@ -191,13 +191,13 @@ fun BasicHub(
         // which partials the reading is made of, when the clean partials are read together; a false one is named
         // the same claim in words waits with the colour (FALSE_MARKS_ON_TUNING)
         val partialsLine = read?.takeIf { it.combined || (FALSE_MARKS_ON_TUNING && it.falsePartials.isNotEmpty()) }?.let { r ->
-            (if (r.combined) "partials " + r.usedPartials.joinToString(" ") else "partial ${r.k}") +
-                (if (FALSE_MARKS_ON_TUNING && r.falsePartials.isNotEmpty()) " · not " + r.falsePartials.joinToString(" ") else "")
+            (if (r.combined) t(K.tuning_partialsUsed, r.usedPartials.joinToString(" ")) else t(K.tuning_partialOne, r.k)) +
+                (if (FALSE_MARKS_ON_TUNING && r.falsePartials.isNotEmpty()) t(K.tuning_partialsNot, r.falsePartials.joinToString(" ")) else "")
         }
-        val status = if (t.sampling) "" else (if (follows) "follows the key · " else "") + when {
-            !cfg.temperamentFirst -> "leaving a note keeps it"
-            t.temperamentComplete -> "A3–A4 done · leaving a note keeps it"
-            else -> "A3–A4 first · Done keeps a note"
+        val status = if (t.sampling) "" else (if (follows) t(K.tuning_follows) else "") + when {
+            !cfg.temperamentFirst -> t(K.tuning_leavingKeeps)
+            t.temperamentComplete -> t(K.tuning_temperamentDone)
+            else -> t(K.tuning_temperamentFirst)
         } + (partialsLine?.let { " · $it" } ?: "")
 
         // the band between the corners: the state word, and Pro's two buttons

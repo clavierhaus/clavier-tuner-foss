@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -82,9 +84,9 @@ fun TuningPictureView(
             }
         }
         Place(0.17f, 0.08f, 0.30f, 0.10f) {
-            val anchorNote = if (p.anchor != p.listened) " · bells on ${p.anchor}" else ""
+            val anchorNote = if (p.anchor != p.listened) t(K.tuning_bellsOn, p.anchor) else ""
             FitText(
-                "partial ${p.listened}$anchorNote", 13.sp,
+                t(K.tuning_partialOne, p.listened) + anchorNote, 13.sp,
                 Modifier.fillMaxSize().then(if (onStretchTap != null) Modifier.clickable(onClick = onStretchTap) else Modifier),
                 color = Color(Brand.WHITE_MUTED),
             )
@@ -157,7 +159,7 @@ private fun Bells(p: TuningPicture, marks: Boolean) {
         paint.textAlign = android.graphics.Paint.Align.LEFT
         drawContext.canvas.nativeCanvas.drawText("−${BELLS_SPAN_C.toInt()}", 2f, h * 0.99f, paint)
         paint.textAlign = android.graphics.Paint.Align.CENTER
-        drawContext.canvas.nativeCanvas.drawText("0 c from the anchor", cx, h * 0.99f, paint)
+        drawContext.canvas.nativeCanvas.drawText(t(K.tuning_fromAnchor), cx, h * 0.99f, paint)
         paint.textAlign = android.graphics.Paint.Align.RIGHT
         drawContext.canvas.nativeCanvas.drawText("+${BELLS_SPAN_C.toInt()}", w - 2f, h * 0.99f, paint)
     }

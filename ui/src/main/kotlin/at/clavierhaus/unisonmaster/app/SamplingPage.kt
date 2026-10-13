@@ -1,5 +1,8 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.ui.formatHz
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -128,8 +131,8 @@ internal fun SamplingPage(
                 // ---- left: what this page is for, and the orders ----
                 Column(Modifier.width(380.dp).fillMaxHeight()) {
                     CornerBand()
-                    Text("Piano Sampling", color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text("Retrieve the piano's inharmonicity", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
+                    Text(t(K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text(t(K.sampling_subtitle), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
                     Spacer(Modifier.height(10.dp))
                     Column(
                         Modifier.fillMaxWidth().border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(12.dp),
@@ -151,7 +154,7 @@ internal fun SamplingPage(
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
                     StepBox("−") { controller.setReference(tenths(a4 - 0.1)) }
                     Text(
-                        String.format(java.util.Locale.ROOT, "%.1f Hz", a4),
+                        formatHz(a4),
                         color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
@@ -163,15 +166,15 @@ internal fun SamplingPage(
                         // is defined first and the string tuned to it, and taking the reading as that
                         // pitch is the tuner's choice (Peter, 7 Oct 2026, 10:18).
                         Spacer(Modifier.width(14.dp))
-                        Chip("as it stands", selected = false, enabled = a4Live) { hz?.let { controller.setReference(tenths(it)) } }
+                        Chip(t(K.sampling_asItStands), selected = false, enabled = a4Live) { hz?.let { controller.setReference(tenths(it)) } }
                     }
                     Spacer(Modifier.weight(1f))
                     if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
-                    else Text("set again", color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                    else Text(t(K.sampling_setAgain), color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
-                    Text("Temperament", color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                    Text(t(K.sampling_temperament), color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
                     val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
                     Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
@@ -200,10 +203,10 @@ internal fun SamplingPage(
                 )
                 if (view != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
-                        Text("Caught", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
+                        Text(t(K.sampling_caughtLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                         val c = view.caught
                         Text(
-                            if (c != null) Notes.name(c) else "strike a key",
+                            if (c != null) Notes.name(c) else t(K.sampling_strikeKey),
                             color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
                         Spacer(Modifier.weight(1f))
@@ -214,14 +217,14 @@ internal fun SamplingPage(
                         // keyboard takes no touch — the right side of this page is the only interactive
                         // area (Peter, 5 Oct 2026) — and a 17 dp key could not be aimed at anyway.
                         if (c != null) {
-                            Chip("Cancel", selected = false, enabled = true) { controller.cancelCaught() }
+                            Chip(t(K.app_cancel), selected = false, enabled = true) { controller.cancelCaught() }
                             Spacer(Modifier.width(10.dp))
                         }
                         AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
-                        Text("Sampled", color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
-                        Text("${view.samplesIn} · at least ${view.samplesNeeded}", color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
+                        Text(t(K.sampling_sampledLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
+                        Text(t(K.sampling_atLeast, view.samplesIn, view.samplesNeeded), color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
                         Spacer(Modifier.weight(1f))
                         DoneButton(onClick = { controller.finishSampling() }, enabled = view.samplingReady)
                     }
@@ -245,10 +248,10 @@ internal fun SamplingPage(
         Dialog(onDismissRequest = { resetA4 = false }) {
             Column(Modifier.background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(Notes.name(TuningSession.MIDI_A4), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("Setting A4 again starts the sampling over: every sample goes.", color = muted, fontSize = 14.sp)
+                Text(t(K.sampling_resetWarning), color = muted, fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Chip("Set A4 again", selected = true, enabled = true) { resetA4 = false; controller.resetSession() }
-                    Chip("Cancel", selected = false, enabled = true) { resetA4 = false }
+                    Chip(t(K.sampling_setA4Again), selected = true, enabled = true) { resetA4 = false; controller.resetSession() }
+                    Chip(t(K.app_cancel), selected = false, enabled = true) { resetA4 = false }
                 }
             }
         }
@@ -259,13 +262,9 @@ internal fun SamplingPage(
 private val KEYBOARD_H = 116.dp
 
 /** The orders, military-short (Peter, 4 Oct 2026). */
-private val ORDERS = listOf(
-    "A4: one string, the others muted. Set it.",
-    "Sample the lowest note.",
-    "First and last bichord: one string muted.",
-    "First plain-wire trichord: two strings muted.",
-    "Then: Two notes per octave, up to C7.",
-    "Each key struck: check it, Accept.",
+private val ORDERS: List<String> get() = listOf(
+    t(K.sampling_order_a4), t(K.sampling_order_lowest), t(K.sampling_order_bichord),
+    t(K.sampling_order_trichord), t(K.sampling_order_octaves), t(K.sampling_order_accept),
 )
 
 /** A pitch to the tenth of a hertz, within the reference's range. */

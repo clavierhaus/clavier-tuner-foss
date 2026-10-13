@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -158,7 +160,7 @@ fun ProgressKeyboard(
             drawContext.canvas.nativeCanvas.drawText(
                 "%+.0f c".format(-roomDown / pxPerCent), 2f, mid + roomDown, captionPaint,
             )
-            drawContext.canvas.nativeCanvas.drawText("measured — the piano as tuned, in cents from equal temperament", 2f, curveBand - 2f, captionPaint)
+            drawContext.canvas.nativeCanvas.drawText(t(K.progress_caption), 2f, curveBand - 2f, captionPaint)
         }
 
         // where the session stands

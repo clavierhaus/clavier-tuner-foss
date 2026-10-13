@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.ui.num
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -91,15 +92,15 @@ fun TunerSettingsScreen(
                 SettingsPage(t(K.settings_page_about), ABOUT_NOTE,
                     left = {
                         SettingsSection("Clavier Tuner")
-                        ReadOnlyRow("Version", version)
-                        ReadOnlyRow("Core", "clavier-tuner-foss")
-                        ReadOnlyRow("Typeface", "DejaVu Serif · Bitstream Vera licence")
-                        ReadOnlyRow("Settings icon", "Material Design icons · Apache 2.0")
+                        ReadOnlyRow(t(K.about_version), version)
+                        ReadOnlyRow(t(K.about_core), "clavier-tuner-foss")
+                        ReadOnlyRow(t(K.about_typeface), t(K.about_typefaceValue))
+                        ReadOnlyRow(t(K.about_icon), "Material Design icons · Apache 2.0")
                     },
                     right = {
-                        SettingsSection("Licence")
+                        SettingsSection(t(K.about_licence))
                         ReadOnlyRow("Clavier Tuner", "Apache License 2.0")
-                        ReadOnlyRow("clavierhaus.at", "Vienna")
+                        ReadOnlyRow("clavierhaus.at", t(K.about_vienna))
                     }),
             )),
         ),
@@ -111,21 +112,21 @@ fun TunerSettingsScreen(
 private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> = listOf(
     SettingsPage(t(K.settings_page_temperament), TEMPERAMENT_NOTE,
         left = {
-            SettingsSection("Temperament")
+            SettingsSection(t(K.settings_temperament))
             // unequal temperaments are not offered until they run: nothing on a screen that does nothing
-            ReadOnlyRow("Temperament octave", "A3–A4")
+            ReadOnlyRow(t(K.settings_temperamentOctave), "A3–A4")
         },
         right = {
-            SettingsSection("The order of work")
-            SwitchRow("Temperament first", s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
+            SettingsSection(t(K.settings_order))
+            SwitchRow(t(K.settings_temperamentFirst), s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
         }),
     SettingsPage(t(K.settings_page_reading), READING_NOTE,
         left = {
-            SettingsSection("The screen")
-            SwitchRow("Follow the key struck", s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
-            SwitchRow("Read the clean partials together", s.cleanPartials) { on -> model.update { it.copy(cleanPartials = on) } }
+            SettingsSection(t(K.settings_screen))
+            SwitchRow(t(K.settings_followKey), s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
+            SwitchRow(t(K.settings_cleanTogether), s.cleanPartials) { on -> model.update { it.copy(cleanPartials = on) } }
             StepperRow(
-                "Highest partial", Notes.name(s.highestPartialMidi),
+                t(K.settings_highestPartial), Notes.name(s.highestPartialMidi),
                 canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
                 canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
                 onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
@@ -133,18 +134,18 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             )
         },
         right = {
-            SettingsSection("The reading")
+            SettingsSection(t(K.settings_reading))
             val steps = TunerSettings.MEMORY_STEPS
             val i = steps.indexOfFirst { kotlin.math.abs(it - s.readingMemoryS) < 1e-6 }.let { if (it < 0) 0 else it }
             StepperRow(
-                "Reading memory", String.format(Locale.ROOT, "%.2f s", steps[i]),
+                t(K.settings_readingMemory), num(steps[i], 2) + " s",
                 canDecrease = i > 0,
                 canIncrease = i < steps.size - 1,
                 onDecrease = { model.update { it.copy(readingMemoryS = steps[i - 1]) } },
                 onIncrease = { model.update { it.copy(readingMemoryS = steps[i + 1]) } },
             )
             StepperRow(
-                "Match window", String.format(Locale.ROOT, "±%.1f c", s.matchCents),
+                t(K.settings_matchWindow), "±" + num(s.matchCents, 1) + " c",
                 canDecrease = s.matchCents > 0.101,
                 canIncrease = s.matchCents < 4.99,
                 onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.1) * 10) / 10) } },
@@ -157,26 +158,26 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
     val octaves = OctaveType.entries
     return listOf(
-        SettingsPage(t(K.settings_page_bass), "From the lowest key to an octave above the lowest plain string, wound and plain alike. The octave type says which partials meet; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.",
+        SettingsPage(t(K.settings_page_bass), t(K.settings_note_bass),
             left = { RegionLeft(octaves, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
-            right = { RegionRight(s.widthBass, s.widthBassFar, "the lowest key") { w -> model.update { it.copy(widthBassFar = w) } } }),
-        SettingsPage(t(K.settings_page_middle), "Up to the temperament octave. The width slides by key between the regions' values; the middle holds one.",
+            right = { RegionRight(s.widthBass, s.widthBassFar, t(K.settings_theLowestKey)) { w -> model.update { it.copy(widthBassFar = w) } } }),
+        SettingsPage(t(K.settings_page_middle), t(K.settings_note_middle),
             left = { RegionLeft(octaves, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
-        SettingsPage(t(K.settings_page_treble), "Above A4, up to C8. The width at C8 is where the slide ends.",
+        SettingsPage(t(K.settings_page_treble), t(K.settings_note_treble),
             left = { RegionLeft(octaves, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
         SettingsPage(t(K.settings_page_breaks), BREAKS_NOTE,
             left = {
-                SettingsSection("The curve's breaks")
+                SettingsSection(t(K.settings_curveBreaks))
                 val breaks = s.curveBreaks.sorted()
-                if (breaks.isEmpty()) ReadOnlyRow("Breaks", "none")
-                for (b in breaks.take(5)) ReadOnlyRow("Break at", Notes.name(b))
+                if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
+                for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), Notes.name(b))
             },
             right = {
                 val rest = s.curveBreaks.sorted().drop(5)
                 if (rest.isNotEmpty()) {
                     SettingsSection("…")
-                    for (b in rest.take(5)) ReadOnlyRow("Break at", Notes.name(b))
+                    for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), Notes.name(b))
                 }
             }),
     )
@@ -184,10 +185,10 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
 
 @Composable
 private fun RegionLeft(octaves: List<OctaveType>, type: OctaveType, width: Double, onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit) {
-    SettingsSection("The octave")
-    ChoiceRow("Octave type", octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
+    SettingsSection(t(K.settings_octave))
+    ChoiceRow(t(K.settings_octaveType), octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
     StepperRow(
-        "Octave width", if (width == 0.0) "beatless" else String.format(Locale.ROOT, "%.1f c wide", width),
+        t(K.settings_octaveWidth), if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
         canDecrease = width > 0.0,
         canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
         onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
@@ -198,11 +199,11 @@ private fun RegionLeft(octaves: List<OctaveType>, type: OctaveType, width: Doubl
 /** The width at the region's far end: null = the same as the region's; set, and the width slides by key towards it. */
 @Composable
 private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Double?) -> Unit) {
-    SettingsSection("At the far end")
+    SettingsSection(t(K.settings_farEnd))
     val f = far ?: width
     StepperRow(
-        "… at $farName",
-        if (far == null) "same" else if (f == 0.0) "beatless" else String.format(Locale.ROOT, "%.1f c wide", f),
+        t(K.settings_atFar, farName),
+        if (far == null) t(K.settings_same) else if (f == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(f, 1)),
         canDecrease = f > 0.0 || far != null,
         canIncrease = f < TunerSettings.MAX_WIDTH_CENTS,
         onDecrease = { val v = tenths(maxOf(0.0, f - WIDTH_STEP)); onFar(if (v == width) null else v) },
@@ -212,16 +213,16 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 
 @Composable
 private fun CompassRows(s: TunerSettings, model: SettingsModel) {
-    SettingsSection("The piano")
+    SettingsSection(t(K.settings_piano))
     StepperRow(
-        "Lowest key", Notes.name(s.lowestKeyMidi),
+        t(K.settings_lowestKey), Notes.name(s.lowestKeyMidi),
         canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
         canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
         onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
         onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
     )
     StepperRow(
-        "Lowest unwound string", Notes.name(s.lowestUnwoundMidi),
+        t(K.settings_lowestUnwound), Notes.name(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
         canIncrease = s.lowestUnwoundMidi < TunerSettings.MAX_UNWOUND,
         onDecrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi - 1) } },
@@ -232,8 +233,8 @@ private fun CompassRows(s: TunerSettings, model: SettingsModel) {
 private const val WIDTH_STEP = 0.5
 
 /** The pages' one-line notes. */
-private const val TEMPERAMENT_NOTE = "Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here."
-private const val READING_NOTE = "The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent."
-private const val COMPASS_NOTE = "A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends."
-private const val BREAKS_NOTE = "The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro)."
-private const val ABOUT_NOTE = "Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository."
+private val TEMPERAMENT_NOTE: String get() = t(K.settings_note_temperament)
+private val READING_NOTE: String get() = t(K.settings_note_reading)
+private val COMPASS_NOTE: String get() = t(K.settings_note_compass)
+private val BREAKS_NOTE: String get() = t(K.settings_note_breaks)
+private val ABOUT_NOTE: String get() = t(K.settings_note_about)

@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -97,7 +99,7 @@ fun BoxScope.Corners(
             Icon(painterResource(R.drawable.ui_settings_gear), null, tint = Color.Black, modifier = Modifier.offset(shift, shift).blur(blur).size(GEAR))
         }
         Icon(
-            painterResource(R.drawable.ui_settings_gear), "Settings",
+            painterResource(R.drawable.ui_settings_gear), t(K.app_settings),
             tint = if (settingsOpen) Color(Brand.ORANGE) else Color(Brand.WHITE),
             modifier = Modifier.size(GEAR).clickable(onClick = onSettings),
         )

@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -178,11 +180,11 @@ fun ReadoutColumn(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.width(372.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             Spacer(Modifier.width(74.dp))
-            Text("target", color = Color(Brand.TARGET_BLUE).copy(alpha = 0.7f), fontSize = 12.sp,
+            Text(t(K.table_target), color = Color(Brand.TARGET_BLUE).copy(alpha = 0.7f), fontSize = 12.sp,
                 textAlign = TextAlign.End, modifier = Modifier.width(96.dp))
-            Text("measured", color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
+            Text(t(K.table_measured), color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
                 textAlign = TextAlign.End, modifier = Modifier.width(78.dp))
-            Text("cents", color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
+            Text(t(K.table_cents), color = Color(Brand.WHITE_MUTED), fontSize = 12.sp,
                 textAlign = TextAlign.End, modifier = Modifier.width(76.dp))
         }
         for (k in shown.sorted()) {

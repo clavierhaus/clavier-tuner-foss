@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.t
+import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,10 +56,11 @@ fun OnePicture(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         if (scale < ScreenRef.MIN_SCALE) {
             Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                 Text(
-                    "This display is too small for Clavier Tuner " +
-                        "(${paneW.value.toInt()} × ${paneH.value.toInt()} dp; needs at least " +
-                        "${(ScreenRef.WIDTH * ScreenRef.MIN_SCALE).value.toInt()} × " +
-                        "${(ScreenRef.HEIGHT * ScreenRef.MIN_SCALE).value.toInt()}).",
+                    t(
+                        K.display_tooSmall,
+                        "${paneW.value.toInt()} × ${paneH.value.toInt()}",
+                        "${(ScreenRef.WIDTH * ScreenRef.MIN_SCALE).value.toInt()} × ${(ScreenRef.HEIGHT * ScreenRef.MIN_SCALE).value.toInt()}",
+                    ),
                     color = Color.White,
                     fontSize = 14.sp,
                 )

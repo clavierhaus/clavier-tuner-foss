@@ -74,7 +74,17 @@ fun HubHint(text: String, modifier: Modifier = Modifier, maxLines: Int = Int.MAX
 }
 
 /** Frequency as shown to the tuner: 0.1 Hz, always a point. Finer digits are noise. */
-fun formatHz(hz: Double): String = String.format(Locale.ROOT, "%.1f Hz", hz)
+fun formatHz(hz: Double): String = num(hz, 1) + " Hz"
+
+/**
+ * A number for the screen, [places] decimals, with the decimal sign of the language in force:
+ * a comma in German ("440,0 Hz", "1,5 c"), a point in English. One place for it, so no screen
+ * writes a number its own way (13 Oct 2026, German first).
+ */
+fun num(x: Double, places: Int): String {
+    val s = String.format(Locale.ROOT, "%.${places}f", x)
+    return if (at.clavierhaus.unisonmaster.i18n.Strings.language.value.startsWith("de")) s.replace('.', ',') else s
+}
 
 /** Note name of partial [k] of A4, the handle a tuner thinks in (e.g. 3 -> E6). */
 fun partialNoteName(k: Int, a4Hz: Double): String = Notes.name(Notes.nearestMidi(k * a4Hz, a4Hz))
@@ -314,7 +324,7 @@ fun SpectrumToggle(
     fullSpectrum: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    fundamentalLabel: String = "Fundamental A4",
+    fundamentalLabel: String = t(K.hub_fundamentalA4),
 ) {
     Button(
         onClick = onClick,
@@ -325,7 +335,7 @@ fun SpectrumToggle(
         ),
     ) {
         Text(
-            if (fullSpectrum) fundamentalLabel else "Full Spectrum",
+            if (fullSpectrum) fundamentalLabel else t(K.hub_fullSpectrum),
             fontFamily = DejaVuSerif,
             fontSize = 16.sp,
             maxLines = 1,
