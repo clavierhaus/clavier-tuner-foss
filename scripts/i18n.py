@@ -20,6 +20,12 @@ The table's header may carry "# version: 2026-09-28" — the day its English
 last changed, kept apart from the app's version; it goes into the .po headers
 so a translator knows which English a file was made from.
 
+A base language is whole — the check refuses a hole in it. A regional tag
+(de-AT, de-CH) holds only the words that differ from its base (docs/I18N.md):
+its cells may stay empty and fall to the base at run time, so the check allows
+a gap in a regional column (and its base must stand beside it), and --import
+takes a regional .po with untranslated rows back as those empty cells.
+
 The order of work (docs/I18N.md): the glossary decides the English, the
 German pass follows it, and only then are .po files exported — a translator
 who starts on pre-glossary English has every rename undo their work.
@@ -51,7 +57,10 @@ def load():
     assert header[0] == "key", "first column must be 'key'"
     langs = header[1:]
     assert langs and langs[0] == "en", "English must be the first language"
-    table, problems = {}, []
+    # a regional column (de-AT) carries only where it differs from its base (de); a base language is whole
+    problems = [f"{l}: a regional column needs its base {l.split('-')[0]} beside it"
+                for l in langs if "-" in l and l.split("-")[0] not in langs]
+    table = {}
     for l in rows[1:]:
         cells = l.split("\t")
         if len(cells) != len(header):
@@ -60,10 +69,10 @@ def load():
         if not re.fullmatch(r"[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+", key):
             problems.append(f"{key}: not a dotted key")
         if key in table: problems.append(f"{key}: twice")
-        args_ = {frozenset(re.findall(r"\{(\d+)\}", t)) for t in texts}
+        args_ = {frozenset(re.findall(r"\{(\d+)\}", t)) for t in texts if t.strip()}
         if len(args_) > 1: problems.append(f"{key}: the languages do not use the same arguments")
         for lang, t in zip(langs, texts):
-            if not t.strip(): problems.append(f"{key}: no {lang}")
+            if not t.strip() and "-" not in lang: problems.append(f"{key}: no {lang}")
         table[key] = texts
     return version, langs, table, problems
 
@@ -129,13 +138,15 @@ def po_parse(path):
 def import_po(path, langs, table):
     lang, entries = po_parse(path)
     if not lang: sys.exit("i18n: the .po has no Language header")
-    holes = [k for k in table if not entries.get(k, ("", ""))[1].strip()]
+    regional = "-" in lang          # a regional column is sparse: what it leaves empty falls to its base
+    holes = [k for k in table if not regional and not entries.get(k, ("", ""))[1].strip()]
     stale = [k for k in table if k in entries and entries[k][0] != table[k][0]]
     if holes or stale:
         for k in holes: print(f"i18n: {k}: no {lang}")
         for k in stale: print(f"i18n: {k}: translated from an older English")
         sys.exit(f"i18n: {path} not taken — a language is whole or absent")
-    bad = [k for k in table if set(re.findall(r"\{(\d+)\}", entries[k][1])) != set(re.findall(r"\{(\d+)\}", table[k][0]))]
+    bad = [k for k in table if entries.get(k, ("", ""))[1].strip()
+           and set(re.findall(r"\{(\d+)\}", entries[k][1])) != set(re.findall(r"\{(\d+)\}", table[k][0]))]
     if bad:
         for k in bad: print(f"i18n: {k}: the arguments differ")
         sys.exit(1)
@@ -148,7 +159,7 @@ def import_po(path, langs, table):
         if cells[0] == "key":
             if col is None: cells.append(lang)
         else:
-            v = entries[cells[0]][1]
+            v = (entries.get(cells[0]) or (None, ""))[1] if regional else entries[cells[0]][1]
             if col is None: cells.append(v)
             else: cells[col + 1] = v
         out.append("\t".join(cells))
