@@ -16,8 +16,7 @@ import at.clavierhaus.unisonmaster.ui.helpPage
 /** The Quick start: left A4 and the sampling, right the octave types and the tuning. */
 internal fun quickStartPage(): SettingsPage = helpPage(
     t(K.settings_page_quickstart),
-    t(K.help_qs_note),
-    left = listOf(t(K.help_qs_a4_title) to steps("a4", 4), t(K.help_qs_sampling_title) to steps("sampling", 4)),
+    left = listOf(t(K.help_qs_a4_title) to steps("a4", 5), t(K.help_qs_sampling_title) to steps("sampling", 4)),
     right = listOf(t(K.help_qs_octaves_title) to steps("octaves", 5), t(K.help_qs_tuning_title) to steps("tuning", 5)),
 )
 

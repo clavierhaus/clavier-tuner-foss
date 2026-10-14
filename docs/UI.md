@@ -227,6 +227,21 @@ octave above the plain-wire floor down to the lowest key), Piano
 (Compass), App (Language · Probe · About); Pro adds its own from the same
 parts. A4 is not a setting.
 
+## Settings: the (i) behind the entry (14 Oct 2026)
+
+This supersedes the line at the foot of each page described above. Peter: the
+small print at the bottom of the settings did not say which entry it belonged
+to. An explanation now stands behind its entry as a round (i): right after a
+row's name, or after a section's header when it speaks for the whole section.
+A tap opens a window with the entry's name and the text. A tap anywhere outside
+the window closes it, and so does Back. The ring is orange while its window is
+open. `SettingsPage` no longer has a note. Every row except `ActionRow` and
+`SettingsSection` take `info`, and `InfoButton` draws the ring and the window.
+No explanation stands on a settings page. A page note that spoke of two rows
+was split between them (Compass: lowest key, lowest unwound string). Help
+pages have no foot line either. Quick start's pitch-raise line became the last
+line of its A4 section.
+
 ## Settings: three scopes
 
 | scope | lives in | examples |

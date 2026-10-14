@@ -47,11 +47,10 @@ val LocalHelpText = compositionLocalOf { HelpText(14) {} }
  */
 fun helpPage(
     title: String,
-    note: String = "",
     left: List<Pair<String, List<String>>>,
     right: List<Pair<String, List<String>>>? = null,
 ): SettingsPage = SettingsPage(
-    title, note,
+    title,
     left = { HelpSteps(*left.toTypedArray()) },
     right = right?.let { r -> { HelpSteps(*r.toTypedArray()) } },
     tools = { HelpTextSizeButtons() },

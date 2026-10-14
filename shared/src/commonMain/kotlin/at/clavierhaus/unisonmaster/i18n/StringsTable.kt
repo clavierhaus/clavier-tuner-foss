@@ -137,9 +137,9 @@ object K {
     const val settings_note_temperament = "settings.note.temperament"
     const val settings_note_reading = "settings.note.reading"
     const val settings_note_compass = "settings.note.compass"
+    const val settings_note_unwound = "settings.note.unwound"
     const val settings_note_breaks = "settings.note.breaks"
     const val settings_note_about = "settings.note.about"
-    const val help_qs_note = "help.qs.note"
     const val help_qs_a4_title = "help.qs.a4.title"
     const val help_qs_sampling_title = "help.qs.sampling.title"
     const val help_qs_octaves_title = "help.qs.octaves.title"
@@ -148,6 +148,7 @@ object K {
     const val help_qs_a4_s2 = "help.qs.a4.s2"
     const val help_qs_a4_s3 = "help.qs.a4.s3"
     const val help_qs_a4_s4 = "help.qs.a4.s4"
+    const val help_qs_a4_s5 = "help.qs.a4.s5"
     const val help_qs_sampling_s1 = "help.qs.sampling.s1"
     const val help_qs_sampling_s2 = "help.qs.sampling.s2"
     const val help_qs_sampling_s3 = "help.qs.sampling.s3"
@@ -304,10 +305,10 @@ internal object StringsTable : Catalog {
         "settings.note.treble" to arrayOf("Above A4, up to C8. The width at C8 is where the slide ends.", "Über A4 bis C8. Die Breite bei C8 ist das Ende des Gleitens."),
         "settings.note.temperament" to arrayOf("Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.", "Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt."),
         "settings.note.reading" to arrayOf("The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent.", "Die Toleranz ist Ihre, nicht die der Messung: die Messung liest eine Saite auf ein Zehntel Cent."),
-        "settings.note.compass" to arrayOf("A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends.", "A0–C8 bei den meisten Klavieren; F0 beim Bösendorfer 225, C0 beim Imperial. Die erste Blanksaite ist, wo die Kurve der umsponnenen Saiten endet."),
+        "settings.note.compass" to arrayOf("A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial.", "A0–C8 bei den meisten Klavieren; F0 beim Bösendorfer 225, C0 beim Imperial."),
+        "settings.note.unwound" to arrayOf("The first plain wire is where the wound strings' curve ends.", "Die erste Blanksaite ist, wo die Kurve der umsponnenen Saiten endet."),
         "settings.note.breaks" to arrayOf("The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro).", "Die Kurve der Saitensteifigkeit wird als gerade Abschnitte über die Tasten gezogen. Ein Übergang beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite her gelesen. Eine gemessene Saite behält ihre eigene Messung, Übergang oder nicht. Gesetzt auf der Seite des Klaviers (Pro)."),
         "settings.note.about" to arrayOf("Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.", "Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository."),
-        "help.qs.note" to arrayOf("Pitch raises are out of scope: a piano far from pitch needs one first.", "Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines."),
         "help.qs.a4.title" to arrayOf("1 · A4", "1 · A4"),
         "help.qs.sampling.title" to arrayOf("2 · Sampling", "2 · Vermessen"),
         "help.qs.octaves.title" to arrayOf("3 · Octave types", "3 · Oktavtypen"),
@@ -316,6 +317,7 @@ internal object StringsTable : Catalog {
         "help.qs.a4.s2" to arrayOf("Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or tap \"as it stands\" to keep the string where it is.", "A4 auf eine Saite abdämpfen. Die Tonhöhe mit − und + wählen, ein Zehntel Hertz je Schritt (gedrückt halten läuft weiter), oder „wie sie steht“ tippen, um die Saite zu lassen, wo sie ist."),
         "help.qs.a4.s3" to arrayOf("Tune the string until the strobe stands still, then Done.", "Die Saite stimmen, bis das Stroboskop steht, dann Fertig."),
         "help.qs.a4.s4" to arrayOf("The temperament octave is A3–A4; its low note can be moved on the same screen.", "Die Temperaturoktave ist A3–A4; ihr unterer Ton lässt sich auf derselben Seite verschieben."),
+        "help.qs.a4.s5" to arrayOf("Pitch raises are out of scope: a piano far from pitch needs one first.", "Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines."),
         "help.qs.sampling.s1" to arrayOf("Strike single strings, the others muted. The app catches the key by itself: check it, then Accept. Cancel drops what the strike caught, its sample too; strike the key again for a new reading.", "Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste selbst: prüfen, dann Übernehmen. Abbrechen verwirft, was der Anschlag erfasst hat, auch den Messpunkt; für eine neue Messung schlagen Sie die Taste erneut an."),
         "help.qs.sampling.s2" to arrayOf("Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.", "Messen Sie dort, wo sich das Klavier ändert: der tiefste Ton, der erste und letzte Zweichor, der erste blanke Dreichor, beide Seiten der Streben — und etwa zwei Töne je Oktave bis C7."),
         "help.qs.sampling.s3" to arrayOf("Six samples are the minimum; ten to fifteen give the better result.", "Sechs Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis."),

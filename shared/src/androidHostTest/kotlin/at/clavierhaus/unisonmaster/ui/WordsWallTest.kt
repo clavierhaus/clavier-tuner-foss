@@ -18,7 +18,9 @@ import kotlin.test.fail
  * the generated constants cannot check, in both languages.
  */
 class WordsWallTest {
-    private val calls = Regex("""\b(Text|FitText|Chip|ReadOnlyRow|SwitchRow|StepperRow|SettingsSection|SettingsNote|ChoiceRow|ActionRow|TextRow|HomeHubItem|drawText)\(\s*"([^"]*)"""")
+    private val calls = Regex("""\b(Text|FitText|Chip|ReadOnlyRow|SwitchRow|StepperRow|SettingsSection|SettingsNote|ChoiceRow|ActionRow|TextRow|InfoButton|HomeHubItem|drawText)\(\s*"([^"]*)"""")
+    /** What an entry's (i) opens (14 Oct 2026): an explanation is words on a screen like any other. */
+    private val infos = Regex("""\b(info)\s*=\s*"([^"]*)"""")
     private val SAME_IN_EVERY_LANGUAGE = setOf("Clavier Tuner", "clavierhaus.at")
 
     private fun repoRoot(): File {
@@ -41,7 +43,7 @@ class WordsWallTest {
             File(dir, "src/main").walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
                 f.readLines().forEachIndexed { i, line ->
                     if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*")) return@forEachIndexed
-                    for (m in calls.findAll(line)) {
+                    for (m in calls.findAll(line) + infos.findAll(line)) {
                         // what stands inside a string template's braces is code, not a word on the screen
                         val text = m.groupValues[2].replace(Regex("""\$\{[^}]*\}"""), "")
                         if (Regex("[A-Za-zÄÖÜäöüß]{3,}").containsMatchIn(text) && text !in SAME_IN_EVERY_LANGUAGE)
@@ -55,7 +57,7 @@ class WordsWallTest {
 
     @Test
     fun theQuickStartsLinesAreInTheTableInEveryLanguage() {
-        val sections = mapOf("a4" to 4, "sampling" to 4, "octaves" to 5, "tuning" to 5)
+        val sections = mapOf("a4" to 5, "sampling" to 4, "octaves" to 5, "tuning" to 5)
         for (lang in Strings.languages) for ((section, n) in sections) for (i in 1..n) {
             val key = "help.qs.$section.s$i"
             val text = Strings.get(lang, key)

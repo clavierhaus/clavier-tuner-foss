@@ -32,8 +32,8 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
 /**
  * The foss settings, drawn to the map of 3 Oct 2026 (Pro's
  * docs/SCREEN-REVAMP.md, "Settings: tabs, sub-tabs and sections"): four tabs
- * by function, each page two columns of rows that say their name, the page's
- * one line saying the rest, nothing scrolling.
+ * by function, each page two columns of rows that say their name, what an
+ * entry means behind its (i), nothing scrolling.
  *
  * - Tuning: Temperament · Reading
  * - Stretch: Wound · Bass · Middle · Treble · Breaks
@@ -86,11 +86,11 @@ fun TunerSettingsScreen(
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), COMPASS_NOTE, left = { CompassRows(s, model) })) + extraPianoPages),
+            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), left = { CompassRows(s, model) })) + extraPianoPages),
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), listOf(quickStartPage()) + extraHelpPages),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
-                SettingsPage(t(K.settings_page_about), ABOUT_NOTE,
+                SettingsPage(t(K.settings_page_about),
                     left = {
                         SettingsSection("Clavier Tuner")
                         ReadOnlyRow(t(K.about_version), version)
@@ -99,7 +99,7 @@ fun TunerSettingsScreen(
                         ReadOnlyRow(t(K.about_icon), "Material Design icons · Apache 2.0")
                     },
                     right = {
-                        SettingsSection(t(K.about_licence))
+                        SettingsSection(t(K.about_licence), info = ABOUT_NOTE)
                         ReadOnlyRow("Clavier Tuner", "Apache License 2.0")
                         ReadOnlyRow("clavierhaus.at", t(K.about_vienna))
                     }),
@@ -111,17 +111,17 @@ fun TunerSettingsScreen(
 
 /** The Tuning tab: what today's tuning does and how it reads. */
 private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> = listOf(
-    SettingsPage(t(K.settings_page_temperament), TEMPERAMENT_NOTE,
+    SettingsPage(t(K.settings_page_temperament),
         left = {
             SettingsSection(t(K.settings_temperament))
             // unequal temperaments are not offered until they run: nothing on a screen that does nothing
-            ReadOnlyRow(t(K.settings_temperamentOctave), "A3–A4")
+            ReadOnlyRow(t(K.settings_temperamentOctave), "A3–A4", info = TEMPERAMENT_NOTE)
         },
         right = {
             SettingsSection(t(K.settings_order))
             SwitchRow(t(K.settings_temperamentFirst), s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
         }),
-    SettingsPage(t(K.settings_page_reading), READING_NOTE,
+    SettingsPage(t(K.settings_page_reading),
         left = {
             SettingsSection(t(K.settings_screen))
             SwitchRow(t(K.settings_followKey), s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
@@ -149,6 +149,7 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
                 t(K.settings_matchWindow), "±" + num(s.matchCents, 1) + " c",
                 canDecrease = s.matchCents > 0.101,
                 canIncrease = s.matchCents < 4.99,
+                info = READING_NOTE,
                 onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.1) * 10) / 10) } },
                 onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.1) * 10) / 10) } },
             )
@@ -159,17 +160,17 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
     val octaves = OctaveType.entries
     return listOf(
-        SettingsPage(t(K.settings_page_bass), t(K.settings_note_bass),
-            left = { RegionLeft(octaves, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
+        SettingsPage(t(K.settings_page_bass),
+            left = { RegionLeft(t(K.settings_note_bass), octaves, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
             right = { RegionRight(s.widthBass, s.widthBassFar, t(K.settings_theLowestKey)) { w -> model.update { it.copy(widthBassFar = w) } } }),
-        SettingsPage(t(K.settings_page_middle), t(K.settings_note_middle),
-            left = { RegionLeft(octaves, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
-        SettingsPage(t(K.settings_page_treble), t(K.settings_note_treble),
-            left = { RegionLeft(octaves, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
+        SettingsPage(t(K.settings_page_middle),
+            left = { RegionLeft(t(K.settings_note_middle), octaves, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
+        SettingsPage(t(K.settings_page_treble),
+            left = { RegionLeft(t(K.settings_note_treble), octaves, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
-        SettingsPage(t(K.settings_page_breaks), BREAKS_NOTE,
+        SettingsPage(t(K.settings_page_breaks),
             left = {
-                SettingsSection(t(K.settings_curveBreaks))
+                SettingsSection(t(K.settings_curveBreaks), info = BREAKS_NOTE)
                 val breaks = s.curveBreaks.sorted()
                 if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
                 for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
@@ -185,8 +186,8 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
 }
 
 @Composable
-private fun RegionLeft(octaves: List<OctaveType>, type: OctaveType, width: Double, onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit) {
-    SettingsSection(t(K.settings_octave))
+private fun RegionLeft(info: String, octaves: List<OctaveType>, type: OctaveType, width: Double, onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit) {
+    SettingsSection(t(K.settings_octave), info = info)
     ChoiceRow(t(K.settings_octaveType), octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
     StepperRow(
         t(K.settings_octaveWidth), if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
@@ -219,6 +220,7 @@ private fun CompassRows(s: TunerSettings, model: SettingsModel) {
         t(K.settings_lowestKey), noteName(s.lowestKeyMidi),
         canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
         canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
+        info = COMPASS_NOTE,
         onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
         onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
     )
@@ -226,6 +228,7 @@ private fun CompassRows(s: TunerSettings, model: SettingsModel) {
         t(K.settings_lowestUnwound), noteName(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
         canIncrease = s.lowestUnwoundMidi < TunerSettings.MAX_UNWOUND,
+        info = UNWOUND_NOTE,
         onDecrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi - 1) } },
         onIncrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi + 1) } },
     )
@@ -233,9 +236,10 @@ private fun CompassRows(s: TunerSettings, model: SettingsModel) {
 
 private const val WIDTH_STEP = 0.5
 
-/** The pages' one-line notes. */
+/** What the entries mean, each opened by the (i) behind its entry. */
 private val TEMPERAMENT_NOTE: String get() = t(K.settings_note_temperament)
 private val READING_NOTE: String get() = t(K.settings_note_reading)
 private val COMPASS_NOTE: String get() = t(K.settings_note_compass)
+private val UNWOUND_NOTE: String get() = t(K.settings_note_unwound)
 private val BREAKS_NOTE: String get() = t(K.settings_note_breaks)
 private val ABOUT_NOTE: String get() = t(K.settings_note_about)

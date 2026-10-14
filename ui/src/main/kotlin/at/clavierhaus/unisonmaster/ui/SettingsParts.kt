@@ -1,6 +1,7 @@
 package at.clavierhaus.unisonmaster.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.HorizontalDivider
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import at.clavierhaus.unisonmaster.Brand
 import kotlin.math.abs
 
@@ -51,8 +56,11 @@ import kotlin.math.abs
  * more than one page its pages as a line of small words, the open one
  * orange and underlined, a swipe or a tap turning the page (Peter's choice
  * of 4 Oct 14:42, option A of wireframes/2026-10-04); the page as two
- * columns of rows — a row is a name and a control, nothing under the name —
- * with one line at the foot saying what the page means. Nothing scrolls: a
+ * columns of rows — a row is a name and a control, nothing under the name.
+ * What an entry means is behind it: a round (i) after the row's name or the
+ * section's header opens the text, and a tap anywhere outside closes it
+ * (Peter, 14 Oct 2026, in place of the line of small print that stood at the
+ * foot of each page and did not say which entry it belonged to). Nothing scrolls: a
  * page holds five rows and a header per column on the reference pane, and a
  * context that needs more is two pages, named. Black, orange for what is
  * open. Each app assembles its own tabs from these parts.
@@ -63,12 +71,12 @@ private val CONTROL = Color(Brand.CONTROL)
 private val RULE = Color(Brand.RULE)
 
 /**
- * One page of a tab: its name on the sub-tab strip, a [note] of one line at
- * the foot, and its rows in a [left] and a [right] column.
+ * One page of a tab: its name on the sub-tab strip and its rows in a [left]
+ * and a [right] column. A page has no line of its own: what an entry means is
+ * the entry's (i) (`info` on [SettingsSection] and the rows).
  */
 class SettingsPage(
     val title: String,
-    val note: String = "",
     val left: @Composable ColumnScope.() -> Unit,
     val right: (@Composable ColumnScope.() -> Unit)? = null,
     /** Controls of the page itself, at its top right, on the line of the page words (Help: A− A+). */
@@ -125,7 +133,7 @@ fun SettingsScreen(
             }
         }
         Spacer(Modifier.height(8.dp))
-        // the page: two columns of rows, the note at the foot; a swipe turns the page
+        // the page: two columns of rows; a swipe turns the page
         val current = tab.pages[page]
         var drag = 0f
         Pane(
@@ -138,17 +146,12 @@ fun SettingsScreen(
                     ) { _, dx -> drag += dx }
                 },
         ) {
-            Place(0f, 0f, if (current.right == null) 1f else 0.48f, if (current.note.isEmpty()) 1f else 0.88f) {
+            Place(0f, 0f, if (current.right == null) 1f else 0.48f, 1f) {
                 Column(Modifier.fillMaxSize()) { current.left(this) }
             }
             current.right?.let { right ->
-                Place(0.52f, 0f, 0.48f, if (current.note.isEmpty()) 1f else 0.88f) {
+                Place(0.52f, 0f, 0.48f, 1f) {
                     Column(Modifier.fillMaxSize()) { right(this) }
-                }
-            }
-            if (current.note.isNotEmpty()) {
-                Place(0f, 0.9f, 1f, 0.1f) {
-                    FitText(current.note, 13.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE_MUTED))
                 }
             }
         }
@@ -186,30 +189,67 @@ private fun PageWord(title: String, open: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** A column's header, small caps. */
+/** A column's header, small caps; [info], what the section means, behind it as an (i). */
 @Composable
-fun SettingsSection(title: String) {
+fun SettingsSection(title: String, info: String? = null) {
     Spacer(Modifier.height(6.dp))
-    Text(title.uppercase(), color = Color(Brand.WHITE_MUTED), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(title.uppercase(), color = Color(Brand.WHITE_MUTED), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+        if (info != null) InfoButton(title, info)
+    }
     Spacer(Modifier.height(2.dp))
 }
 
-/** A line of explanation inside a column, where a page's one-line note is not enough; measured, never cut. */
+/**
+ * The round (i) behind an entry (Peter, 14 Oct 2026): a tap opens a window with the entry's
+ * [title] and what it means, and a tap anywhere outside the window closes it. The ring is orange
+ * while its window is open, as everything open is. Every explanation in the settings is reached
+ * this way; none stands on the page.
+ */
+@Composable
+fun InfoButton(title: String, text: String) {
+    var open by remember { mutableStateOf(false) }
+    val tint = if (open) Color(Brand.ORANGE) else Color(Brand.WHITE_MUTED)
+    // the touch target is wider than the ring; its height is the row's or the header's
+    Box(Modifier.clickable { open = true }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(20.dp).border(1.5.dp, tint, CircleShape), contentAlignment = Alignment.Center) {
+            Text("i", color = tint, fontFamily = DejaVuSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+    if (open) {
+        // Dialog closes on a tap outside it (dismissOnClickOutside) and on Back
+        Dialog(onDismissRequest = { open = false }) {
+            Column(
+                Modifier.widthIn(max = 560.dp).background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(title, color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text, color = Color(Brand.WHITE), fontSize = 16.sp, lineHeight = 22.sp)
+            }
+        }
+    }
+}
+
+/** A line inside a column that is not an explanation but news of the moment (Pro's probe: a file that could not be played); measured, never cut. */
 @Composable
 fun SettingsNote(text: String) {
     FitText(text, 12.sp, Modifier.fillMaxWidth().padding(vertical = 4.dp), color = Color(Brand.WHITE_MUTED))
 }
 
-/** A row: the name, and the control at the right edge. Nothing under the name — the page's note says the rest. */
+/** A row: the name, its (i) right behind it when it has [info], and the control at the right edge. Nothing under the name. */
 @Composable
-private fun SettingsRow(name: String, control: @Composable () -> Unit) {
+private fun SettingsRow(name: String, info: String?, control: @Composable () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .height(ROW_HEIGHT),
     ) {
-        FitText(name, 15.sp, Modifier.weight(1f), color = Color(Brand.WHITE))
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            // the name takes what it needs, so the (i) stands right behind it, not at the far edge
+            FitText(name, 15.sp, Modifier.weight(1f, fill = false), color = Color(Brand.WHITE))
+            if (info != null) InfoButton(name, info)
+        }
         Spacer(Modifier.width(12.dp))
         control()
     }
@@ -239,10 +279,11 @@ fun StepperRow(
     value: String,
     canDecrease: Boolean = true,
     canIncrease: Boolean = true,
+    info: String? = null,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
 ) {
-    SettingsRow(name) {
+    SettingsRow(name, info) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             StepButton("−", canDecrease, onDecrease)
             FitText(
@@ -256,8 +297,8 @@ fun StepperRow(
 
 /** A small set of options, the selected one in orange. */
 @Composable
-fun ChoiceRow(name: String, options: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    SettingsRow(name) {
+fun ChoiceRow(name: String, options: List<String>, selected: Int, info: String? = null, onSelect: (Int) -> Unit) {
+    SettingsRow(name, info) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             options.forEachIndexed { i, label ->
                 val on = i == selected
@@ -279,8 +320,8 @@ fun ChoiceRow(name: String, options: List<String>, selected: Int, onSelect: (Int
 }
 
 @Composable
-fun SwitchRow(name: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    SettingsRow(name) {
+fun SwitchRow(name: String, checked: Boolean, info: String? = null, onChange: (Boolean) -> Unit) {
+    SettingsRow(name, info) {
         Switch(
             checked = checked,
             onCheckedChange = onChange,
@@ -290,16 +331,16 @@ fun SwitchRow(name: String, checked: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 @Composable
-fun ReadOnlyRow(name: String, value: String) {
-    SettingsRow(name) {
+fun ReadOnlyRow(name: String, value: String, info: String? = null) {
+    SettingsRow(name, info) {
         FitText(value, 15.sp, color = Color(Brand.WHITE_MUTED), align = TextAlign.End)
     }
 }
 
 /** A row with a line of text to edit at the right: one line, no wrap. */
 @Composable
-fun TextRow(name: String, value: String, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
-    SettingsRow(name) {
+fun TextRow(name: String, value: String, modifier: Modifier = Modifier, info: String? = null, onChange: (String) -> Unit) {
+    SettingsRow(name, info) {
         BasicTextField(
             value = value,
             onValueChange = { onChange(it.replace("\n", "")) },
