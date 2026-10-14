@@ -1,5 +1,7 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.ui.num
+import at.clavierhaus.unisonmaster.i18n.noteName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -126,7 +128,7 @@ fun BasicHub(
         fun engineFrame(t: TuningController.TuningView): TuningPicture.Frame {
             val read = reading; val l = t.listening
             return TuningPicture.Frame(
-                note = Notes.name(t.midi), listened = read?.k ?: l.k, live = read?.live == true,
+                note = noteName(t.midi), listened = read?.k ?: l.k, live = read?.live == true,
                 listenedHz = read?.hz, listenedTargetHz = read?.targetHz ?: l.targetHz,
                 partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
                 targets = targets.associate { it.k to it.hz },
@@ -149,7 +151,7 @@ fun BasicHub(
         }
 
         // ---- the tuning screen ----
-        val name = Notes.name(t.midi)
+        val name = noteName(t.midi)
         // What is tuned by: the note's listened partial (or one the tuner
         // tapped) against its target, read by phase (docs/ENGINE.md)
         val read = reading
@@ -160,12 +162,12 @@ fun BasicHub(
         val origin = when (l.source) {
             TuningSession.Source.REFERENCE -> t(K.origin_reference)
             TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
-            TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, Notes.name(l.refMidi!!)) +
+            TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, noteName(l.refMidi!!)) +
                 (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless))
-            TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, Notes.name(l.refMidi!!))
-            TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, Notes.name(l.refMidi!!)) +
+            TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, noteName(l.refMidi!!))
+            TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, noteName(l.refMidi!!)) +
                 (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless)) +
-                (l.checkCents?.let { t(K.origin_check, Notes.name(l.refMidi!!), String.format(Locale.ROOT, "%.1f", abs(it)), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
+                (l.checkCents?.let { t(K.origin_check, noteName(l.refMidi!!), num(abs(it), 1), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
         // Every number on this screen is derived from the A4 reference, and the
         // screen showed the target, the measurement, the cents, the octave and its

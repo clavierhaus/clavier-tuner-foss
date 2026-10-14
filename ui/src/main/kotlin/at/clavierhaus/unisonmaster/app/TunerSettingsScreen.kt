@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.ui.num
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -126,7 +127,7 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             SwitchRow(t(K.settings_followKey), s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
             SwitchRow(t(K.settings_cleanTogether), s.cleanPartials) { on -> model.update { it.copy(cleanPartials = on) } }
             StepperRow(
-                t(K.settings_highestPartial), Notes.name(s.highestPartialMidi),
+                t(K.settings_highestPartial), noteName(s.highestPartialMidi),
                 canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
                 canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
                 onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
@@ -171,13 +172,13 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
                 SettingsSection(t(K.settings_curveBreaks))
                 val breaks = s.curveBreaks.sorted()
                 if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
-                for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), Notes.name(b))
+                for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
             },
             right = {
                 val rest = s.curveBreaks.sorted().drop(5)
                 if (rest.isNotEmpty()) {
                     SettingsSection("…")
-                    for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), Notes.name(b))
+                    for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
                 }
             }),
     )
@@ -215,14 +216,14 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 private fun CompassRows(s: TunerSettings, model: SettingsModel) {
     SettingsSection(t(K.settings_piano))
     StepperRow(
-        t(K.settings_lowestKey), Notes.name(s.lowestKeyMidi),
+        t(K.settings_lowestKey), noteName(s.lowestKeyMidi),
         canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
         canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
         onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
         onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
     )
     StepperRow(
-        t(K.settings_lowestUnwound), Notes.name(s.lowestUnwoundMidi),
+        t(K.settings_lowestUnwound), noteName(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
         canIncrease = s.lowestUnwoundMidi < TunerSettings.MAX_UNWOUND,
         onDecrease = { model.update { it.copy(lowestUnwoundMidi = it.lowestUnwoundMidi - 1) } },

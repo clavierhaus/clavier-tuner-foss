@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.noteName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -73,7 +74,7 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
                             contentAlignment = Alignment.Center,
                         ) {
                             if (inCompass) FitText(
-                                Notes.name(midi),
+                                noteName(midi),
                                 16.sp,
                                 color = Color(if (black && !isCurrent) Brand.WHITE else Brand.BLACK),
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,

@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.ui.formatHz
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.i18n.K
@@ -178,7 +179,7 @@ internal fun SamplingPage(
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
                     val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
                     Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
-                    Text("${Notes.name(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
+                    Text("${noteName(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
                     Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
                     // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording
                     // is the only way to see what the display makes of a string when the piano is out
@@ -206,7 +207,7 @@ internal fun SamplingPage(
                         Text(t(K.sampling_caughtLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
                         val c = view.caught
                         Text(
-                            if (c != null) Notes.name(c) else t(K.sampling_strikeKey),
+                            if (c != null) noteName(c) else t(K.sampling_strikeKey),
                             color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
                         Spacer(Modifier.weight(1f))
@@ -247,7 +248,7 @@ internal fun SamplingPage(
     if (resetA4) {
         Dialog(onDismissRequest = { resetA4 = false }) {
             Column(Modifier.background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(Notes.name(TuningSession.MIDI_A4), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(noteName(TuningSession.MIDI_A4), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text(t(K.sampling_resetWarning), color = muted, fontSize = 14.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip(t(K.sampling_setA4Again), selected = true, enabled = true) { resetA4 = false; controller.resetSession() }

@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.noteName
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -87,7 +88,7 @@ fun num(x: Double, places: Int): String {
 }
 
 /** Note name of partial [k] of A4, the handle a tuner thinks in (e.g. 3 -> E6). */
-fun partialNoteName(k: Int, a4Hz: Double): String = Notes.name(Notes.nearestMidi(k * a4Hz, a4Hz))
+fun partialNoteName(k: Int, a4Hz: Double): String = noteName(Notes.nearestMidi(k * a4Hz, a4Hz))
 
 internal fun DrawScope.bellFilled(xc: Float, peak: Float, sigma: Float, base: Float, color: Color) =
     bell(xc, peak, sigma, base, color)

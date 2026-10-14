@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.ui
 
+import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.i18n.K
 import androidx.compose.animation.core.LinearEasing
@@ -43,7 +44,7 @@ import kotlin.math.floor
 
 /** Note name of partial [k] of a note whose first partial is [f1Hz]. */
 fun partialNoteName(k: Int, f1Hz: Double, a4Hz: Double): String =
-    Notes.name(Notes.nearestMidi(k * f1Hz, a4Hz))
+    noteName(Notes.nearestMidi(k * f1Hz, a4Hz))
 
 private val ROW_ACTIVE = Color(0xFF2E2E2E)
 

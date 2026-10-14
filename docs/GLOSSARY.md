@@ -112,3 +112,21 @@ Peter, 12 Oct 2026: the button names its act; the other one says *Cancel*.
 | Cancel | the other answer: what was caught is dropped and a new strike is wanted | Abbrechen | Peter, 12 Oct 2026 | on the sampling page it drops the strike's catch and its sample; on a window it leaves things as they were |
 | the act's own name | a confirming button says what it does: *Set A4 again*, *Save*, *Add entry* | — | Peter, 12 Oct 2026 | never *OK*, never *Keep* |
 
+## 7. 14 October 2026 — the German words, decided
+
+Peter, 14 Oct 2026, for the German-first localisation. These settle the German
+column wherever an earlier row carries a "?" for the same thing.
+
+| ours | Deutsch | note |
+|---|---|---|
+| address | *Sie, Ihr, Ihre* | explanations address the tuner with *Sie*; short orders stay in the infinitive (*Taste anschlagen*) |
+| note names | A1, A#1, C4 … **H** for B | only the screen; files and the corpus keep B (`noteName` vs `Notes.name`) |
+| sampling, to sample, a sample | *Vermessen*, *messen*, *Messpunkt* | not *Sampling*: on Clavio it was read as recording sounds for playback |
+| Continue Tuning / New Tuning | *Stimmung fortsetzen* / *Neue Stimmung* | the home screen's doors |
+| match window | *Toleranz* | |
+| reading memory | *Mittelungszeit* | |
+| the curve's breaks | *Übergänge*; *Bassübergang*, *Tenorübergang* | a break by the place it stands |
+| bells; the anchor line | *Glockenkurven*; *Vertikalachse* | |
+| Accept / Cancel | *Übernehmen* / *Abbrechen* | §6 |
+| Progress | *Fortschritt* | §5 |
+

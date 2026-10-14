@@ -10,10 +10,10 @@ app.progress	Progress	Fortschritt
 app.tuning	Tuning	Stimmen
 app.partials	Partials	Teiltöne
 app.onePartial	One partial	Ein Teilton
-sampling.title	Sampling your piano	Klavier-Sampling
-sampling.line	Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, Tasten nach Wahl, {0} davon: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe.
-sampling.lineSet	Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, die {0} Tasten unten: Übernehmen behält eine Saite; eine erneut angeschlagene Taste ersetzt ihre Probe.
-sampling.strikeAny	strike a key: one string, one wedge	eine Taste anschlagen: eine Saite, ein Keil
+sampling.title	Sampling your piano	Klavier vermessen
+sampling.line	Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, Tasten nach Ihrer Wahl, {0} davon: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt.
+sampling.lineSet	Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, die {0} Tasten unten: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt.
+sampling.strikeAny	strike a key: one string, one wedge	Taste anschlagen: eine Saite, ein Keil
 sampling.caught	caught — Accept keeps it	erkannt — Übernehmen behält sie
 sampling.kept	kept	behalten
 app.accept	Accept	Übernehmen
@@ -26,7 +26,7 @@ state.near	near	nah
 state.complete	complete	fertig
 state.heardOther	that's {0}	das ist {0}
 state.off	{0} c {1}	{0} c {1}
-origin.reference	the reference, set when sampling	die Referenz, beim Sampling gesetzt
+origin.reference	the reference, set when sampling	die Referenz, beim Vermessen gesetzt
 origin.temperament	equal temperament on A4 {0}	gleichstufig auf A4 {0}
 origin.curve	{0} octave to {1} on the curve	{0}-Oktave zu {1} nach der Kurve
 origin.wide	, {0} c wide	, {0} c weit
@@ -47,18 +47,18 @@ settings.page.bass	Bass	Bass
 settings.page.middle	Middle	Mitte
 settings.page.treble	Treble	Diskant
 settings.page.compass	Compass	Umfang
-settings.page.breaks	Breaks	Brüche
+settings.page.breaks	Breaks	Übergänge
 settings.page.language	Language	Sprache
 settings.page.probe	Probe	Sonde
 settings.page.quickstart	Quick start	Schnellstart
 settings.page.about	About	Über
 settings.language	Language	Sprache
 settings.language.system	System	System
-hub.continue.verb	Continue	Weiter
-hub.continue.rest	 Tuning	 stimmen
+hub.continue.verb	Continue	Stimmung
+hub.continue.rest	 Tuning	 fortsetzen
 hub.continue.note	from {0}, A4 {1}	vom {0}, A4 {1}
-hub.new.verb	New	Neu
-hub.new.rest	 Tuning	 stimmen
+hub.new.verb	New	Neue
+hub.new.rest	 Tuning	 Stimmung
 hub.new.note	starting from A4	beginnt mit A4
 hub.new.rejected	the saved tuning could not be verified	die gespeicherte Stimmung ließ sich nicht prüfen
 hub.unisons.lead	The	Die
@@ -67,18 +67,18 @@ hub.unisons.note	the strings of a note read apart, partial by partial	die Saiten
 hub.dateFormat	d MMM	d. MMM
 hub.fundamentalA4	Fundamental A4	Grundton A4
 hub.fullSpectrum	Full Spectrum	Alle Teiltöne
-sampling.subtitle	Retrieve the piano's inharmonicity	Die Inharmonizität des Klaviers erfassen
+sampling.subtitle	Retrieve the piano's inharmonicity	Die Inharmonizität Ihres Klaviers messen
 sampling.asItStands	as it stands	wie sie steht
 sampling.setAgain	set again	neu setzen
 sampling.temperament	Temperament	Temperatur
 sampling.caughtLabel	Caught	Erkannt
 sampling.strikeKey	strike a key	Taste anschlagen
-sampling.sampledLabel	Sampled	Gesampelt
+sampling.sampledLabel	Sampled	Messpunkte
 sampling.atLeast	{0} · at least {1}	{0} · mindestens {1}
-sampling.resetWarning	Setting A4 again starts the sampling over: every sample goes.	A4 neu setzen beginnt das Sampling von vorn: alle Samples gehen verloren.
+sampling.resetWarning	Setting A4 again starts the sampling over: every sample goes.	A4 neu setzen beginnt das Vermessen von vorn: alle Messpunkte gehen verloren.
 sampling.setA4Again	Set A4 again	A4 neu setzen
 sampling.order.a4	A4: one string, the others muted. Set it.	A4: eine Saite, die anderen abgedämpft. Setzen.
-sampling.order.lowest	Sample the lowest note.	Den tiefsten Ton sampeln.
+sampling.order.lowest	Sample the lowest note.	Den tiefsten Ton messen.
 sampling.order.bichord	First and last bichord: one string muted.	Erster und letzter Zweichor: eine Saite abgedämpft.
 sampling.order.trichord	First plain-wire trichord: two strings muted.	Erster blanker Dreichor: zwei Saiten abgedämpft.
 sampling.order.octaves	Then: Two notes per octave, up to C7.	Dann: zwei Töne je Oktave, bis C7.
@@ -88,11 +88,11 @@ tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
 tuning.partialsNot	 · not {0}	 · ohne {0}
 tuning.follows	follows the key · 	folgt der Taste · 
-tuning.leavingKeeps	leaving a note keeps it	ein verlassener Ton bleibt gestimmt
-tuning.temperamentDone	A3–A4 done · leaving a note keeps it	A3–A4 fertig · ein verlassener Ton bleibt gestimmt
-tuning.temperamentFirst	A3–A4 first · Done keeps a note	zuerst A3–A4 · Fertig behält einen Ton
-tuning.bellsOn	 · bells on {0}	 · Glocken auf {0}
-tuning.fromAnchor	0 c from the anchor	0 c vom Anker
+tuning.leavingKeeps	leaving a note keeps it	Weitergehen speichert den Ton
+tuning.temperamentDone	A3–A4 done · leaving a note keeps it	A3–A4 fertig · Weitergehen speichert den Ton
+tuning.temperamentFirst	A3–A4 first · Done keeps a note	zuerst A3–A4 · Fertig speichert einen Ton
+tuning.bellsOn	 · bells on {0}	 · Vertikalachse: Teilton {0}
+tuning.fromAnchor	0 c from the anchor	0 c von der Vertikalachse
 tuning.target	target {0}	Ziel {0}
 tuning.targetPartial	, partial {0}	, Teilton {0}
 tuning.fundamental	fundamental	Grundton
@@ -114,12 +114,12 @@ settings.followKey	Follow the key struck	Der angeschlagenen Taste folgen
 settings.cleanTogether	Read the clean partials together	Saubere Teiltöne gemeinsam lesen
 settings.highestPartial	Highest partial	Höchster Teilton
 settings.reading	The reading	Ablesung
-settings.readingMemory	Reading memory	Ablesegedächtnis
+settings.readingMemory	Reading memory	Mittelungszeit
 settings.matchWindow	Match window	Toleranz
 settings.theLowestKey	the lowest key	der tiefsten Taste
-settings.curveBreaks	The curve's breaks	Brüche der Kurve
+settings.curveBreaks	The curve's breaks	Übergänge der Kurve
 settings.none	none	keine
-settings.breakAt	Break at	Bruch bei
+settings.breakAt	Break at	Übergang bei
 settings.octave	The octave	Oktave
 settings.octaveType	Octave type	Oktavtyp
 settings.octaveWidth	Octave width	Oktavbreite
@@ -135,32 +135,32 @@ settings.note.bass	From the lowest key to an octave above the lowest plain strin
 settings.note.middle	Up to the temperament octave. The width slides by key between the regions' values; the middle holds one.	Bis zur Temperaturoktave. Die Breite gleitet von Taste zu Taste zwischen den Werten der Bereiche; die Mitte hält einen.
 settings.note.treble	Above A4, up to C8. The width at C8 is where the slide ends.	Über A4 bis C8. Die Breite bei C8 ist das Ende des Gleitens.
 settings.note.temperament	Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.	Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt.
-settings.note.reading	The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent.	Die Toleranz ist die des Stimmers, nicht die der Messung: die Messung liest eine Saite auf ein Zehntel Cent.
+settings.note.reading	The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent.	Die Toleranz ist Ihre, nicht die der Messung: die Messung liest eine Saite auf ein Zehntel Cent.
 settings.note.compass	A0–C8 for most pianos; F0 on a Bösendorfer 225, C0 on the Imperial. The first plain wire is where the wound strings' curve ends.	A0–C8 bei den meisten Klavieren; F0 beim Bösendorfer 225, C0 beim Imperial. Die erste Blanksaite ist, wo die Kurve der umsponnenen Saiten endet.
-settings.note.breaks	The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro).	Die Kurve der Saitensteifigkeit wird als gerade Abschnitte über die Tasten gezogen. Ein Bruch beginnt einen neuen Abschnitt, so wird ein noch nicht gesampelter Ton von seiner eigenen Seite her gelesen. Eine gesampelte Saite behält ihre eigene Messung, Bruch oder nicht. Gesetzt auf der Seite des Klaviers (Pro).
+settings.note.breaks	The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro).	Die Kurve der Saitensteifigkeit wird als gerade Abschnitte über die Tasten gezogen. Ein Übergang beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite her gelesen. Eine gemessene Saite behält ihre eigene Messung, Übergang oder nicht. Gesetzt auf der Seite des Klaviers (Pro).
 settings.note.about	Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.	Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository.
 help.qs.note	Pitch raises are out of scope: a piano far from pitch needs one first.	Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines.
 help.qs.a4.title	1 · A4	1 · A4
-help.qs.sampling.title	2 · Sampling	2 · Sampling
+help.qs.sampling.title	2 · Sampling	2 · Vermessen
 help.qs.octaves.title	3 · Octave types	3 · Oktavtypen
 help.qs.tuning.title	4 · Tuning	4 · Stimmen
-help.qs.a4.s1	On the home screen: New Tuning.	Auf der Startseite: Neu stimmen.
-help.qs.a4.s2	Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or tap "as it stands" to keep the string where it is.	A4 auf eine Saite abdämpfen. Die Tonhöhe mit − und + wählen, ein Zehntel Hertz je Schritt (halten läuft weiter), oder "wie sie steht" tippen, um die Saite zu lassen, wo sie ist.
+help.qs.a4.s1	On the home screen: New Tuning.	Auf der Startseite: Neue Stimmung.
+help.qs.a4.s2	Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or tap "as it stands" to keep the string where it is.	A4 auf eine Saite abdämpfen. Die Tonhöhe mit − und + wählen, ein Zehntel Hertz je Schritt (gedrückt halten läuft weiter), oder „wie sie steht“ tippen, um die Saite zu lassen, wo sie ist.
 help.qs.a4.s3	Tune the string until the strobe stands still, then Done.	Die Saite stimmen, bis das Stroboskop steht, dann Fertig.
 help.qs.a4.s4	The temperament octave is A3–A4; its low note can be moved on the same screen.	Die Temperaturoktave ist A3–A4; ihr unterer Ton lässt sich auf derselben Seite verschieben.
-help.qs.sampling.s1	Strike single strings, the others muted. The app catches the key by itself: check it, then Accept. Cancel drops what the strike caught, its sample too; strike the key again for a new reading.	Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste selbst: prüfen, dann Übernehmen. Abbrechen verwirft, was der Anschlag erfasst hat, auch das Sample; für eine neue Messung die Taste erneut anschlagen.
-help.qs.sampling.s2	Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.	Dort sampeln, wo sich das Klavier ändert: der tiefste Ton, der erste und letzte Zweichor, der erste blanke Dreichor, beide Seiten der Streben — und etwa zwei Töne je Oktave bis C7.
-help.qs.sampling.s3	Six samples are the minimum; ten to fifteen give the better result.	Sechs Samples sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis.
-help.qs.sampling.s4	Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.	Fertig beendet das Sampling. Die Inharmonizität des Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde.
+help.qs.sampling.s1	Strike single strings, the others muted. The app catches the key by itself: check it, then Accept. Cancel drops what the strike caught, its sample too; strike the key again for a new reading.	Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste selbst: prüfen, dann Übernehmen. Abbrechen verwirft, was der Anschlag erfasst hat, auch den Messpunkt; für eine neue Messung schlagen Sie die Taste erneut an.
+help.qs.sampling.s2	Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.	Messen Sie dort, wo sich das Klavier ändert: der tiefste Ton, der erste und letzte Zweichor, der erste blanke Dreichor, beide Seiten der Streben — und etwa zwei Töne je Oktave bis C7.
+help.qs.sampling.s3	Six samples are the minimum; ten to fifteen give the better result.	Sechs Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis.
+help.qs.sampling.s4	Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.	Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde.
 help.qs.octaves.s1	Settings › Stretch, for the bass, the middle and the treble.	Einstellungen › Spreizung, für Bass, Mitte und Diskant.
 help.qs.octaves.s2	An octave type names the partials made beatless: 4:2 puts the 4th partial of the lower note on the 2nd of the upper. The higher the numbers, the wider the octave. 4:1 is the double octave.	Ein Oktavtyp nennt die Teiltöne, die schwebungsfrei werden: 4:2 legt den 4. Teilton des unteren Tons auf den 2. des oberen. Je höher die Zahlen, desto weiter die Oktave. 4:1 ist die Doppeloktave.
 help.qs.octaves.s3	Set out: bass 6:3, middle 4:2, treble 4:2.	Voreingestellt: Bass 6:3, Mitte 4:2, Diskant 4:2.
 help.qs.octaves.s4	The width, in cents, widens the octave beyond beatless: the lower note flatter, the upper sharper.	Die Breite, in Cent, macht die Oktave weiter als schwebungsfrei: der untere Ton tiefer, der obere höher.
-help.qs.octaves.s5	Set them before you tune: every note's target is computed from them.	Vor dem Stimmen einstellen: das Ziel jedes Tons wird daraus berechnet.
-help.qs.tuning.s1	Strike a key and the screen is on it. Tap the note's name to choose a key by hand; tap it again and the screen follows the strike once more.	Eine Taste anschlagen, und die Anzeige ist bei ihr. Den Namen des Tons tippen, um eine Taste von Hand zu wählen; noch einmal tippen, und die Anzeige folgt wieder dem Anschlag.
-help.qs.tuning.s2	Tune until the strobe on the right stands still. When it stands within your match window, the note is kept.	Stimmen, bis das Stroboskop rechts steht. Steht es innerhalb der Toleranz, ist der Ton gespeichert.
-help.qs.tuning.s3	The bells on the left are the string's partials. A clean string's bells stand together; one standing apart beats on its own. They are no target to tune to.	Die Glocken links sind die Teiltöne der Saite. Bei einer reinen Saite stehen sie beisammen; eine abseits stehende schwebt für sich. Sie sind kein Ziel zum Stimmen.
-help.qs.tuning.s4	Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.	Fortschritt zeigt die Stimmung bis hierher. Weiter stimmen auf der Startseite führt dorthin zurück, wo aufgehört wurde.
+help.qs.octaves.s5	Set them before you tune: every note's target is computed from them.	Stellen Sie die Oktaven vor dem Stimmen ein: das Ziel jedes Tons wird daraus berechnet.
+help.qs.tuning.s1	Strike a key and the screen is on it. Tap the note's name to choose a key by hand; tap it again and the screen follows the strike once more.	Schlagen Sie eine Taste an, und die Anzeige ist bei ihr. Tippen Sie auf den Namen des Tons, um eine Taste von Hand zu wählen; ein zweites Tippen, und die Anzeige folgt wieder dem Anschlag.
+help.qs.tuning.s2	Tune until the strobe on the right stands still. When it stands within your match window, the note is kept.	Stimmen Sie, bis das Stroboskop rechts steht. Steht es innerhalb Ihrer Toleranz, ist der Ton gespeichert.
+help.qs.tuning.s3	The bells on the left are the string's partials. A clean string's bells stand together; one standing apart beats on its own. They are no target to tune to.	Die Glockenkurven links sind die Teiltöne der Saite. Bei einer reinen Saite stehen sie beisammen auf der Vertikalachse; eine abseits stehende schwebt für sich. Sie sind kein Ziel zum Stimmen.
+help.qs.tuning.s4	Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.	Fortschritt zeigt die Stimmung bis hierher. „Stimmung fortsetzen“ auf der Startseite führt Sie dorthin zurück, wo Sie aufgehört haben.
 help.qs.tuning.s5	Unisons are tuned by ear.	Chöre werden nach Gehör gestimmt.
 table.target	target	Ziel
 table.measured	measured	gemessen
