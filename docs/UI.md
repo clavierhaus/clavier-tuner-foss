@@ -242,6 +242,17 @@ was split between them (Compass: lowest key, lowest unwound string). Help
 pages have no foot line either. Quick start's pitch-raise line became the last
 line of its A4 section.
 
+## Help: an index on the left, the topic on the right (14 Oct 2026)
+
+Peter: "The left half will become an index for various help topics." Help is one
+page. Its left half is the index, one line per topic, with the open topic orange
+and bold. Its right half is the open topic's full text in one column. A new topic
+opens at its top. A− A+ step the text of both halves. Quick start is the first
+topic, and its four sections now stand in one column on the right. A topic is a
+`HelpTopic(title, sections)`, and an edition adds its own through
+`TunerSettingsScreen(extraHelpTopics = …)`. Both halves wrap and scroll, under
+Help's exemption.
+
 ## Settings: three scopes
 
 | scope | lives in | examples |

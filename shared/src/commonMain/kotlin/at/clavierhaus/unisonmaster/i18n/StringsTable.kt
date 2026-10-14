@@ -140,6 +140,7 @@ object K {
     const val settings_note_unwound = "settings.note.unwound"
     const val settings_note_breaks = "settings.note.breaks"
     const val settings_note_about = "settings.note.about"
+    const val help_index = "help.index"
     const val help_qs_a4_title = "help.qs.a4.title"
     const val help_qs_sampling_title = "help.qs.sampling.title"
     const val help_qs_octaves_title = "help.qs.octaves.title"
@@ -309,6 +310,7 @@ internal object StringsTable : Catalog {
         "settings.note.unwound" to arrayOf("The first plain wire is where the wound strings' curve ends.", "Die erste Blanksaite ist, wo die Kurve der umsponnenen Saiten endet."),
         "settings.note.breaks" to arrayOf("The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro).", "Die Kurve der Saitensteifigkeit wird als gerade Abschnitte über die Tasten gezogen. Ein Übergang beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite her gelesen. Eine gemessene Saite behält ihre eigene Messung, Übergang oder nicht. Gesetzt auf der Seite des Klaviers (Pro)."),
         "settings.note.about" to arrayOf("Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.", "Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository."),
+        "help.index" to arrayOf("Topics", "Themen"),
         "help.qs.a4.title" to arrayOf("1 · A4", "1 · A4"),
         "help.qs.sampling.title" to arrayOf("2 · Sampling", "2 · Vermessen"),
         "help.qs.octaves.title" to arrayOf("3 · Octave types", "3 · Oktavtypen"),

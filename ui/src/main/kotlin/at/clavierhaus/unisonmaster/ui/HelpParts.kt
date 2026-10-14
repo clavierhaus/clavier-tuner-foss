@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,19 +8,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.i18n.K
+import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 
 /*
@@ -39,22 +50,52 @@ class HelpText(val sp: Int, val set: (Int) -> Unit)
 
 val LocalHelpText = compositionLocalOf { HelpText(14) {} }
 
+/** One help topic: its [title] in the index and its [sections], each a header and its lines, on the right. */
+class HelpTopic(val title: String, val sections: List<Pair<String, List<String>>>)
+
 /**
- * A help page: its sections in one column or two, and A− A+ at its top right, which step the text
- * from 12 to 22 sp for every help page at once (Peter, 12 Oct 2026). Every page of the Help tab is
- * made with this -- Quick start, and Pro's Customers and Pianos -- so each has the same buttons in
- * the same place.
+ * The Help tab's one page (Peter, 14 Oct 2026: "The left half will become an index for various
+ * help topics"): the index of [topics] on the left, the open one orange, and the open topic's full
+ * text on the right; A− A+ at the top right step the text of both from 12 to 22 sp (12 Oct 2026).
+ * Every topic is a [HelpTopic] -- Quick start, and whatever an edition adds -- so each reads the
+ * same and sits in the same index.
  */
-fun helpPage(
-    title: String,
-    left: List<Pair<String, List<String>>>,
-    right: List<Pair<String, List<String>>>? = null,
-): SettingsPage = SettingsPage(
-    title,
-    left = { HelpSteps(*left.toTypedArray()) },
-    right = right?.let { r -> { HelpSteps(*r.toTypedArray()) } },
-    tools = { HelpTextSizeButtons() },
-)
+@Composable
+fun helpPage(title: String, topics: List<HelpTopic>): SettingsPage {
+    var open by rememberSaveable { mutableIntStateOf(0) }
+    val shown = open.coerceIn(topics.indices)
+    return SettingsPage(
+        title,
+        left = { HelpIndex(topics, shown) { open = it } },
+        // a new topic starts at its top: the text's scroll belongs to the topic it shows
+        right = { key(shown) { HelpSteps(*topics[shown].sections.toTypedArray()) } },
+        tools = { HelpTextSizeButtons() },
+    )
+}
+
+/** The index: one line per topic, the open one orange and bold, each a door with its ›; the lines wrap and the column scrolls, as all of Help does. */
+@Composable
+private fun HelpIndex(topics: List<HelpTopic>, open: Int, onOpen: (Int) -> Unit) {
+    val size = LocalHelpText.current.sp
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        SettingsSection(t(K.help_index))
+        topics.forEachIndexed { i, topic ->
+            val on = i == open
+            val color = if (on) Color(Brand.ORANGE) else Color(Brand.WHITE)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { onOpen(i) }.padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    topic.title, color = color, fontFamily = DejaVuSerif, fontSize = size.sp,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f),
+                )
+                Text("›", color = color, fontSize = (size + 4).sp)
+            }
+            HorizontalDivider(color = Color(Brand.CONTROL))
+        }
+    }
+}
 
 /** A− and A+: Help's text one step smaller or larger; each stops at its end of the range. */
 @Composable

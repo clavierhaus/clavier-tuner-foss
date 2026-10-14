@@ -10,6 +10,8 @@ import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.ui.HelpText
+import at.clavierhaus.unisonmaster.ui.HelpTopic
+import at.clavierhaus.unisonmaster.ui.helpPage
 import at.clavierhaus.unisonmaster.ui.LocalHelpText
 import androidx.compose.runtime.CompositionLocalProvider
 import at.clavierhaus.unisonmaster.settings.OctaveType
@@ -38,8 +40,8 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * - Tuning: Temperament · Reading
  * - Stretch: Wound · Bass · Middle · Treble · Breaks
  * - Piano: Compass
- * - Help: Quick start (12 Oct 2026, Peter: between Piano and App; an edition adds its own
- *   help after it, Pro the book's)
+ * - Help: one page, the index of topics on the left and the open topic on the right (14 Oct 2026);
+ *   Quick start is the first topic, an edition adds its own after it, Pro the book's
  * - App: About
  *
  * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
@@ -69,8 +71,8 @@ fun TunerSettingsScreen(
     extraPianoPages: List<SettingsPage> = emptyList(),
     /** Tabs an edition adds after Piano, before Help (Pro: the customers book). */
     extraTabs: List<SettingsTab> = emptyList(),
-    /** Pages an edition adds to the Help tab after Quick start (Pro: the book's own help). */
-    extraHelpPages: List<SettingsPage> = emptyList(),
+    /** Topics an edition adds to Help's index after Quick start (Pro: the book's own help). */
+    extraHelpTopics: List<HelpTopic> = emptyList(),
     /** Pages an edition adds to the App tab before About (Pro: Language, Probe). */
     extraAppPages: List<SettingsPage> = emptyList(),
 ) {
@@ -88,7 +90,7 @@ fun TunerSettingsScreen(
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
             SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), left = { CompassRows(s, model) })) + extraPianoPages),
         ) + extraTabs + listOf(
-            SettingsTab(t(K.settings_tab_help), listOf(quickStartPage()) + extraHelpPages),
+            SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
                 SettingsPage(t(K.settings_page_about),
                     left = {
