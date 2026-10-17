@@ -30,7 +30,7 @@ Binaries: https://github.com/clavierhaus/clavier-tuner-foss/releases/download/v%
 Builds:
   - versionName: 0.2.0
     versionCode: 3
-    commit: 4b3b2ce83e918b10e401045981c7e1bc34410029
+    commit: 754506f8a1a591d884513db349532d2e61711d46
     subdir: androidApp
     gradle:
       - 'yes'       # the string, quoted: a bare yes is a YAML boolean and F-Droid's schema refuses it
