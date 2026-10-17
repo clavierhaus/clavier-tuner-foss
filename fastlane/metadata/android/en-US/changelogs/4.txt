@@ -1,0 +1,1 @@
+The screen stays on while the app is open: the phone's timeout no longer turns it off in the middle of a tuning.

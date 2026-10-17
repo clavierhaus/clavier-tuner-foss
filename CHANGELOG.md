@@ -7,6 +7,12 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-17
+- **The screen stays on while the app is open.** The phone's own timeout
+  turned the screen off in the middle of a tuning, and with it the listening.
+  The app now keeps the screen on while it is in front; in the background the
+  phone's setting applies as before.
+
 ## 0.2.0 -- 2026-10-17
 
 ### 2026-10-14

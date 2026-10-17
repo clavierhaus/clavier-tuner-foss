@@ -1,0 +1,1 @@
+Der Bildschirm bleibt an, solange die App offen ist: die Zeitsperre des Telefons schaltet ihn nicht mehr mitten im Stimmen ab.

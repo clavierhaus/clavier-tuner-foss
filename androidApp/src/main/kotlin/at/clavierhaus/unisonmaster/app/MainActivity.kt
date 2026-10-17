@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
+import android.view.WindowManager
 import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -63,6 +64,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The screen stays on while the app is on it. A tuner's hands are on the piano, and the
+        // phone's own timeout turned the screen off mid-tuning, which pauses the app and stops the
+        // listening (17 Oct 2026, the first tuner's report after the F-Droid release; Peter: to be
+        // fixed at once). Only while this window is shown: in the background the phone's setting holds.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         permissionRequest.launch(Manifest.permission.RECORD_AUDIO)
         hideSystemBars()
         lastTuning.value = sessionStore.load()
