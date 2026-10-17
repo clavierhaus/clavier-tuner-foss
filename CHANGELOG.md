@@ -7,6 +7,26 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-14
+- **Help is one page with an index.** The left half lists the help topics,
+  the right half shows the open one in full. Quick start is the first topic.
+- **Every explanation in the settings sits behind a round (i).** The line of
+  small print at the foot of each page did not say which entry it belonged
+  to; it is gone. A tap on the (i) behind an entry opens its explanation, and
+  a tap anywhere outside closes it.
+- **German throughout.** On a phone set to German every screen, setting and
+  help line is German, with note names A1, A#1 and H for B, and numbers with
+  the decimal comma.
+
+### 2026-10-12
+- **A Help tab with a Quick start**, between Piano and App: the way through a
+  tuning in four short sections -- A4, the sampling, the octave types, the
+  tuning. A− and A+ at its top right make the help text smaller or larger,
+  and the size is kept.
+- **Accept and Cancel while sampling.** The button that keeps a caught string
+  says Accept. Cancel drops what the strike caught, its sample too, and waits
+  for a new strike and a new reading.
+
 ## 0.1.1 -- 2026-10-11
 
 ### 2026-10-11

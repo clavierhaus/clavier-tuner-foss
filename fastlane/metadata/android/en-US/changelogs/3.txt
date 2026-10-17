@@ -1,0 +1,1 @@
+A Help tab with a Quick start, from A4 to the tuning; A− and A+ set the size of the help text. Every explanation in the settings sits behind a round (i). Sampling: Accept keeps a string, Cancel drops the strike and waits for a new one. On a German phone the app is German throughout, with H for B and the decimal comma.
