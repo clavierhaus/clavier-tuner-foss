@@ -1,1 +1,2 @@
+Das Stroboskop erscheint nach dem Anschlag viel schneller: im tiefen Bass nach etwa 0,4 statt einer Sekunde, in der Mitte nach etwa 0,2 Sekunden.
 Der Bildschirm bleibt an, solange die App offen ist: die Zeitsperre des Telefons schaltet ihn nicht mehr mitten im Stimmen ab.

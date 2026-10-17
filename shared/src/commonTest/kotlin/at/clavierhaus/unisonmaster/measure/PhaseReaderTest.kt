@@ -170,4 +170,88 @@ class PhaseReaderStrikeTest {
         val rate = (rs.last().hz - rs.first().hz) / ((rs.size - 1) * 1024.0 / SR)
         assertEquals(0.5, rate, 0.02)
     }
+
+    /** A string struck at [strikeS] at [hz], a 30 ms noise burst on the strike, a 4 s decay: a tone whose pitch is known. */
+    private fun struck(hz: Double, seconds: Double, strikeS: Double = 0.25): FloatArray {
+        val rnd = kotlin.random.Random(1)
+        return FloatArray((SR * seconds).toInt()) { i ->
+            val t = (i - SR * strikeS) / SR
+            if (t < 0) (1e-4 * (rnd.nextDouble() * 2 - 1)).toFloat()
+            else (0.3 * exp(-t / 4.0) * sin(2 * PI * hz * t) + if (t < 0.03) 0.3 * (rnd.nextDouble() * 2 - 1) else 0.0).toFloat()
+        }
+    }
+
+    /** The shown readings of [reader] over [signal], each with its time after the strike at [strikeS]. */
+    private fun shown(reader: PhaseReader, signal: FloatArray, strikeS: Double = 0.25): List<Pair<Double, PhaseReader.Reading>> {
+        val out = ArrayList<Pair<Double, PhaseReader.Reading>>()
+        val buf = FloatArray(1024); var pos = 0
+        while (pos + 1024 <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + 1024); pos += 1024
+            val r = reader.push(buf) ?: continue
+            val t = pos.toDouble() / SR - strikeS
+            if (t > 0 && r.shown) out += t to r
+        }
+        return out
+    }
+
+    /**
+     * The strobe's reader (window, 17 Oct 2026; SAMICK findings §27). A string struck at 165 Hz, A0's
+     * sixth partial, three cents sharp: the four stages read nothing for twenty of their time
+     * constants after the strike, 1.33 s there; the window is read once it holds nothing from before
+     * the strike, its own length, 0.41 s. Both read the string from their first reading on.
+     */
+    @Test
+    fun theWindowReadsAStruckStringAsSoonAsItHoldsNothingFromBeforeTheStrike() {
+        val f = 165.0; val sig = struck(f * 2.0.pow(3.0 / 1200), 3.0)
+        val stages = shown(PhaseReader(SR, f), sig)
+        val window = shown(PhaseReader(SR, f, window = true), sig)
+        assertTrue(stages.first().first > 1.2, "the four stages wait: %.2f s".format(stages.first().first))
+        assertTrue(window.first().first < 0.5, "the window is up %.2f s after the strike".format(window.first().first))
+        for ((name, rs) in listOf("stages" to stages, "window" to window)) {
+            val worst = rs.maxBy { abs(it.second.cents - 3.0) }
+            assertTrue(abs(worst.second.cents - 3.0) < 0.05, "$name: %+.3f c at %.2f s for +3.00".format(worst.second.cents, worst.first))
+        }
+    }
+
+    /**
+     * The window's phase is read as often as the four stages' blocks, so a string far off its target
+     * in the treble does not turn its phase past half a cycle between two readings: at C8 a hop of
+     * 1024 samples would wrap at 23 Hz, 9.5 cents, where the band reaches 25 cents (a wrap reads
+     * 60 cents off). Read from 1 s on: the test strike's 30 ms of noise fills the first windows at
+     * C8, 33 ms long, as a hammer's would, and the reading's 0.15 s memory carries it for a while
+     * (-20.105 c at 0.5 s). At 20 cents the string stands near the band's edge, where the window's
+     * lobe must still reach.
+     */
+    @Test
+    fun theWindowReadsATrebleStringFarOffItsTargetWithoutWrapping() {
+        val f = 4186.0
+        for (off in listOf(+20.0, -20.0, +8.0)) {
+            val rs = shown(PhaseReader(SR, f, window = true), struck(f * 2.0.pow(off / 1200), 3.0)).filter { it.first >= 1.0 }
+            assertTrue(rs.size > 40, "read at $off c: ${rs.size}")
+            val worst = rs.maxBy { abs(it.second.cents - off) }
+            assertTrue(abs(worst.second.cents - off) < 0.1, "%+.0f c off: read %+.3f".format(off, worst.second.cents))
+        }
+    }
+
+    /**
+     * A move to another partial mid-sound (the screen following a key the identifier has named)
+     * reads again what the window has heard: the reading at the new partial is there within a hop or
+     * two of the move, and right, where the four stages start empty.
+     */
+    @Test
+    fun theWindowMovedToAnotherPartialReadsWhatItHasHeardAgain() {
+        val sig = struck(330.0 * 2.0.pow(-2.0 / 1200), 2.0)
+        val r = PhaseReader(SR, 311.1, window = true)
+        val buf = FloatArray(1024); var pos = 0; var moved = -1.0; var first: Pair<Double, Double>? = null
+        while (pos + 1024 <= sig.size) {
+            sig.copyInto(buf, 0, pos, pos + 1024); pos += 1024
+            val t = pos.toDouble() / SR - 0.25
+            if (moved < 0 && t >= 0.55) { r.retarget(330.0); moved = t }
+            val rd = r.push(buf) ?: continue
+            if (moved >= 0 && first == null && rd.shown) first = t to rd.cents
+        }
+        val (at, cents) = first ?: error("never read after the move")
+        assertTrue(at - moved < 0.07, "read %.3f s after the move".format(at - moved))
+        assertEquals(-2.0, cents, 0.05)
+    }
 }

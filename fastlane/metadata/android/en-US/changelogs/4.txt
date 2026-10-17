@@ -1,1 +1,2 @@
+The strobe comes up much sooner after a strike: in the deep bass after about 0.4 s instead of a second, in the middle after about 0.2 s.
 The screen stays on while the app is open: the phone's timeout no longer turns it off in the middle of a tuning.

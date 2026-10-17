@@ -8,6 +8,14 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-17
+- **The strobe comes up with the strike.** It used to wait until its filter
+  had settled, about a second in the deep bass and half a second in the
+  temperament octave. It now reads the partial through a window just long
+  enough to hold the neighbouring key out, and shows the string as soon as
+  that window has heard nothing but the strike: about 0.4 s after the strike
+  in the deep bass, 0.2 s in the temperament octave, and as soon as the key
+  is named, about a third of a second, when the next key is struck. Once
+  settled it reads the same string as before.
 - **The screen stays on while the app is open.** The phone's own timeout
   turned the screen off in the middle of a tuning, and with it the listening.
   The app now keeps the screen on while it is in front; in the background the

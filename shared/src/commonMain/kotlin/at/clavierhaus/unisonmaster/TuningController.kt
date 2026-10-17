@@ -1013,7 +1013,7 @@ class TuningController(
                     finder?.near(centre, span)?.let { p ->
                         val r = reader
                         if (r == null || abs(TuningSession.centsOff(p.hz, r.targetHz)) > HUB_RETARGET_CENTS) {
-                            if (r == null) reader = PhaseReader(sr, p.hz, memoryS = _settings.value.readingMemoryS) else r.retarget(p.hz)
+                            if (r == null) reader = PhaseReader(sr, p.hz, memoryS = _settings.value.readingMemoryS, window = true) else r.retarget(p.hz)
                         }
                     }
                     readerGeneration = -1
@@ -1036,7 +1036,10 @@ class TuningController(
                     // a new generation at the same place leaves the reader alone: a retarget starts
                     // its memory afresh, and the note recorded from a still strobe is published
                     // without the place moving (7 Oct 2026) -- the reading must not blink for that
-                    if (r == null) reader = PhaseReader(sr, w.listenHz, memoryS = _settings.value.readingMemoryS)
+                    // the strobe's reader reads through its window (PhaseReader.window, 17 Oct 2026): up
+                    // as soon as the window is clear of the strike, and a move to a newly named key
+                    // reads again what the window has heard instead of starting afresh
+                    if (r == null) reader = PhaseReader(sr, w.listenHz, memoryS = _settings.value.readingMemoryS, window = true)
                     else if (r.targetHz != w.listenHz) r.retarget(w.listenHz)
                     readerGeneration = w.generation
                     coarse = null

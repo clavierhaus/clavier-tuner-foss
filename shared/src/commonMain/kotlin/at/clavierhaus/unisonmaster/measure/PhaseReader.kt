@@ -46,14 +46,33 @@ import kotlin.math.sqrt
  *   ([Reading.quality] ≥ 0.5). On the recordings 92 % of shown readings
  *   agreed with their neighbours within a cent, of hidden ones 57 %.
  *
- * Nothing here finds a note, chooses a partial, or averages over a window:
- * the note and the partial are inputs, the reading is the phase.
+ * **The strobe's reader** ([window], 17 Oct 2026; Peter, 22:24: "build a strobe that comes up
+ * reasonably fast, significantly faster than now"). The four stages give a rate only after the
+ * twenty time constants of the strike's skip, 3.2 / bandHz s: on the corpus 1.07 s after the
+ * strike on A0-B1's sixth partials (median), 0.64 s on the temperament octave's fundamentals.
+ * With [window] the rate is read instead from a Blackman-Harris window over the last
+ * [WINDOW_LOBES] / semitoneHz seconds of the demodulated partial: its main lobe ends at the
+ * neighbouring key, and everything beyond lies under the window's -92 dB sidelobes. After a
+ * strike the rates are read once the window holds nothing from before it, which is its own
+ * length and no longer: 0.38 s on A0-B1, 0.23 s on the temperament octave, the same string once
+ * settled (0.01 c median on 197 readings; SAMICK findings §27). A struck test tone is read
+ * exactly from the first reading on, so what the window shows in a strike's first moments is
+ * those moments, which the four stages wait out. The level, the noise beside the partial and
+ * the presence gate stay the four stages' (Law 4). The window keeps the samples it has heard,
+ * and a [retarget] reads them again at the new partial instead of starting afresh: the screen
+ * follows a key 0.28 s after its strike, and the reading need not begin again there. The four
+ * stages hear those samples again too, so the gate stands where it would have stood.
+ *
+ * Nothing here finds a note, chooses a partial, or averages over a window
+ * of readings: the note and the partial are inputs, the reading is the phase.
  */
 class PhaseReader(
     private val sampleRate: Int,
     targetHz: Double,
     private val bandCents: Double = DEFAULT_BAND_CENTS,
     private val memoryS: Double = DEFAULT_MEMORY_S,
+    /** The rate from a finite window instead of the four stages: the strobe's reader (see above). */
+    private val window: Boolean = false,
 ) {
     /**
      * One hop's reading. [hz] is the partial's measured frequency, [cents]
@@ -133,6 +152,17 @@ class PhaseReader(
     private var sample = 0L
     private var skipUntil = -1L
 
+    // The window ([window] only): the samples heard, the partial demodulated against the reference
+    // at their own absolute time, and the Blackman-Harris weights over the last [winN] of them.
+    private var raw = FloatArray(0)
+    private var zr = DoubleArray(0)
+    private var zi = DoubleArray(0)
+    private var ringHead = 0
+    private var ringValid = 0
+    private var winN = 0
+    private var winW = DoubleArray(0)
+    private var winStep = 0.0
+
     private val rates = DoubleArray(RATES_PER_HOP)
     private var memory = 0.0
     private var mainPower = 0.0
@@ -165,8 +195,59 @@ class PhaseReader(
         main.tune(hz)
         below.tune(hz * 2.0.pow(-NEIGHBOUR_CENTS / 1200.0))
         above.tune(hz * 2.0.pow(NEIGHBOUR_CENTS / 1200.0))
+        if (window) windowOn(hz)
         haveAngle = false; inBlock = 0; sinceRenorm = 0
         memoryFilled = false; last = null; powerFilled = false
+    }
+
+    /**
+     * The window at [hz]: as long as the neighbouring key needs to lie beyond its main lobe, the ring
+     * grown to hold it if it must (keeping what it has heard), and what it has heard demodulated
+     * again against the new reference -- the skip of the last strike still counts from the strike.
+     */
+    private fun windowOn(hz: Double) {
+        // four lobes a semitone; held at MIN_WINDOW_S where that is shorter, as far as the lobe
+        // still reaches twice the band the gate reads through (above 1.4 kHz the lobe would close
+        // inside the band, and a string the gate shows would stand in the window's sidelobes)
+        val semitoneS = WINDOW_LOBES / (hz * (SEMITONE - 1))
+        val bandS = 2.0 / bandHz
+        val n = (maxOf(semitoneS, minOf(MIN_WINDOW_S, bandS)) * sampleRate).toInt()
+        if (n > raw.size) {
+            val grown = FloatArray(n)
+            for (j in 0 until ringValid) grown[n - ringValid + j] = raw[(ringHead - ringValid + j).mod(raw.size)]
+            raw = grown; ringHead = 0
+            zr = DoubleArray(n); zi = DoubleArray(n)
+        }
+        winN = n
+        winW = DoubleArray(n) { m ->
+            val x = 2 * PI * m / (n - 1)
+            0.35875 - 0.48829 * cos(x) + 0.14128 * cos(2 * x) - 0.01168 * cos(3 * x)
+        }
+        winStep = 2 * PI * hz / sampleRate
+        val size = raw.size
+        for (j in 1..ringValid) {
+            val at = (ringHead - j).mod(size)
+            val ph = winStep * (sample - j).toDouble()
+            zr[at] = raw[at] * cos(ph); zi[at] = -raw[at] * sin(ph)
+        }
+        // and the four stages, which keep the level and the gate, hear the same samples again at the
+        // new partial: emptied by the move, they would hold the reading back while they fill
+        for (j in ringValid downTo 1) {
+            val x = raw[(ringHead - j).mod(size)].toDouble()
+            main.push(x, alpha); below.push(x, alpha); above.push(x, alpha)
+        }
+        if (ringValid > 0) { main.renormalise(ringValid); below.renormalise(ringValid); above.renormalise(ringValid) }
+    }
+
+    /** The phase of the partial over the window's last [winN] samples. */
+    private fun windowAngle(): Double {
+        val size = raw.size
+        val start = (ringHead - winN).mod(size)
+        val first = minOf(winN, size - start)
+        var ar = 0.0; var ai = 0.0
+        for (m in 0 until first) { val j = start + m; ar += winW[m] * zr[j]; ai += winW[m] * zi[j] }
+        for (m in first until winN) { val j = m - first; ar += winW[m] * zr[j]; ai += winW[m] * zi[j] }
+        return atan2(ai, ar)
     }
 
     /**
@@ -186,13 +267,21 @@ class PhaseReader(
         if (onset) {
             strikes++
             memoryFilled = false
-            skipUntil = sample + settleSamples
+            // the window is read once it holds nothing from before the strike: this hop, in which
+            // the strike falls, and the window's length after it
+            skipUntil = sample + if (window) chunk.size + winN.toLong() else settleSamples
         }
 
         var n = 0
         for (x in chunk) {
             val xd = x.toDouble()
             main.push(xd, alpha); below.push(xd, alpha); above.push(xd, alpha)
+            if (window) {
+                val ph = winStep * sample.toDouble()
+                raw[ringHead] = x; zr[ringHead] = xd * cos(ph); zi[ringHead] = -xd * sin(ph)
+                ringHead = (ringHead + 1) % raw.size
+                if (ringValid < raw.size) ringValid++
+            }
             sample++
             if (++sinceRenorm >= RENORMALISE_EVERY) {
                 main.renormalise(sinceRenorm); below.renormalise(sinceRenorm); above.renormalise(sinceRenorm)
@@ -200,15 +289,20 @@ class PhaseReader(
             }
             if (++inBlock >= block) {
                 inBlock = 0
-                val angle = atan2(main.q, main.i)
-                if (haveAngle && sample >= skipUntil) {
-                    var d = angle - lastAngle
-                    while (d > PI) d -= 2 * PI
-                    while (d < -PI) d += 2 * PI
-                    if (n < rates.size) rates[n++] = d * sampleRate / (2 * PI * block)
+                if (window && ringValid < winN) {
+                    // the window not yet full of what was heard: no phase to read a rate between
+                    haveAngle = false
+                } else {
+                    val angle = if (window) windowAngle() else atan2(main.q, main.i)
+                    if (haveAngle && sample >= skipUntil) {
+                        var d = angle - lastAngle
+                        while (d > PI) d -= 2 * PI
+                        while (d < -PI) d += 2 * PI
+                        if (n < rates.size) rates[n++] = d * sampleRate / (2 * PI * block)
+                    }
+                    lastAngle = angle
+                    haveAngle = true
                 }
-                lastAngle = angle
-                haveAngle = true
             }
         }
 
@@ -266,8 +360,31 @@ class PhaseReader(
          * −1 on C2 -- a wrong number shown earlier in place of a right one later, which Amendment
          * 3 forbids. The latency is the price of the band's width in hertz at low frequencies,
          * and a change goes through the band, measured, not through this number.
+         * Corrected 17 Oct 2026 (SAMICK findings §27): those first readings were the reader's
+         * [retarget] when the walk's key was named, 0.28 s after the strike, emptying the filter
+         * while the skip still counted from the strike; with the skip counted from the move as
+         * well, half of it read B1 −0.3 c. The skip stays for the four stages; the strobe reads
+         * through the window ([window]), whose skip is its length.
          */
         const val SETTLE_TIME_CONSTANTS = 5.0
+        /**
+         * The strobe's window is this many of its own frequency bins long per semitone: a
+         * Blackman-Harris main lobe is four bins wide either side, so at four the lobe ends at the
+         * neighbouring key, a semitone off -- 0.41 s at A0's sixth partial (165 Hz), 0.15 s at
+         * 440 Hz, 0.02 s at C8 (held at [MIN_WINDOW_S]). Taken from the note, not chosen: shorter,
+         * and the neighbouring key is inside the lobe (at three it reads 36 dB down instead of 124).
+         */
+        const val WINDOW_LOBES = 4.0
+        /**
+         * …and not shorter than this, seconds, about the limit below which a response is felt as
+         * instant (Nielsen, Usability Engineering, 1993: 0.1 s), as long as its main lobe still
+         * reaches twice the band's edge (2 / bandHz: shorter from 1.4 kHz up, 33 ms at C8). From
+         * 670 Hz up four lobes a semitone would be shorter, and a shorter window only lets in more
+         * noise: at C7, 32 ms, the D's C7 of 16 Sept scattered 4.3 c over its decay against 1.0 on
+         * the four stages; at 65 ms, 0.8. Below 670 Hz it plays no part.
+         */
+        const val MIN_WINDOW_S = 0.1
+        private val SEMITONE = 2.0.pow(1 / 12.0)
         /** Where the noise is read: either side of the target, clear of the string, inside the semitone. */
         const val NEIGHBOUR_CENTS = 60.0
         /** A reading is shown when the partial stands this far above the noise beside it. */

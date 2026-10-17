@@ -61,7 +61,7 @@ class RecordingsTest {
     private data class Result(val file: String, val note: String, val k: Int, val cents: Double, val spread: Double, val levelDbfs: Double, val quality: Double)
 
     /** The take read on its listening partial over the decay, 0.5 s to 2.5 s after the strike: what the screen shows there. */
-    private fun measure(f: File): Result? {
+    private fun measure(f: File, strobe: Boolean): Result? {
         val m = TAKE.find(f.name) ?: return null
         val note = m.groupValues[2]
         val midi = Notes.midi(note) ?: return null
@@ -85,7 +85,7 @@ class RecordingsTest {
         val window = strike + wav.sampleRate / 4
         val placed = if (window + 16384 <= wav.samples.size)
             PartialFinder(wav.samples.copyOfRange(window, window + 16384), wav.sampleRate).near(target, 100.0)?.hz else null
-        val reader = PhaseReader(wav.sampleRate, placed ?: target)
+        val reader = PhaseReader(wav.sampleRate, placed ?: target, window = strobe)
         val readings = ArrayList<PhaseReader.Reading>()
         val buf = FloatArray(hop)
         pos = 0
@@ -105,20 +105,30 @@ class RecordingsTest {
         return Result(f.name, note, k, median, spread, readings.map { it.levelDbfs }.max(), readings.map { it.quality }.average())
     }
 
+    /**
+     * Both readers the screen has: the four stages, which read the bells and the clean partials,
+     * and the window, which reads the strobe (17 Oct 2026). The strobe's is the one the tuner turns
+     * the pin by, and it is held to the same corpus.
+     */
     @Test
     fun everySingleStringTakeReadsSteadilyOnItsListeningPartialAndTheStrikesAgree() {
         val dir = recordingsDir()
         if (dir == null) { println("RecordingsTest: no data/recordings here, nothing read"); return }
         val files = dir.walkTopDown().filter { it.isFile && it.name.endsWith(".wav") && !it.name.contains("-U-") && TAKE.containsMatchIn(it.name) }.sortedBy { it.name }.toList()
         assertTrue(files.isNotEmpty(), "no recordings under $dir")
-        val all = files.mapNotNull { measure(it) }
+        for (window in listOf(false, true)) readTheCorpus(files, window)
+    }
+
+    private fun readTheCorpus(files: List<File>, window: Boolean) {
+        val all = files.mapNotNull { measure(it, window) }
+        println(if (window) "the strobe's reader, the window:" else "the four stages:")
         println("file                                                 note  k   cents   spread   level   quality")
         for (r in all) {
             if (r.cents.isNaN()) println("%-52s %-4s %2d   too short or too weak to be shown".format(r.file, r.note, r.k))
             else println("%-52s %-4s %2d %+7.2f %8.2f %7.1f %8.2f".format(r.file, r.note, r.k, r.cents, r.spread, r.levelDbfs, r.quality))
         }
         val results = all.filter { !it.cents.isNaN() }
-        assertTrue(results.size >= files.size * 0.8, "read ${results.size} of ${files.size}")
+        assertTrue(results.size >= files.size * 0.8, "read ${results.size} of ${files.size} (window $window)")
         // What the set says on 22 September, and what the assertions hold:
         // the three strikes of a string agree to a fraction of a cent (C1's
         // sixth partial to 0.07 c), and a string's reading over two seconds of
@@ -149,8 +159,8 @@ class RecordingsTest {
         }
         if (outliers.isNotEmpty()) println("strikes apart from the rest of their string: ${outliers.map { "${it.file} (%+.1f c)".format(it.cents) }}")
         val disagree = byNote.filter { (_, rs) -> rs.size >= 2 && agreeing(rs) * 2 < rs.size + 1 }
-        assertTrue(disagree.isEmpty(), "strings whose strikes do not agree within 1.5 cents: ${disagree.keys}")
+        assertTrue(disagree.isEmpty(), "strings whose strikes do not agree within 1.5 cents (window $window): ${disagree.keys}")
         val unsteady = byNote.filter { (_, rs) -> rs.size >= 2 && rs.map { it.spread }.sorted()[rs.size / 2] > 2.5 }
-        assertTrue(unsteady.isEmpty(), "strings whose typical strike moved more than 2.5 cents over the decay: ${unsteady.keys}")
+        assertTrue(unsteady.isEmpty(), "strings whose typical strike moved more than 2.5 cents over the decay (window $window): ${unsteady.keys}")
     }
 }

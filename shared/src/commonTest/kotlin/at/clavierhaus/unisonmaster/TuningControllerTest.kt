@@ -627,6 +627,67 @@ class TuningControllerTest {
         assertTrue(abs(TuningSession.centsOff(four.hz, 4 * one.hz * 2.0.pow(stored / 1200.0))) > 1.0,
             "the stored partial table does not reach the targets")
     }
+
+    /**
+     * The strobe comes up with the strike (Peter, 17 Oct 2026, 22:24: "build a strobe that comes up
+     * reasonably fast, significantly faster than now"). G#4 is read on its fundamental, 418 Hz here:
+     * until then the reader's four stages waited twenty time constants after the strike, 0.52 s,
+     * before reading anything. The strobe's reader is a window now whose length is the time the
+     * neighbouring key needs to lie outside it, 0.16 s at 418 Hz (SAMICK findings §27). And it
+     * reads the string from its first reading on: a wrong number shown earlier in place of a right
+     * one later is what Amendment 3 forbids, and the faster strobe must not buy its speed with one.
+     */
+    @Test
+    fun theStrobeComesUpWithinAFifthOfASecondOfTheStrikeAndReadsTheStringFromItsFirstReading() {
+        val (c, src) = controller()
+        // G#4 sampled, as the temperament octave always is: the partials that stand in for the
+        // fundamental while it is still being judged are then placed by the string's own B
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4)), sampling = false))
+        assertEquals(1, c.tuning.value!!.listening.k)
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        // struck at 0.3 s, four cents flat
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-4.0 / 1200), 7e-4, 3.0))
+        val live = trail.filter { it.first > 0.3 && it.second.live }
+        val first = live.first()
+        assertTrue(first.first - 0.3 <= 0.20, "the strobe is up %.2f s after the strike".format(first.first - 0.3))
+        val worst = live.filter { it.first <= 2.5 }.maxBy { abs(it.second.cents!! + 4.0) }
+        assertTrue(abs(worst.second.cents!! + 4.0) < 0.1,
+            "every reading is the string, the first one too: %+.2f c at %.2f s".format(worst.second.cents, worst.first - 0.3))
+    }
+
+    /**
+     * Another key struck: the screen follows it once the identifier has named it, 0.28 s after the
+     * strike, and the strobe's reader is moved there. Until 17 Oct 2026 the move emptied its filter
+     * while the wait still ran from the strike, which is where the walk's wrong first readings in the
+     * bass came from (SAMICK findings §27: B1 +8.2 c with half the wait). The window holds the
+     * samples it has heard and reads them again at the new key's partial, so the strobe is up as soon
+     * as the key is named, and right.
+     */
+    @Test
+    fun aKeyStruckAndFollowedIsOnTheStrobeAsSoonAsItIsNamedAndRight() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4), measuredString(67, et(67), 7e-4)), sampling = false))
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { r -> trail += at to r } }
+        val midi = mutableListOf<Pair<Double, Int?>>()
+        val log = src.afterBuffer!!
+        src.afterBuffer = { at -> log(at); midi += at to c.tuning.value?.midi }
+        // G4 struck while G#4 is on screen, three cents sharp
+        c.hear(src, SyntheticString.strike(et(67) * 2.0.pow(3.0 / 1200), 7e-4, 3.0))
+        val followedAt = midi.first { it.first > 0.3 && it.second == 67 }.first
+        val live = trail.filter { it.first >= followedAt && it.second.live }
+        val first = live.first()
+        assertTrue(first.first - 0.3 <= 0.40, "followed at %.2f s, the strobe up at %.2f s after the strike".format(followedAt - 0.3, first.first - 0.3))
+        // the strobe's own reading, until the clean partials take over: those are read by their own
+        // four stages, which the move empties as it emptied the strobe's (17 Oct 2026: they come in
+        // at 0.87 s 0.15 c under the string and close on it over 0.4 s; their own change, measured)
+        val own = live.filter { it.second.usedPartials.isEmpty() }
+        assertTrue(own.size >= 10, "the strobe's own reading holds the screen until the clean partials come in")
+        val worst = own.maxBy { abs(it.second.cents!! - 3.0) }
+        assertTrue(abs(worst.second.cents!! - 3.0) < 0.1,
+            "the followed key is read right from its first reading: %+.2f c at %.2f s".format(worst.second.cents, worst.first - 0.3))
+    }
 }
 
 
