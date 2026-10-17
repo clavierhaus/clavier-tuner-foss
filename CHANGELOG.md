@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.2.0 -- 2026-10-17
+
 ### 2026-10-14
 - **Help is one page with an index.** The left half lists the help topics,
   the right half shows the open one in full. Quick start is the first topic.
