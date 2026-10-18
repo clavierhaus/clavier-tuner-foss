@@ -67,5 +67,7 @@ object Brand {
     const val KEY_DONE_BLACK: Long = 0xFF1B7A2C
 
     const val ALERT_RED: Long = 0xFFE02020
+    /** A sampled string measured short: the next strike came before more sound stopped changing it (18 Oct 2026). */
+    const val MEASURED_SHORT: Long = 0xFFFFD60A
     const val ALERT_RED_DIM: Long = 0xFF7A1414
 }

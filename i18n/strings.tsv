@@ -16,6 +16,9 @@ sampling.lineSet	Single strings, the {0} keys below: Accept keeps a string; a ke
 sampling.strikeAny	strike a key: one string, one wedge	Taste anschlagen: eine Saite, ein Keil
 sampling.caught	caught — Accept keeps it	erkannt — Übernehmen behält sie
 sampling.kept	kept	behalten
+sampling.measuring	measuring …	misst …
+sampling.measured	measured	gemessen
+sampling.short	measured short: strike again for the full measurement	kurz gemessen: für die volle Messung noch einmal anschlagen
 app.accept	Accept	Übernehmen
 sampling.count	{0} of {1}	{0} von {1}
 state.listening	listening	hört zu

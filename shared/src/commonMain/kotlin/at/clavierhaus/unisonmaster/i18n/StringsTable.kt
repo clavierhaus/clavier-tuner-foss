@@ -16,6 +16,9 @@ object K {
     const val sampling_strikeAny = "sampling.strikeAny"
     const val sampling_caught = "sampling.caught"
     const val sampling_kept = "sampling.kept"
+    const val sampling_measuring = "sampling.measuring"
+    const val sampling_measured = "sampling.measured"
+    const val sampling_short = "sampling.short"
     const val app_accept = "app.accept"
     const val sampling_count = "sampling.count"
     const val state_listening = "state.listening"
@@ -186,6 +189,9 @@ internal object StringsTable : Catalog {
         "sampling.strikeAny" to arrayOf("strike a key: one string, one wedge", "Taste anschlagen: eine Saite, ein Keil"),
         "sampling.caught" to arrayOf("caught — Accept keeps it", "erkannt — Übernehmen behält sie"),
         "sampling.kept" to arrayOf("kept", "behalten"),
+        "sampling.measuring" to arrayOf("measuring …", "misst …"),
+        "sampling.measured" to arrayOf("measured", "gemessen"),
+        "sampling.short" to arrayOf("measured short: strike again for the full measurement", "kurz gemessen: für die volle Messung noch einmal anschlagen"),
         "app.accept" to arrayOf("Accept", "Übernehmen"),
         "sampling.count" to arrayOf("{0} of {1}", "{0} von {1}"),
         "state.listening" to arrayOf("listening", "hört zu"),

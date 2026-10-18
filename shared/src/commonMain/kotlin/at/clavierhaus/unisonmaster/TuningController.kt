@@ -113,8 +113,29 @@ class TuningController(
         const val SAMPLE_EARLY_SAMPLES = 16384
         const val SAMPLE_EARLY_AT_S = 0.02
         const val SAMPLE_EARLY_MIN_HZ = 1500.0
-        /** The caught string is measured when decided and again this long after the strike, with the decay in. */
-        const val SAMPLE_REMEASURE_S = 2.5
+        /**
+         * The caught string is measured when its key is decided and again every this many hops, a
+         * quarter second, as the sound comes in, until more sound no longer changes it (Peter,
+         * 18 Oct 2026, 15:52: "Why hard-code a fixed value at all? A note is done when the software
+         * can say: I have captured all measurable partials"). Until then it was measured once more
+         * at a fixed 2.5 s, and an Accept followed by the next strike sooner kept the measurement of
+         * the decision: in the bass B 10.6 % off the full one (median of 209 takes), where a
+         * string's strikes agree to 1.3 % (SAMICK findings §29).
+         */
+        const val SAMPLE_STEP_HOPS = 12L
+        /**
+         * Complete: [SAMPLE_STILL_HOPS] more sound (half a second, a choice, not a measurement)
+         * moved the partial the string's octaves meet on (the octave type's higher partial, 6 for
+         * 6:3, 4 for 4:2) by less than [SAMPLE_STILL_CENTS]. On the 209 takes this completes the
+         * middle at 1.4 s, the bass at 1.9 s, the top at 2.4 s, where the measurement's own decay
+         * window ends it, with B as close to the 2.5 s measurement as the string's strikes are to
+         * each other -- in C3-B4 0.7 % against 0.3 %, 0.04 c at the octave's partial (§30). A
+         * criterion on the fit's own uncertainty was tried beside it and failed: it called the
+         * middle complete at the decision with B 1.5 % off.
+         */
+        const val SAMPLE_STILL_HOPS = 24L
+        /** One string's strike-to-strike repeat at its partials, cents: the floor under [TuningSession.MATCH_CENTS]. */
+        const val SAMPLE_STILL_CENTS = 0.1
     }
 
     // ---- Reference and settings ----
@@ -410,6 +431,10 @@ class TuningController(
         /** Sampling: the key caught from the last strike, and whether Accept has kept it. */
         val caught: Int? = null,
         val caughtAccepted: Boolean = false,
+        /** Sampling: how far the caught string's measurement has got (TuningController.SAMPLE_STEP_HOPS). */
+        val caughtMeasured: Measured = Measured.MEASURING,
+        /** Sampling: kept strings whose measurement the next strike cut short. */
+        val sampledShort: Set<Int> = emptySet(),
         /** True once the curve stands on enough strings for computed targets. */
         val curveReady: Boolean = false,
         /** The strings sampled so far (for the sampling screen's row). */
@@ -446,6 +471,7 @@ class TuningController(
     /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
     fun resetSession() {
         caught = null
+        shortSamples.clear()
         session = null
         _tuning.value = null
         _reading.value = null
@@ -465,6 +491,7 @@ class TuningController(
     /** Continues a saved session: A4, every measured note, the note the tuner was on. */
     fun restore(snap: SessionSnapshot) {
         session = null
+        shortSamples.clear()
         setReference(snap.a4Hz)
         val s = TuningSession(_referenceA4Hz.value, _settings.value)
         for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
@@ -611,6 +638,8 @@ class TuningController(
             samplingReady = s.samplingReady,
             caught = caught?.midi,
             caughtAccepted = caught?.accepted == true,
+            caughtMeasured = caught?.state ?: Measured.MEASURING,
+            sampledShort = shortSamples.filter { it in s.measurements }.toSet(),
             curveReady = s.curve.ready,
             sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),
             breakHere = midi in s.settings.curveBreaks,
@@ -706,6 +735,7 @@ class TuningController(
             val m = c.measurement ?: return null
             if (!s.record(m)) return null
             c.accepted = true
+            if (c.state == Measured.SHORT) shortSamples += c.midi else shortSamples -= c.midi
             publish(s)
             return c.f1
         }
@@ -857,7 +887,17 @@ class TuningController(
      * ([accepted]). Struck again, the same key replaces its measurement and
      * stays accepted; another key starts afresh.
      */
-    private class Caught(val midi: Int, val f1: Double, val b: Double, val strikeHop: Long, var measurement: NoteMeasurement?, var accepted: Boolean)
+    private class Caught(val midi: Int, val f1: Double, val b: Double, val strikeHop: Long, var measurement: NoteMeasurement?, var accepted: Boolean) {
+        /** B of every measurement of this strike, a quarter second apart: whether more sound still changes it. */
+        val history = ArrayList<Double>()
+        var state = Measured.MEASURING
+    }
+
+    /** How far the caught string's measurement has got: still measuring, measured, or cut short by the next strike. */
+    enum class Measured { MEASURING, MEASURED, SHORT }
+
+    /** Sampled keys whose kept measurement was cut short by the next strike (shown so, until struck again in full). */
+    private val shortSamples = HashSet<Int>()
 
     @Volatile private var caught: Caught? = null
 
@@ -887,6 +927,8 @@ class TuningController(
         // (A4 is the hub's reference and is only replaced by hand)
         val c = Caught(fit.midi, fit.f1, fit.b, strikeHop, null, accepted = fit.midi != TuningSession.MIDI_A4 && fit.midi in s.measurements)
         c.measurement = measureCaught(c)
+        c.measurement?.let { c.history += it.b }
+        shortSamples -= c.midi
         caught = c
         if (c.accepted) c.measurement?.let { s.record(it) }
         if (s.current != fit.midi) s.select(fit.midi)
@@ -894,20 +936,75 @@ class TuningController(
     }
 
     /** The caught string measured from the ring, from its strike ([StringMeasure]); at least its fundamental as the fit read it. */
-    private fun measureCaught(c: Caught): NoteMeasurement =
-        (StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, c.midi, c.f1, c.b, timeMs = clock())
+    private fun measureCaught(c: Caught, ring: FloatArray = ringSnapshot()): NoteMeasurement =
+        (StringMeasure.measure(ring, audioSource.sampleRateHz, c.midi, c.f1, c.b, timeMs = clock())
             ?.takeIf { Notes.nearestMidi(it.f1Hz, _referenceA4Hz.value) == c.midi }
             ?: NoteMeasurement(c.midi, c.f1, c.b, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock()))
             .copy(falseBeats = factsOf(c.midi))
 
-    /** With the decay in, the caught string measured again; an accepted one is kept anew. */
-    private fun remeasureCaught() {
+    /**
+     * The caught string measured again, a quarter second on ([SAMPLE_STEP_HOPS]); an accepted one is
+     * kept anew. Measured once half a second more sound has moved the partial its octaves meet on
+     * by less than a strike repeats ([SAMPLE_STILL_CENTS]), or once the measurement's own decay
+     * window is full ([StringMeasure.SKIP_S] + [StringMeasure.LENGTH_S]).
+     */
+    private fun stepCaught(since: Long) {
         val s = session ?: return
         val c = caught ?: return
-        if (!s.sampling) return
-        c.measurement = measureCaught(c)
-        if (c.accepted) c.measurement?.let { s.record(it) }
-        publish(s)
+        if (!s.sampling || c.state != Measured.MEASURING) return
+        val m = measureCaught(c)
+        c.measurement = m
+        c.history += m.b
+        val k = s.settings.octaveTypeFor(c.midi).low
+        val back = (SAMPLE_STILL_HOPS / SAMPLE_STEP_HOPS).toInt()
+        val still = c.history.size > back &&
+            1200.0 / ln(2.0) * (k * k - 1) / 2.0 * abs(m.b - c.history[c.history.size - 1 - back]) < SAMPLE_STILL_CENTS
+        val windowFull = since * HOP >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * audioSource.sampleRateHz
+        if (still || windowFull) c.state = Measured.MEASURED
+        if (c.accepted) {
+            s.record(m)
+            if (c.state == Measured.MEASURED) shortSamples -= c.midi
+        }
+        // the measurement reaches the targets once, when it is complete, as the one remeasure at
+        // 2.5 s did; the steps before only tell the page. A publish mints a generation and places
+        // the note's partials anew, which four times a second in the middle of a strike would do
+        // for nothing (and, mid-hop, it cost the clean partials a hop of sound until the publishes
+        // moved to the hop's end the same day)
+        if (c.state == Measured.MEASURED) publish(s) else caughtChanged(s)
+    }
+
+    /** The caught string's measurement, and the samples it changes, reach the page without a publish (see [recorded]). */
+    private fun caughtChanged(s: TuningSession) {
+        _tuning.value = _tuning.value?.copy(
+            measured = s.measurements.keys.toSet(),
+            deviations = deviationsOf(s),
+            samplesIn = s.samplesIn,
+            samplesNeeded = s.samplesNeeded,
+            samplingReady = s.samplingReady,
+            caughtAccepted = caught?.accepted == true,
+            caughtMeasured = caught?.state ?: Measured.MEASURING,
+            sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),
+            sampledShort = shortSamples.filter { it in s.measurements }.toSet(),
+            curveReady = s.curve.ready,
+        )
+        if (caught?.accepted == true) onSessionChanged?.let { save -> snapshot()?.let(save) }
+    }
+
+    /**
+     * The next strike came while the caught string was still being measured: it is measured once
+     * more from everything heard up to that strike -- the ring less the hop the strike falls in --
+     * and called short, so the page can say that a strike again gives the full measurement.
+     */
+    private fun cutCaught(strikeHopSamples: Int) {
+        val s = session ?: return
+        val c = caught ?: return
+        if (!s.sampling || c.state != Measured.MEASURING) return
+        val all = ringSnapshot()
+        if (all.size <= strikeHopSamples) return
+        c.measurement = measureCaught(c, all.copyOfRange(0, all.size - strikeHopSamples))
+        c.state = Measured.SHORT
+        if (c.accepted) { c.measurement?.let { s.record(it) }; shortSamples += c.midi }
+        caughtChanged(s)
     }
     @Volatile private var lastShown: Shown? = null
     @Volatile private var hops = 0L
@@ -998,7 +1095,6 @@ class TuningController(
         var decided = false
         val earlyHop = ((SAMPLE_EARLY_AT_S * sr + SAMPLE_EARLY_SAMPLES) / HOP).toLong() + 1
         val longHop = ((SAMPLE_LONG_AT_S * sr + SAMPLE_LONG_SAMPLES) / HOP).toLong() + 1
-        val remeasureHop = (SAMPLE_REMEASURE_S * sr / HOP).toLong()
         _live.value = true
         return try {
             audioSource.start(HOP) { chunk -> try {
@@ -1015,6 +1111,8 @@ class TuningController(
                 val loudest = recent.max()
                 // a strike; the attack's own rising hops are the same strike, not new ones
                 val strike = db - loudest >= PhaseReader.ONSET_DB && rms >= SILENCE_RMS && hop - strikeHop > STRIKE_HOPS
+                // a strike before the caught string's measurement is complete: it is measured from all it had
+                if (strike) cutCaught(chunk.size)
                 if (strike) { strikeHop = hop; strikePeakDb = db; candidate = null; run = 0; followed = false; early = null; decided = false; _heardMidi.value = null; shownSpread.values.forEach { it.clear() }; stillSince = -1L }
                 if (strike || db > peakDb) peakDb = db
                 if (db > strikePeakDb) strikePeakDb = db
@@ -1109,7 +1207,7 @@ class TuningController(
                         pick?.let { p -> val at = strikeHop; afterHop += { catchKey(p, at) } }
                     }
                 }
-                if (s != null && s.sampling && since == remeasureHop && caught?.strikeHop == strikeHop) afterHop += { remeasureCaught() }
+                if (s != null && s.sampling && since > longHop && (since - longHop) % SAMPLE_STEP_HOPS == 0L && caught?.strikeHop == strikeHop) { val n = since; afterHop += { stepCaught(n) } }
                 // the partials of this strike, once the ring holds enough of it: the
                 // targets of every shown partial come from the string now sounding
                 val tv = _tuning.value

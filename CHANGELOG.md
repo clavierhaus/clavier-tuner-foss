@@ -7,6 +7,20 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-18
+- **Sampling says when a string is measured.** After the strike the key
+  shows "measuring …" until more sound no longer changes the measurement,
+  then "measured": in the middle after about 1.4 s, in the bass after about
+  1.9 s. Until now the string was measured once more at a fixed 2.5 s, and
+  nothing on the page said so. Accept can still be tapped at once.
+- **A key struck again too soon keeps all it had.** If the next strike comes
+  while a string is still being measured, the string is measured from
+  everything heard up to that strike, and its key turns yellow: struck again,
+  it is measured in full.
+- **The sampling page's reading no longer jumps when a key is caught.** The
+  reading of the clean partials lost a moment of sound each time the page
+  changed, and could jump by several cents.
+
 ## 0.2.1 -- 2026-10-18
 
 ### 2026-10-17

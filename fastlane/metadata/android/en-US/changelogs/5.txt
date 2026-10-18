@@ -1,0 +1,1 @@
+Sampling says when a string is measured: "measuring …" until more sound no longer changes it, then "measured". A key struck again too soon keeps all it had and turns yellow.

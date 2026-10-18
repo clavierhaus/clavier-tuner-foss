@@ -1,0 +1,1 @@
+Beim Vermessen zeigt die App, wann eine Saite gemessen ist: „misst …“, bis mehr Klang nichts mehr ändert, dann „gemessen“. Eine zu früh wieder angeschlagene Taste behält alles Gehörte und wird gelb.

@@ -33,6 +33,8 @@ fun SamplingKeyboard(
     referenceSet: Boolean,
     temperament: IntRange,
     modifier: Modifier = Modifier,
+    /** Kept strings whose measurement the next strike cut short: yellow, until struck again in full. */
+    short: Set<Int> = emptySet(),
 ) {
     val lowest = lowestMidi.coerceAtMost(A0)
     val keys = lowest..C8
@@ -50,6 +52,7 @@ fun SamplingKeyboard(
         // said "look here" where nothing was wanted); orange is for the key caught and not yet kept, below
         fun fill(m: Int) = when {
             m == A4 && referenceSet -> Color(Brand.GO_GREEN)
+            m in sampled && m in short -> Color(Brand.MEASURED_SHORT)
             m in sampled -> Color(Brand.GO_GREEN)
             black(m) -> Color(Brand.KEY_BLACK)
             else -> Color(Brand.KEY_WHITE)

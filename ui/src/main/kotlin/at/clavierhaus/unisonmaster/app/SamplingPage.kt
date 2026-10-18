@@ -210,6 +210,19 @@ internal fun SamplingPage(
                             if (c != null) noteName(c) else t(K.sampling_strikeKey),
                             color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
+                        // how far the caught string's measurement has got (18 Oct 2026: a tuner could not
+                        // know that the string must ring on until it is measured; SAMICK findings §29-30):
+                        // measuring while more sound still changes it, measured once it does not, and
+                        // short when the next strike came first
+                        if (c != null) {
+                            Spacer(Modifier.width(12.dp))
+                            val (word, colour) = when (view.caughtMeasured) {
+                                TuningController.Measured.MEASURING -> t(K.sampling_measuring) to muted
+                                TuningController.Measured.MEASURED -> t(K.sampling_measured) to Color(Brand.GO_GREEN)
+                                TuningController.Measured.SHORT -> t(K.sampling_short) to Color(Brand.MEASURED_SHORT)
+                            }
+                            Text(word, color = colour, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false))
+                        }
                         Spacer(Modifier.weight(1f))
                         // Cancel and Accept, the two answers to a strike (Peter, 12 Oct 2026: the
                         // button names its act, the other says Cancel). Cancel drops what the strike
@@ -236,6 +249,7 @@ internal fun SamplingPage(
         if (!settingA4) SamplingKeyboard(
             lowestMidi = cfg.lowestKeyMidi,
             sampled = sampled,
+            short = view?.sampledShort.orEmpty(),
             caught = view?.caught,
             referenceSet = true,
             temperament = low..TuningSession.MIDI_A4,
