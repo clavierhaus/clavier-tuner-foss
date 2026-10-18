@@ -58,6 +58,29 @@ class TuningControllerTest {
         return c to src
     }
 
+    /**
+     * A publish while sampling -- the key caught, its measurement redone -- does not cost the clean
+     * partials a hop of sound (18 Oct 2026). Published mid-hop, the rest of that hop returned at the
+     * generation check and the clean partials' readers missed 1024 samples, losing their phase across
+     * them. A steady string read through the catch at 0.85 s and the remeasure: its clean partials,
+     * which the screen reads together, do not jump at either.
+     */
+    @Test
+    fun aPublishWhileSamplingDoesNotCostTheCleanPartialsAHopOfSound() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 69, listOf(measuredString(69, a4, 8e-4)), sampling = true))
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        c.hear(src, SyntheticString.strike(a4, 8e-4, 4.0, decayS = 6.0))
+        val combined = trail.filter { it.first in 1.2..3.4 && it.second.usedPartials.isNotEmpty() }
+        assertTrue(combined.size > 40, "the clean partials are read together while sampling: ${combined.size} hops")
+        val cents = combined.map { it.second.cents!! }.sorted()
+        val med = cents[cents.size / 2]
+        val worst = combined.maxBy { abs(it.second.cents!! - med) }
+        assertTrue(abs(worst.second.cents!! - med) < 0.05,
+            "the clean partials jump %+.3f c at %.2f s against their median %+.3f".format(worst.second.cents!! - med, worst.first - 0.3, med))
+    }
+
     @Test
     fun theHubsA4ReadingDiesWithItsSound() {
         // Law 3 on the sampling page (Peter, 4 Oct 2026: "a frequency display that actually reflects the A4 from the piano"):

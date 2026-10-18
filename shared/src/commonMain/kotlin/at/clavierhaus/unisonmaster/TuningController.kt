@@ -861,6 +861,24 @@ class TuningController(
 
     @Volatile private var caught: Caught? = null
 
+    /**
+     * What the hop decided and must publish, done at its end (18 Oct 2026). A publish mints a
+     * generation, and the rest of the hop it falls in returns at the generation check (the note
+     * may have changed): the clean partials and the bells then missed that hop of sound, and their
+     * readers lost their phase across it. Sampling published twice per strike that way, at the catch
+     * and at the remeasure, and the Samick A4 left string's partial-3 false beat, which stands at
+     * the detector's line on its first strike, was claimed or not by whether a hop was lost at
+     * 1.4 or at 2.5 s. Sampling's catch and its remeasure are published here.
+     */
+    private val afterHop = ArrayList<() -> Unit>()
+
+    private fun runAfterHop() {
+        if (afterHop.isEmpty()) return
+        val todo = afterHop.toList()
+        afterHop.clear()
+        for (f in todo) f()
+    }
+
     /** The key decided for a strike while sampling: caught, or the accepted key's measurement replaced. */
     private fun catchKey(fit: KeyIdentifier.Fit, strikeHop: Long) {
         val s = session ?: return
@@ -983,7 +1001,7 @@ class TuningController(
         val remeasureHop = (SAMPLE_REMEASURE_S * sr / HOP).toLong()
         _live.value = true
         return try {
-            audioSource.start(HOP) { chunk ->
+            audioSource.start(HOP) { chunk -> try {
                 if (!_live.value) return@start
                 tap?.invoke(chunk)
                 toRing(chunk)
@@ -1086,10 +1104,12 @@ class TuningController(
                         val e = early
                         val pick = if (long == null) e else if (e != null && e.score > long.score) e else long
                         decided = true
-                        pick?.let { catchKey(it, strikeHop) }
+                        // at the hop's end: a publish in the middle of it would cost the clean partials this
+                        // hop of sound (the generation check below), and with it their phase
+                        pick?.let { p -> val at = strikeHop; afterHop += { catchKey(p, at) } }
                     }
                 }
-                if (s != null && s.sampling && since == remeasureHop && caught?.strikeHop == strikeHop) remeasureCaught()
+                if (s != null && s.sampling && since == remeasureHop && caught?.strikeHop == strikeHop) afterHop += { remeasureCaught() }
                 // the partials of this strike, once the ring holds enough of it: the
                 // targets of every shown partial come from the string now sounding
                 val tv = _tuning.value
@@ -1240,7 +1260,7 @@ class TuningController(
                 if (rd != null && rd.shown) shownSpread.getOrPut(w.k) { ReadingSpread() }.push(rd.cents)
                 else if (held == null) shownSpread.remove(w.k)
                 if (t != null) spectrum(finder, t, w.k, held, rd?.takeIf { it.shown }, shownHeld, shownSpread)
-            }
+            } finally { runAfterHop() } }
             true
         } catch (e: Exception) {
             _live.value = false
