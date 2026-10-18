@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.2.1 -- 2026-10-18
+
 ### 2026-10-17
 - **The strobe comes up with the strike.** It used to wait until its filter
   had settled, about a second in the deep bass and half a second in the
