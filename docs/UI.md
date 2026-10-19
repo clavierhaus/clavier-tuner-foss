@@ -242,6 +242,17 @@ was split between them (Compass: lowest key, lowest unwound string). Help
 pages have no foot line either. Quick start's pitch-raise line became the last
 line of its A4 section.
 
+## Settings: the compass is fixed (19 Oct 2026)
+
+Peter: the free app's compass is A0–C8 and cannot be changed. The settings
+model holds the lowest key at A0 whatever is stored or asked
+(`SettingsModel(lowestKeyFixed = TunerSettings.MIDI_A0)`, passed by this app's
+`MainActivity`), and Piano › Compass shows it as a plain row with its (i). An
+edition that lets the tuner set the lowest key puts its own row there through
+`TunerSettingsScreen(lowestKeyRow = …)` and builds its model without the fixed
+key. The lowest unwound string stays a setting in both. From 4 to 19 Oct the
+lowest key was a stepper here too.
+
 ## Help: an index on the left, the topic on the right (14 Oct 2026)
 
 Peter: "The left half will become an index for various help topics." Help is one

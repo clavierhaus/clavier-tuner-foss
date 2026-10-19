@@ -75,6 +75,11 @@ fun TunerSettingsScreen(
     extraHelpTopics: List<HelpTopic> = emptyList(),
     /** Pages an edition adds to the App tab before About (Pro: Language, Probe). */
     extraAppPages: List<SettingsPage> = emptyList(),
+    /**
+     * The lowest key's row, for an edition that lets the tuner set it (Pro: down to C0). Without it the
+     * compass is the fixed A0–C8 of the free app (Peter, 19 Oct 2026), and the row only shows it.
+     */
+    lowestKeyRow: (@Composable () -> Unit)? = null,
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
@@ -88,7 +93,7 @@ fun TunerSettingsScreen(
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), left = { CompassRows(s, model) })) + extraPianoPages),
+            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), left = { CompassRows(s, model, lowestKeyRow) })) + extraPianoPages),
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
@@ -216,16 +221,10 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 }
 
 @Composable
-private fun CompassRows(s: TunerSettings, model: SettingsModel) {
+private fun CompassRows(s: TunerSettings, model: SettingsModel, lowestKeyRow: (@Composable () -> Unit)?) {
     SettingsSection(t(K.settings_piano))
-    StepperRow(
-        t(K.settings_lowestKey), noteName(s.lowestKeyMidi),
-        canDecrease = s.lowestKeyMidi > TunerSettings.MIN_LOWEST_KEY,
-        canIncrease = s.lowestKeyMidi < TunerSettings.MAX_LOWEST_KEY,
-        info = COMPASS_NOTE,
-        onDecrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi - 1) } },
-        onIncrease = { model.update { it.copy(lowestKeyMidi = it.lowestKeyMidi + 1) } },
-    )
+    // the free app's compass is fixed (SettingsModel.lowestKeyFixed); the row that sets it is Pro's
+    if (lowestKeyRow != null) lowestKeyRow() else ReadOnlyRow(t(K.settings_lowestKey), noteName(s.lowestKeyMidi), info = COMPASS_NOTE)
     StepperRow(
         t(K.settings_lowestUnwound), noteName(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,

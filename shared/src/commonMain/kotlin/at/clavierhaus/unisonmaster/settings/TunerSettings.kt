@@ -93,7 +93,8 @@ data class TunerSettings(
     /**
      * The instrument's lowest key: A0 on the piano as it is built; a Pro
      * setting for the few that go lower (F0 on the Bösendorfer 225, C0 on
-     * the Imperial). FOSS pins A0. The session runs down to here.
+     * the Imperial). FOSS pins A0 ([SettingsModel.lowestKeyFixed]; free to
+     * set in both from 4 to 19 Oct 2026). The session runs down to here.
      */
     val lowestKeyMidi: Int = 21,               // A0
     // LANGUAGE
@@ -173,6 +174,7 @@ data class TunerSettings(
         /** Top of the temperament octave: A4, the note the session is defined on. */
         const val TEMPERAMENT_HIGH = 69        // A4
         const val MIDI_C8 = 108
+        const val MIDI_A0 = 21
         const val MIN_MEMORY_S = 0.15
         const val MAX_MEMORY_S = 1.2
         val MEMORY_STEPS = listOf(0.15, 0.3, 0.6, 1.2)
@@ -238,25 +240,33 @@ data class TunerSettings(
 
 /**
  * Holds the settings, persists every change, and exposes them as a flow.
- * [defaults] is what an unset value is; nothing is pinned by edition — foss
- * and Pro are one tuner since 4 Oct 2026, and what the tuner may set in one
- * he may set in the other (the compass and the temperament's order were the
- * free app's pins from 25 Sept to then).
+ * [defaults] is what an unset value is. [lowestKeyFixed] is the one value an
+ * edition fixes: the free app's compass is A0–C8 and cannot be changed, and
+ * Pro sets the lowest key down to C0 for the 225, the Imperial and the Érards
+ * (Peter, 19 Oct 2026, 21:59). Whatever is stored, and whatever an update
+ * asks, the fixed key is what the settings hold. Everything else the tuner
+ * may set in one edition he may set in the other (foss and Pro are one tuner
+ * since 4 Oct 2026; the compass and the temperament's order were the free
+ * app's pins from 25 Sept to then, and from 4 to 19 Oct nothing was pinned).
  */
 class SettingsModel(
     private val store: KeyValueStore,
     private val defaults: TunerSettings = TunerSettings(),
+    /** The lowest key an edition fixes, or null where the tuner sets it (Pro). */
+    val lowestKeyFixed: Int? = null,
 ) {
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
 
     fun update(change: (TunerSettings) -> TunerSettings) {
-        val s = change(_settings.value)
+        val s = fixed(change(_settings.value))
         _settings.value = s
         save(s)
     }
 
-    private fun load(): TunerSettings = loadStored()
+    private fun load(): TunerSettings = fixed(loadStored())
+
+    private fun fixed(s: TunerSettings): TunerSettings = lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s
 
     private fun loadStored(): TunerSettings {
         val d = defaults

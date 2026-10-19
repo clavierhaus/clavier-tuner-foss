@@ -12,6 +12,7 @@ import at.clavierhaus.unisonmaster.persistence.PrivateSaveFile
 import at.clavierhaus.unisonmaster.persistence.KeystoreSealer
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.settings.SettingsModel
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +39,8 @@ class MainActivity : ComponentActivity() {
     private val audioSource by lazy { createAudioSource() }
     private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
     private val settingsModel by lazy {
-        SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)))
+        // the free app's compass is A0–C8 and cannot be changed (Peter, 19 Oct 2026); Pro sets it down to C0
+        SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)), lowestKeyFixed = TunerSettings.MIDI_A0)
     }
     /** The microphone runs only on the tuning screen. */
     private var micWanted = false

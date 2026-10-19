@@ -7,6 +7,11 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-19
+- **The compass is A0–C8.** The lowest key is no longer a setting: the app
+  tunes the 88 keys from A0 to C8, and a lowest key set earlier gives way to
+  A0. Settings › Piano › Compass shows it.
+
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key
   shows "measuring …" until more sound no longer changes the measurement,

@@ -16,7 +16,7 @@ class SettingsTest {
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(false, b.settings.value.autoNote)
-        // nothing is pinned by edition (4 Oct 2026): the compass the tuner set is the compass he gets back
+        // a model with no fixed lowest key (Pro's, since 19 Oct 2026): the compass the tuner set is the compass he gets back
         assertEquals(17, b.settings.value.lowestKeyMidi, "the lowest key as set")
         val other = MemoryStore()
         SettingsModel(other).update { it.copy(temperamentFirst = true) }
@@ -42,6 +42,25 @@ class SettingsTest {
         assertEquals(16, TunerSettings.helpTextStep(14, +1)); assertEquals(12, TunerSettings.helpTextStep(14, -1))
         store.put("helpTextSp", "40")
         assertEquals(22, SettingsModel(store).settings.value.helpTextSp, "a stored size beyond the range is kept at its end")
+    }
+
+    /**
+     * The free app's compass is A0–C8 and cannot be changed; Pro sets the lowest key down to C0, for
+     * the 225 (F0), the Imperial and the Érards (Peter, 19 Oct 2026, 21:59). A lowest key stored before,
+     * when the free app let it be set, does not survive into the free app's session.
+     */
+    @Test
+    fun theFreeAppsCompassIsA0ToC8WhateverIsStoredAndProSetsItDownToC0() {
+        val store = MemoryStore()
+        SettingsModel(store).update { it.copy(lowestKeyMidi = 17) }          // set to F0 in a free app before 19 Oct
+        val free = SettingsModel(store, lowestKeyFixed = TunerSettings.MIDI_A0)
+        assertEquals(21, free.settings.value.lowestKeyMidi, "the stored F0 gives way to A0")
+        free.update { it.copy(lowestKeyMidi = 12) }
+        assertEquals(21, free.settings.value.lowestKeyMidi, "and nothing sets it lower")
+        val pro = SettingsModel(MemoryStore())
+        pro.update { it.copy(lowestKeyMidi = TunerSettings.MIN_LOWEST_KEY) }
+        assertEquals(12, pro.settings.value.lowestKeyMidi, "Pro goes down to C0")
+        assertEquals(null, pro.lowestKeyFixed)
     }
 
     @Test
