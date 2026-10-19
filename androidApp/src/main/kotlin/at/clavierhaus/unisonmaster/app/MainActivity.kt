@@ -15,6 +15,10 @@ import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +76,7 @@ class MainActivity : ComponentActivity() {
         // fixed at once). Only while this window is shown: in the background the phone's setting holds.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         permissionRequest.launch(Manifest.permission.RECORD_AUDIO)
-        hideSystemBars()
+        systemBars(hidden = false)
         lastTuning.value = sessionStore.load()
         controller.onSessionChanged = { snap -> sessionStore.save(snap) }
         // The activity made again while a tuning was under way (4 Oct 2026, Peter at the piano: a turn of the
@@ -106,6 +110,11 @@ class MainActivity : ComponentActivity() {
                     controller.applySettings(settings)
                 }
                 LaunchedEffect(screen) {
+                    // the system bars are hidden only while tuning, where the picture needs every millimetre;
+                    // on the start screen and the settings they show, and with them the way out (19 Oct 2026)
+                    systemBars(hidden = screen == "tune")
+                }
+                LaunchedEffect(screen) {
                     // the microphone runs only while tuning: nothing is measured unseen
                     micWanted = screen == "tune"
                     if (micWanted && hasMic()) controller.startLive() else stopListening()
@@ -118,7 +127,8 @@ class MainActivity : ComponentActivity() {
                     lastTuning.value = sessionStore.load()
                     screen = "hub"
                 }
-                OnePicture {
+                // where the bars show, the picture stands inside them; behind them the screens' black
+                OnePicture(Modifier.background(Color(Brand.BLACK)).then(if (screen == "tune") Modifier else Modifier.windowInsetsPadding(WindowInsets.systemBars))) {
                     when (screen) {
                         "settings" -> {
                             BackHandler { screen = settingsFrom }
@@ -181,17 +191,27 @@ class MainActivity : ComponentActivity() {
         stopListening()
     }
 
+    /** Whether the screen in front hides the bars: set again when the window regains its focus. */
+    private var barsHidden = false
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        if (hasFocus) systemBars(barsHidden)
     }
 
-    private fun hideSystemBars() {
+    /**
+     * The status and navigation bars: hidden while tuning, shown everywhere else (Peter, 19 Oct 2026).
+     * Until then they were hidden on every screen, and two testers in the forum found no way to close
+     * the app: the Back, Home and Recents buttons only came for a moment after a swipe from the edge.
+     * Hidden, a swipe from the edge still shows them for a moment, as before.
+     */
+    private fun systemBars(hidden: Boolean) {
+        barsHidden = hidden
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemBars())
+            if (hidden) hide(WindowInsetsCompat.Type.systemBars()) else show(WindowInsetsCompat.Type.systemBars())
         }
     }
 }

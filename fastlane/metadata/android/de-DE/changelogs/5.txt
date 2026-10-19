@@ -1,1 +1,1 @@
-Beim Vermessen zeigt die App, wann eine Saite gemessen ist: „misst …“, bis mehr Klang nichts mehr ändert, dann „gemessen“. Eine zu früh wieder angeschlagene Taste behält alles Gehörte und wird gelb. Der Umfang ist fest: die 88 Tasten von A0 bis C8.
+Beim Vermessen zeigt die App, wann eine Saite gemessen ist: „misst …“, bis mehr Klang nichts mehr ändert, dann „gemessen“. Eine zu früh wieder angeschlagene Taste behält alles Gehörte und wird gelb. Der Umfang ist fest: die 88 Tasten von A0 bis C8. Die Zurück- und Home-Tasten des Telefons sind außerhalb des Stimmens sichtbar.

@@ -11,6 +11,12 @@ reconstructed from the commit history that day.
 - **The compass is A0–C8.** The lowest key is no longer a setting: the app
   tunes the 88 keys from A0 to C8, and a lowest key set earlier gives way to
   A0. Settings › Piano › Compass shows it.
+- **The phone's own buttons show outside the tuning screen.** The status bar
+  and the navigation bar (Back, Home, the app switcher) were hidden on every
+  screen and came only for a moment after a swipe from the edge, so the app
+  seemed to have no way out. They now show on the start screen and in the
+  settings; only the tuning screen hides them, where the picture needs the
+  room. Back on the start screen closes the app.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key

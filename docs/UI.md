@@ -253,6 +253,18 @@ edition that lets the tuner set the lowest key puts its own row there through
 key. The lowest unwound string stays a setting in both. From 4 to 19 Oct the
 lowest key was a stepper here too.
 
+## The system bars show outside the tuning screen (19 Oct 2026)
+
+Since the first commit the status bar and the navigation bar were hidden on
+every screen (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`): Back, Home and the app
+switcher came only for a moment after a swipe from the edge, and two testers
+in the forum found no way to close the app. Peter chose to hide them only on
+the tuning screen. `MainActivity` sets them with each screen, and on the
+screens where they show the picture stands inside them
+(`OnePicture(Modifier.windowInsetsPadding(WindowInsets.systemBars))`) on the
+screens' black. Back on the start screen closes the app; there is no exit
+button.
+
 ## Help: an index on the left, the topic on the right (14 Oct 2026)
 
 Peter: "The left half will become an index for various help topics." Help is one

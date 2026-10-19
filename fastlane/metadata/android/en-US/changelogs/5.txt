@@ -1,1 +1,1 @@
-Sampling says when a string is measured: "measuring …" until more sound no longer changes it, then "measured". A key struck again too soon keeps all it had and turns yellow. The compass is fixed at the 88 keys, A0 to C8.
+Sampling says when a string is measured: "measuring …" until more sound no longer changes it, then "measured". A key struck again too soon keeps all it had and turns yellow. The compass is fixed at the 88 keys, A0 to C8. The phone's Back and Home buttons show outside the tuning screen.
