@@ -385,8 +385,10 @@ fun AcceptButton(accepted: Boolean, enabled: Boolean, onClick: () -> Unit, modif
         colors = ButtonDefaults.buttonColors(
             containerColor = orange,
             contentColor = Color(Brand.BLACK),
-            disabledContainerColor = if (accepted) orange else orange.copy(alpha = 0.3f),
-            disabledContentColor = if (accepted) Color(Brand.BLACK) else Color(Brand.BLACK).copy(alpha = 0.6f),
+            // once the key is kept the button is spent and looks it: grey, not the orange that asks
+            // for a tap (Peter, 22 Oct 2026: the kept key shows, and Accept greys out)
+            disabledContainerColor = if (accepted) Color(0xFF444444) else orange.copy(alpha = 0.3f),
+            disabledContentColor = if (accepted) Color(Brand.WHITE_MUTED) else Color(Brand.BLACK).copy(alpha = 0.6f),
         ),
     ) {
         Text(t(K.app_accept), fontFamily = DejaVuSerif, fontSize = 18.sp)

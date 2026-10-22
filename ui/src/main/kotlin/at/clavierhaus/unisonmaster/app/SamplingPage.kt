@@ -208,7 +208,8 @@ internal fun SamplingPage(
                         val c = view.caught
                         Text(
                             if (c != null) noteName(c) else t(K.sampling_strikeKey),
-                            color = if (c != null) orange else muted, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
+                            // the key kept stands green, as it does on the keyboard (Peter, 22 Oct 2026)
+                            color = if (c == null) muted else if (view.caughtAccepted) Color(Brand.GO_GREEN) else orange, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
                         )
                         // how far the caught string's measurement has got (18 Oct 2026: a tuner could not
                         // know that the string must ring on until it is measured; SAMICK findings §29-30):

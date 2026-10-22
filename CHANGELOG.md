@@ -23,6 +23,8 @@ reconstructed from the commit history that day.
   button took it off, and the next strike brought it back. It now stays off
   through every strike of the note until a tap brings it back; a new note
   starts with all its partials.
+- **Accept shows that it took.** Once a caught key is kept, Accept turns grey
+  and the key's name beside it turns green, as the key does on the keyboard.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key
