@@ -1068,6 +1068,13 @@ class TuningController(
         var readerGeneration = -1
         val shownReaders = HashMap<Int, PhaseReader>()
         var shownGeneration = -1
+        // the A4 page: the A4 string's partials 2 and up, each by its own reader at the place the strike
+        // put it, which is the only lawful place before a B is measured (Rule 0; Peter, 22 Oct 2026)
+        val hubReaders = HashMap<Int, PhaseReader>()
+        var hubPlaces: Map<Int, Double> = emptyMap()
+        val hubHeld = HashMap<Int, PhaseReader.Reading>()
+        val hubAt = HashMap<Int, Long>()
+        var hubStrike = -1L
         // the clean partials read together (CleanReading): targets follow the note, readings the strike
         val clean = CleanReading(sr, memoryS = _settings.value.readingMemoryS, holdHops = holdHops(sr))
         var cleanGeneration = -1
@@ -1144,6 +1151,30 @@ class TuningController(
                     // the A4 string as it sounds now, and nothing once it is gone (Law 3): a shown reading or none
                     reader?.push(chunk)?.let { rd -> _liveHz.value = if (rd.shown) rd.hz else null }
                     if (_fullSpectrum.value && finder != null) hubSpectrum(finder, _liveHz.value ?: _referenceA4Hz.value)
+                    // the A4 string's other partials as strobes, so a false beat shows before a string is
+                    // chosen as the reference (Peter, 22 Oct 2026: "No bells on A4, just strobe. Strobe
+                    // shows false beats"): once the ring holds enough of the strike, the strike says where
+                    // they stand, and each is read there; a partial gone quiet is dropped (Rule 3)
+                    if (strikeHop > 0 && hop - strikeHop == livePartialsHops(sr) && hubStrike != strikeHop) {
+                        hubStrike = strikeHop
+                        reader?.targetHz?.let { f1 -> StringMeasure.measure(ringSnapshot(), sr, TuningSession.MIDI_A4, f1, timeMs = clock()) }?.let { m ->
+                            hubPlaces = m.partials.filter { it.k >= 2 }.mapNotNull { p -> m.partialHz(p.k)?.let { p.k to it } }.toMap()
+                            hubReaders.keys.retainAll(hubPlaces.keys)
+                            for ((k, hz) in hubPlaces) {
+                                val r = hubReaders[k]
+                                if (r == null) hubReaders[k] = PhaseReader(sr, hz, memoryS = _settings.value.readingMemoryS)
+                                else if (abs(TuningSession.centsOff(hz, r.targetHz)) > PhaseReader.DEFAULT_BAND_CENTS / 2) r.retarget(hz)
+                            }
+                        }
+                    }
+                    for ((k, r) in hubReaders) r.push(chunk)?.let { if (it.shown) { hubHeld[k] = it; hubAt[k] = hop } }
+                    hubAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { hubHeld.remove(k); true } else false }
+                    val top = hubHeld.values.maxOfOrNull { it.levelDbfs }
+                    _livePartials.value = hubHeld.entries.sortedBy { it.key }.mapNotNull { (k, r) ->
+                        val place = hubPlaces[k] ?: return@mapNotNull null
+                        LivePartial(k, r.hz, TuningSession.centsOff(r.hz, place),
+                            (1.0 + (r.levelDbfs - (top ?: r.levelDbfs)) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0), null, r.levelDbfs - r.noiseDbfs)
+                    }
                     return@start
                 }
 

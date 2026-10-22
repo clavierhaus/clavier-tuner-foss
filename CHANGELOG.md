@@ -25,6 +25,10 @@ reconstructed from the commit history that day.
   starts with all its partials.
 - **Accept shows that it took.** Once a caught key is kept, Accept turns grey
   and the key's name beside it turns green, as the key does on the keyboard.
+- **The A4 page shows the string's partials as strobes.** Partial 1 stands
+  against the pitch chosen, as before; partials 2 to 5 stand against where the
+  strike put them, so a clean string's stand still and a false one's beat.
+  Strike each string of A4 alone and take the cleanest as the reference.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key

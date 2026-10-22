@@ -93,6 +93,25 @@ class TuningControllerTest {
     }
 
     /**
+     * The A4 page shows the A4 string's partials as strobes, not only its first, so a false beat shows
+     * before a string is chosen as the reference (Peter, 22 Oct 2026, at the Steinway B: "No bells on
+     * A4, just strobe. Strobe shows false beats"). Each partial is read by its own reader at the place
+     * the strike put it -- with no B measured yet, the strike is the only lawful place (Rule 0).
+     */
+    @Test
+    fun theA4PageReadsTheStringsPartialsWhereTheStrikePutThem() {
+        val (c, src) = controller()
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        val live = c.livePartials.value.associateBy { it.k }
+        for (k in 2..4) {
+            val p = assertNotNull(live[k], "partial $k of A4 is read on the A4 page: ${live.keys}")
+            val at = k * 443.12 * Inharmonicity.ratio(k, 8e-4)
+            assertTrue(abs(TuningSession.centsOff(p.hz, at)) < 1.0, "partial $k read at %.3f Hz, the string's at %.3f".format(p.hz, at))
+            assertTrue(abs(p.cents) < 1.0, "and stands still against the place the strike put it: %.2f c".format(p.cents))
+        }
+    }
+
+    /**
      * Superseded 5 Oct 2026. Until then Done took the A4 string as it stood
      * and made *that* the reference, so the tuner had nothing to tune A4 to:
      * the pitch was whatever the string happened to be. Peter, 15:55: "we

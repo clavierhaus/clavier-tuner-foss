@@ -1,5 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
+import kotlin.math.pow
 import at.clavierhaus.unisonmaster.ui.num
 import at.clavierhaus.unisonmaster.i18n.noteName
 import androidx.compose.foundation.background
@@ -138,12 +139,22 @@ fun BasicHub(
                 seats = if (t.sampling) SAMPLING_SEATS else null,
             )
         }
-        fun hubFrame(): TuningPicture.Frame = TuningPicture.Frame(
-            note = "A4", listened = 1, live = hubHz != null, listenedHz = hubHz, listenedTargetHz = a4,
-            partials = hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap(),
-            targets = mapOf(1 to a4), falsePartials = emptySet(), dropped = emptySet(),
-            matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
-        )
+        // Since 22 Oct 2026 the A4 page shows the string's partials 2 and up as strobes too, each against the
+        // place the strike put it -- a measured place, which is what the note above asked for -- so a false
+        // beat shows before a string is taken as the reference (Peter, at the Steinway B). Partial 1 stands
+        // against the pitch chosen, as before.
+        fun hubFrame(): TuningPicture.Frame {
+            val upper = partials.filter { it.k >= 2 }
+            return TuningPicture.Frame(
+                note = "A4", listened = 1, live = hubHz != null, listenedHz = hubHz, listenedTargetHz = a4,
+                partials = (hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap()) +
+                    upper.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
+                targets = mapOf(1 to a4) + upper.associate { it.k to it.hz * 2.0.pow(-it.cents / 1200.0) },
+                falsePartials = emptySet(), dropped = emptySet(),
+                matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+                seats = SAMPLING_SEATS,
+            )
+        }
         val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
         if (t == null || t.sampling) {
             SamplingPage(controller, t, picture, onTemperamentLow, feeding, onPickRecording, onUseMicrophone)
