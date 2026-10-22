@@ -158,6 +158,30 @@ class TuningControllerTest {
     }
 
     /**
+     * A partial the tuner takes off the tuning screen stays off (Peter, 22 Oct 2026, at his Steinway B:
+     * "I can eliminate partials in tuning mode, but they return ... Tapping a partial button is a
+     * deliberate choice and should not automagically be changed back"). Until then the tap took it out
+     * of the shown set only, and the next strike built that set again from the strike's partials less
+     * those hidden on the hub, so it came back with the next strike.
+     */
+    @Test
+    fun aPartialTakenOffStaysOffThroughTheNextStrikeAndComesBackOnlyByATap() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val k = c.shownPartials.value.filter { it != c.tuning.value!!.listening.k }.max()
+        c.tapPartial(k)
+        assertFalse(k in c.shownPartials.value, "taken off")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertFalse(k in c.shownPartials.value, "struck again, partial $k stays off: ${c.shownPartials.value}")
+        assertTrue(c.shownPartials.value.size > 1, "the others are read as before")
+        c.tapPartial(k)
+        assertTrue(k in c.shownPartials.value, "a tap brings it back")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertTrue(k in c.shownPartials.value, "and it stays: ${c.shownPartials.value}")
+    }
+
+    /**
      * A string of its own stiffness, struck once; its partial 4 — the one
      * being tuned — dies away at 2.7 s while the others ring on. Once the
      * strike has spoken (1.5 s in) the string's own series is the targets of

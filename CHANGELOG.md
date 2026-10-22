@@ -18,6 +18,12 @@ reconstructed from the commit history that day.
   settings; only the tuning screen hides them, where the picture needs the
   room. Back on the start screen closes the app.
 
+### 2026-10-22
+- **A partial taken off the tuning screen stays off.** A tap on a partial's
+  button took it off, and the next strike brought it back. It now stays off
+  through every strike of the note until a tap brings it back; a new note
+  starts with all its partials.
+
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key
   shows "measuring …" until more sound no longer changes the measurement,

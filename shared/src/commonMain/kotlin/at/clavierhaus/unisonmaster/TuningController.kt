@@ -228,7 +228,12 @@ class TuningController(
     val fullSpectrum: StateFlow<Boolean> = _fullSpectrum.asStateFlow()
 
     private val _hiddenPartials = MutableStateFlow<Set<Int>>(emptySet())
-    /** Partials the tuner has switched off on the hub's Full Spectrum. */
+    /**
+     * Partials the tuner has switched off: on the hub's Full Spectrum, and on the tuning screen, where a
+     * partial taken off stays off through every strike of the note until a tap brings it back (Peter,
+     * 22 Oct 2026: "Tapping a partial button is a deliberate choice and should not automagically be
+     * changed back"). A new note starts with none.
+     */
     val hiddenPartials: StateFlow<Set<Int>> = _hiddenPartials.asStateFlow()
 
     private val _shownPartials = MutableStateFlow(setOf(1))
@@ -277,12 +282,15 @@ class TuningController(
             k !in shown -> {
                 val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
                 if (k !in available) return
+                _hiddenPartials.value = _hiddenPartials.value - k
                 _shownPartials.value = shown + k
                 setActive(k)
                 wantShown()
             }
-            // ... and one tap removes it again
+            // ... and one tap removes it again, and it stays off: the next strike builds the shown
+            // partials less the hidden ones (until 22 Oct 2026 it came back with the next strike)
             else -> {
+                _hiddenPartials.value = _hiddenPartials.value + k
                 _shownPartials.value = shown - k
                 if (_activePartial.value == k) setActive(listened)
                 wantShown()
