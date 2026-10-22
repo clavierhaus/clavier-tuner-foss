@@ -17,7 +17,6 @@ import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.KeyIdentifier
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.Notes
-import at.clavierhaus.unisonmaster.tuning.PartialSelection
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -270,7 +269,10 @@ class TuningController(
     fun tapPartial(k: Int) {
         val t = _tuning.value
         if (t == null) {
-            _hiddenPartials.value = PartialSelection.tap(k, _fullSpectrum.value, _liveAudible.value, _hiddenPartials.value)
+            // the A4 page: every partial the strike showed is drawn, and a tap takes one out or brings it
+            // back; partial 1 is the pitch itself and always stays (Peter, 22 Oct 2026)
+            val hidden = _hiddenPartials.value
+            if (k != 1 && k in _liveAudible.value) _hiddenPartials.value = if (k in hidden) hidden - k else hidden + k
             return
         }
         val listened = t.listening.k
@@ -1072,6 +1074,7 @@ class TuningController(
         // put it, which is the only lawful place before a B is measured (Rule 0; Peter, 22 Oct 2026)
         val hubReaders = HashMap<Int, PhaseReader>()
         var hubPlaces: Map<Int, Double> = emptyMap()
+        var hubPlace1 = 0.0
         val hubHeld = HashMap<Int, PhaseReader.Reading>()
         val hubAt = HashMap<Int, Long>()
         var hubStrike = -1L
@@ -1159,6 +1162,8 @@ class TuningController(
                         hubStrike = strikeHop
                         reader?.targetHz?.let { f1 -> StringMeasure.measure(ringSnapshot(), sr, TuningSession.MIDI_A4, f1, timeMs = clock()) }?.let { m ->
                             hubPlaces = m.partials.filter { it.k >= 2 }.mapNotNull { p -> m.partialHz(p.k)?.let { p.k to it } }.toMap()
+                            hubPlace1 = m.partialHz(1) ?: m.f1Hz
+                            _liveAudible.value = hubPlaces.keys + 1
                             hubReaders.keys.retainAll(hubPlaces.keys)
                             for ((k, hz) in hubPlaces) {
                                 val r = hubReaders[k]
@@ -1169,10 +1174,16 @@ class TuningController(
                     }
                     for ((k, r) in hubReaders) r.push(chunk)?.let { if (it.shown) { hubHeld[k] = it; hubAt[k] = hop } }
                     hubAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { hubHeld.remove(k); true } else false }
+                    // each partial against the pitch chosen, by the ratio this strike measured between it and
+                    // partial 1: the string's partials move together (Law 1), so an A4 standing flat shows
+                    // flat on every strobe, and a false partial beats against the others (Peter, 22 Oct 2026:
+                    // partial 1 moved, the others stood still against their own places, which made no sense)
                     val top = hubHeld.values.maxOfOrNull { it.levelDbfs }
-                    _livePartials.value = hubHeld.entries.sortedBy { it.key }.mapNotNull { (k, r) ->
+                    val hidden = _hiddenPartials.value
+                    _livePartials.value = hubHeld.entries.filter { it.key !in hidden }.sortedBy { it.key }.mapNotNull { (k, r) ->
                         val place = hubPlaces[k] ?: return@mapNotNull null
-                        LivePartial(k, r.hz, TuningSession.centsOff(r.hz, place),
+                        if (hubPlace1 <= 0.0) return@mapNotNull null
+                        LivePartial(k, r.hz, TuningSession.centsOff(r.hz, _referenceA4Hz.value * place / hubPlace1),
                             (1.0 + (r.levelDbfs - (top ?: r.levelDbfs)) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0), null, r.levelDbfs - r.noiseDbfs)
                     }
                     return@start

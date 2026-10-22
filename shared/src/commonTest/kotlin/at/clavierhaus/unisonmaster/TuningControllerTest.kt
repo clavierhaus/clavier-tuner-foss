@@ -96,7 +96,8 @@ class TuningControllerTest {
      * The A4 page shows the A4 string's partials as strobes, not only its first, so a false beat shows
      * before a string is chosen as the reference (Peter, 22 Oct 2026, at the Steinway B: "No bells on
      * A4, just strobe. Strobe shows false beats"). Each partial is read by its own reader at the place
-     * the strike put it -- with no B measured yet, the strike is the only lawful place (Rule 0).
+     * the strike put it -- with no B measured yet, the strike is the only lawful place (Rule 0) -- and
+     * shown against the pitch chosen by the ratio the strike measured to partial 1.
      */
     @Test
     fun theA4PageReadsTheStringsPartialsWhereTheStrikePutThem() {
@@ -107,8 +108,21 @@ class TuningControllerTest {
             val p = assertNotNull(live[k], "partial $k of A4 is read on the A4 page: ${live.keys}")
             val at = k * 443.12 * Inharmonicity.ratio(k, 8e-4)
             assertTrue(abs(TuningSession.centsOff(p.hz, at)) < 1.0, "partial $k read at %.3f Hz, the string's at %.3f".format(p.hz, at))
-            assertTrue(abs(p.cents) < 1.0, "and stands still against the place the strike put it: %.2f c".format(p.cents))
+            // against the pitch chosen, as partial 1 is: the string's partials move together (Law 1; Peter,
+            // 22 Oct 2026: partial 1 moved and the others stood still, which made no sense)
+            val off = TuningSession.centsOff(443.12, c.referenceA4Hz.value)
+            assertTrue(abs(p.cents - off) < 1.0, "partial $k stands %.2f c from the pitch chosen, partial 1 %.2f c".format(p.cents, off))
         }
+        // a tap takes a partial out, and another brings it back; partial 1 always stays
+        c.tapPartial(3)
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertTrue(c.livePartials.value.none { it.k == 3 }, "partial 3 taken out: ${c.livePartials.value.map { it.k }}")
+        assertTrue(c.livePartials.value.any { it.k == 2 })
+        c.tapPartial(3)
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertTrue(c.livePartials.value.any { it.k == 3 }, "and back")
+        c.tapPartial(1)
+        assertTrue(1 !in c.hiddenPartials.value)
     }
 
     /**

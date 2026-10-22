@@ -68,6 +68,8 @@ fun TuningPictureView(
     onNoteTap: (() -> Unit)? = null,
     /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
     onStretchTap: (() -> Unit)? = null,
+    /** Whether the bells are drawn. Not on the A4 page: there the strobe alone (Peter, 22 Oct 2026). */
+    bells: Boolean = true,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -97,8 +99,10 @@ fun TuningPictureView(
         // same as the bells with less, and are gone. Each region is a box with round corners on a
         // ground one step lighter than the page, so the eye finds it as a region; all black read as
         // unordered.
-        Place(0.00f, 0.26f, 0.48f, 0.72f) { Panel { Bells(p, marks) } }
-        Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
+        if (bells) {
+            Place(0.00f, 0.26f, 0.48f, 0.72f) { Panel { Bells(p, marks) } }
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
+        } else Place(0.20f, 0.00f, 0.80f, 0.98f) { Panel { Bands(p, marks) } }
     }
 }
 

@@ -42,6 +42,7 @@ import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.AcceptButton
 import at.clavierhaus.unisonmaster.ui.CornerBand
 import at.clavierhaus.unisonmaster.ui.ProbeButton
+import at.clavierhaus.unisonmaster.ui.PartialChips
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
@@ -104,6 +105,8 @@ internal fun SamplingPage(
 ) {
     val hz by controller.liveHz.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
+    val hiddenA4 by controller.hiddenPartials.collectAsState()
+    val audibleA4 by controller.liveAudible.collectAsState()
     val cfg by controller.settings.collectAsState()
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED); val orange = Color(Brand.ORANGE)
     // the one thing this page asks before doing: A4 set again, which starts the sampling over
@@ -201,7 +204,22 @@ internal fun SamplingPage(
                     modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
                     // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
                     marks = false,
+                    // A4: the strobe alone, no bells (Peter, 22 Oct 2026)
+                    bells = view != null,
                 )
+                if (view == null) {
+                    // A4's partials under the strobe: a tap takes one out of it, another brings it back,
+                    // so the strings can be compared on the partials that matter (Peter, 22 Oct 2026)
+                    PartialChips(
+                        a4Hz = a4, baseHz = a4,
+                        count = controller.highestPartial(a4),
+                        shown = audibleA4 - hiddenA4,
+                        falseMarked = emptySet(),
+                        tappable = audibleA4 - 1,
+                        onTap = { k -> controller.tapPartial(k) },
+                        modifier = Modifier.fillMaxWidth().height(36.dp),
+                    )
+                }
                 if (view != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
                         Text(t(K.sampling_caughtLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
