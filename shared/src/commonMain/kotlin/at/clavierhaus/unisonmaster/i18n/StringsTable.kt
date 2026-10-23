@@ -71,7 +71,7 @@ object K {
     const val hub_fundamentalA4 = "hub.fundamentalA4"
     const val hub_fullSpectrum = "hub.fullSpectrum"
     const val sampling_subtitle = "sampling.subtitle"
-    const val sampling_asItStands = "sampling.asItStands"
+    const val sampling_a4Hint = "sampling.a4Hint"
     const val sampling_setAgain = "sampling.setAgain"
     const val sampling_temperament = "sampling.temperament"
     const val sampling_caughtLabel = "sampling.caughtLabel"
@@ -244,7 +244,7 @@ internal object StringsTable : Catalog {
         "hub.fundamentalA4" to arrayOf("Fundamental A4", "Grundton A4"),
         "hub.fullSpectrum" to arrayOf("Full Spectrum", "Alle Teiltöne"),
         "sampling.subtitle" to arrayOf("Retrieve the piano's inharmonicity", "Die Inharmonizität Ihres Klaviers messen"),
-        "sampling.asItStands" to arrayOf("as it stands", "wie sie steht"),
+        "sampling.a4Hint" to arrayOf("Tap − or + to adjust. You can also slide left and right here.", "Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen."),
         "sampling.setAgain" to arrayOf("set again", "neu setzen"),
         "sampling.temperament" to arrayOf("Temperament", "Temperatur"),
         "sampling.caughtLabel" to arrayOf("Caught", "Erkannt"),
@@ -322,7 +322,7 @@ internal object StringsTable : Catalog {
         "help.qs.octaves.title" to arrayOf("3 · Octave types", "3 · Oktavtypen"),
         "help.qs.tuning.title" to arrayOf("4 · Tuning", "4 · Stimmen"),
         "help.qs.a4.s1" to arrayOf("On the home screen: New Tuning.", "Auf der Startseite: Neue Stimmung."),
-        "help.qs.a4.s2" to arrayOf("Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or tap \"as it stands\" to keep the string where it is.", "A4 auf eine Saite abdämpfen. Die Tonhöhe mit − und + wählen, ein Zehntel Hertz je Schritt (gedrückt halten läuft weiter), oder „wie sie steht“ tippen, um die Saite zu lassen, wo sie ist."),
+        "help.qs.a4.s2" to arrayOf("Mute A4 to one string. Choose its pitch with − and +, a tenth of a hertz at a time (hold to run on), or slide a finger left or right across them. To keep the pitch shown, tap Done.", "A4 auf eine Saite abdämpfen. Die Tonhöhe mit − und + wählen, ein Zehntel Hertz je Schritt (gedrückt halten läuft weiter), oder mit dem Finger darüber nach links oder rechts wischen. Um die angezeigte Tonhöhe zu behalten, Fertig tippen."),
         "help.qs.a4.s3" to arrayOf("Tune the string until the strobe stands still, then Done.", "Die Saite stimmen, bis das Stroboskop steht, dann Fertig."),
         "help.qs.a4.s4" to arrayOf("The temperament octave is A3–A4; its low note can be moved on the same screen.", "Die Temperaturoktave ist A3–A4; ihr unterer Ton lässt sich auf derselben Seite verschieben."),
         "help.qs.a4.s5" to arrayOf("Pitch raises are out of scope: a piano far from pitch needs one first.", "Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines."),
