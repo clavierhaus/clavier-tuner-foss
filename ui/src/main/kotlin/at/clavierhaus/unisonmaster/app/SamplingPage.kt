@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import at.clavierhaus.unisonmaster.Brand
@@ -155,45 +156,42 @@ internal fun SamplingPage(
                 // It starts at the engine's 440.0 Hz and the two steps move it by a tenth of a hertz;
                 // until 5 Oct 2026 this page read the string and took it as the reference, which gave
                 // the tuner nothing to aim at (Peter, 15:55: "we define the initial pitch for A4").
-                // how the pitch is set, over the controls that set it (Peter, 23 Oct 2026)
-                if (view == null) Text(t(K.sampling_a4Hint), color = muted, fontSize = 12.sp, modifier = Modifier.padding(start = 60.dp))
+                val a4Now by rememberUpdatedState(a4)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
-                    // − 440.0 + is also one slider: a finger drawn right raises A4 a tenth of a hertz
-                    // every SLIDE_STEP_DP, drawn left lowers it (Peter, 23 Oct 2026); a held box stops
-                    // stepping by itself once the finger slides
-                    var sliding by remember { mutableStateOf(false) }
-                    val a4Now by rememberUpdatedState(a4)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.pointerInput(Unit) {
+                    StepBox("−") { controller.setReference(tenths(a4Now - 0.1)) }
+                    Text(
+                        formatHz(a4),
+                        color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                    )
+                    StepBox("+") { controller.setReference(tenths(a4Now + 0.1)) }
+                    // "as it stands", the string's reading taken as the pitch by one tap (7 Oct 2026), left on
+                    // 23 Oct 2026 (Peter): the tuner who keeps the pitch shown taps Done
+                    Spacer(Modifier.weight(1f))
+                    if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
+                    else Text(t(K.sampling_setAgain), color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                }
+                // Under − 440.0 +, the line that says how the pitch is set is the slider itself: a finger
+                // drawn right along it raises A4 a tenth of a hertz every SLIDE_STEP_DP, drawn left lowers
+                // it (Peter, 23 Oct 2026: on the number alone the slide was too small to find, and the
+                // boxes took the touch). A strip of its own, so it reads as something to touch.
+                if (view == null) Box(
+                    Modifier.padding(start = 60.dp, top = 4.dp).width(SLIDER_W).height(30.dp)
+                        .background(Color(Brand.CONTROL), RoundedCornerShape(6.dp))
+                        .pointerInput(Unit) {
                             val stepPx = SLIDE_STEP_DP.dp.toPx()
                             var acc = 0f
-                            detectHorizontalDragGestures(
-                                onDragStart = { sliding = true; acc = 0f },
-                                onDragEnd = { sliding = false },
-                                onDragCancel = { sliding = false },
-                            ) { change, dx ->
+                            detectHorizontalDragGestures(onDragStart = { acc = 0f }) { change, dx ->
                                 change.consume()
                                 acc += dx
                                 val steps = (acc / stepPx).toInt()
                                 if (steps != 0) { acc -= steps * stepPx; controller.setReference(tenths(a4Now + steps * 0.1)) }
                             }
                         },
-                    ) {
-                        StepBox("−", blocked = { sliding }) { controller.setReference(tenths(a4Now - 0.1)) }
-                        Text(
-                            formatHz(a4),
-                            color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                        )
-                        StepBox("+", blocked = { sliding }) { controller.setReference(tenths(a4Now + 0.1)) }
-                    }
-                    // "as it stands", the string's reading taken as the pitch by one tap (7 Oct 2026), left on
-                    // 23 Oct 2026 (Peter): the tuner who keeps the pitch shown taps Done
-                    Spacer(Modifier.weight(1f))
-                    if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
-                    else Text(t(K.sampling_setAgain), color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                    contentAlignment = Alignment.Center,
+                ) {
+                    FitText("‹  " + t(K.sampling_a4Hint) + "  ›", 12.sp, Modifier.padding(horizontal = 8.dp), color = muted, align = TextAlign.Center)
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
@@ -353,7 +351,9 @@ private fun StepBox(label: String, blocked: () -> Boolean = { false }, onClick: 
     }
 }
 
-/** A finger slid this far across − 440.0 + moves A4 a tenth of a hertz, dp. */
+/** A finger slid this far along the strip under − 440.0 + moves A4 a tenth of a hertz, dp. */
+private val SLIDER_W = 300.dp
+
 private const val SLIDE_STEP_DP = 8
 /** A held step box waits this long before it runs, ms. */
 private const val STEP_HOLD_MS = 450L
