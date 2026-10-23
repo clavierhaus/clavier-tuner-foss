@@ -1,16 +1,19 @@
 Clavier Tuner is a piano tuning app made by a piano tuner — free, open source, and built on one idea: the only truth about a string is a measurement of that string.
 
+A4 ON THE STRING YOU CHOOSE
+The first page sets the pitch: tap − or +, or slide a finger along the strip under them. Strike each string of A4 alone and its partials stand as strobes: a clean string's move together and stand still together, a false partial beats on its own. Take the cleanest as your reference.
+
 MEASURE FIRST
-Strike a handful of keys with the other strings muted. From those strings the app measures the inharmonicity of your piano and works out where every note belongs, before you tune the first one. The stretch comes from this instrument, not from a table.
+Strike a handful of keys with the other strings muted. From those strings the app measures the inharmonicity of your piano and works out where every note belongs, before you tune the first one. The stretch comes from this instrument, not from a table. Each key says when its measurement is complete.
 
 TUNE BY THE STROBE
-The app follows the key you strike and listens to the partial a tuner would listen to in that register. The strobe shows that partial against its target to a tenth of a cent, at 47 readings a second — a string that wobbles is shown wobbling. Beside the strobe, the bells: every partial of the string, each on its own, so a clean string reads as one stack and a false beat is seen for what it is. When the strobe stands still, the note is in, and the app notes it. No wizard, no verdict dressed up as a number.
+The app follows the key you strike and listens to the partial a tuner would listen to in that register. The strobe shows that partial against its target to a tenth of a cent, at 47 readings a second — a string that wobbles is shown wobbling. The string's other partials stand beside it, each in its own band: a clean string is one pattern that comes to a standstill, a false partial is the one out of step. When the strobe stands still, the note is in, and the app notes it. No wizard, no verdict dressed up as a number.
 
 YOUR PIANO, YOUR PHONE
-Octave type and width per register, the compass, the wound/plain break — the engine carries them as settings and the measurement decides the rest. The session is kept on the phone in one sealed file; continue tomorrow where you stopped. No account, no server, nothing leaves the phone. The microphone is read raw, with every effect switched off.
+A line at the top shows what this tuning is tuned to — A4, the temperament octave, the octave types — and a tap on it changes them. Octave type and width per register (2:1 to 10:5, the double octave 4:1, the twelfth 3:1), the wound/plain break, the match window: the engine carries them as settings and the measurement decides the rest. The session is kept on the phone in one sealed file; continue tomorrow where you stopped. No account, no server, nothing leaves the phone. The microphone is read raw, with every effect switched off.
 
 HONEST ABOUT WHAT IT IS NOT
 Pitch raises are out of scope by design: a piano far from pitch needs a pitch raise first. Unisons are tuned by ear, as they should be.
 
 OPEN
-The whole engine is published, with the recordings and documents it was judged on. If you want to know how a number on the screen was made, you can read it.
+The whole engine is published, with its tests and the documents it is judged by. If you want to know how a number on the screen was made, you can read it.

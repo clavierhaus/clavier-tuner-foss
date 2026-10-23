@@ -11,6 +11,8 @@ reconstructed from the commit history that day.
 - **The tuning screen shows the strobe alone.** The bells moved about where
   the strobe of the same partials stood still, and a tuner could not tune by
   them. The strobe stays where it was; the left side is empty for now.
+- **"listening" is gone from the tuning screen.** An empty strobe already says
+  nothing is heard.
 
 ### 2026-10-19
 - **The compass is A0–C8.** The lowest key is no longer a setting: the app

@@ -1,16 +1,19 @@
 Clavier Tuner ist eine Stimm-App von einem Klavierstimmer — frei, quelloffen und auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
 
+A4 AUF DER SAITE IHRER WAHL
+Die erste Seite legt die Tonhöhe fest: − oder + tippen oder mit dem Finger über den Streifen darunter wischen. Jede Saite von A4 allein angeschlagen, stehen ihre Teiltöne als Stroboskope da: Bei einer sauberen Saite laufen sie gemeinsam und stehen gemeinsam still, ein falscher Teilton schwebt für sich. Nehmen Sie die sauberste als Referenz.
+
 ZUERST MESSEN
-Einige Tasten anschlagen, die übrigen Saiten abgedämpft. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle.
+Einige Tasten anschlagen, die übrigen Saiten abgedämpft. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle. Jede Taste zeigt an, wann ihre Messung fertig ist.
 
 NACH DEM STROBOSKOP STIMMEN
-Die App folgt der angeschlagenen Taste und hört auf den Teilton, auf den ein Stimmer in dieser Lage hört. Das Stroboskop zeigt diesen Teilton gegen sein Ziel auf ein Zehntel Cent, 47-mal in der Sekunde — eine Saite, die schwankt, wird schwankend gezeigt. Daneben die Glocken: jeder Teilton der Saite für sich, sodass eine saubere Saite als ein Stapel erscheint und eine falsche Schwebung als das, was sie ist. Steht das Stroboskop, ist der Ton drin, und die App merkt ihn sich. Kein Assistent, kein als Zahl verkleidetes Urteil.
+Die App folgt der angeschlagenen Taste und hört auf den Teilton, auf den ein Stimmer in dieser Lage hört. Das Stroboskop zeigt diesen Teilton gegen sein Ziel auf ein Zehntel Cent, 47-mal in der Sekunde — eine Saite, die schwankt, wird schwankend gezeigt. Die übrigen Teiltöne der Saite stehen daneben, jeder in seinem Band: Eine saubere Saite ist ein Muster, das zum Stillstand kommt, ein falscher Teilton ist der, der aus dem Takt fällt. Steht das Stroboskop, ist der Ton drin, und die App merkt ihn sich. Kein Assistent, kein als Zahl verkleidetes Urteil.
 
 IHR KLAVIER, IHR TELEFON
-Oktavtyp und Weite je Lage, der Umfang, der Übergang von umsponnenen zu blanken Saiten — die App führt sie als Einstellungen, die Messung entscheidet den Rest. Die Sitzung bleibt in einer versiegelten Datei auf dem Telefon; morgen geht es weiter, wo Sie aufgehört haben. Kein Konto, kein Server, nichts verlässt das Telefon. Das Mikrofon wird roh gelesen, jede Klangbearbeitung ist abgeschaltet.
+Eine Zeile oben zeigt, worauf diese Stimmung gestimmt wird — A4, die Temperaturoktave, die Oktavtypen —, ein Tippen darauf ändert sie. Oktavtyp und Weite je Lage (2:1 bis 10:5, die Doppeloktave 4:1, die Duodezime 3:1), der Übergang von umsponnenen zu blanken Saiten, die Toleranz: Die App führt sie als Einstellungen, die Messung entscheidet den Rest. Die Sitzung bleibt in einer versiegelten Datei auf dem Telefon; morgen geht es weiter, wo Sie aufgehört haben. Kein Konto, kein Server, nichts verlässt das Telefon. Das Mikrofon wird roh gelesen, jede Klangbearbeitung ist abgeschaltet.
 
 EHRLICH DARIN, WAS SIE NICHT IST
 Vorstimmen ist mit Absicht nicht vorgesehen: Ein Klavier weit weg von der Stimmhöhe braucht zuerst ein Vorstimmen. Chöre werden nach dem Gehör gestimmt, wie es sich gehört.
 
 OFFEN
-Die ganze Engine ist veröffentlicht, mit den Aufnahmen und Dokumenten, an denen sie geprüft wurde. Wer wissen will, wie eine Zahl auf dem Schirm zustande kam, kann es nachlesen.
+Die ganze Engine ist veröffentlicht, mit ihren Tests und den Dokumenten, an denen sie gemessen wird. Wer wissen will, wie eine Zahl auf dem Schirm zustande kam, kann es nachlesen.
