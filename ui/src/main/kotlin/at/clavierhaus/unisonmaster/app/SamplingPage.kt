@@ -50,6 +50,7 @@ import at.clavierhaus.unisonmaster.ui.DoneButton
 import at.clavierhaus.unisonmaster.ui.FitText
 import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.input.pointer.pointerInput
@@ -156,13 +157,36 @@ internal fun SamplingPage(
                 // the tuner nothing to aim at (Peter, 15:55: "we define the initial pitch for A4").
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
                     Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
-                    StepBox("−") { controller.setReference(tenths(a4 - 0.1)) }
-                    Text(
-                        formatHz(a4),
-                        color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                    )
-                    StepBox("+") { controller.setReference(tenths(a4 + 0.1)) }
+                    // − 440.0 + is also one slider: a finger drawn right raises A4 a tenth of a hertz
+                    // every SLIDE_STEP_DP, drawn left lowers it (Peter, 23 Oct 2026); a held box stops
+                    // stepping by itself once the finger slides
+                    var sliding by remember { mutableStateOf(false) }
+                    val a4Now by rememberUpdatedState(a4)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.pointerInput(Unit) {
+                            val stepPx = SLIDE_STEP_DP.dp.toPx()
+                            var acc = 0f
+                            detectHorizontalDragGestures(
+                                onDragStart = { sliding = true; acc = 0f },
+                                onDragEnd = { sliding = false },
+                                onDragCancel = { sliding = false },
+                            ) { change, dx ->
+                                change.consume()
+                                acc += dx
+                                val steps = (acc / stepPx).toInt()
+                                if (steps != 0) { acc -= steps * stepPx; controller.setReference(tenths(a4Now + steps * 0.1)) }
+                            }
+                        },
+                    ) {
+                        StepBox("−", blocked = { sliding }) { controller.setReference(tenths(a4Now - 0.1)) }
+                        Text(
+                            formatHz(a4),
+                            color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                        )
+                        StepBox("+", blocked = { sliding }) { controller.setReference(tenths(a4Now + 0.1)) }
+                    }
                     if (view == null) {
                         // The string's own reading taken as the pitch to tune to, by one tap, for the
                         // piano that stays where it is. Until 5 Oct this happened by itself and was
@@ -307,7 +331,7 @@ private fun tenths(hz: Double): Double =
 
 /** A step of the reference: a box with its sign, to the left of the number it moves. */
 @Composable
-private fun StepBox(label: String, onClick: () -> Unit) {
+private fun StepBox(label: String, blocked: () -> Boolean = { false }, onClick: () -> Unit) {
     // A tap steps once. A finger held steps again after STEP_HOLD_MS and then every STEP_REPEAT_MS
     // until it lifts: 439.2 from 440.0 was eight taps. Not too fast, but visible (Peter, 7 Oct 2026,
     // 10:18): about six tenths a second, so a hertz takes a little under two seconds and the eye
@@ -322,7 +346,7 @@ private fun StepBox(label: String, onClick: () -> Unit) {
                     step()
                     val running = scope.launch {
                         delay(STEP_HOLD_MS)
-                        while (isActive) { step(); delay(STEP_REPEAT_MS) }
+                        while (isActive && !blocked()) { step(); delay(STEP_REPEAT_MS) }
                     }
                     tryAwaitRelease()
                     running.cancel()
@@ -334,6 +358,8 @@ private fun StepBox(label: String, onClick: () -> Unit) {
     }
 }
 
+/** A finger slid this far across − 440.0 + moves A4 a tenth of a hertz, dp. */
+private const val SLIDE_STEP_DP = 8
 /** A held step box waits this long before it runs, ms. */
 private const val STEP_HOLD_MS = 450L
 /** ... and then steps this often, ms: a tenth of a hertz every 160 ms. */

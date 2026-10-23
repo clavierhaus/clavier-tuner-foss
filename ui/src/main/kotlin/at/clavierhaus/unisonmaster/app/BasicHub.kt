@@ -43,6 +43,7 @@ import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
+import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
 import kotlin.math.abs
@@ -152,7 +153,10 @@ fun BasicHub(
                 targets = mapOf(1 to a4) + upper.associate { it.k to it.hz * 2.0.pow(-it.cents / 1200.0) },
                 falsePartials = emptySet(), dropped = emptySet(),
                 matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
-                seats = SAMPLING_SEATS,
+                // one column per partial button under the strobe, in the same order and width (Peter,
+                // 23 Oct 2026: the strobe columns correspond to the buttons below); a partial taken out
+                // keeps its empty column, so the two rows never shift against each other
+                seats = (1..controller.highestPartial(a4).coerceIn(1, Partials.MAX)).toList(),
             )
         }
         val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))

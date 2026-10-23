@@ -85,7 +85,9 @@ fun TuningPictureView(
                 FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE), fontWeight = FontWeight.Bold)
             }
         }
-        Place(0.17f, 0.08f, 0.30f, 0.10f) {
+        // the partial line belongs to the bells; without them (the A4 page) it stood under the strobe and
+        // was cut to "parti" (Peter, 23 Oct 2026)
+        if (bells) Place(0.17f, 0.08f, 0.30f, 0.10f) {
             val anchorNote = if (p.anchor != p.listened) t(K.tuning_bellsOn, p.anchor) else ""
             FitText(
                 t(K.tuning_partialOne, p.listened) + anchorNote, 13.sp,
@@ -102,7 +104,7 @@ fun TuningPictureView(
         if (bells) {
             Place(0.00f, 0.26f, 0.48f, 0.72f) { Panel { Bells(p, marks) } }
             Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
-        } else Place(0.20f, 0.00f, 0.80f, 0.98f) { Panel { Bands(p, marks) } }
+        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks) } }   // the full width, column over the button below it
     }
 }
 

@@ -31,6 +31,10 @@ reconstructed from the commit history that day.
   The page shows the strobe alone, with the partials' buttons under it: a tap
   takes a partial out, another brings it back. Strike each string of A4 alone
   and take the cleanest as the reference.
+- **On the A4 page the strobe has one column per partial button,** each over
+  its button, and a partial taken out leaves its column empty. A4 can also be
+  set by sliding a finger across − 440.0 +: right raises it, left lowers it, a
+  tenth of a hertz at a time.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key
