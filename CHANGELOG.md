@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.3.0 -- 2026-10-23
+
 ### 2026-10-23
 - **The tuning screen shows the strobe alone.** The bells moved about where
   the strobe of the same partials stood still, and a tuner could not tune by
