@@ -21,7 +21,6 @@ object K {
     const val sampling_short = "sampling.short"
     const val app_accept = "app.accept"
     const val sampling_count = "sampling.count"
-    const val state_listening = "state.listening"
     const val state_matches = "state.matches"
     const val state_sharp = "state.sharp"
     const val state_flat = "state.flat"
@@ -200,7 +199,6 @@ internal object StringsTable : Catalog {
         "sampling.short" to arrayOf("measured short: strike again for the full measurement", "kurz gemessen: für die volle Messung noch einmal anschlagen"),
         "app.accept" to arrayOf("Accept", "Übernehmen"),
         "sampling.count" to arrayOf("{0} of {1}", "{0} von {1}"),
-        "state.listening" to arrayOf("listening", "hört zu"),
         "state.matches" to arrayOf("matches", "stimmt"),
         "state.sharp" to arrayOf("sharp", "zu hoch"),
         "state.flat" to arrayOf("flat", "zu tief"),

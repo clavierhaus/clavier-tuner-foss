@@ -207,8 +207,8 @@ fun BasicHub(
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)
-            read?.settling == true -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
-            !live || shownHz == null -> t(K.state_listening) to Color(Brand.WHITE_MUTED)
+            // "listening" left on 23 Oct 2026 (Peter: it serves no purpose): an empty strobe already says
+            // nothing is heard, and the word stood over the info line in the band
             else -> "" to Color(Brand.WHITE_MUTED)
         }
         val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling

@@ -21,7 +21,6 @@ sampling.measured	measured	gemessen
 sampling.short	measured short: strike again for the full measurement	kurz gemessen: für die volle Messung noch einmal anschlagen
 app.accept	Accept	Übernehmen
 sampling.count	{0} of {1}	{0} von {1}
-state.listening	listening	hört zu
 state.matches	matches	stimmt
 state.sharp	sharp	zu hoch
 state.flat	flat	zu tief
