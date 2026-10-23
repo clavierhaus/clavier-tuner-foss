@@ -881,7 +881,8 @@ class TuningController(
         }
         val level = m.partials.firstOrNull { it.k == k }?.levelDb ?: 0.0
         // the reference string tuned alone: what the tally has claimed of it goes with it (referenceAlone)
-        val facts = if (referenceAlone && keptClaimsMidi == t.midi) keptClaims else m.falseBeats
+        // and a note recorded again with its unison sounding keeps what its string alone was found to do
+        val facts = if (referenceAlone && keptClaimsMidi == t.midi) keptClaims else session?.measurements?.get(t.midi)?.falseBeats ?: m.falseBeats
         return m.copy(partials = (m.partials.filter { it.k != k } + own.copy(levelDb = level)).sortedBy { it.k }, falseBeats = facts)
     }
 
