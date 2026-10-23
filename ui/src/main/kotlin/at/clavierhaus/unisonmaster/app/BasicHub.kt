@@ -96,6 +96,8 @@ fun BasicHub(
     onTemperamentLow: ((Int) -> Unit)? = null,
     /** Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf): the note's own octave type and width, one tap away. */
     onStretch: ((Int) -> Unit)? = null,
+    /** The tuning screen's left panel, drawn by an edition (Pro: the unison toggle and its 2 x 2 grid); null leaves it blank. */
+    leftPanel: (@Composable () -> Unit)? = null,
     /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
 ) {
@@ -247,6 +249,7 @@ fun BasicHub(
                     matchCents = cfg.matchCents,
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                     follows = follows,
+                    left = leftPanel,
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,

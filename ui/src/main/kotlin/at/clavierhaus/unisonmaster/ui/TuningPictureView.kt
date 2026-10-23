@@ -70,6 +70,8 @@ fun TuningPictureView(
     onStretchTap: (() -> Unit)? = null,
     /** Whether the bells are drawn. Not on the A4 page: there the strobe alone (Peter, 22 Oct 2026). */
     bells: Boolean = true,
+    /** What an edition draws in the left panel, blank since 23 Oct 2026 (Pro: the unison's grid). */
+    left: (@Composable () -> Unit)? = null,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -108,6 +110,7 @@ fun TuningPictureView(
             // would it give to a tuner?"). The strobe stays where it is; the left side is left blank, and
             // Bells() is kept for the unison boxes Pro may draw later. Why the bells moved where the strobe
             // stood is not yet shown from a recording (SAMICK findings §33).
+            if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
             Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
         } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks) } }   // the full width, column over the button below it
     }
