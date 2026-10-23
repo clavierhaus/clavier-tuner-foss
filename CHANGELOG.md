@@ -7,6 +7,11 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-23
+- **The tuning screen shows the strobe alone.** The bells moved about where
+  the strobe of the same partials stood still, and a tuner could not tune by
+  them. The strobe stays where it was; the left side is empty for now.
+
 ### 2026-10-19
 - **The compass is A0–C8.** The lowest key is no longer a setting: the app
   tunes the 88 keys from A0 to C8, and a lowest key set earlier gives way to

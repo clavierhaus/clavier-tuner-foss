@@ -102,7 +102,12 @@ fun TuningPictureView(
         // ground one step lighter than the page, so the eye finds it as a region; all black read as
         // unordered.
         if (bells) {
-            Place(0.00f, 0.26f, 0.48f, 0.72f) { Panel { Bells(p, marks) } }
+            // The bells panel stands empty since 23 Oct 2026 (Peter, at the Steinway B, D2: the bells danced
+            // over the panel on a single string and on the unison alike, while the strobe of the same
+            // partials came to a complete standstill on new Heller strings; "even if it worked, what help
+            // would it give to a tuner?"). The strobe stays where it is; the left side is left blank, and
+            // Bells() is kept for the unison boxes Pro may draw later. Why the bells moved where the strobe
+            // stood is not yet shown from a recording (SAMICK findings §33).
             Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
         } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks) } }   // the full width, column over the button below it
     }
