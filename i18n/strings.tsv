@@ -89,6 +89,8 @@ sampling.order.accept	Each key struck: check it, Accept.	Jede angeschlagene Tast
 app.cancel	Cancel	Abbrechen
 tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
+tuning.info	A4 = {0} · equal temperament {1}–A4 · octaves {2}	A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}
+tuning.infoTitle	This tuning	Diese Stimmung
 tuning.partialsNot	 · not {0}	 · ohne {0}
 tuning.follows	follows the key · 	folgt der Taste · 
 tuning.leavingKeeps	leaving a note keeps it	Weitergehen speichert den Ton

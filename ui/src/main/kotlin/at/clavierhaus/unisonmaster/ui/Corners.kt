@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -88,6 +89,10 @@ fun BoxScope.Corners(
     onHome: (() -> Unit)?,
     settingsOpen: Boolean = false,
     shadowed: Boolean = false,
+    /** The tuning's settings at a glance, between the gear and the name; null where a screen has none. */
+    info: String? = null,
+    /** A tap on [info]: the window with the settings that matter while tuning. */
+    onInfo: (() -> Unit)? = null,
 ) {
     val density = LocalDensity.current
     val blur = with(density) { CornerShadow.blurRadius.toDp() }
@@ -103,6 +108,17 @@ fun BoxScope.Corners(
             tint = if (settingsOpen) Color(Brand.ORANGE) else Color(Brand.WHITE),
             modifier = Modifier.size(GEAR).clickable(onClick = onSettings),
         )
+    }
+
+    // between them: the tuning's settings in one line (Peter, 23 Oct 2026), a tap away from changing them
+    if (info != null) Box(
+        Modifier.align(Alignment.TopStart).fillMaxWidth()
+            .padding(start = CORNER_LEFT_WIDTH, end = CORNER_RIGHT_WIDTH + 8.dp, top = CORNER_INSET)
+            .height(CORNER_BAND - CORNER_INSET)
+            .then(if (onInfo != null) Modifier.clickable(onClick = onInfo) else Modifier),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        FitText(info, 15.sp, Modifier.fillMaxWidth(), color = Color(Brand.WHITE_MUTED))
     }
 
     // top right: the name, and the home button

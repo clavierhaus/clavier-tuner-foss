@@ -89,6 +89,8 @@ object K {
     const val app_cancel = "app.cancel"
     const val tuning_partialsUsed = "tuning.partialsUsed"
     const val tuning_partialOne = "tuning.partialOne"
+    const val tuning_info = "tuning.info"
+    const val tuning_infoTitle = "tuning.infoTitle"
     const val tuning_partialsNot = "tuning.partialsNot"
     const val tuning_follows = "tuning.follows"
     const val tuning_leavingKeeps = "tuning.leavingKeeps"
@@ -262,6 +264,8 @@ internal object StringsTable : Catalog {
         "app.cancel" to arrayOf("Cancel", "Abbrechen"),
         "tuning.partialsUsed" to arrayOf("partials {0}", "Teiltöne {0}"),
         "tuning.partialOne" to arrayOf("partial {0}", "Teilton {0}"),
+        "tuning.info" to arrayOf("A4 = {0} · equal temperament {1}–A4 · octaves {2}", "A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}"),
+        "tuning.infoTitle" to arrayOf("This tuning", "Diese Stimmung"),
         "tuning.partialsNot" to arrayOf(" · not {0}", " · ohne {0}"),
         "tuning.follows" to arrayOf("follows the key · ", "folgt der Taste · "),
         "tuning.leavingKeeps" to arrayOf("leaving a note keeps it", "Weitergehen speichert den Ton"),

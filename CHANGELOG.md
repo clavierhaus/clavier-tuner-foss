@@ -36,7 +36,13 @@ reconstructed from the commit history that day.
   set by sliding a finger across − 440.0 +: right raises it, left lowers it, a
   tenth of a hertz at a time.
 - **"As it stands" is gone from the A4 page.** To keep the pitch shown, tap
-  Done. A line above − 440.0 + says how the pitch is set.
+  Done. Under − 440.0 + a strip says how the pitch is set, and is itself the
+  slider: a finger drawn right along it raises A4, drawn left lowers it.
+- **The tuning's settings at a glance.** Between the gear and the name a line
+  says what this tuning is tuned to: A4, the temperament octave, and the
+  octave types of the bass, the middle and the treble. A tap on it opens the
+  settings that matter while tuning: each region's octave type and width, and
+  the temperament octave.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key

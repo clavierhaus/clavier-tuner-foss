@@ -43,6 +43,7 @@ import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
@@ -95,6 +96,8 @@ fun BasicHub(
     onTemperamentLow: ((Int) -> Unit)? = null,
     /** Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf): the note's own octave type and width, one tap away. */
     onStretch: ((Int) -> Unit)? = null,
+    /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
+    onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -115,7 +118,11 @@ fun BasicHub(
 
     val t = tuning
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
-    Corners(onSettings = onSettings, onHome = onHome)
+    // the tuning's settings between the gear and the name, a tap opening the ones that matter while tuning
+    var infoOpen by remember { mutableStateOf(false) }
+    Corners(onSettings = onSettings, onHome = onHome, info = tuningInfoLine(cfg, a4),
+        onInfo = if (onChangeSettings != null) ({ infoOpen = true }) else null)
+    if (infoOpen && onChangeSettings != null) TuningInfoDialog(cfg, onChangeSettings) { infoOpen = false }
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
         // The one picture, built here once for every state of the screen -- one place puts the number

@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity() {
                                 onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                                 onStretch = { region -> openSettings(1 to region) },
                                 onTemperamentLow = { low -> settingsModel.update { it.copy(temperamentLowMidi = low) } },
+                                onChangeSettings = { change -> settingsModel.update(change) },
                             )
                         }
                         else -> {
