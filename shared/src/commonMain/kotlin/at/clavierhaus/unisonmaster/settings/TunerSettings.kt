@@ -27,6 +27,8 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
     O2_1("2:1", 2, 1), O4_2("4:2", 4, 2), O6_3("6:3", 6, 3), O8_4("8:4", 8, 4), O10_5("10:5", 10, 5),
     /** The double octave. */
     O4_1("4:1", 4, 1, 24),
+    /** The twelfth: partial 3 of the lower note on partial 1 of the note a twelfth up (Peter, 23 Oct 2026). */
+    O3_1("3:1", 3, 1, 19),
 }
 
 /**

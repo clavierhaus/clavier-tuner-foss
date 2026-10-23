@@ -308,3 +308,25 @@ class TuningSessionTest {
         assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(69, t.refMidi); assertEquals(OctaveType.O4_2, t.type)
     }
 }
+
+/**
+ * The twelfth, 3:1, as an octave type (Peter, 23 Oct 2026, at the Steinway B: "in the treble I would
+ * go for 4:1 or 3:1, the 3:1 is missing"): a treble note's partial 1 meets partial 3 of the note a
+ * twelfth below, chained from the temperament as every type is. On the 225 as tuned it stood
+ * -1.04 c (median) from the treble, against +0.48 c for 4:1 (SAMICK findings §32, 19 Oct 2026).
+ */
+class TwelfthOctaveTypeTest {
+    @Test
+    fun aTrebleNoteOnTheTwelfthMeetsPartialThreeOfTheNoteATwelfthBelow() {
+        val a4 = 443.0
+        val s = TuningSession(a4, TunerSettings(lowestUnwoundMidi = 40, octaveTreble = OctaveType.O3_1))
+        for ((m, b) in listOf(69 to 4e-4, 36 to 1.5e-4, 48 to 2e-4, 57 to 3e-4, 60 to 3.2e-4, 65 to 3.6e-4, 84 to 9e-4, 96 to 2e-3))
+            s.record(measuredString(m, TuningSession.targetF1(m, a4), b))
+        s.finishSampling()
+        assertEquals(Triple(65, 1, 3), s.partner(84), "C6's partner on the twelfth is F4, its partial 3")
+        val c = s.curve
+        val c6 = s.curveTargetF1(84, c)
+        val f4p3 = 3 * s.curveTargetF1(65, c) * Inharmonicity.ratio(3, 3.6e-4)
+        assertEquals(0.0, TuningSession.centsOff(c6 * Inharmonicity.ratio(1, 9e-4), f4p3), 0.01, "C6's partial 1 on F4's partial 3")
+    }
+}

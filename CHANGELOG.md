@@ -46,6 +46,9 @@ reconstructed from the commit history that day.
 - **The phone's bars are yours to switch.** Settings › App › Display: the
   navigation bar and the status bar, each on or off outside the tuning screen,
   which always has the whole screen. Both on by default.
+- **3:1, the twelfth, as an octave type.** A note's partial 1 is set on
+  partial 3 of the note a twelfth below (in the bass: its partial 3 on the
+  note a twelfth above). Chosen per region like the others.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key
