@@ -43,6 +43,9 @@ reconstructed from the commit history that day.
   octave types of the bass, the middle and the treble. A tap on it opens the
   settings that matter while tuning: each region's octave type and width, and
   the temperament octave.
+- **The phone's bars are yours to switch.** Settings › App › Display: the
+  navigation bar and the status bar, each on or off outside the tuning screen,
+  which always has the whole screen. Both on by default.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key

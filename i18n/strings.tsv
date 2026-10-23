@@ -55,6 +55,10 @@ settings.page.language	Language	Sprache
 settings.page.probe	Probe	Sonde
 settings.page.quickstart	Quick start	Schnellstart
 settings.page.about	About	Über
+settings.page.display	Display	Anzeige
+settings.navigationBar	Navigation bar	Navigationsleiste
+settings.statusBar	Status bar	Statusleiste
+settings.note.bars	The phone's bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.	Die Leisten des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz.
 settings.language	Language	Sprache
 settings.language.system	System	System
 hub.continue.verb	Continue	Stimmung

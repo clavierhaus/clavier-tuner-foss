@@ -161,6 +161,14 @@ data class TunerSettings(
      * on is tuning to yesterday's piano.
      */
     val probe: Boolean = false,
+    // DISPLAY
+    /**
+     * The phone's navigation bar (Back, Home, the app switcher) and status bar, outside the tuning
+     * screen, which hides both always. Shown by default, so the way out of the app is in sight (two
+     * forum testers, 19 Oct 2026); off for the tuner who wants the whole screen (Peter, 23 Oct 2026).
+     */
+    val showNavigationBar: Boolean = true,
+    val showStatusBar: Boolean = true,
 ) {
     companion object {
         /** Help's text size runs from [MIN_HELP_SP] to [MAX_HELP_SP] in steps of [HELP_SP_STEP] (Peter, 12 Oct 2026: 12 to 22). */
@@ -302,6 +310,8 @@ class SettingsModel(
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
             probe = b("probe", d.probe),
+            showNavigationBar = b("showNavigationBar", d.showNavigationBar),
+            showStatusBar = b("showStatusBar", d.showStatusBar),
         )
     }
 
@@ -333,5 +343,7 @@ class SettingsModel(
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())
         store.put("probe", s.probe.toString())
+        store.put("showNavigationBar", s.showNavigationBar.toString())
+        store.put("showStatusBar", s.showStatusBar.toString())
     }
 }

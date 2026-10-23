@@ -63,6 +63,17 @@ class SettingsTest {
         assertEquals(null, pro.lowestKeyFixed)
     }
 
+    /** The phone's bars outside the tuning screen are the tuner's to show or not (Peter, 23 Oct 2026): shown until he says otherwise, and kept. */
+    @Test
+    fun theNavigationAndStatusBarsAreShownUntilSwitchedOffAndKept() {
+        val store = MemoryStore()
+        assertEquals(true, SettingsModel(store).settings.value.showNavigationBar)
+        assertEquals(true, SettingsModel(store).settings.value.showStatusBar)
+        SettingsModel(store).update { it.copy(showNavigationBar = false, showStatusBar = false) }
+        assertEquals(false, SettingsModel(store).settings.value.showNavigationBar)
+        assertEquals(false, SettingsModel(store).settings.value.showStatusBar)
+    }
+
     @Test
     fun aWidthBeyondTheLimitIsKeptAtTheLimit() {
         val store = MemoryStore()

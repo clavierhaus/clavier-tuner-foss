@@ -97,6 +97,13 @@ fun TunerSettingsScreen(
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
+                // the phone's bars outside the tuning screen (Peter, 23 Oct 2026)
+                SettingsPage(t(K.settings_page_display),
+                    left = {
+                        SettingsSection(t(K.settings_page_display), info = t(K.settings_note_bars))
+                        SwitchRow(t(K.settings_navigationBar), s.showNavigationBar) { on -> model.update { it.copy(showNavigationBar = on) } }
+                        SwitchRow(t(K.settings_statusBar), s.showStatusBar) { on -> model.update { it.copy(showStatusBar = on) } }
+                    }),
                 SettingsPage(t(K.settings_page_about),
                     left = {
                         SettingsSection("Clavier Tuner")

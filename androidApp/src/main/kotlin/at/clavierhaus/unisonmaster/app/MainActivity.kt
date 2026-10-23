@@ -109,9 +109,10 @@ class MainActivity : ComponentActivity() {
                     // the temperament octave's low note is the tuner's, set on the sampling page (Peter, 4 Oct 2026)
                     controller.applySettings(settings)
                 }
-                LaunchedEffect(screen) {
+                LaunchedEffect(screen, settings.showNavigationBar, settings.showStatusBar) {
                     // the system bars are hidden only while tuning, where the picture needs every millimetre;
                     // on the start screen and the settings they show, and with them the way out (19 Oct 2026)
+                    barsWanted = settings.showNavigationBar to settings.showStatusBar
                     systemBars(hidden = screen == "tune")
                 }
                 LaunchedEffect(screen) {
@@ -194,6 +195,8 @@ class MainActivity : ComponentActivity() {
 
     /** Whether the screen in front hides the bars: set again when the window regains its focus. */
     private var barsHidden = false
+    /** The navigation bar and the status bar as Settings › App › Display wants them outside the tuning screen. */
+    private var barsWanted = true to true
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -212,7 +215,11 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            if (hidden) hide(WindowInsetsCompat.Type.systemBars()) else show(WindowInsetsCompat.Type.systemBars())
+            // outside the tuning screen each bar as the tuner set it under Settings › App › Display (23 Oct 2026)
+            val nav = !hidden && barsWanted.first
+            val status = !hidden && barsWanted.second
+            if (nav) show(WindowInsetsCompat.Type.navigationBars()) else hide(WindowInsetsCompat.Type.navigationBars())
+            if (status) show(WindowInsetsCompat.Type.statusBars()) else hide(WindowInsetsCompat.Type.statusBars())
         }
     }
 }

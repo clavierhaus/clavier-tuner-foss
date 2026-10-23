@@ -55,6 +55,10 @@ object K {
     const val settings_page_probe = "settings.page.probe"
     const val settings_page_quickstart = "settings.page.quickstart"
     const val settings_page_about = "settings.page.about"
+    const val settings_page_display = "settings.page.display"
+    const val settings_navigationBar = "settings.navigationBar"
+    const val settings_statusBar = "settings.statusBar"
+    const val settings_note_bars = "settings.note.bars"
     const val settings_language = "settings.language"
     const val settings_language_system = "settings.language.system"
     const val hub_continue_verb = "hub.continue.verb"
@@ -230,6 +234,10 @@ internal object StringsTable : Catalog {
         "settings.page.probe" to arrayOf("Probe", "Sonde"),
         "settings.page.quickstart" to arrayOf("Quick start", "Schnellstart"),
         "settings.page.about" to arrayOf("About", "Über"),
+        "settings.page.display" to arrayOf("Display", "Anzeige"),
+        "settings.navigationBar" to arrayOf("Navigation bar", "Navigationsleiste"),
+        "settings.statusBar" to arrayOf("Status bar", "Statusleiste"),
+        "settings.note.bars" to arrayOf("The phone's bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.", "Die Leisten des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz."),
         "settings.language" to arrayOf("Language", "Sprache"),
         "settings.language.system" to arrayOf("System", "System"),
         "hub.continue.verb" to arrayOf("Continue", "Stimmung"),
