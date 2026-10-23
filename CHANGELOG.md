@@ -49,6 +49,10 @@ reconstructed from the commit history that day.
 - **3:1, the twelfth, as an octave type.** A note's partial 1 is set on
   partial 3 of the note a twelfth below (in the bass: its partial 3 on the
   note a twelfth above). Chosen per region like the others.
+- **The treble is set to 4:1 by default.** At 4:2 the treble stood about
+  3.4 cents sharp of a concert grand as its tuner left it, and C7 about
+  10.6 cents; 4:1 met it within half a cent. 4:2 remains a choice. A treble
+  set before keeps what was set.
 
 ### 2026-10-18
 - **Sampling says when a string is measured.** After the strike the key

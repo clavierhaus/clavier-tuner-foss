@@ -74,6 +74,19 @@ class SettingsTest {
         assertEquals(false, SettingsModel(store).settings.value.showStatusBar)
     }
 
+    /**
+     * The treble's default octave is 4:1 (Peter, 23 Oct 2026, at the Steinway B: "4:2 should stay, but
+     * treble default should go to 4:1"). 4:2 since 4 Oct stood 3.4 c (median) sharp of the 225 as tuned
+     * and C7 10.6 c sharp, as a forum tester found against Verituner; 4:1 met it within half a cent
+     * (SAMICK findings §32). 4:2 stays a choice.
+     */
+    @Test
+    fun theTreblesDefaultOctaveIs4To1() {
+        assertEquals(OctaveType.O4_1, TunerSettings().octaveTreble)
+        assertEquals(OctaveType.O4_1, SettingsModel(MemoryStore()).settings.value.octaveTreble)
+        assertTrue(OctaveType.O4_2 in OctaveType.entries)
+    }
+
     @Test
     fun aWidthBeyondTheLimitIsKeptAtTheLimit() {
         val store = MemoryStore()
@@ -90,7 +103,7 @@ class SettingsTest {
         assertEquals(OctaveType.O8_4, s.octaveTypeFor(40)); assertEquals(4.0, s.widthFor(52))
         assertEquals(OctaveType.O4_2, s.octaveTypeFor(53)); assertEquals(1.0, s.widthFor(69))
         assertEquals(OctaveType.O4_1, s.octaveTypeFor(70)); assertEquals(2.0, s.widthFor(108))
-        assertEquals(OctaveType.O4_2, TunerSettings().octaveTreble, "4:2 above A4 by default (Peter, 4 Oct 2026)")
+        assertEquals(OctaveType.O4_1, TunerSettings().octaveTreble, "4:1 above A4 by default (Peter, 23 Oct 2026; 4:2 from 4 Oct)")
     }
 
     @Test

@@ -303,9 +303,10 @@ class TuningSessionTest {
         val l2 = s.listening(56)
         assertEquals(l.targetHz, l2.targetHz, 1e-6, "the curve stays the target")
         assertEquals(-1.0, l2.checkCents!!, 0.05, "the partner stands a cent sharp: the octave to it a cent narrower")
-        // the treble chains upward the same way: A5 over A4 as a 4:2 (the default since 4 Oct 2026)
+        // the treble chains upward the same way: A5 over A3 as a 4:1, the default since 23 Oct 2026
+        // (A5 over A4 as a 4:2 from 4 Oct to then)
         val t = s.listening(81)
-        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(69, t.refMidi); assertEquals(OctaveType.O4_2, t.type)
+        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(57, t.refMidi); assertEquals(OctaveType.O4_1, t.type)
     }
 }
 

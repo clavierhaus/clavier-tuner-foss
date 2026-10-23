@@ -57,8 +57,12 @@ data class TunerSettings(
     // string, wound and plain alike — one region since 4 Oct 2026, Peter's word), the middle, the treble
     val octaveBass: OctaveType = OctaveType.O6_3,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
-    /** 4:2 by default (Peter, 4 Oct 2026); the double octave 4:1 stays a choice. */
-    val octaveTreble: OctaveType = OctaveType.O4_2,
+    /**
+     * 4:1 by default since 23 Oct 2026 (Peter, at the Steinway B: "4:2 should stay, but treble default
+     * should go to 4:1"); 4:2 from 4 Oct stood 3.4 c sharp of the 225 as tuned (SAMICK findings §32)
+     * and stays a choice, as do 3:1 and the rest.
+     */
+    val octaveTreble: OctaveType = OctaveType.O4_1,
     /**
      * How wide the octave is tuned beyond the partials' coincidence, cents
      * at the partial read (0 = beatless). Wide means the lower note flatter,
