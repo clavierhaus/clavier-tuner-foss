@@ -70,4 +70,40 @@ class A3FalseBeatRecordingsTest {
         assertTrue(4 in claimed, "partial 4 (0.932 Hz by ESPRIT) was not claimed; claimed $claimed")
         assertTrue(1 !in claimed, "partial 1 (0.226 Hz, a wow, not a beat) was claimed")
     }
+
+    /**
+     * The same three strikes while tuning, the string alone (Peter, 23 Oct 2026: the reference string is
+     * tuned alone, and its false beats are what the unison sets aside): with referenceAlone the tuning
+     * screen claims 3 and 4 and not 1, as sampling does, and keeps them with the note; without it nothing
+     * is tallied while tuning (FALSE-BEATS §15).
+     */
+    @Test
+    fun theReferenceStringTunedAloneIsClaimedFalseAsSamplingClaimsIt() {
+        val dir = corpus() ?: run { println("A3FalseBeatRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val takes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
+        val pcm = takes.map { WavPcm.read(it.readBytes()) }
+        val sr = pcm.first().sampleRateHz
+        val a4 = 443.0; val midi = 57
+        val m = StringMeasure.measure(pcm[0].samples.copyOfRange(0, minOf(pcm[0].samples.size, sr * 3)), sr, midi, a4 * Math.pow(2.0, (midi - 69) / 12.0), timeMs = 0L)
+            ?: fail("A3 could not be measured")
+        val all = FloatArray(pcm.sumOf { it.samples.size }); var at = 0
+        for (p in pcm) { p.samples.copyInto(all, at); at += p.samples.size }
+        for (alone in listOf(true, false)) {
+            lateinit var c: TuningController
+            val claimed = LinkedHashSet<Int>()
+            val player = Player(all) { _ -> c.reading.value?.falsePartials?.let { claimed += it } }
+            c = TuningController(player)
+            c.applySettings(TunerSettings())
+            c.restore(SessionSnapshot(0, a4, midi, listOf(m.copy(falseBeats = emptyList())), sampling = false))
+            c.referenceAlone = alone
+            c.startLive()
+            val kept = c.snapshot()?.measurements?.firstOrNull { it.midi == midi }?.falseBeats?.map { it.k } ?: emptyList()
+            println("A3 tuned, referenceAlone=$alone: claimed ${claimed.sorted()}, kept $kept")
+            if (alone) {
+                assertTrue(3 in claimed && 4 in claimed, "tuned alone, partials 3 and 4 are claimed: $claimed")
+                assertTrue(1 !in claimed, "and not partial 1: $claimed")
+                assertTrue(3 in kept && 4 in kept, "and kept with the note: $kept")
+            } else assertTrue(claimed.isEmpty(), "with the unison possibly sounding nothing is tallied: $claimed")
+        }
+    }
 }

@@ -354,6 +354,17 @@ class TuningController(
     private val falseBeats = FalseBeatTally()
     /** The tally's claims as last kept on the note's measurement, so a claim is written once when it appears. */
     private var keptClaims: List<FalseBeat> = emptyList()
+    /** The note [keptClaims] are of. */
+    private var keptClaimsMidi = -1
+
+    /**
+     * The string being tuned sounds alone, its partners muted: a beat it makes is its own, and the
+     * tuning screen tallies its false beats as sampling does and keeps them with the note. Set by
+     * an edition that knows (Pro, 23 Oct 2026: the reference string is tuned alone, and its false
+     * beats are what the unison then sets aside); off, a beat while tuning may be the unison's and
+     * nothing is tallied (FALSE-BEATS §15).
+     */
+    @Volatile var referenceAlone: Boolean = false
 
     /**
      * The string's false beats as sampling has claimed them so far, for [midi] when it is the
@@ -369,6 +380,7 @@ class TuningController(
      * is kept again with them on its own f1 and B. Nothing else of the measurement changes.
      */
     private fun keepFacts(s: TuningSession, midi: Int, claims: List<FalseBeat>) {
+        keptClaimsMidi = midi
         caught?.takeIf { it.midi == midi }?.let { c -> c.measurement = c.measurement?.copy(falseBeats = claims) }
         s.measurements[midi]?.let { s.record(it.copy(falseBeats = claims)) }
         onSessionChanged?.let { save -> snapshot()?.let(save) }
@@ -868,7 +880,9 @@ class TuningController(
             return NoteMeasurement(t.midi, f1, t.b, 0.0, partials, clock())
         }
         val level = m.partials.firstOrNull { it.k == k }?.levelDb ?: 0.0
-        return m.copy(partials = (m.partials.filter { it.k != k } + own.copy(levelDb = level)).sortedBy { it.k })
+        // the reference string tuned alone: what the tally has claimed of it goes with it (referenceAlone)
+        val facts = if (referenceAlone && keptClaimsMidi == t.midi) keptClaims else m.falseBeats
+        return m.copy(partials = (m.partials.filter { it.k != k } + own.copy(levelDb = level)).sortedBy { it.k }, falseBeats = facts)
     }
 
     // ---- Live input ----
@@ -1333,9 +1347,10 @@ class TuningController(
                     // note (NoteMeasurement.falseBeats). While sampling they are being made; while
                     // tuning they are what the screen marks.
                     val facts = s.measurements[t.midi]?.falseBeats ?: emptyList()
-                    val cr = clean.push(chunk, w.k, combine = s.isMeasured(), alone = s.sampling, known = facts.map { it.k }.toSet())
+                    val alone = s.sampling || referenceAlone
+                    val cr = clean.push(chunk, w.k, combine = s.isMeasured(), alone = alone, known = facts.map { it.k }.toSet())
                     used = cr.used
-                    if (s.sampling) {
+                    if (alone) {
                         // The string sounds alone (the mutes are in, by the orders of the sampling
                         // page), so a beat heard is the string's own. A false beat is claimed only
                         // when it repeats across strikes at one rate, never from one (FalseBeatTally,
