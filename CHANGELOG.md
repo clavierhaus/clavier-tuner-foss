@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.4.0 -- 2026-10-24
+
 ### 2026-10-24
 - **No text is cut or broken any more, on small phones and at large text
   sizes.** A button's word never breaks: the button first narrows its
