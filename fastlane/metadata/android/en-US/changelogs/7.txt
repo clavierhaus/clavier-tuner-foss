@@ -1,1 +1,1 @@
-0.4.1: Done on the A4 page works on the first tap: A4 is measured from its strike, shows "measured", and Done then stays green, sounding or not (the tap itself had restarted the reading). Accept opens only once a key is measured.
+0.4.1: Done on the A4 page works on the first tap: A4 is measured from its strike, shows "measured", and Done then stays green, sounding or not (the tap itself had restarted the reading). Accept opens only once a key is measured. The A4 page says how to read the strobe.

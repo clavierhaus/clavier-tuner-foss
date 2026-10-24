@@ -261,6 +261,8 @@ internal fun SamplingPage(
                     marks = false,
                     // A4: the strobe alone, over the full width (Peter, 22 Oct 2026)
                     twoPanels = false,
+                    // what to do, over the strobe (Peter, 24 Oct 2026)
+                    hint = t(K.sampling_a4Strobe),
                 ) else Spacer(Modifier.weight(1f))
                 if (view == null) {
                     // A4's partials under the strobe: a tap takes one out of it, another brings it back,

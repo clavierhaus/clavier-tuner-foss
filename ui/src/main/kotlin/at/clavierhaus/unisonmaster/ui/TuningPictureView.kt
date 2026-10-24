@@ -12,6 +12,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -29,9 +30,12 @@ import at.clavierhaus.unisonmaster.picture.TuningPicture
 import kotlin.math.abs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
+/** The band over the strobe that holds the note and its hint, as a share of the picture's height: two lines of the hint on a small phone. */
+private const val HINT_BAND = 0.32f
 /** The panels' corner radius, dp: the two regions of the picture are boxes on the ground, not areas of it. */
 private const val PANEL_RADIUS_DP = 12
 
@@ -70,6 +74,12 @@ fun TuningPictureView(
      * strobe on the right. Off on the A4 page, where the strobe has the width (Peter, 22 Oct 2026).
      */
     twoPanels: Boolean = true,
+    /**
+     * A line saying what to do, over the strobe beside the note, the note's line drawn on under it to
+     * the strobe's right edge (Peter, 24 Oct 2026: the strobe was plain to him, "aber das gilt wohl nicht
+     * für jeden"). The A4 page's; null draws none.
+     */
+    hint: String? = null,
     /** What an edition draws in the left panel, blank since 23 Oct 2026. */
     left: (@Composable () -> Unit)? = null,
     /** Bands an edition draws green, and bands it dims (24 Oct 2026): the picture's colours, its own reasons. */
@@ -78,13 +88,26 @@ fun TuningPictureView(
 ) {
     Pane(modifier) {
         // left: the tuning
-        Place(0.00f, 0.00f, 0.16f, 0.22f) {
+        if (hint != null) {
+            // the note's line under the note and the hint alike, to the strobe's right edge
+            Place(0.00f, 0.00f, 1.00f, HINT_BAND) {
+                Box(Modifier.fillMaxSize().drawBehind {
+                    drawLine(Color(Brand.WHITE_MUTED), Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 3f)
+                })
+            }
+            Place(0.17f, 0.00f, 0.83f, HINT_BAND) {
+                Box(Modifier.fillMaxSize().padding(bottom = 5.dp), contentAlignment = Alignment.BottomStart) {
+                    TextBlock(listOf(hint), Modifier.fillMaxWidth(), size = 14.sp, minSize = 10.sp, color = Color(Brand.WHITE))
+                }
+            }
+        }
+        Place(0.00f, 0.00f, 0.16f, if (hint != null) HINT_BAND else 0.22f) {
             Box(
                 Modifier
                     .fillMaxSize()
                     .then(if (onNoteTap != null) Modifier.clickable(onClick = onNoteTap) else Modifier)
                     .drawBehind {
-                        if (!follows) drawLine(Color(Brand.WHITE_MUTED), Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 3f)
+                        if (!follows && hint == null) drawLine(Color(Brand.WHITE_MUTED), Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 3f)
                     },
             ) {
                 FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE), fontWeight = FontWeight.Bold)
@@ -116,6 +139,8 @@ fun TuningPictureView(
             // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
             Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands) } }
+        } else if (hint != null) Place(0.00f, HINT_BAND + 0.02f, 1.00f, 0.98f - HINT_BAND) {
+            Panel { Bands(p, marks, greenBands, dimBands) }
         } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands) } }   // the full width, column over the button below it
     }
 }
