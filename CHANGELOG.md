@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.4.1 -- 2026-10-24
+
 ### 2026-10-24 (evening)
 - **Done on the A4 page works on the first tap.** The tap on the glass is
   itself a strike to the microphone; the reading started over and a tap
