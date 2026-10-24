@@ -192,7 +192,7 @@ class LayoutCheckTest {
         c.acceptLive()
         // sampling: nothing yet; a key measuring; measured; kept; a short one
         look(where, dir, "03-sampling")
-        c.hear(src, strike(corpus, "G3-C-s1", -0.2, 0.6)); look(where, dir, "04-sampling-measuring")
+        c.hear(src, strike(corpus, "C4-C-s1", -0.2, 0.6)); look(where, dir, "04-sampling-measuring")
         c.hear(src, strike(corpus, "G3-C-s1", -0.2, 3.0)); look(where, dir, "05-sampling-measured")
         c.acceptLive(); look(where, dir, "06-sampling-kept")
         c.hear(src, strike(corpus, "C1-L-s1", -0.2, 0.9)); c.hear(src, strike(corpus, "G3-C-s1", -0.2, 0.3)); look(where, dir, "07-sampling-short")
@@ -217,7 +217,7 @@ class LayoutCheckTest {
 
     // The panes, landscape, in dp. The Motorola edge 50 neo (2670 × 1220 px, 460 ppi) at its densities
     // 3.0 and 2.75, and with the navigation bar standing at its side; a small 20:9 phone (1560 × 720 at
-    // 2.0, or any phone set to a large display size); and the edge's system text at its largest.
+    // 2.0, or any phone set to a large display size); the edge's system text at its largest.
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun edge50neoGerman() = check("890x406", "de")
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun edge50neoEnglish() = check("890x406", "en")
     @Test @Config(qualifiers = "w971dp-h443dp-land-440dpi") fun edge50neoAt275German() = check("971x443", "de")
@@ -225,6 +225,8 @@ class LayoutCheckTest {
     @Test @Config(qualifiers = "w780dp-h360dp-land-320dpi") fun smallPhoneGerman() = check("780x360", "de")
     @Test @Config(qualifiers = "w780dp-h360dp-land-320dpi") fun smallPhoneEnglish() = check("780x360", "en")
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun largestTextGerman() = check("890x406", "de", 1.3f)
+    // the Pixel 8 Pro (2992 × 1344 px at 3.0), the phone the store's screenshots are taken on
+    @Test @Config(qualifiers = "w997dp-h448dp-land-480dpi") fun pixel8ProEnglish() = check("997x448", "en")
 
     companion object {
         /** Under this the type is no longer read at arm's length from a piano. */

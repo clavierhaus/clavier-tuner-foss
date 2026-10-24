@@ -361,3 +361,18 @@ it), and its picture is not drawn when it would be under 90 dp tall, which is
 the case on the edge 50 neo and smaller phones while sampling. The A4 page
 always has its picture.
 
+*Superseded the same day:* the sampling page has no picture at all (Peter,
+24 Oct 2026, 15:50: "beim Vermessen können wir eigentlich grundsätzlich auf
+das Stroboskop und Glocken verzichten"). The A4 page keeps its strobe.
+
+## The bells removed (24 Oct 2026)
+
+Peter, 15:50: "Die Glocken entfernen." The bells' panel had stood empty since
+23 Oct; now their drawing is gone from the library: `Bells` in
+`TuningPictureView`, the "bells on partial …" note beside the partial line
+(Gregor had asked what "Vertikalachse: Teilton 1" was to tell him), and the
+unused `TuningGraph` and `ToneGraph` with their bell paths. `TuningPicture`
+still carries its partials as `bells`: that is the engine's reading of each
+partial, which the strobe's bands draw, and only the name is old. The
+picture view's `bells` flag is `twoPanels` now, which is what it decided.
+

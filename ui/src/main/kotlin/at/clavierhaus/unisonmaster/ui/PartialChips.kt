@@ -24,9 +24,8 @@ import at.clavierhaus.unisonmaster.measure.Partials
 /**
  * The partials of the note, one chip each, in one row that always fits: every
  * chip takes an equal share of the width and its label steps down rather
- * than being cut. Orange: shown, read, in the bells. Red-violet: shown and
- * measured false on this strike — a tap takes it out of the bells (and out
- * of the reading). Grey: not shown; a tap brings it in when the string
+ * than being cut. Orange: shown and read. Red-violet: shown and measured
+ * false on this strike — a tap takes it out of the reading. Grey: not shown; a tap brings it in when the string
  * carries it.
  */
 @Composable

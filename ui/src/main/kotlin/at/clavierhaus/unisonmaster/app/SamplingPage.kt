@@ -237,19 +237,19 @@ internal fun SamplingPage(
                 // looks on every other note and green means the same thing (Peter, 15:56). It is given
                 // the band between the temperament and the work, and so pushes the work to the foot as
                 // the spacer used to.
-                // On a small phone the sampling page leaves the picture a few millimetres, where its labels
-                // could only shrink to nothing (24 Oct 2026, a 780 x 360 dp pane): under MIN_PICTURE it is not
-                // drawn. The A4 page has no keyboard and always has the room.
-                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-                    if (settingA4 || maxHeight >= MIN_PICTURE) TuningPictureView(
-                        picture, cfg.matchCents,
-                        modifier = Modifier.fillMaxSize(), follows = false,
-                        // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
-                        marks = false,
-                        // A4: the strobe alone, no bells (Peter, 22 Oct 2026)
-                        bells = view != null,
-                    )
-                }
+                // The A4 page has the strobe, its partials together telling when A4 is exact. The sampling
+                // page has no picture (Peter, 24 Oct 2026: "beim Vermessen können wir eigentlich grundsätzlich
+                // auf das Stroboskop und Glocken verzichten"): a sample is measured, not tuned, and the page
+                // says when the string is measured. Until then the strobe stood squeezed above the work, a few
+                // millimetres high on a small phone, and a tester asked what it was for (Gregor, Clavio).
+                if (settingA4) TuningPictureView(
+                    picture, cfg.matchCents,
+                    modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
+                    // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
+                    marks = false,
+                    // A4: the strobe alone, over the full width (Peter, 22 Oct 2026)
+                    twoPanels = false,
+                ) else Spacer(Modifier.weight(1f))
                 if (view == null) {
                     // A4's partials under the strobe: a tap takes one out of it, another brings it back,
                     // so the strings can be compared on the partials that matter (Peter, 22 Oct 2026)
@@ -370,9 +370,6 @@ private const val SLIDER_SHARE = 0.75f
 
 /** The height of the rows of the work: the key caught, and the count. */
 private val ROW_H = 50.dp
-
-/** Under this the sampling page's picture is not drawn: its labels would shrink past reading. */
-private val MIN_PICTURE = 90.dp
 
 /** A pitch to the tenth of a hertz, within the reference's range. */
 private fun tenths(hz: Double): Double =

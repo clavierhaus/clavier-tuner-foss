@@ -13,7 +13,7 @@ Made by [clavierhaus.at](https://clavierhaus.at), Vienna, by a piano tuner who
 wanted to see what his instruments actually do.
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100%" alt="Tuning B1 on its sixth partial">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100%" alt="Tuning G3 on its sixth partial: the strobe">
 </p>
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="Sampling the piano: a single string measured">
@@ -32,12 +32,13 @@ wanted to see what his instruments actually do.
   string's strobes move together and stand still together, a false partial
   beats on its own. Take the cleanest string as the reference; a tap on a
   partial's button takes it out of the strobe and another brings it back.
-- **Measures first.** Strike a handful of keys, single strings, mutes in. From
-  those strings the app measures the inharmonicity of the piano and computes
-  where every note belongs before you tune the first one. The stretch comes
-  from this instrument, not from a table. Each key says "measuring …" until
-  more sound no longer changes the measurement, then "measured"; Accept turns
-  grey once a key is kept.
+- **Measures first.** Strike single strings, mutes in, any keys in any order:
+  six are the minimum, 10 to 15 across the whole range give the best result.
+  From those strings the app measures the inharmonicity of the piano and
+  computes where every note belongs before you tune the first one. The
+  stretch comes from this instrument, not from a table. Each key says
+  "measuring …" until more sound no longer changes the measurement, then
+  "measured"; Accept turns grey once a key is kept.
 - **Follows the key.** Strike a note and the screen is on it — the key is
   identified by fitting a string to what the microphone hears, not guessed
   from the loudest peak. Measured on recordings of six pianos (Bösendorfer
@@ -68,6 +69,24 @@ wanted to see what his instruments actually do.
 
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
+
+## New in 1.0
+
+What testers found in 0.3, and what changed:
+
+- **Words broken or cut on smaller phones.** On a Motorola edge 50 neo the
+  word beside the caught key stood letter by letter, and the last line of
+  the sampling instructions was missing. Every screen is now drawn and
+  checked on five phone sizes, in English and German and at the largest
+  system text size: a button's word never breaks, and no text is cut.
+- **Sampling instructions that named keys.** They now say only what to do:
+  single strings, any keys, any order; six at least, 10 to 15 for the best
+  result; let each ring until it says measured, then Accept.
+- **A strobe on the sampling page nobody needed.** A sample is measured, not
+  tuned; the sampling page has no strobe any more. A4 keeps its strobe, now
+  with each partial's number under its name.
+- **The bells are gone for good,** and with them the "anchor" line beside
+  the partial.
 
 ## New in 0.3
 

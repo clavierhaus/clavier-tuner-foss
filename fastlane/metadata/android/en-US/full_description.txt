@@ -4,7 +4,7 @@ A4 ON THE STRING YOU CHOOSE
 The first page sets the pitch: tap − or +, or slide a finger along the strip under them. Strike each string of A4 alone and its partials stand as strobes: a clean string's move together and stand still together, a false partial beats on its own. Take the cleanest as your reference.
 
 MEASURE FIRST
-Strike a handful of keys with the other strings muted. From those strings the app measures the inharmonicity of your piano and works out where every note belongs, before you tune the first one. The stretch comes from this instrument, not from a table. Each key says when its measurement is complete.
+Strike single strings with the others muted, any keys in any order: six at least, 10 to 15 across the range for the best result. From those strings the app measures the inharmonicity of your piano and works out where every note belongs, before you tune the first one. The stretch comes from this instrument, not from a table. Each key says when its measurement is complete.
 
 TUNE BY THE STROBE
 The app follows the key you strike and listens to the partial a tuner would listen to in that register. The strobe shows that partial against its target to a tenth of a cent, at 47 readings a second — a string that wobbles is shown wobbling. The string's other partials stand beside it, each in its own band: a clean string is one pattern that comes to a standstill, a false partial is the one out of step. When the strobe stands still, the note is in, and the app notes it. No wizard, no verdict dressed up as a number.

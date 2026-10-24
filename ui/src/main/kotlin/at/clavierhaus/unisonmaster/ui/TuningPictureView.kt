@@ -32,18 +32,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
-/** The bells' span either side of the anchor, cents: narrow enough that a bell's movement is seen undistorted. */
-const val BELLS_SPAN_C = 6.0
-/** A bell is never drawn narrower than this, cents, whatever its width says: a needle must stay visible. */
-const val MIN_BELL_WIDTH_C = 0.2
 /** The panels' corner radius, dp: the two regions of the picture are boxes on the ground, not areas of it. */
 private const val PANEL_RADIUS_DP = 12
 
 /**
  * Draws a [TuningPicture] and nothing else (docs/UI.md): a split window. Left,
- * the tuning — the note, the partial, the bells in their panel. Right,
- * nothing but the bells on their centre line — no numbers over them, the chip
- * row below naming the partials instead. Every position is a fraction of the
+ * the tuning — the note, the partial, and the panel an edition draws there.
+ * Right, the strobe — no numbers over it, the chip row below naming the
+ * partials instead. The bells, drawn beside the strobe from 7 to 23 Oct 2026,
+ * were taken out on 24 Oct (Peter). Every position is a fraction of the
  * pane. The picture decides what is shown; this decides only how.
  *
  * The note name is the one control on the picture: the screen follows the key
@@ -68,8 +65,11 @@ fun TuningPictureView(
     onNoteTap: (() -> Unit)? = null,
     /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
     onStretchTap: (() -> Unit)? = null,
-    /** Whether the bells are drawn. Not on the A4 page: there the strobe alone (Peter, 22 Oct 2026). */
-    bells: Boolean = true,
+    /**
+     * The tuning screen's two panels: the note and the partial on the left over an edition's panel, the
+     * strobe on the right. Off on the A4 page, where the strobe has the width (Peter, 22 Oct 2026).
+     */
+    twoPanels: Boolean = true,
     /** What an edition draws in the left panel, blank since 23 Oct 2026. */
     left: (@Composable () -> Unit)? = null,
     /** Bands an edition draws green, and bands it dims (24 Oct 2026): the picture's colours, its own reasons. */
@@ -92,10 +92,11 @@ fun TuningPictureView(
         }
         // the partial line belongs to the bells; without them (the A4 page) it stood under the strobe and
         // was cut to "parti" (Peter, 23 Oct 2026)
-        if (bells) Place(0.17f, 0.08f, 0.30f, 0.10f) {
-            val anchorNote = if (p.anchor != p.listened) t(K.tuning_bellsOn, p.anchor) else ""
+        // which partial the strobe's reading is on; the bells' anchor beside it left with the bells
+        // (Peter, 24 Oct 2026; Gregor had asked what "Vertikalachse: Teilton 1" was to tell him)
+        if (twoPanels) Place(0.17f, 0.08f, 0.30f, 0.10f) {
             TextBlock(
-                listOf(t(K.tuning_partialOne, p.listened) + anchorNote),
+                listOf(t(K.tuning_partialOne, p.listened)),
                 Modifier.fillMaxSize().then(if (onStretchTap != null) Modifier.clickable(onClick = onStretchTap) else Modifier),
                 size = 13.sp, minSize = 10.sp, color = Color(Brand.WHITE_MUTED),
             )
@@ -106,13 +107,13 @@ fun TuningPictureView(
         // same as the bells with less, and are gone. Each region is a box with round corners on a
         // ground one step lighter than the page, so the eye finds it as a region; all black read as
         // unordered.
-        if (bells) {
+        if (twoPanels) {
             // The bells panel stands empty since 23 Oct 2026 (Peter, at the Steinway B, D2: the bells danced
             // over the panel on a single string and on the unison alike, while the strobe of the same
             // partials came to a complete standstill on new Heller strings; "even if it worked, what help
             // would it give to a tuner?"). The strobe stays where it is; the left side is left blank, and
-            // Bells() is kept for the unison boxes Pro may draw later. Why the bells moved where the strobe
-            // stood is not yet shown from a recording (SAMICK findings §33).
+            // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where
+            // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
             Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands) } }
         } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands) } }   // the full width, column over the button below it
@@ -127,59 +128,6 @@ private fun Panel(content: @Composable () -> Unit) {
             .background(Color(Brand.PANEL), RoundedCornerShape(PANEL_RADIUS_DP.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) { content() }
-}
-
-/**
- * The bells: one string seen several ways. Each partial a bell on one baseline, its place its
- * distance from the anchor in cents, its height its level, its width how well it was read (its own
- * measured spread, never narrower than MIN_BELL_WIDTH_C). A clean string's bells stand on one line
- * (Law 1); a false partial's bell stands out of it, and is coloured when [marks] is on. Drawn as
- * they were until 6 Oct 2026, back by Peter's word of 7 Oct, 15:29, beside the strobe instead of
- * instead of it.
- */
-@Composable
-private fun Bells(p: TuningPicture, marks: Boolean) {
-    Canvas(Modifier.fillMaxSize()) {
-        val w = size.width; val h = size.height
-        val base = h * 0.90f
-        val top = h * 0.06f
-        val cx = w / 2f
-        val half = w / 2f * 0.9f
-        fun xOf(cents: Double): Float = (cx + (cents / BELLS_SPAN_C).coerceIn(-1.0, 1.0) * half).toFloat()
-        // the anchor line, fixed in the panel
-        drawLine(Color(Brand.WHITE).copy(alpha = 0.6f), Offset(cx, top), Offset(cx, base), 2f)
-        drawLine(Color(Brand.WHITE_MUTED), Offset(0f, base), Offset(w, base), 1f)
-        val perCent = half / BELLS_SPAN_C.toFloat()
-        // Every bell is drawn inside its panel (Peter, 10 Oct 2026: bells left the box). A bell's
-        // centre is held to the span, but its skirt reaches 3 widths either side of it and a wide
-        // bell near the edge, or one at the edge, ran past the panel's sides; a Canvas does not
-        // clip by itself. Only the drawing is cut at the panel's edge: where each bell stands, how
-        // high and how wide, is what the picture says, as before.
-        clipRect(0f, 0f, w, h) {
-        for (b in p.bells.filter { it.k !in p.dropped }.sortedBy { it.level }) {
-            val x = xOf(b.offsetCents)
-            val height = (base - top) * (0.25f + 0.75f * b.level.toFloat())
-            val sigma = perCent * (b.widthCents ?: MIN_BELL_WIDTH_C).coerceIn(MIN_BELL_WIDTH_C, BELLS_SPAN_C).toFloat()
-            val path = Path().apply {
-                moveTo(x - 3 * sigma, base)
-                cubicTo(x - sigma, base, x - sigma * 0.8f, base - height, x, base - height)
-                cubicTo(x + sigma * 0.8f, base - height, x + sigma, base, x + 3 * sigma, base)
-                close()
-            }
-            val c = if (marks && b.k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE)
-            drawPath(path, c.copy(alpha = 0.22f))
-            drawPath(path, c, style = Stroke(width = 2f))
-        }
-        }
-        // the span, in the panel's foot
-        val paint = android.graphics.Paint().apply { color = Color(Brand.WHITE_MUTED).toArgb(); textSize = h * 0.07f; isAntiAlias = true }
-        paint.textAlign = android.graphics.Paint.Align.LEFT
-        drawContext.canvas.nativeCanvas.drawText("−${BELLS_SPAN_C.toInt()}", 2f, h * 0.99f, paint)
-        paint.textAlign = android.graphics.Paint.Align.CENTER
-        drawContext.canvas.nativeCanvas.drawText(t(K.tuning_fromAnchor), cx, h * 0.99f, paint)
-        paint.textAlign = android.graphics.Paint.Align.RIGHT
-        drawContext.canvas.nativeCanvas.drawText("+${BELLS_SPAN_C.toInt()}", w - 2f, h * 0.99f, paint)
-    }
 }
 
 @Composable

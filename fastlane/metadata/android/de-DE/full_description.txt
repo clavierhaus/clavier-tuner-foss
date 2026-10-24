@@ -4,7 +4,7 @@ A4 AUF DER SAITE IHRER WAHL
 Die erste Seite legt die Tonhöhe fest: − oder + tippen oder mit dem Finger über den Streifen darunter wischen. Jede Saite von A4 allein angeschlagen, stehen ihre Teiltöne als Stroboskope da: Bei einer sauberen Saite laufen sie gemeinsam und stehen gemeinsam still, ein falscher Teilton schwebt für sich. Nehmen Sie die sauberste als Referenz.
 
 ZUERST MESSEN
-Einige Tasten anschlagen, die übrigen Saiten abgedämpft. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle. Jede Taste zeigt an, wann ihre Messung fertig ist.
+Einzelne Saiten anschlagen, die übrigen abgedämpft, beliebige Tasten in beliebiger Reihenfolge: mindestens sechs, 10 bis 15 über den ganzen Umfang für das beste Ergebnis. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle. Jede Taste zeigt an, wann ihre Messung fertig ist.
 
 NACH DEM STROBOSKOP STIMMEN
 Die App folgt der angeschlagenen Taste und hört auf den Teilton, auf den ein Stimmer in dieser Lage hört. Das Stroboskop zeigt diesen Teilton gegen sein Ziel auf ein Zehntel Cent, 47-mal in der Sekunde — eine Saite, die schwankt, wird schwankend gezeigt. Die übrigen Teiltöne der Saite stehen daneben, jeder in seinem Band: Eine saubere Saite ist ein Muster, das zum Stillstand kommt, ein falscher Teilton ist der, der aus dem Takt fällt. Steht das Stroboskop, ist der Ton drin, und die App merkt ihn sich. Kein Assistent, kein als Zahl verkleidetes Urteil.

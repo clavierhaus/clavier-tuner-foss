@@ -95,8 +95,6 @@ object K {
     const val tuning_leavingKeeps = "tuning.leavingKeeps"
     const val tuning_temperamentDone = "tuning.temperamentDone"
     const val tuning_temperamentFirst = "tuning.temperamentFirst"
-    const val tuning_bellsOn = "tuning.bellsOn"
-    const val tuning_fromAnchor = "tuning.fromAnchor"
     const val tuning_target = "tuning.target"
     const val tuning_targetPartial = "tuning.targetPartial"
     const val tuning_fundamental = "tuning.fundamental"
@@ -269,8 +267,6 @@ internal object StringsTable : Catalog {
         "tuning.leavingKeeps" to arrayOf("leaving a note keeps it", "Weitergehen speichert den Ton"),
         "tuning.temperamentDone" to arrayOf("A3–A4 done · leaving a note keeps it", "A3–A4 fertig · Weitergehen speichert den Ton"),
         "tuning.temperamentFirst" to arrayOf("A3–A4 first · Done keeps a note", "zuerst A3–A4 · Fertig speichert einen Ton"),
-        "tuning.bellsOn" to arrayOf(" · bells on {0}", " · Vertikalachse: Teilton {0}"),
-        "tuning.fromAnchor" to arrayOf("0 c from the anchor", "0 c von der Vertikalachse"),
         "tuning.target" to arrayOf("target {0}", "Ziel {0}"),
         "tuning.targetPartial" to arrayOf(", partial {0}", ", Teilton {0}"),
         "tuning.fundamental" to arrayOf("fundamental", "Grundton"),
@@ -339,7 +335,7 @@ internal object StringsTable : Catalog {
         "help.qs.octaves.s5" to arrayOf("Set them before you tune: every note's target is computed from them.", "Stellen Sie die Oktaven vor dem Stimmen ein: das Ziel jedes Tons wird daraus berechnet."),
         "help.qs.tuning.s1" to arrayOf("Strike a key and the screen is on it. Tap the note's name to choose a key by hand; tap it again and the screen follows the strike once more.", "Schlagen Sie eine Taste an, und die Anzeige ist bei ihr. Tippen Sie auf den Namen des Tons, um eine Taste von Hand zu wählen; ein zweites Tippen, und die Anzeige folgt wieder dem Anschlag."),
         "help.qs.tuning.s2" to arrayOf("Tune until the strobe on the right stands still. When it stands within your match window, the note is kept.", "Stimmen Sie, bis das Stroboskop rechts steht. Steht es innerhalb Ihrer Toleranz, ist der Ton gespeichert."),
-        "help.qs.tuning.s3" to arrayOf("The bells on the left are the string's partials. A clean string's bells stand together; one standing apart beats on its own. They are no target to tune to.", "Die Glockenkurven links sind die Teiltöne der Saite. Bei einer reinen Saite stehen sie beisammen auf der Vertikalachse; eine abseits stehende schwebt für sich. Sie sind kein Ziel zum Stimmen."),
+        "help.qs.tuning.s3" to arrayOf("Under the strobe, the string's partials: tap one to take it out of the reading, tap it again to bring it back.", "Unter dem Stroboskop die Teiltöne der Saite: ein Tippen nimmt einen aus der Messung, ein zweites holt ihn zurück."),
         "help.qs.tuning.s4" to arrayOf("Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.", "Fortschritt zeigt die Stimmung bis hierher. „Stimmung fortsetzen“ auf der Startseite führt Sie dorthin zurück, wo Sie aufgehört haben."),
         "help.qs.tuning.s5" to arrayOf("Unisons are tuned by ear.", "Chöre werden nach Gehör gestimmt."),
         "table.target" to arrayOf("target", "Ziel"),

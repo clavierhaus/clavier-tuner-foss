@@ -17,6 +17,10 @@ reconstructed from the commit history that day.
   strings, any keys, any order; six notes are the minimum, 10 to 15 across
   the whole range give the best accuracy.
 - **The A4 page shows the partials' numbers under their names.**
+- **No strobe while sampling.** A sample is measured, not tuned; the page
+  says when a key is measured. A4 keeps its strobe.
+- **The bells are gone,** with the "bells on partial …" note beside the
+  partial on the tuning screen. The quick start no longer speaks of them.
 - A layout check draws every screen on several phone sizes, in English and
   German and at the largest text size, and fails on any cut or broken text.
 
