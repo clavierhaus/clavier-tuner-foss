@@ -261,8 +261,25 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         }
     }
 
-    /** What is listened to on [midi], and where it must sit. */
+    /**
+     * An offset in cents per key that an edition may lay over the targets (24 Oct 2026): Pro's pitch
+     * raise pulls each string past its target by this much, so that it settles there once the strings
+     * after it are raised. Every target the screen reads ([listening]) carries it; the stretch itself
+     * ([curveTargetF1]) does not, and neither does the check against a partner, which is read against
+     * where the partner was asked to stand. The free edition never sets it. Empty: the targets as computed.
+     */
+    var targetOffsetCents: Map<Int, Double> = emptyMap()
+
+    private fun offset(midi: Int): Double = targetOffsetCents[midi] ?: 0.0
+
+    /** What is listened to on [midi], and where it must sit: the target as computed, moved by its offset if it has one. */
     fun listening(midi: Int = current): Listening {
+        val l = listeningAsComputed(midi)
+        val o = offset(midi)
+        return if (o == 0.0) l else l.copy(targetHz = l.targetHz * 2.0.pow(o / 1200.0))
+    }
+
+    private fun listeningAsComputed(midi: Int): Listening {
         if (midi == MIDI_A4) return Listening(midi, 1, a4Hz, Source.REFERENCE)
         val p = partner(midi) ?: return Listening(midi, 1, targetF1(midi, a4Hz), Source.TEMPERAMENT)
         val (refMidi, ownK, refK) = p
@@ -275,7 +292,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
             val sign = if (midi < refMidi) -1.0 else 1.0
             // the check: the partner as measured against the partner as the curve has it
             val check = measured[refMidi]?.partialHz(refK)?.let { measuredRef ->
-                val modelledRef = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c))
+                val modelledRef = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c)) * 2.0.pow(offset(refMidi) / 1200.0)
                 sign * centsOff(measuredRef, modelledRef)
             }
             return Listening(midi, ownK, hz, Source.CURVE, type, refMidi, null, width, checkCents = check)

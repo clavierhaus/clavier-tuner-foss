@@ -376,3 +376,17 @@ still carries its partials as `bells`: that is the engine's reading of each
 partial, which the strobe's bands draw, and only the name is old. The
 picture view's `bells` flag is `twoPanels` now, which is what it decided.
 
+## The hub's notes, and an offset over the targets (24 Oct 2026, night)
+
+Peter: the script beneath the hub's entries "was a nice touch in GNU
+backgammon, for a professional piece of software it's not right". An entry
+stands as it was — the verb orange, the rest white — and its note follows on
+the same line after a dot, in DejaVu Serif at half the entry's size
+(`HomeHub.kt`, `NOTE_SHARE`). The Allura script stays for the edition mark only.
+
+The engine carries an offset in cents per key that an edition may lay over
+the targets (`TuningSession.targetOffsetCents`, `TuningController.setTargetOffsets`,
+saved as `offset` lines in the session file). Every target the screen reads
+moves by it; the stretch and the check against a partner do not. The free
+edition never sets one.
+

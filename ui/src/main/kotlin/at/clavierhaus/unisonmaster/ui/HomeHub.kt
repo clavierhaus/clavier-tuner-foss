@@ -43,12 +43,13 @@ import at.clavierhaus.unisonmaster.Brand
  * The hub, on the clavierhaus backgammon stencil: the concert grand full
  * screen, the corners every screen has (Corners.kt: the gear top left, the
  * name and a dim home top right), a menu of large serif lines (the verb in
- * orange) with a script note beneath, and the colophon bottom right.
+ * orange) each with its short note on the same line after a dot, in the same serif and
+ * smaller (24 Oct 2026; a script note stood beneath until then), and the colophon bottom right.
  * Drawn for the reference device; OnePicture scales it on smaller screens.
  * Each app assembles its own hub from this: the entries are its own.
  */
 
-/** One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("The Unisons", "My Pianos") — with an optional note written beneath it. */
+/** One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("My Pianos") — with an optional short note after a dot on the same line. */
 data class HomeHubItem(
     val verb: String,
     val rest: String,
@@ -73,7 +74,6 @@ val DejaVuSerifFamily = FontFamily(
 val AlluraScript = FontFamily(Font(R.font.allura_regular))
 
 private val EntryStyle = TextStyle(fontFamily = DejaVuSerifFamily, color = HubWhite, fontSize = 36.sp, shadow = HubShadow)
-private val NoteStyle = TextStyle(fontFamily = AlluraScript, color = HubWhite.copy(alpha = 0.75f), fontSize = 30.sp, shadow = HubShadow)
 private val ColophonStyle = TextStyle(fontFamily = DejaVuSerifFamily, color = HubWhite, fontSize = 26.sp, shadow = HubShadow)
 
 @Composable
@@ -121,20 +121,26 @@ fun HomeHub(
 
 @Composable
 private fun HubEntry(e: HomeHubItem, tight: Boolean) {
-    Column(Modifier.clickable(onClick = e.onClick).padding(vertical = 4.dp)) {
-        BasicText(
-            text = buildAnnotatedString {
-                if (e.lead.isNotEmpty()) append(e.lead + " ")
-                withStyle(SpanStyle(color = HubOrange)) { append(e.verb) }
-                append(e.rest)
-            },
-            style = if (tight) EntryStyle.copy(fontSize = 30.sp) else EntryStyle,
-        )
-        if (e.note != null) {
-            BasicText(e.note, style = if (tight) NoteStyle.copy(fontSize = 24.sp) else NoteStyle, modifier = Modifier.padding(start = 28.dp))
-        }
-    }
+    // the entry as it was, and its note on the same line after a dot, in the same serif and smaller
+    // (Peter, 24 Oct 2026: the script beneath the entries was a nice touch in GNU Backgammon, not right
+    // for a professional piece of software)
+    val entry = if (tight) EntryStyle.copy(fontSize = 30.sp) else EntryStyle
+    BasicText(
+        text = buildAnnotatedString {
+            if (e.lead.isNotEmpty()) append(e.lead + " ")
+            withStyle(SpanStyle(color = HubOrange)) { append(e.verb) }
+            append(e.rest)
+            if (!e.note.isNullOrEmpty()) withStyle(SpanStyle(fontSize = entry.fontSize * NOTE_SHARE, color = HubWhite.copy(alpha = 0.75f))) {
+                append("  ·  " + e.note)
+            }
+        },
+        style = entry,
+        modifier = Modifier.clickable(onClick = e.onClick).padding(vertical = 4.dp),
+    )
 }
+
+/** A note's size beside its entry, as a share of the entry's. */
+private const val NOTE_SHARE = 0.5f
 
 /*
  * The photograph (3504 x 2336, half the original) is decoded once, off the

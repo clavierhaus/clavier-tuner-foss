@@ -83,6 +83,8 @@ private val sample = SessionSnapshot(
     ),
     // the inharmonicity sampled before tuning: kept apart from the tuned notes' (11 Oct 2026)
     basis = mapOf(69 to 4.0e-4, 36 to 1.1e-4),
+    // an edition's offsets over the targets: Pro's pitch raise (24 Oct 2026)
+    offsets = mapOf(45 to 6.2, 69 to 3.0),
 )
 
 class SessionStoreTest {

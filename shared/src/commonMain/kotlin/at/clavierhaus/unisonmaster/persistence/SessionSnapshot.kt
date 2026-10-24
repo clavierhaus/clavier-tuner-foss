@@ -21,6 +21,8 @@ data class SessionSnapshot(
      * and in a file saved before then.
      */
     val basis: Map<Int, Double>? = null,
+    /** The offsets an edition laid over the targets, cents by key (TuningSession.targetOffsetCents, since 24 Oct 2026). */
+    val offsets: Map<Int, Double> = emptyMap(),
 )
 
 /**
@@ -33,6 +35,7 @@ data class SessionSnapshot(
  *     current <midi>
  *     sampling <0|1>                          (optional)
  *     basis <midi> <b>                          (the sampled inharmonicity, any number; since 11 Oct 2026)
+ *     offset <midi> <cents>                     (an edition's offset of the target, any number; since 24 Oct 2026)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
  *     f <k> <rateHz> <depthDb>                  (the string's false beats, any number; since 8 Oct 2026)
@@ -74,6 +77,7 @@ object SessionCodec {
         append("current ${s.currentMidi}\n")
         if (s.sampling) append("sampling 1\n")
         s.basis?.toList()?.sortedBy { it.first }?.forEach { (midi, b) -> if (midi in 12..108 && b.isFinite() && b in 0.0..0.1) append("basis $midi $b\n") }
+        s.offsets.toList().sortedBy { it.first }.forEach { (midi, c) -> if (midi in 12..108 && c.isFinite() && c in -100.0..100.0) append("offset $midi $c\n") }
         for (m in s.measurements) {
             if (!noteInRange(m.midi, m.f1Hz, m.b, m.residualCents, m.timeMs)) continue
             val ps = m.partials.filter { partialInRange(it.k, it.cents, it.levelDb, it.sustainS) }
@@ -129,6 +133,12 @@ object SessionCodec {
             val b = d(t[1], 0.0, 0.1)
             (basis ?: LinkedHashMap<Int, Double>().also { basis = it })[midi] = b
         }
+        // an edition's offsets of the targets: a file from before 24 Oct 2026 has none
+        val offsets = LinkedHashMap<Int, Double>()
+        while (i < lines.size && lines[i].startsWith("offset ")) {
+            val t = tokens("offset", 2)
+            offsets[int(t[0], 12, 108)] = d(t[1], -100.0, 100.0)
+        }
 
         // Structure — header, version, line shapes, the end marker — must be
         // right, or the file is not a session and is refused. Values are
@@ -175,7 +185,7 @@ object SessionCodec {
             notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs, falseBeats))
         }
         if (i != lines.size) fail("data after end")
-        return SessionSnapshot(saved, a4, current, notes, sampling, basis)
+        return SessionSnapshot(saved, a4, current, notes, sampling, basis, offsets)
     }
 }
 

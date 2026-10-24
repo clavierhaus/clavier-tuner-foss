@@ -7,6 +7,10 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-24 (night)
+- **The start page's entries carry their note on the same line,** after a
+  dot, in the same serif and smaller, where a handwritten line stood beneath.
+
 ## 0.4.1 -- 2026-10-24
 
 ### 2026-10-24 (evening)

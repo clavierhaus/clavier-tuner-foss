@@ -219,6 +219,32 @@ class TuningSessionTest {
         assertFalse(s.forget(52), "the tuning has begun: nothing is taken back")
     }
 
+    /**
+     * An edition's offset over the targets (Pro's pitch raise, 24 Oct 2026): every target read on the
+     * note moves by exactly its cents, the stretch itself does not, notes without one stand as computed,
+     * and a partner's check is read against where the partner was asked to stand, not against the curve.
+     */
+    @Test
+    fun anOffsetMovesTheNotesTargetAndNothingElse() {
+        val s = TuningSession(a4, TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40))
+        s.record(measuredString(69, a4, 8e-4))
+        for (m in listOf(24, 33, 45, 52, 76, 93)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        s.finishSampling()
+        val before = (21..108).associateWith { s.listening(it).targetHz }
+        val curve = (21..108).associateWith { s.curveTargetF1(it) }
+        s.targetOffsetCents = mapOf(45 to 6.0, 69 to 4.0)
+        assertEquals(6.0, cents(s.listening(45).targetHz, before.getValue(45)), 1e-9)
+        assertEquals(4.0, cents(s.listening(69).targetHz, before.getValue(69)), 1e-9)
+        for (m in 21..108) if (m != 45 && m != 69) assertEquals(before.getValue(m), s.listening(m).targetHz, 1e-9, "key $m has no offset")
+        for (m in 21..108) assertEquals(curve.getValue(m), s.curveTargetF1(m), 1e-9, "the stretch stands, key $m")
+        // A2 (45) tuned where it was asked to stand: its octave below, A1 (33), checks clean against it
+        val a2 = s.listening(45)
+        s.record(measuredString(45, a2.targetHz / (a2.k * Inharmonicity.ratio(a2.k, s.predictedB(45))), s.predictedB(45)))
+        s.listening(33).checkCents?.let { assertEquals(0.0, it, 0.05, "the partner checked against its offset target") }
+        s.targetOffsetCents = emptyMap()
+        for (m in 21..108) if (m != 45) assertEquals(before.getValue(m), s.listening(m).targetHz, 1e-9, "offsets taken off, key $m")
+    }
+
     @Test
     fun aNewSessionSamplesThenTunes() {
         // one sampling law (4 Oct 2026): any six strings besides A4, where the tuner sees fit —

@@ -487,8 +487,34 @@ class TuningController(
             measurements = s.measurements.values.toList(),
             sampling = s.sampling,
             basis = s.frozenBasis,
+            offsets = s.targetOffsetCents,
         )
     }
+
+    /**
+     * Lays an offset in cents per key over the targets (TuningSession.targetOffsetCents): the strobe then
+     * stands still where the edition asks, on every note it names. An empty map takes them off. The free
+     * edition never calls this; Pro's pitch raise does (24 Oct 2026).
+     */
+    fun setTargetOffsets(offsets: Map<Int, Double>) {
+        val s = session ?: return
+        s.targetOffsetCents = offsets
+        publish(s)
+    }
+
+    /**
+     * The first partial [midi] is to have when tuned, as the stretch computes it from the sampling, without
+     * any offset; null while sampling or without a session. Pro's pitch raise measures how far each sampled
+     * string stands from it (24 Oct 2026).
+     */
+    fun computedTargetF1(midi: Int): Double? {
+        val s = session ?: return null
+        if (s.sampling || !s.curve.ready) return null
+        return s.curveTargetF1(midi)
+    }
+
+    /** The offsets in force over the targets, cents by key; empty without a session or an edition's offsets. */
+    fun targetOffsets(): Map<Int, Double> = session?.targetOffsetCents ?: emptyMap()
 
     /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
     fun resetSession() {
@@ -523,6 +549,7 @@ class TuningController(
         // the basis saved with the session; a file from before 11 Oct 2026 has none, and its
         // measurements, tuned notes among them, become the basis -- the best that file can say
         if (!snap.sampling) s.finishSampling(snap.basis)
+        s.targetOffsetCents = snap.offsets
         val resume = snap.currentMidi.takeIf { s.selectable(it) }
             ?: s.next()?.takeIf { s.selectable(it) }
             ?: TuningSession.MIDI_A4
