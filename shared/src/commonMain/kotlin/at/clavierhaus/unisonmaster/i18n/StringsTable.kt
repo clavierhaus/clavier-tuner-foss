@@ -73,7 +73,6 @@ object K {
     const val hub_dateFormat = "hub.dateFormat"
     const val hub_fundamentalA4 = "hub.fundamentalA4"
     const val hub_fullSpectrum = "hub.fullSpectrum"
-    const val sampling_subtitle = "sampling.subtitle"
     const val sampling_a4Hint = "sampling.a4Hint"
     const val sampling_setAgain = "sampling.setAgain"
     const val sampling_temperament = "sampling.temperament"
@@ -83,11 +82,8 @@ object K {
     const val sampling_atLeast = "sampling.atLeast"
     const val sampling_resetWarning = "sampling.resetWarning"
     const val sampling_setA4Again = "sampling.setA4Again"
-    const val sampling_order_a4 = "sampling.order.a4"
-    const val sampling_order_lowest = "sampling.order.lowest"
-    const val sampling_order_bichord = "sampling.order.bichord"
-    const val sampling_order_trichord = "sampling.order.trichord"
-    const val sampling_order_octaves = "sampling.order.octaves"
+    const val sampling_order_strings = "sampling.order.strings"
+    const val sampling_order_count = "sampling.order.count"
     const val sampling_order_accept = "sampling.order.accept"
     const val app_cancel = "app.cancel"
     const val tuning_partialsUsed = "tuning.partialsUsed"
@@ -196,7 +192,7 @@ internal object StringsTable : Catalog {
         "sampling.kept" to arrayOf("kept", "behalten"),
         "sampling.measuring" to arrayOf("measuring …", "misst …"),
         "sampling.measured" to arrayOf("measured", "gemessen"),
-        "sampling.short" to arrayOf("measured short: strike again for the full measurement", "kurz gemessen: für die volle Messung noch einmal anschlagen"),
+        "sampling.short" to arrayOf("too short: strike again", "zu kurz: noch einmal anschlagen"),
         "app.accept" to arrayOf("Accept", "Übernehmen"),
         "sampling.count" to arrayOf("{0} of {1}", "{0} von {1}"),
         "state.matches" to arrayOf("matches", "stimmt"),
@@ -251,7 +247,6 @@ internal object StringsTable : Catalog {
         "hub.dateFormat" to arrayOf("d MMM", "d. MMM"),
         "hub.fundamentalA4" to arrayOf("Fundamental A4", "Grundton A4"),
         "hub.fullSpectrum" to arrayOf("Full Spectrum", "Alle Teiltöne"),
-        "sampling.subtitle" to arrayOf("Retrieve the piano's inharmonicity", "Die Inharmonizität Ihres Klaviers messen"),
         "sampling.a4Hint" to arrayOf("Tap − or + to adjust. You can also slide left and right here.", "Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen."),
         "sampling.setAgain" to arrayOf("set again", "neu setzen"),
         "sampling.temperament" to arrayOf("Temperament", "Temperatur"),
@@ -261,12 +256,9 @@ internal object StringsTable : Catalog {
         "sampling.atLeast" to arrayOf("{0} · at least {1}", "{0} · mindestens {1}"),
         "sampling.resetWarning" to arrayOf("Setting A4 again starts the sampling over: every sample goes.", "A4 neu setzen beginnt das Vermessen von vorn: alle Messpunkte gehen verloren."),
         "sampling.setA4Again" to arrayOf("Set A4 again", "A4 neu setzen"),
-        "sampling.order.a4" to arrayOf("A4: one string, the others muted. Set it.", "A4: eine Saite, die anderen abgedämpft. Setzen."),
-        "sampling.order.lowest" to arrayOf("Sample the lowest note.", "Den tiefsten Ton messen."),
-        "sampling.order.bichord" to arrayOf("First and last bichord: one string muted.", "Erster und letzter Zweichor: eine Saite abgedämpft."),
-        "sampling.order.trichord" to arrayOf("First plain-wire trichord: two strings muted.", "Erster blanker Dreichor: zwei Saiten abgedämpft."),
-        "sampling.order.octaves" to arrayOf("Then: Two notes per octave, up to C7.", "Dann: zwei Töne je Oktave, bis C7."),
-        "sampling.order.accept" to arrayOf("Each key struck: check it, Accept.", "Jede angeschlagene Taste: prüfen, Übernehmen."),
+        "sampling.order.strings" to arrayOf("Strike single strings, the others muted. Any keys, any order.", "Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten und Reihenfolge beliebig."),
+        "sampling.order.count" to arrayOf("{0} notes are the minimum; 10–15 across the whole range give the best accuracy.", "{0} Töne sind das Minimum; 10–15 über den ganzen Umfang ergeben die beste Genauigkeit."),
+        "sampling.order.accept" to arrayOf("Let each string ring until measured, then Accept.", "Klingen lassen bis „gemessen“, dann Übernehmen."),
         "app.cancel" to arrayOf("Cancel", "Abbrechen"),
         "tuning.partialsUsed" to arrayOf("partials {0}", "Teiltöne {0}"),
         "tuning.partialOne" to arrayOf("partial {0}", "Teilton {0}"),
@@ -336,8 +328,8 @@ internal object StringsTable : Catalog {
         "help.qs.a4.s3" to arrayOf("Tune the string until the strobe stands still, then Done.", "Die Saite stimmen, bis das Stroboskop steht, dann Fertig."),
         "help.qs.a4.s4" to arrayOf("The temperament octave is A3–A4; its low note can be moved on the same screen.", "Die Temperaturoktave ist A3–A4; ihr unterer Ton lässt sich auf derselben Seite verschieben."),
         "help.qs.a4.s5" to arrayOf("Pitch raises are out of scope: a piano far from pitch needs one first.", "Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines."),
-        "help.qs.sampling.s1" to arrayOf("Strike single strings, the others muted. The app catches the key by itself: check it, then Accept. Cancel drops what the strike caught, its sample too; strike the key again for a new reading.", "Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste selbst: prüfen, dann Übernehmen. Abbrechen verwirft, was der Anschlag erfasst hat, auch den Messpunkt; für eine neue Messung schlagen Sie die Taste erneut an."),
-        "help.qs.sampling.s2" to arrayOf("Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.", "Messen Sie dort, wo sich das Klavier ändert: der tiefste Ton, der erste und letzte Zweichor, der erste blanke Dreichor, beide Seiten der Streben — und etwa zwei Töne je Oktave bis C7."),
+        "help.qs.sampling.s1" to arrayOf("Strike single strings, the others muted. The app catches the key by itself: let the string ring until it says measured, then Accept. Cancel drops what the strike caught, its sample too.", "Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste von selbst: die Saite klingen lassen, bis „gemessen“ dasteht, dann Übernehmen. Abbrechen verwirft, was der Anschlag erkannt hat, auch seinen Messpunkt."),
+        "help.qs.sampling.s2" to arrayOf("Spread the samples over the whole keyboard, in any order.", "Verteilen Sie die Messpunkte über die ganze Tastatur, in beliebiger Reihenfolge."),
         "help.qs.sampling.s3" to arrayOf("Six samples are the minimum; ten to fifteen give the better result.", "Sechs Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis."),
         "help.qs.sampling.s4" to arrayOf("Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.", "Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde."),
         "help.qs.octaves.s1" to arrayOf("Settings › Stretch, for the bass, the middle and the treble.", "Einstellungen › Spreizung, für Bass, Mitte und Diskant."),

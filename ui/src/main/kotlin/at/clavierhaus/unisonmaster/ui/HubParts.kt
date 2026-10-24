@@ -378,35 +378,24 @@ fun ProgressButton(
 @Composable
 fun AcceptButton(accepted: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val orange = Color(Brand.ORANGE)
-    Button(
-        onClick = onClick,
-        enabled = enabled && !accepted,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = orange,
-            contentColor = Color(Brand.BLACK),
-            // once the key is kept the button is spent and looks it: grey, not the orange that asks
-            // for a tap (Peter, 22 Oct 2026: the kept key shows, and Accept greys out)
-            disabledContainerColor = if (accepted) Color(0xFF444444) else orange.copy(alpha = 0.3f),
-            disabledContentColor = if (accepted) Color(Brand.WHITE_MUTED) else Color(Brand.BLACK).copy(alpha = 0.6f),
-        ),
-    ) {
-        Text(t(K.app_accept), fontFamily = DejaVuSerif, fontSize = 18.sp)
-    }
+    val on = enabled && !accepted
+    // once the key is kept the button is spent and looks it: grey, not the orange that asks for a tap
+    // (Peter, 22 Oct 2026: the kept key shows, and Accept greys out); its word never breaks (Elements.kt)
+    WordButton(
+        t(K.app_accept),
+        fill = when { on -> orange; accepted -> Color(0xFF444444); else -> orange.copy(alpha = 0.3f) },
+        textColor = when { on -> Color(Brand.BLACK); accepted -> Color(Brand.WHITE_MUTED); else -> Color(Brand.BLACK).copy(alpha = 0.6f) },
+        enabled = on, onClick = onClick, modifier = modifier,
+    )
 }
 
 /** The green confirmation button. */
 @Composable
 fun DoneButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(Brand.GO_GREEN),
-            contentColor = Color(Brand.BLACK),
-        ),
-    ) {
-        Text(t(K.app_done), fontFamily = DejaVuSerif, fontSize = 18.sp)
-    }
+    WordButton(
+        t(K.app_done),
+        fill = if (enabled) Color(Brand.GO_GREEN) else Color(0xFF1F1F1F),
+        textColor = if (enabled) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
+        enabled = enabled, onClick = onClick, modifier = modifier,
+    )
 }

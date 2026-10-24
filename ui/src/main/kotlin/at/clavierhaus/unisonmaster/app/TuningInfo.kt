@@ -14,6 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,8 +28,9 @@ import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.TunerSettings
-import at.clavierhaus.unisonmaster.ui.ChoiceRow
-import at.clavierhaus.unisonmaster.ui.StepperRow
+import at.clavierhaus.unisonmaster.ui.Choices
+import at.clavierhaus.unisonmaster.ui.DejaVuSerif
+import at.clavierhaus.unisonmaster.ui.Stepper
 import at.clavierhaus.unisonmaster.ui.formatHz
 import at.clavierhaus.unisonmaster.ui.num
 
@@ -57,7 +61,24 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                 Chip(t(K.app_done), selected = true, enabled = true, onClick = onClose)
             }
             Spacer(Modifier.height(8.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // a table: the columns say "octave type" and "width" once, each region is a row of its name
+            // and its two controls (24 Oct 2026: the name of the width, said three times, left the width
+            // itself no room, and "schwebungsfrei" was cut)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                // each heading stands over its column at that column's own width: the control is laid out
+                // unseen beneath it and takes the width, so heading and column cannot drift apart
+                Box(contentAlignment = Alignment.Center) {
+                    Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Choices(octaves.map { it.label }, -1) {} }
+                    Text(t(K.settings_octaveType), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+                }
+                Spacer(Modifier.width(16.dp))
+                Box(contentAlignment = Alignment.Center) {
+                    Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Stepper(t(K.settings_beatless), true, true, {}, {}) }
+                    Text(t(K.settings_octaveWidth), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 region(t(K.settings_page_bass), octaves, s.octaveBass, s.widthBass,
                     { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBass = w) } })
                 region(t(K.settings_page_middle), octaves, s.octaveMiddle, s.widthMiddle,
@@ -66,9 +87,11 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                     { o -> onChange { it.copy(octaveTreble = o) } }, { w -> onChange { it.copy(widthTreble = w) } })
             }
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.width(360.dp)) {
-                StepperRow(
-                    t(K.settings_temperamentOctave), noteName(s.temperamentLowMidi) + "–A4",
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(t(K.settings_temperamentOctave), color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
+                Spacer(Modifier.width(16.dp))
+                Stepper(
+                    noteName(s.temperamentLowMidi) + "–A4",
                     canDecrease = s.temperamentLowMidi > TunerSettings.MIN_TEMPERAMENT_LOW,
                     canIncrease = s.temperamentLowMidi < TunerSettings.MAX_TEMPERAMENT_LOW,
                     onDecrease = { onChange { it.copy(temperamentLowMidi = it.temperamentLowMidi - 1) } },
@@ -84,19 +107,18 @@ private fun region(
     name: String, octaves: List<OctaveType>, type: OctaveType, width: Double,
     onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit,
 ) {
-    // one row a region, low to high: its octave type, then its width
+    // one row a region, low to high: its name, its octave type, its width
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(0.62f)) {
-            ChoiceRow(name, octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
-        }
+        Text(name, Modifier.weight(1f), color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
+        Choices(octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
         Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(0.38f)) { StepperRow(
-            t(K.settings_octaveWidth), if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
+        Stepper(
+            if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
             canDecrease = width > 0.0,
             canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
             onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
             onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
-        ) }
+        )
     }
 }
 

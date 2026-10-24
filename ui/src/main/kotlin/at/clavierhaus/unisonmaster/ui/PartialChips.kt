@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -63,11 +64,15 @@ fun PartialChips(
                     FitText(
                         partialNoteName(k, baseHz, a4Hz),
                         12.sp,
+                        minSize = 10.sp,
                         color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE_MUTED),
                         align = TextAlign.Center,
                     )
                 }
-                FitText("$k", 10.sp, color = if (isFalse) Color(Brand.FALSE_VIOLET) else Color(Brand.WHITE_MUTED), align = TextAlign.Center)
+                // the partial's number under its chip (Gregor, Clavio, 24 Oct 2026: the A4 page showed the names
+                // only); a line as tall as the digit, where the theme's 24 sp line cut it
+                Text("$k", color = if (isFalse) Color(Brand.FALSE_VIOLET) else Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif,
+                    fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center, softWrap = false)
             }
         }
     }

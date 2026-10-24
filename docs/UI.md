@@ -318,3 +318,46 @@ dashed outline or a struck number carries the cue without colour.
 - A new way of drawing: `ui/`, built from `Pane`, `FitText`, `Page`.
 - Navigation, permissions, files, the microphone: `androidApp/`.
 - Words the user reads: `i18n/strings.tsv`, then `scripts/i18n.py`.
+
+## Elements, and the layout check (24 Oct 2026)
+
+Peter, 15:10: "Wir müssen in Elementen denken, die auf einem Bildschirm
+platziert werden." Two rules of type, held by `ui/Elements.kt`:
+
+- **A button's word never breaks.** `WordButton` (Chip, Accept and Done are
+  built on it) keeps its label on one line; given less width, it narrows its
+  padding from 18 to 6 dp, then steps its type down to 12 sp.
+- **One element, one size of type.** `TextBlock` sets lines that belong
+  together in one size, wrapping between words; when they do not fit their
+  box, the whole block steps down, to 10 sp at the least. The sampling
+  page's orders stood in four sizes on one card, each line shrunk alone, and
+  the last one was off the card.
+
+What the Motorola edge 50 neo showed (Gregor, Clavio, 24 Oct 2026) — "ge /
+me" beside the caught key, "Übernehmen" as "Ü / h" on a small phone — came
+from fixed widths (the sampling page's left side at 380 dp, its labels at 92
+and 120 dp, the slider at 300 dp, a stepper's value at 88 dp) and from the
+Material theme's 24 sp line height, which stood taller than small type and
+made `FitText` step down for a height that was never short. The widths are
+shares now (law 1), the keyboard's height too (28 % of the page), and text
+in the elements has a line 1.25 times its size.
+
+**`LayoutCheckTest`** (`ui/src/test`, `:ui:testDebugUnitTest`) draws the
+screens with Robolectric on the JVM — the A4 page, the sampling page in each
+state, the tuning screen, every settings page but Help's, the info line's
+window — fed by corpus strikes through the engine, on these panes: 890 × 406
+dp (the edge 50 neo at density 3.0), 971 × 443 (at 2.75), 842 × 406 (its
+navigation bar at the side), 780 × 360 (a small 20:9 phone, or any phone at a
+large display size), in English and German, and 890 × 406 at text × 1.3. It
+reads every text back from its own layout and fails when one is cut, breaks
+inside a word, stands on another, is under 10 sp, or when an element holds
+two sizes. The pictures go to `ui/build/layout-check/`. It failed with 72
+faults on the edge in German before the change and passes after. It needs
+the corpus (`CLAVIER_DATA`) and says so when it has none.
+
+Two things the check made visible and this change decided: the sampling
+page's subtitle left (at the largest text the orders no longer fitted under
+it), and its picture is not drawn when it would be under 90 dp tall, which is
+the case on the edge 50 neo and smaller phones while sampling. The A4 page
+always has its picture.
+

@@ -48,7 +48,14 @@ import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
-import at.clavierhaus.unisonmaster.ui.FitText
+import at.clavierhaus.unisonmaster.ui.TextBlock
+import at.clavierhaus.unisonmaster.ui.LINE
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.em
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
 import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -121,7 +128,13 @@ internal fun SamplingPage(
     // Accept go by this; the picture itself is the hub's and already follows the note on screen.
     val a4Live = hz != null && (view == null || view.caught == TuningSession.MIDI_A4)
 
-    Box(Modifier.fillMaxSize()) {
+    // a line as tall as its type, not the theme's 24 sp at every size (24 Oct 2026: at the phone's largest
+    // text the two lines of a label and its value stood taller than their row)
+    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.merge(TextStyle(lineHeight = LINE.em))) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // the keyboard's height, a share of the page's (docs/UI.md, law 1): at a fixed 116 dp a small
+        // phone's work rows stood below its top edge (24 Oct 2026)
+        val keyboardH = maxHeight * KEYBOARD_SHARE
         // The page is one band above the keyboard, and it is given its height rather than left to wrap
         // (Peter's screen recording of 4 Oct 2026, 16:52: the column grew past the pane and Caught with
         // its Accept and Sampled with its Done stood below the screen's edge, where they could not be
@@ -132,25 +145,27 @@ internal fun SamplingPage(
         // nothing else: no title, no orders, no keyboard; the picture has the width. From Done on it
         // is the sampling page, with the orders on the left and the compass along the bottom.
         val settingA4 = view == null
-        Row(Modifier.fillMaxSize().padding(bottom = if (settingA4) 0.dp else KEYBOARD_H + 8.dp)) {
+        Row(Modifier.fillMaxSize().padding(bottom = if (settingA4) 0.dp else keyboardH + 8.dp)) {
             if (!settingA4) {
                 // ---- left: what this page is for, and the orders ----
-                Column(Modifier.width(380.dp).fillMaxHeight()) {
+                // a share of the width, never a number of dp (docs/UI.md, law 1): at 380 dp the right side
+                // was left too little on a small phone, and its buttons broke their words (24 Oct 2026)
+                Column(Modifier.weight(LEFT_SHARE).fillMaxHeight()) {
                     CornerBand()
-                    Text(t(K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text(t(K.sampling_subtitle), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp)
-                    Spacer(Modifier.height(10.dp))
-                    Column(
-                        Modifier.fillMaxWidth().border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(3.dp),
-                    ) {
-                        for (line in ORDERS) FitText(line, 14.sp, Modifier.fillMaxWidth(), color = white)
+                    Text(t(K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    // the subtitle ("Retrieve the piano's inharmonicity") left on 24 Oct 2026: at the phone's largest
+                    // text it took two lines, and the orders, which say what to do, no longer fitted under it
+                    Spacer(Modifier.height(6.dp))
+                    // the orders: one element, one size of type, wrapping between words (Peter, 24 Oct 2026,
+                    // 15:10); until then each line shrank alone to its width and the last fell off the card
+                    Box(Modifier.fillMaxWidth().weight(1f, fill = false).border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        TextBlock(orders(view?.samplesNeeded ?: 0), Modifier.fillMaxWidth(), size = 15.sp, color = white, gap = 4.dp)
                     }
                 }
-                Spacer(Modifier.width(28.dp))
+                Spacer(Modifier.width(24.dp))
             }
             // ---- right: A4 and the temperament above, the work at the foot ----
-            Column(Modifier.weight(1f).fillMaxHeight()) {
+            Column(Modifier.weight(if (settingA4) 1f else 1f - LEFT_SHARE).fillMaxHeight()) {
                 CornerBand()
                 // The pitch A4 is to be tuned to is chosen here, and the string is brought to it.
                 // It starts at the engine's 440.0 Hz and the two steps move it by a tenth of a hertz;
@@ -158,11 +173,11 @@ internal fun SamplingPage(
                 // the tuner nothing to aim at (Peter, 15:55: "we define the initial pitch for A4").
                 val a4Now by rememberUpdatedState(a4)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
-                    Text("A4", color = muted, fontSize = 14.sp, modifier = Modifier.width(60.dp))
+                    Text("A4", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false, modifier = Modifier.width(60.dp))
                     StepBox("−") { controller.setReference(tenths(a4Now - 0.1)) }
                     Text(
                         formatHz(a4),
-                        color = white, fontFamily = DejaVuSerif, fontSize = 30.sp,
+                        color = white, fontFamily = DejaVuSerif, fontSize = 30.sp, softWrap = false,
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                     StepBox("+") { controller.setReference(tenths(a4Now + 0.1)) }
@@ -170,14 +185,14 @@ internal fun SamplingPage(
                     // 23 Oct 2026 (Peter): the tuner who keeps the pitch shown taps Done
                     Spacer(Modifier.weight(1f))
                     if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
-                    else Text(t(K.sampling_setAgain), color = muted, fontSize = 13.sp, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                    else Text(t(K.sampling_setAgain), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
                 }
                 // Under − 440.0 +, the line that says how the pitch is set is the slider itself: a finger
                 // drawn right along it raises A4 a tenth of a hertz every SLIDE_STEP_DP, drawn left lowers
                 // it (Peter, 23 Oct 2026: on the number alone the slide was too small to find, and the
                 // boxes took the touch). A strip of its own, so it reads as something to touch.
                 if (view == null) Box(
-                    Modifier.padding(start = 60.dp, top = 4.dp).width(SLIDER_W).height(30.dp)
+                    Modifier.padding(start = 60.dp, top = 4.dp).fillMaxWidth(SLIDER_SHARE).heightIn(min = 30.dp)
                         .background(Color(Brand.CONTROL), RoundedCornerShape(6.dp))
                         .pointerInput(Unit) {
                             val stepPx = SLIDE_STEP_DP.dp.toPx()
@@ -191,11 +206,17 @@ internal fun SamplingPage(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    FitText("‹  " + t(K.sampling_a4Hint) + "  ›", 12.sp, Modifier.padding(horizontal = 8.dp), color = muted, align = TextAlign.Center)
+                    // the hint wraps between its words inside the strip rather than being cut at its end (24 Oct 2026)
+                    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("‹", color = muted, fontSize = 13.sp)
+                        TextBlock(listOf(t(K.sampling_a4Hint)), Modifier.weight(1f).padding(horizontal = 8.dp), size = 13.sp, color = muted, align = TextAlign.Center)
+                        Text("›", color = muted, fontSize = 13.sp)
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
-                    Text(t(K.sampling_temperament), color = muted, fontSize = 14.sp, modifier = Modifier.width(120.dp))
+                    Text(t(K.sampling_temperament), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false)
+                    Spacer(Modifier.width(12.dp))
                     val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
                     val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
                     Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
@@ -216,14 +237,19 @@ internal fun SamplingPage(
                 // looks on every other note and green means the same thing (Peter, 15:56). It is given
                 // the band between the temperament and the work, and so pushes the work to the foot as
                 // the spacer used to.
-                TuningPictureView(
-                    picture, cfg.matchCents,
-                    modifier = Modifier.fillMaxWidth().weight(1f), follows = false,
-                    // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
-                    marks = false,
-                    // A4: the strobe alone, no bells (Peter, 22 Oct 2026)
-                    bells = view != null,
-                )
+                // On a small phone the sampling page leaves the picture a few millimetres, where its labels
+                // could only shrink to nothing (24 Oct 2026, a 780 x 360 dp pane): under MIN_PICTURE it is not
+                // drawn. The A4 page has no keyboard and always has the room.
+                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                    if (settingA4 || maxHeight >= MIN_PICTURE) TuningPictureView(
+                        picture, cfg.matchCents,
+                        modifier = Modifier.fillMaxSize(), follows = false,
+                        // measuring, not tuning: the stripes keep one colour here (Peter, 7 Oct 2026)
+                        marks = false,
+                        // A4: the strobe alone, no bells (Peter, 22 Oct 2026)
+                        bells = view != null,
+                    )
+                }
                 if (view == null) {
                     // A4's partials under the strobe: a tap takes one out of it, another brings it back,
                     // so the strings can be compared on the partials that matter (Peter, 22 Oct 2026)
@@ -234,48 +260,61 @@ internal fun SamplingPage(
                         falseMarked = emptySet(),
                         tappable = audibleA4 - 1,
                         onTap = { k -> controller.tapPartial(k) },
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
+                        // the chip and its number under it: 36 dp cut the numbers (24 Oct 2026)
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
                     )
                 }
                 if (view != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
-                        Text(t(K.sampling_caughtLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
+                    // what the last strike caught, under its label, and the two answers to it; below, the count,
+                    // how far the caught string's measurement has got, and Done. The status is an element of its
+                    // own in the row with the room for it, and wraps between words; until 24 Oct 2026 it was
+                    // given what Cancel and Accept left, and "gemessen" stood as "ge / me" on the Motorola edge
+                    // 50 neo (Gregor, Clavio).
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = ROW_H)) {
                         val c = view.caught
-                        Text(
-                            if (c != null) noteName(c) else t(K.sampling_strikeKey),
-                            // the key kept stands green, as it does on the keyboard (Peter, 22 Oct 2026)
-                            color = if (c == null) muted else if (view.caughtAccepted) Color(Brand.GO_GREEN) else orange, fontFamily = DejaVuSerif, fontSize = if (c != null) 28.sp else 18.sp,
-                        )
-                        // how far the caught string's measurement has got (18 Oct 2026: a tuner could not
-                        // know that the string must ring on until it is measured; SAMICK findings §29-30):
-                        // measuring while more sound still changes it, measured once it does not, and
-                        // short when the next strike came first
-                        if (c != null) {
-                            Spacer(Modifier.width(12.dp))
-                            val (word, colour) = when (view.caughtMeasured) {
-                                TuningController.Measured.MEASURING -> t(K.sampling_measuring) to muted
-                                TuningController.Measured.MEASURED -> t(K.sampling_measured) to Color(Brand.GO_GREEN)
-                                TuningController.Measured.SHORT -> t(K.sampling_short) to Color(Brand.MEASURED_SHORT)
-                            }
-                            Text(word, color = colour, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false))
+                        Column {
+                            Text(t(K.sampling_caughtLabel), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+                            Text(
+                                if (c != null) noteName(c) else t(K.sampling_strikeKey),
+                                // the key kept stands green, as it does on the keyboard (Peter, 22 Oct 2026)
+                                color = if (c == null) muted else if (view.caughtAccepted) Color(Brand.GO_GREEN) else orange,
+                                fontFamily = DejaVuSerif, fontSize = if (c != null) 26.sp else 16.sp, softWrap = false,
+                            )
                         }
                         Spacer(Modifier.weight(1f))
                         // Cancel and Accept, the two answers to a strike (Peter, 12 Oct 2026: the
                         // button names its act, the other says Cancel). Cancel drops what the strike
                         // caught -- its sample too, once taken -- and the page waits for a new strike
-                        // and a new reading; it replaced "Undo", which only took back a sample. The
-                        // keyboard takes no touch — the right side of this page is the only interactive
-                        // area (Peter, 5 Oct 2026) — and a 17 dp key could not be aimed at anyway.
+                        // and a new reading. The keyboard takes no touch — the right side of this page
+                        // is the only interactive area (Peter, 5 Oct 2026).
                         if (c != null) {
+                            Spacer(Modifier.width(8.dp))
                             Chip(t(K.app_cancel), selected = false, enabled = true) { controller.cancelCaught() }
-                            Spacer(Modifier.width(10.dp))
                         }
+                        Spacer(Modifier.width(8.dp))
                         AcceptButton(accepted = view.caughtAccepted, enabled = controller.acceptReady(), onClick = { controller.acceptLive() })
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(50.dp)) {
-                        Text(t(K.sampling_sampledLabel), color = muted, fontSize = 14.sp, modifier = Modifier.width(92.dp))
-                        Text(t(K.sampling_atLeast, view.samplesIn, view.samplesNeeded), color = white, fontFamily = DejaVuSerif, fontSize = 18.sp)
-                        Spacer(Modifier.weight(1f))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = ROW_H)) {
+                        Column {
+                            Text(t(K.sampling_sampledLabel), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+                            Text(t(K.sampling_atLeast, view.samplesIn, view.samplesNeeded), color = white, fontFamily = DejaVuSerif, fontSize = 18.sp, softWrap = false)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        // how far the caught string's measurement has got (18 Oct 2026: a tuner could not
+                        // know that the string must ring on until it is measured; SAMICK findings §29-30):
+                        // measuring while more sound still changes it, measured once it does not, and
+                        // short when the next strike came first
+                        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                            if (view.caught != null) {
+                                val (word, colour) = when (view.caughtMeasured) {
+                                    TuningController.Measured.MEASURING -> t(K.sampling_measuring) to muted
+                                    TuningController.Measured.MEASURED -> t(K.sampling_measured) to Color(Brand.GO_GREEN)
+                                    TuningController.Measured.SHORT -> t(K.sampling_short) to Color(Brand.MEASURED_SHORT)
+                                }
+                                TextBlock(listOf(word), Modifier.fillMaxWidth(), size = 14.sp, color = colour)
+                            }
+                        }
+                        Spacer(Modifier.width(8.dp))
                         DoneButton(onClick = { controller.finishSampling() }, enabled = view.samplingReady)
                     }
                 }
@@ -289,10 +328,11 @@ internal fun SamplingPage(
             caught = view?.caught,
             referenceSet = true,
             temperament = low..TuningSession.MIDI_A4,
-            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(KEYBOARD_H),
+            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(keyboardH),
         )
     }
 
+    }
     // Setting A4 again throws every sample away, so it is asked before it is done. Nothing else on
     // this page asks: Undo names the key it takes back, and the key can simply be struck again.
     if (resetA4) {
@@ -309,14 +349,30 @@ internal fun SamplingPage(
     }
 }
 
-/** The keyboard's height along the foot of the page; the band above it is what is left. */
-private val KEYBOARD_H = 116.dp
+/** The keyboard's share of the page's height along its foot; the band above it is what is left. */
+private const val KEYBOARD_SHARE = 0.28f
 
-/** The orders, military-short (Peter, 4 Oct 2026). */
-private val ORDERS: List<String> get() = listOf(
-    t(K.sampling_order_a4), t(K.sampling_order_lowest), t(K.sampling_order_bichord),
-    t(K.sampling_order_trichord), t(K.sampling_order_octaves), t(K.sampling_order_accept),
+/**
+ * The orders, short (Peter, 24 Oct 2026): no key is named -- the tuner samples where he likes -- and
+ * the count says the minimum and what gives the best result. Until then they named the lowest note,
+ * the bichords, the first plain trichord and C7, and a tuner who leaves out A0-B0 by habit read them as
+ * an instruction to sample A0 (Gregor, Clavio, 24 Oct 2026).
+ */
+private fun orders(needed: Int): List<String> = listOf(
+    t(K.sampling_order_strings), t(K.sampling_order_count, needed), t(K.sampling_order_accept),
 )
+
+/** The left side's share of the width; the right side, with the controls, has the rest. */
+private const val LEFT_SHARE = 0.42f
+
+/** The A4 hint's strip, as a share of the right side under − 440.0 +. */
+private const val SLIDER_SHARE = 0.75f
+
+/** The height of the rows of the work: the key caught, and the count. */
+private val ROW_H = 50.dp
+
+/** Under this the sampling page's picture is not drawn: its labels would shrink past reading. */
+private val MIN_PICTURE = 90.dp
 
 /** A pitch to the tenth of a hertz, within the reference's range. */
 private fun tenths(hz: Double): Double =
@@ -352,8 +408,6 @@ private fun StepBox(label: String, blocked: () -> Boolean = { false }, onClick: 
 }
 
 /** A finger slid this far along the strip under − 440.0 + moves A4 a tenth of a hertz, dp. */
-private val SLIDER_W = 300.dp
-
 private const val SLIDE_STEP_DP = 8
 /** A held step box waits this long before it runs, ms. */
 private const val STEP_HOLD_MS = 450L

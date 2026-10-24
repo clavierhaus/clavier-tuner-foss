@@ -18,7 +18,7 @@ sampling.caught	caught — Accept keeps it	erkannt — Übernehmen behält sie
 sampling.kept	kept	behalten
 sampling.measuring	measuring …	misst …
 sampling.measured	measured	gemessen
-sampling.short	measured short: strike again for the full measurement	kurz gemessen: für die volle Messung noch einmal anschlagen
+sampling.short	too short: strike again	zu kurz: noch einmal anschlagen
 app.accept	Accept	Übernehmen
 sampling.count	{0} of {1}	{0} von {1}
 state.matches	matches	stimmt
@@ -73,7 +73,6 @@ hub.unisons.note	the strings of a note read apart, partial by partial	die Saiten
 hub.dateFormat	d MMM	d. MMM
 hub.fundamentalA4	Fundamental A4	Grundton A4
 hub.fullSpectrum	Full Spectrum	Alle Teiltöne
-sampling.subtitle	Retrieve the piano's inharmonicity	Die Inharmonizität Ihres Klaviers messen
 sampling.a4Hint	Tap − or + to adjust. You can also slide left and right here.	Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen.
 sampling.setAgain	set again	neu setzen
 sampling.temperament	Temperament	Temperatur
@@ -83,12 +82,9 @@ sampling.sampledLabel	Sampled	Messpunkte
 sampling.atLeast	{0} · at least {1}	{0} · mindestens {1}
 sampling.resetWarning	Setting A4 again starts the sampling over: every sample goes.	A4 neu setzen beginnt das Vermessen von vorn: alle Messpunkte gehen verloren.
 sampling.setA4Again	Set A4 again	A4 neu setzen
-sampling.order.a4	A4: one string, the others muted. Set it.	A4: eine Saite, die anderen abgedämpft. Setzen.
-sampling.order.lowest	Sample the lowest note.	Den tiefsten Ton messen.
-sampling.order.bichord	First and last bichord: one string muted.	Erster und letzter Zweichor: eine Saite abgedämpft.
-sampling.order.trichord	First plain-wire trichord: two strings muted.	Erster blanker Dreichor: zwei Saiten abgedämpft.
-sampling.order.octaves	Then: Two notes per octave, up to C7.	Dann: zwei Töne je Oktave, bis C7.
-sampling.order.accept	Each key struck: check it, Accept.	Jede angeschlagene Taste: prüfen, Übernehmen.
+sampling.order.strings	Strike single strings, the others muted. Any keys, any order.	Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten und Reihenfolge beliebig.
+sampling.order.count	{0} notes are the minimum; 10–15 across the whole range give the best accuracy.	{0} Töne sind das Minimum; 10–15 über den ganzen Umfang ergeben die beste Genauigkeit.
+sampling.order.accept	Let each string ring until measured, then Accept.	Klingen lassen bis „gemessen“, dann Übernehmen.
 app.cancel	Cancel	Abbrechen
 tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
@@ -158,8 +154,8 @@ help.qs.a4.s2	Mute A4 to one string. Choose its pitch with − and +, a tenth of
 help.qs.a4.s3	Tune the string until the strobe stands still, then Done.	Die Saite stimmen, bis das Stroboskop steht, dann Fertig.
 help.qs.a4.s4	The temperament octave is A3–A4; its low note can be moved on the same screen.	Die Temperaturoktave ist A3–A4; ihr unterer Ton lässt sich auf derselben Seite verschieben.
 help.qs.a4.s5	Pitch raises are out of scope: a piano far from pitch needs one first.	Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines.
-help.qs.sampling.s1	Strike single strings, the others muted. The app catches the key by itself: check it, then Accept. Cancel drops what the strike caught, its sample too; strike the key again for a new reading.	Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste selbst: prüfen, dann Übernehmen. Abbrechen verwirft, was der Anschlag erfasst hat, auch den Messpunkt; für eine neue Messung schlagen Sie die Taste erneut an.
-help.qs.sampling.s2	Sample where the piano changes: the lowest note, the first and last bichord, the first plain-wire trichord, both sides of the struts — and about two notes per octave up to C7.	Messen Sie dort, wo sich das Klavier ändert: der tiefste Ton, der erste und letzte Zweichor, der erste blanke Dreichor, beide Seiten der Streben — und etwa zwei Töne je Oktave bis C7.
+help.qs.sampling.s1	Strike single strings, the others muted. The app catches the key by itself: let the string ring until it says measured, then Accept. Cancel drops what the strike caught, its sample too.	Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste von selbst: die Saite klingen lassen, bis „gemessen“ dasteht, dann Übernehmen. Abbrechen verwirft, was der Anschlag erkannt hat, auch seinen Messpunkt.
+help.qs.sampling.s2	Spread the samples over the whole keyboard, in any order.	Verteilen Sie die Messpunkte über die ganze Tastatur, in beliebiger Reihenfolge.
 help.qs.sampling.s3	Six samples are the minimum; ten to fifteen give the better result.	Sechs Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis.
 help.qs.sampling.s4	Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.	Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde.
 help.qs.octaves.s1	Settings › Stretch, for the bass, the middle and the treble.	Einstellungen › Spreizung, für Bass, Mitte und Diskant.

@@ -1,15 +1,6 @@
 package at.clavierhaus.unisonmaster.app
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,29 +18,20 @@ import at.clavierhaus.unisonmaster.Brand
  */
 @Composable
 fun Chip(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .height(40.dp)
-            .background(
-                when {
-                    selected -> Color(Brand.ORANGE)
-                    enabled -> Color(0xFF333333)
-                    else -> Color(0xFF1F1F1F)
-                },
-                RoundedCornerShape(8.dp),
-            )
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            color = when {
-                selected -> Color(Brand.BLACK)
-                enabled -> Color(Brand.WHITE)
-                else -> Color(Brand.WHITE_MUTED)
-            },
-            fontSize = 16.sp,
-        )
-    }
+    // a button of the library's (Elements.kt): its word never breaks, and the serif of every screen
+    at.clavierhaus.unisonmaster.ui.WordButton(
+        label,
+        fill = when {
+            selected -> Color(Brand.ORANGE)
+            enabled -> Color(0xFF333333)
+            else -> Color(0xFF1F1F1F)
+        },
+        textColor = when {
+            selected -> Color(Brand.BLACK)
+            enabled -> Color(Brand.WHITE)
+            else -> Color(Brand.WHITE_MUTED)
+        },
+        enabled = enabled, onClick = onClick,
+        size = 16.sp, padding = 16.dp, height = 40.dp,
+    )
 }

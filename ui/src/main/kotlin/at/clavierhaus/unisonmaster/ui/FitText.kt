@@ -42,6 +42,9 @@ fun FitText(
         fontFamily = fontFamily,
         fontWeight = fontWeight,
         fontSize = size.sp,
+        // a line as tall as the type (Elements.LINE): the theme's 24 sp line overflowed a chip's height at the
+        // phone's larger text sizes, and the step-down took it for the word not fitting (24 Oct 2026)
+        lineHeight = (size * LINE).sp,
         textAlign = align,
         softWrap = false,
         onTextLayout = { result ->

@@ -7,6 +7,19 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-24
+- **No text is cut or broken any more, on small phones and at large text
+  sizes.** A button's word never breaks: the button first narrows its
+  margins, then its type. A block of text that belongs together is set in
+  one size. On a Motorola edge 50 neo the status beside the caught key stood
+  as "ge / me", and the last line of the sampling instructions was missing.
+- **Shorter sampling instructions.** No keys are named any more: single
+  strings, any keys, any order; six notes are the minimum, 10 to 15 across
+  the whole range give the best accuracy.
+- **The A4 page shows the partials' numbers under their names.**
+- A layout check draws every screen on several phone sizes, in English and
+  German and at the largest text size, and fails on any cut or broken text.
+
 ## 0.3.0 -- 2026-10-23
 
 ### 2026-10-23

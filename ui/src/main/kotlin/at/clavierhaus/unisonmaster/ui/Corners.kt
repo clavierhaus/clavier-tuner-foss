@@ -118,7 +118,8 @@ fun BoxScope.Corners(
             .then(if (onInfo != null) Modifier.clickable(onClick = onInfo) else Modifier),
         contentAlignment = Alignment.CenterStart,
     ) {
-        FitText(info, 15.sp, Modifier.fillMaxWidth(), color = Color(Brand.WHITE_MUTED))
+        // one element: it wraps between words and steps down whole (Elements.kt), where it shrank to 9 sp
+        TextBlock(listOf(info), Modifier.fillMaxWidth(), size = 15.sp, minSize = 10.sp, color = Color(Brand.WHITE_MUTED))
     }
 
     // top right: the name, and the home button

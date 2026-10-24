@@ -94,10 +94,10 @@ fun TuningPictureView(
         // was cut to "parti" (Peter, 23 Oct 2026)
         if (bells) Place(0.17f, 0.08f, 0.30f, 0.10f) {
             val anchorNote = if (p.anchor != p.listened) t(K.tuning_bellsOn, p.anchor) else ""
-            FitText(
-                t(K.tuning_partialOne, p.listened) + anchorNote, 13.sp,
+            TextBlock(
+                listOf(t(K.tuning_partialOne, p.listened) + anchorNote),
                 Modifier.fillMaxSize().then(if (onStretchTap != null) Modifier.clickable(onClick = onStretchTap) else Modifier),
-                color = Color(Brand.WHITE_MUTED),
+                size = 13.sp, minSize = 10.sp, color = Color(Brand.WHITE_MUTED),
             )
         }
         // Two regions, two panels (Peter, 7 Oct 2026, 15:29): the strobe says when the string has

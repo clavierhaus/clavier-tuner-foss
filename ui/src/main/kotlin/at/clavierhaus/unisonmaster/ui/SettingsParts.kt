@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -213,7 +214,9 @@ fun InfoButton(title: String, text: String) {
     // the touch target is wider than the ring; its height is the row's or the header's
     Box(Modifier.clickable { open = true }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
         Box(Modifier.size(20.dp).border(1.5.dp, tint, CircleShape), contentAlignment = Alignment.Center) {
-            Text("i", color = tint, fontFamily = DejaVuSerif, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            // the letter set without the font's padding, so its box is the ring's and nothing of it is cut
+            Text("i", color = tint, fontWeight = FontWeight.Bold,
+                style = TextStyle(fontFamily = DejaVuSerif, fontSize = 12.sp, lineHeight = 12.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)))
         }
     }
     if (open) {
@@ -247,7 +250,9 @@ private fun SettingsRow(name: String, info: String?, control: @Composable () -> 
     ) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // the name takes what it needs, so the (i) stands right behind it, not at the far edge
-            FitText(name, 15.sp, Modifier.weight(1f, fill = false), color = Color(Brand.WHITE))
+            // the name wraps between its words rather than shrinking beside its control: a row is one size
+            // of type (Peter, 24 Oct 2026, 15:10)
+            TextBlock(listOf(name), Modifier.weight(1f, fill = false), size = 15.sp, minSize = 10.sp, color = Color(Brand.WHITE))
             if (info != null) InfoButton(name, info)
         }
         Spacer(Modifier.width(12.dp))
@@ -272,6 +277,21 @@ internal fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
     }
 }
 
+/** − value +, without a name: the control of a StepperRow, and of a table whose column says the name once. */
+@Composable
+fun Stepper(value: String, canDecrease: Boolean, canIncrease: Boolean, onDecrease: () -> Unit, onIncrease: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        StepButton("−", canDecrease, onDecrease)
+        // as wide as its value needs, never less than 88 dp: at a fixed 88 dp "schwebungsfrei" was cut
+        // in the info line's window and shrunk beside its name (24 Oct 2026)
+        Text(
+            value, Modifier.widthIn(min = 88.dp).padding(horizontal = 6.dp), color = Color(Brand.WHITE),
+            fontFamily = DejaVuSerif, fontSize = 15.sp, textAlign = TextAlign.Center, softWrap = false,
+        )
+        StepButton("+", canIncrease, onIncrease)
+    }
+}
+
 /** − value + */
 @Composable
 fun StepperRow(
@@ -283,14 +303,26 @@ fun StepperRow(
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
 ) {
-    SettingsRow(name, info) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StepButton("−", canDecrease, onDecrease)
-            FitText(
-                value, 15.sp, Modifier.width(88.dp),
-                color = Color(Brand.WHITE), align = TextAlign.Center,
-            )
-            StepButton("+", canIncrease, onIncrease)
+    SettingsRow(name, info) { Stepper(value, canDecrease, canIncrease, onDecrease, onIncrease) }
+}
+
+/** The options of a ChoiceRow without its name, the selected one in orange; each chip as wide as its word. */
+@Composable
+fun Choices(options: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        options.forEachIndexed { i, label ->
+            val on = i == selected
+            Box(
+                Modifier
+                    .height(32.dp)
+                    .defaultMinSize(minWidth = 32.dp)
+                    .background(if (on) Color(Brand.ORANGE) else CONTROL, RoundedCornerShape(6.dp))
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 5.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(label, color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+            }
         }
     }
 }
@@ -298,25 +330,7 @@ fun StepperRow(
 /** A small set of options, the selected one in orange. */
 @Composable
 fun ChoiceRow(name: String, options: List<String>, selected: Int, info: String? = null, onSelect: (Int) -> Unit) {
-    SettingsRow(name, info) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            options.forEachIndexed { i, label ->
-                val on = i == selected
-                // a chip is as wide as its word: nothing is cut to a fixed width
-                Box(
-                    Modifier
-                        .height(32.dp)
-                        .defaultMinSize(minWidth = 44.dp)
-                        .background(if (on) Color(Brand.ORANGE) else CONTROL, RoundedCornerShape(6.dp))
-                        .clickable { onSelect(i) }
-                        .padding(horizontal = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    FitText(label, 13.sp, color = if (on) Color(Brand.BLACK) else Color(Brand.WHITE), align = TextAlign.Center)
-                }
-            }
-        }
-    }
+    SettingsRow(name, info) { Choices(options, selected, onSelect) }
 }
 
 @Composable
@@ -332,9 +346,17 @@ fun SwitchRow(name: String, checked: Boolean, info: String? = null, onChange: (B
 
 @Composable
 fun ReadOnlyRow(name: String, value: String, info: String? = null) {
-    SettingsRow(name, info) {
-        FitText(value, 15.sp, color = Color(Brand.WHITE_MUTED), align = TextAlign.End)
+    // the name and the value share the row, each an element that wraps between its words (24 Oct 2026:
+    // a long value took the row and left its name to break inside a word)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().height(ROW_HEIGHT)) {
+        Row(Modifier.weight(0.45f), verticalAlignment = Alignment.CenterVertically) {
+            TextBlock(listOf(name), Modifier.weight(1f, fill = false), size = 15.sp, minSize = 10.sp, color = Color(Brand.WHITE))
+            if (info != null) InfoButton(name, info)
+        }
+        Spacer(Modifier.width(12.dp))
+        TextBlock(listOf(value), Modifier.weight(0.55f), size = 15.sp, minSize = 11.sp, color = Color(Brand.WHITE_MUTED), align = TextAlign.End)
     }
+    HorizontalDivider(color = CONTROL)
 }
 
 /** A row with a line of text to edit at the right: one line, no wrap. */
