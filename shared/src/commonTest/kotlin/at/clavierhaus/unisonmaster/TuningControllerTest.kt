@@ -510,6 +510,36 @@ class TuningControllerTest {
         assertEquals(66, c.heardMidi.value)
     }
 
+    /**
+     * Done on the A4 page (Peter, 24 Oct 2026, from two testers' reports): it opens once A4's strike is
+     * measured in full and stays open, the string sounding or not, and a tap on the glass -- a short
+     * loud transient, a strike to the microphone -- does not close it. Until then it took the live
+     * reading at the tap, and the tap itself left no reading for about 0.2 s.
+     */
+    @Test
+    fun doneOnTheA4PageStaysOpenOnceA4IsMeasuredThroughSilenceAndATap() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.setReference(a4)
+        val strike = SyntheticString.strike(a4, 8e-4, 3.0)
+        val openAt = ArrayList<Pair<Double, Boolean>>()
+        src.afterBuffer = { at -> openAt += at to c.a4Status.value.ready }
+        // the strike, then silence, then a tap: 5 ms of noise as loud as the strike's peak
+        val tapAt = strike.size + 48_000
+        val sig = FloatArray(strike.size + 2 * 48_000)
+        strike.copyInto(sig)
+        val peak = strike.maxOf { kotlin.math.abs(it) }
+        val rnd = kotlin.random.Random(1)
+        for (i in 0 until 240) sig[tapAt + i] = ((rnd.nextDouble() * 2 - 1) * peak).toFloat()
+        c.hear(src, sig)
+        val firstOpen = openAt.firstOrNull { it.second }?.first
+        assertNotNull(firstOpen, "Done never opened")
+        assertTrue(firstOpen > 0.3 + 0.5, "Done opened at %.2f s, before A4's strike at 0.3 s could be measured".format(firstOpen))
+        assertTrue(openAt.filter { it.first >= firstOpen }.all { it.second }, "Done closed again after it opened: through the silence or at the tap")
+        assertEquals(TuningController.Measured.MEASURED, c.a4Status.value.measured)
+        assertEquals(a4, c.acceptLive(), "Done keeps A4 in silence, after the tap")
+        assertTrue(c.tuning.value!!.sampling)
+    }
+
     @Test
     fun samplingCatchesTheKeyStruckAndAcceptKeepsIt() {
         // Pro: any key, in any order; six besides A4 and Done ends it

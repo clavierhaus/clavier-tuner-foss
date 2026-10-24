@@ -112,7 +112,6 @@ internal fun SamplingPage(
     /** Back to the microphone. */
     onUseMicrophone: () -> Unit = {},
 ) {
-    val hz by controller.liveHz.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
     val hiddenA4 by controller.hiddenPartials.collectAsState()
     val audibleA4 by controller.liveAudible.collectAsState()
@@ -126,7 +125,9 @@ internal fun SamplingPage(
     // and after it the strike must have been caught as A4 -- the strike of any other key is that key's
     // and is never taken for this pitch (4 Oct 2026, 16:52, where 193.5 Hz stood here). Done and
     // Accept go by this; the picture itself is the hub's and already follows the note on screen.
-    val a4Live = hz != null && (view == null || view.caught == TuningSession.MIDI_A4)
+    // A4 measured from its strike, as a sampled key is: Done opens once it is, and stays open in silence
+    // and through the tap on the glass that used to close it (Peter, 24 Oct 2026)
+    val a4State by controller.a4Status.collectAsState()
 
     // a line as tall as its type, not the theme's 24 sp at every size (24 Oct 2026: at the phone's largest
     // text the two lines of a label and its value stood taller than their row)
@@ -183,9 +184,20 @@ internal fun SamplingPage(
                     StepBox("+") { controller.setReference(tenths(a4Now + 0.1)) }
                     // "as it stands", the string's reading taken as the pitch by one tap (7 Oct 2026), left on
                     // 23 Oct 2026 (Peter): the tuner who keeps the pitch shown taps Done
-                    Spacer(Modifier.weight(1f))
-                    if (view == null) DoneButton(onClick = { controller.acceptLive() }, enabled = a4Live)
-                    else Text(t(K.sampling_setAgain), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                    if (view == null) {
+                        // how far A4's strike is measured, in the sampling page's words
+                        Box(Modifier.weight(1f).padding(horizontal = 12.dp), contentAlignment = Alignment.CenterEnd) {
+                            when (a4State.measured) {
+                                TuningController.Measured.MEASURING -> TextBlock(listOf(t(K.sampling_measuring)), size = 14.sp, color = muted)
+                                TuningController.Measured.MEASURED -> TextBlock(listOf(t(K.sampling_measured)), size = 14.sp, color = Color(Brand.GO_GREEN))
+                                else -> Unit
+                            }
+                        }
+                        DoneButton(onClick = { controller.acceptLive() }, enabled = a4State.ready)
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                        Text(t(K.sampling_setAgain), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
+                    }
                 }
                 // Under − 440.0 +, the line that says how the pitch is set is the slider itself: a finger
                 // drawn right along it raises A4 a tenth of a hertz every SLIDE_STEP_DP, drawn left lowers

@@ -15,14 +15,19 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 /**
- * A string accepted the moment its key is caught, and the next strike before its measurement is
- * complete: what is kept is the string measured from everything heard up to that strike, not the
- * measurement of the decision 0.85 s after its own (SAMICK findings §29: in the bass 10.6 % off
- * the full measurement, median of 209 takes, where the strikes of one string agree to 1.3 %).
- * The 225's B0, left string (22 Sept), struck again 1.1 s after itself, before the half second
- * of history the measurement needs to call itself complete (1.36 s at the earliest). Until 18 Oct 2026 the
- * decision's measurement stood, because the second measurement came at a fixed 2.5 s and only if
- * no strike had come first.
+ * A sampled string struck again, and the next strike before the new measurement is complete: what is
+ * kept is the string measured from everything heard up to that strike, not the measurement of the
+ * decision 0.85 s after its own (SAMICK findings §29: in the bass 10.6 % off the full measurement,
+ * median of 209 takes, where the strikes of one string agree to 1.3 %). The 225's B0, left string
+ * (22 Sept): struck, measured in full and accepted; struck again, and that strike struck again 1.1 s
+ * after itself, before the half second of history the measurement needs to call itself complete
+ * (1.36 s at the earliest). Until 18 Oct 2026 the decision's measurement stood, because the second
+ * measurement came at a fixed 2.5 s and only if no strike had come first.
+ *
+ * Until 24 Oct 2026 the string was accepted the moment its key was caught. Accept waits for the
+ * measurement now (Peter: a tester could accept a key milliseconds after it was caught), so the kept
+ * string cut short is the one struck again, which stays accepted; and Accept is checked closed while
+ * the first strike is still measuring.
  *
  * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
  */
@@ -64,27 +69,37 @@ class SamplingCutRecordingsTest {
             ?: fail("A4 could not be measured")
         val bass = WavPcm.read(bassFile.readBytes()).samples
         val at = strike(bass)
-        // half a second of the room, the string from its strike for 1.1 s, then the same string struck again
-        val lead = sr / 2; val gap = (1.1 * sr).toInt() / hop * hop
-        val sig = FloatArray(lead + gap + 3 * sr)
-        bass.copyInto(sig, lead, at, at + gap)
-        bass.copyInto(sig, lead + gap, at, minOf(bass.size, at + 3 * sr))
-        val secondHop = (lead + gap) / hop     // the hop the second strike's take begins in; the engine hears it rise in this one or the next
+        // half a second of the room; the string from its strike for 3 s, measured and accepted; struck
+        // again, and that strike struck again 1.1 s after itself
+        val lead = sr / 2; val full = 3 * sr / hop * hop; val gap = (1.1 * sr).toInt() / hop * hop
+        val sig = FloatArray(lead + full + gap + 3 * sr)
+        bass.copyInto(sig, lead, at, minOf(bass.size, at + full))
+        bass.copyInto(sig, lead + full, at, at + gap)
+        bass.copyInto(sig, lead + full + gap, at, minOf(bass.size, at + 3 * sr))
+        val againHop = (lead + full) / hop
+        val secondHop = (lead + full + gap) / hop     // the hop the cutting strike's take begins in; the engine hears it rise in this one or the next
 
         lateinit var c: TuningController
         val keptB = HashMap<Int, Double>()
         var cutHop = -1
+        var readyWhileMeasuring = false
+        var againCaught = -1
         val player = Player(sig) { h ->
+            val t = c.tuning.value
+            if (h < againHop && t?.caught == 23 && t.caughtMeasured == TuningController.Measured.MEASURING && c.acceptReady()) readyWhileMeasuring = true
             if (c.acceptReady()) c.acceptLive()
             c.snapshot()?.measurements?.firstOrNull { it.midi == 23 }?.let { keptB[h] = it.b }
-            if (cutHop < 0 && c.tuning.value?.caughtMeasured == TuningController.Measured.SHORT) cutHop = h
+            if (againCaught < 0 && h > againHop && t?.caught == 23 && t.caughtMeasured == TuningController.Measured.MEASURING) againCaught = h
+            if (cutHop < 0 && t?.caughtMeasured == TuningController.Measured.SHORT) cutHop = h
         }
         c = TuningController(player)
         c.applySettings(TunerSettings())
         c.restore(SessionSnapshot(0, a4.f1Hz, TuningSession.MIDI_A4, listOf(a4), sampling = true))
         c.startLive()
 
-        val decision = keptB.filterKeys { it < cutHop }.minByOrNull { it.key }?.value ?: fail("B0 was never caught and kept before the second strike: ${keptB.keys.sorted().take(5)}")
+        assertTrue(!readyWhileMeasuring, "Accept stood open while the first strike was still being measured")
+        assertTrue(againCaught > 0, "B0 struck again was never caught anew")
+        val decision = keptB[againCaught] ?: fail("B0 was never kept at its catch: ${keptB.keys.sorted().take(5)}")
         assertTrue(cutHop in secondHop..secondHop + 1, "the second strike is heard at hop $cutHop and the measurement called short there; the take begins in hop $secondHop")
         val atCut = keptB[cutHop] ?: fail("nothing kept at the second strike's hop")
         // everything heard up to the second strike: the ring as it stood before the hop the strike was heard in

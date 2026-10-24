@@ -188,7 +188,7 @@ class LayoutCheckTest {
         // A4, its string sounding
         c.setReference(439.4)
         show("tune", tune)
-        c.hear(src, strike(corpus, "A4-C-s1", -0.2, 1.6)); look(where, dir, "02-a4")
+        c.hear(src, strike(corpus, "A4-C-s1", -0.2, 3.0)); look(where, dir, "02-a4")
         c.acceptLive()
         // sampling: nothing yet; a key measuring; measured; kept; a short one
         look(where, dir, "03-sampling")

@@ -493,6 +493,9 @@ class TuningController(
     /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
     fun resetSession() {
         caught = null
+        hubA4 = null
+        a4Kept = null
+        _a4Status.value = A4Status(null, false)
         shortSamples.clear()
         session = null
         _tuning.value = null
@@ -738,13 +741,13 @@ class TuningController(
     fun acceptLive(): Double? {
         val t = _tuning.value
         if (t == null) {
-            val hz = _liveHz.value ?: return null
+            // the A4 string as its last strike measured it in full, sounding now or not (HubA4); nothing
+            // until one is measured
+            val m = a4Kept ?: return null
             // the reference is the pitch the tuner chose on the sampling page and tuned the string to,
             // not the string as it happens to stand: until 5 Oct 2026 this overwrote his choice with
             // the reading, so there was never a pitch to aim at (Peter, 15:55)
             val s = TuningSession(_referenceA4Hz.value, _settings.value)
-            val m = StringMeasure.measure(ringSnapshot(), audioSource.sampleRateHz, TuningSession.MIDI_A4, hz, timeMs = clock())
-                ?: NoteMeasurement(TuningSession.MIDI_A4, hz, 0.0, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock())
             s.record(m)
             session = s
             advance(s)
@@ -754,6 +757,7 @@ class TuningController(
         if (s.sampling) {
             // Accept: the string caught from the last strike, as it was measured, is kept
             val c = caught ?: return null
+            if (c.state != Measured.MEASURED) return null
             val m = c.measurement ?: return null
             if (!s.record(m)) return null
             c.accepted = true
@@ -820,7 +824,9 @@ class TuningController(
     /** Accept can be tapped: while sampling, a key caught and not yet kept. */
     fun acceptReady(): Boolean {
         val s = session ?: return false
-        return s.sampling && caught?.let { it.measurement != null && !it.accepted } == true
+        // once the string is measured, not before (Peter, 24 Oct 2026: a tester could accept a key a few
+        // milliseconds after it was caught, before anything of it was measured)
+        return s.sampling && caught?.let { it.measurement != null && !it.accepted && it.state == Measured.MEASURED } == true
     }
 
     /** Whether the partial read matches its target now (what Done asks). */
@@ -925,6 +931,46 @@ class TuningController(
     private val shortSamples = HashSet<Int>()
 
     @Volatile private var caught: Caught? = null
+
+    /**
+     * A4 on the hub, measured from its strike as a sampled key is (Peter, 24 Oct 2026: Done stays green
+     * once A4 is measured, the string sounding or not). Until then Done took the live reading at the
+     * moment of the tap, and the tap on the glass is itself a strike to the microphone: the reading
+     * restarted, stood empty for about 0.2 s, and a tap released inside it did nothing (a 5 ms transient
+     * laid into the 225's A4, Boesendorfer_A4-C-s1, 22 Sept: no reading from 2.05 to 2.13 s).
+     */
+    private class HubA4(val strikeHop: Long, val f1: Double) {
+        var measurement: NoteMeasurement? = null
+        val history = ArrayList<Double>()
+        var state = Measured.MEASURING
+    }
+    @Volatile private var hubA4: HubA4? = null
+    /** The last A4 strike measured in full: what Done keeps. A strike after it replaces it only once measured itself. */
+    @Volatile private var a4Kept: NoteMeasurement? = null
+
+    /** A4 on the hub: how far the measurement of the last strike has got (null: none yet), and whether Done can keep one. */
+    data class A4Status(val measured: Measured?, val ready: Boolean)
+    private val _a4Status = MutableStateFlow(A4Status(null, false))
+    val a4Status: StateFlow<A4Status> = _a4Status.asStateFlow()
+
+    /** The hub's A4 strike measured again, a quarter second on; measured by the same rule as a sampled key ([stepCaught]). */
+    private fun stepHubA4(a: HubA4, since: Long) {
+        val sr = audioSource.sampleRateHz
+        StringMeasure.measure(ringSnapshot(), sr, TuningSession.MIDI_A4, a.f1, timeMs = clock())?.let { m ->
+            a.measurement = m
+            a.history += m.b
+        }
+        val k = _settings.value.octaveTypeFor(TuningSession.MIDI_A4).low
+        val back = (SAMPLE_STILL_HOPS / SAMPLE_STEP_HOPS).toInt()
+        val still = a.history.size > back &&
+            1200.0 / ln(2.0) * (k * k - 1) / 2.0 * abs(a.history.last() - a.history[a.history.size - 1 - back]) < SAMPLE_STILL_CENTS
+        val windowFull = since * HOP >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * sr
+        if (still || windowFull) {
+            a.state = Measured.MEASURED
+            a4Kept = a.measurement ?: NoteMeasurement(TuningSession.MIDI_A4, a.f1, 0.0, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock())
+        }
+        _a4Status.value = A4Status(a.state, a4Kept != null)
+    }
 
     /**
      * What the hop decided and must publish, done at its end (18 Oct 2026). A publish mints a
@@ -1168,6 +1214,14 @@ class TuningController(
                     readerGeneration = -1
                     // the A4 string as it sounds now, and nothing once it is gone (Law 3): a shown reading or none
                     reader?.push(chunk)?.let { rd -> _liveHz.value = if (rd.shown) rd.hz else null }
+                    // A4 measured from its strike: caught once the strike gives a reading of the A4 string, then
+                    // measured again every quarter second until more sound no longer changes it (HubA4)
+                    val f1Now = _liveHz.value
+                    if (strikeHop > 0 && f1Now != null && hubA4?.strikeHop != strikeHop) {
+                        hubA4 = HubA4(strikeHop, f1Now)
+                        _a4Status.value = A4Status(Measured.MEASURING, a4Kept != null)
+                    }
+                    hubA4?.let { a -> if (a.state == Measured.MEASURING && (hop - a.strikeHop) % SAMPLE_STEP_HOPS == 0L) stepHubA4(a, hop - a.strikeHop) }
                     if (_fullSpectrum.value && finder != null) hubSpectrum(finder, _liveHz.value ?: _referenceA4Hz.value)
                     // the A4 string's other partials as strobes, so a false beat shows before a string is
                     // chosen as the reference (Peter, 22 Oct 2026: "No bells on A4, just strobe. Strobe

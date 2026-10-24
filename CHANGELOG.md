@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-24 (evening)
+- **Done on the A4 page works on the first tap.** The tap on the glass is
+  itself a strike to the microphone; the reading started over and a tap
+  released in that moment did nothing. A4 is now measured from its strike
+  as a sampled key is: "measuring …", then "measured", and from then on Done
+  stays green, the string sounding or not.
+- **Accept opens once a key is measured,** no longer the moment it is caught.
+
 ## 0.4.0 -- 2026-10-24
 
 ### 2026-10-24
