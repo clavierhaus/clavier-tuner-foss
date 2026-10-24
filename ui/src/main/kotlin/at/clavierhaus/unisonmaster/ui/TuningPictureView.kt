@@ -70,8 +70,11 @@ fun TuningPictureView(
     onStretchTap: (() -> Unit)? = null,
     /** Whether the bells are drawn. Not on the A4 page: there the strobe alone (Peter, 22 Oct 2026). */
     bells: Boolean = true,
-    /** What an edition draws in the left panel, blank since 23 Oct 2026 (Pro: the unison's grid). */
+    /** What an edition draws in the left panel, blank since 23 Oct 2026. */
     left: (@Composable () -> Unit)? = null,
+    /** Bands an edition draws green, and bands it dims (24 Oct 2026): the picture's colours, its own reasons. */
+    greenBands: Set<Int> = emptySet(),
+    dimBands: Set<Int> = emptySet(),
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -111,8 +114,8 @@ fun TuningPictureView(
             // Bells() is kept for the unison boxes Pro may draw later. Why the bells moved where the strobe
             // stood is not yet shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
-            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks) } }
-        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks) } }   // the full width, column over the button below it
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands) } }
+        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands) } }   // the full width, column over the button below it
     }
 }
 
@@ -180,7 +183,7 @@ private fun Bells(p: TuningPicture, marks: Boolean) {
 }
 
 @Composable
-private fun Bands(p: TuningPicture, marks: Boolean) {
+private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet()) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
@@ -225,7 +228,12 @@ private fun Bands(p: TuningPicture, marks: Boolean) {
             // 2026, 16:10: "two different colours and thus sizes"). How well a partial was read is
             // the bells' to say, as a bell's width, in the other panel. A partial the tuner took out
             // is not here at all: the picture gives it no seat (8 Oct 2026).
-            val c = if (marks && k in p.falseMarked) Color(Brand.FALSE_VIOLET) else Color(Brand.ORANGE)
+            val c = when {
+                k in dims -> Color(Brand.WHITE_MUTED).copy(alpha = 0.25f)
+                k in greens -> Color(Brand.GO_GREEN)
+                marks && k in p.falseMarked -> Color(Brand.FALSE_VIOLET)
+                else -> Color(Brand.ORANGE)
+            }
             clipRect(bx, top, bx + bw, base) {
                 val solid = sh * 0.46f
                 for (seg in 0..k) {
