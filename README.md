@@ -70,7 +70,7 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
-## New in 1.0
+## New in 0.4
 
 What testers found in 0.3, and what changed:
 
