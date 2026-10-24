@@ -14,9 +14,8 @@ reconstructed from the commit history that day.
   as a sampled key is: "measuring …", then "measured", and from then on Done
   stays green, the string sounding or not.
 - **Accept opens once a key is measured,** no longer the moment it is caught.
-- **The A4 page says how to read the strobe.** Over it, beside A4, one line:
-  tune until every strobe stands still, stripes moving down meaning too
-  low and up too high, then wait for "measured" and tap Done.
+- **The A4 page says how to read the strobe.** Over it, beside A4: "Tune
+  until the stripes stand still."
 
 ## 0.4.0 -- 2026-10-24
 

@@ -247,7 +247,7 @@ internal object StringsTable : Catalog {
         "hub.fundamentalA4" to arrayOf("Fundamental A4", "Grundton A4"),
         "hub.fullSpectrum" to arrayOf("Full Spectrum", "Alle Teiltöne"),
         "sampling.a4Hint" to arrayOf("Tap − or + to adjust. You can also slide left and right here.", "Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen."),
-        "sampling.a4Strobe" to arrayOf("Tune A4 until every strobe stands still (stripes moving down: too low; up: too high). Then wait for “measured” and tap Done.", "A4 stimmen, bis alle Stroboskope stillstehen (Streifen nach unten: zu tief, nach oben: zu hoch). Dann „gemessen“ abwarten, Fertig tippen."),
+        "sampling.a4Strobe" to arrayOf("Tune until the stripes stand still.", "Stimmen, bis die Streifen stillstehen."),
         "sampling.setAgain" to arrayOf("set again", "neu setzen"),
         "sampling.temperament" to arrayOf("Temperament", "Temperatur"),
         "sampling.caughtLabel" to arrayOf("Caught", "Erkannt"),
