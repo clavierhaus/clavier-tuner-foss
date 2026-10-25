@@ -169,7 +169,7 @@ private fun TabWord(title: String, open: Boolean, onClick: () -> Unit) {
     Text(
         title,
         color = if (open) Color(Brand.ORANGE) else Color(Brand.WHITE),
-        fontFamily = DejaVuSerif, fontSize = 22.sp,
+        fontFamily = DejaVuSerif, fontSize = 22.sp, softWrap = false,
         fontWeight = if (open) FontWeight.Bold else FontWeight.Normal,
         modifier = Modifier.clickable(onClick = onClick).padding(vertical = 4.dp),
     )
@@ -178,9 +178,11 @@ private fun TabWord(title: String, open: Boolean, onClick: () -> Unit) {
 /** A page's name under its tab: a small serif word, muted; the open one orange with a bar beneath it as wide as the word. */
 @Composable
 private fun PageWord(title: String, open: Boolean, onClick: () -> Unit) {
-    Column(Modifier.width(IntrinsicSize.Min).clickable(onClick = onClick).padding(top = 8.dp, bottom = 2.dp)) {
+    // as wide as the whole name on one line: at its narrowest width a name of two words ("Scale breaks")
+    // stood on two lines (25 Oct 2026)
+    Column(Modifier.width(IntrinsicSize.Max).clickable(onClick = onClick).padding(top = 8.dp, bottom = 2.dp)) {
         Text(
-            title,
+            title, softWrap = false,
             color = if (open) Color(Brand.ORANGE) else Color(Brand.WHITE_MUTED),
             fontFamily = DejaVuSerif, fontSize = 15.sp,
             fontWeight = if (open) FontWeight.Bold else FontWeight.Normal,

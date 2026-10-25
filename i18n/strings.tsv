@@ -44,20 +44,20 @@ settings.tab.piano	Piano	Klavier
 settings.tab.help	Help	Hilfe
 settings.tab.app	App	App
 settings.page.temperament	Temperament	Temperatur
-settings.page.reading	Reading	Ablesung
+settings.page.reading	Strobe	Stroboskop
 settings.page.bass	Bass	Bass
-settings.page.middle	Middle	Mitte
+settings.page.middle	Midrange	Mittellage
 settings.page.treble	Treble	Diskant
-settings.page.compass	Compass	Umfang
-settings.page.breaks	Breaks	Übergänge
+settings.page.compass	Compass	Tonumfang
+settings.page.breaks	Scale breaks	Bruchstellen
 settings.page.language	Language	Sprache
 settings.page.probe	Probe	Sonde
 settings.page.quickstart	Quick start	Schnellstart
 settings.page.about	About	Über
-settings.page.display	Display	Anzeige
+settings.page.display	Phone bars	Systemleisten
 settings.navigationBar	Navigation bar	Navigationsleiste
 settings.statusBar	Status bar	Statusleiste
-settings.note.bars	The phone's bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.	Die Leisten des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz.
+settings.note.bars	The phone’s status and navigation bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.	Status- und Navigationsleiste des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz.
 settings.language	Language	Sprache
 settings.language.system	System	System
 hub.continue.verb	Continue	Stimmung
@@ -110,38 +110,38 @@ about.licence	Licence	Lizenz
 about.vienna	Vienna	Wien
 settings.temperament	Temperament	Temperatur
 settings.temperamentOctave	Temperament octave	Temperaturoktave
-settings.order	The order of work	Reihenfolge
+settings.order	Tuning order	Stimmreihenfolge
 settings.temperamentFirst	Temperament first	Temperatur zuerst
-settings.screen	The screen	Anzeige
-settings.followKey	Follow the key struck	Der angeschlagenen Taste folgen
-settings.cleanTogether	Read the clean partials together	Saubere Teiltöne gemeinsam lesen
-settings.highestPartial	Highest partial	Höchster Teilton
-settings.reading	The reading	Ablesung
-settings.readingMemory	Reading memory	Mittelungszeit
-settings.matchWindow	Match window	Toleranz
+settings.screen	Note switching	Tonwechsel
+settings.followKey	Auto note switching	Automatischer Tonwechsel
+settings.cleanTogether	Average the clean partials	Saubere Teiltöne mitteln
+settings.highestPartial	Partials up to	Teiltöne bis
+settings.reading	Strobe	Stroboskop
+settings.readingMemory	Averaging time	Mittelungszeit
+settings.matchWindow	Tolerance	Toleranz
 settings.theLowestKey	the lowest key	der tiefsten Taste
-settings.curveBreaks	The curve's breaks	Übergänge der Kurve
+settings.curveBreaks	Breaks in the inharmonicity curve	Brüche der Inharmonizitätskurve
 settings.none	none	keine
-settings.breakAt	Break at	Übergang bei
+settings.breakAt	Break at	Bruch bei
 settings.octave	The octave	Oktave
 settings.octaveType	Octave type	Oktavtyp
-settings.octaveWidth	Octave width	Oktavbreite
-settings.beatless	beatless	schwebungsfrei
-settings.cWide	{0} c wide	{0} c weit
-settings.farEnd	At the far end	Am anderen Ende
-settings.atFar	… at {0}	… bei {0}
-settings.same	same	gleich
+settings.octaveWidth	Extra stretch	Zusätzliche Spreizung
+settings.beatless	none (pure)	keine (rein)
+settings.cWide	+{0} c	+{0} c
+settings.farEnd	Toward the end of the range	Zum Ende des Bereichs
+settings.atFar	At {0}	Bei {0}
+settings.same	unchanged	unverändert
 settings.piano	The piano	Das Klavier
 settings.lowestKey	Lowest key	Tiefste Taste
 settings.lowestUnwound	Lowest unwound string	Tiefste Blanksaite
-settings.note.bass	From the lowest key to an octave above the lowest plain string, wound and plain alike. The octave type says which partials meet; the width, how far beyond beatless — wide means the lower note flatter, the upper sharper.	Von der tiefsten Taste bis eine Oktave über der tiefsten Blanksaite, umsponnen wie blank. Der Oktavtyp sagt, welche Teiltöne zusammenfallen; die Breite, wie weit über schwebungsfrei hinaus — weit heißt: der untere Ton tiefer, der obere höher.
-settings.note.middle	Up to the temperament octave. The width slides by key between the regions' values; the middle holds one.	Bis zur Temperaturoktave. Die Breite gleitet von Taste zu Taste zwischen den Werten der Bereiche; die Mitte hält einen.
-settings.note.treble	Above A4, up to C8. The width at C8 is where the slide ends.	Über A4 bis C8. Die Breite bei C8 ist das Ende des Gleitens.
+settings.note.bass	From the lowest key to an octave above the lowest plain string, wound and plain alike. The octave type says which partials of the octave are made beatless; the extra stretch, in cents, widens it further: the lower note flatter, the upper sharper.	Von der tiefsten Taste bis eine Oktave über der tiefsten Blanksaite, umsponnen wie blank. Der Oktavtyp sagt, welche Teiltöne der Oktave schwebungsfrei werden; die zusätzliche Spreizung, in Cent, macht sie weiter: der untere Ton tiefer, der obere höher.
+settings.note.middle	Up to the temperament octave. The extra stretch slides from key to key between the registers’ values; the midrange holds one.	Bis zur Temperaturoktave. Die zusätzliche Spreizung gleitet von Taste zu Taste zwischen den Werten der Lagen; die Mittellage hat einen.
+settings.note.treble	Above A4, up to C8. The extra stretch at C8 is where the slide ends.	Über A4 bis C8. Die zusätzliche Spreizung bei C8 ist das Ende des Gleitens.
 settings.note.temperament	Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.	Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt.
-settings.note.reading	The match window is your tolerance, not the measurement's: the engine reads a string to a tenth of a cent.	Die Toleranz ist Ihre, nicht die der Messung: die Messung liest eine Saite auf ein Zehntel Cent.
-settings.note.compass	The compass is the 88 keys, A0 to C8.	Der Umfang sind die 88 Tasten, A0 bis C8.
-settings.note.unwound	The first plain wire is where the wound strings' curve ends.	Die erste Blanksaite ist, wo die Kurve der umsponnenen Saiten endet.
-settings.note.breaks	The curve of string stiffness is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of it. A sampled string keeps its own measurement, break or not. Set on the piano's page (Pro).	Die Kurve der Saitensteifigkeit wird als gerade Abschnitte über die Tasten gezogen. Ein Übergang beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite her gelesen. Eine gemessene Saite behält ihre eigene Messung, Übergang oder nicht. Gesetzt auf der Seite des Klaviers (Pro).
+settings.note.reading	The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.	Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert.
+settings.note.compass	The compass is the 88 keys, A0 to C8.	Der Tonumfang sind die 88 Tasten, A0 bis C8.
+settings.note.unwound	The first plain string: the wound strings’ part of the inharmonicity curve ends here.	Die erste Blanksaite: hier endet der Teil der Inharmonizitätskurve für die umsponnenen Saiten.
+settings.note.breaks	The inharmonicity curve is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of the bridge or strut. A sampled string keeps its own measurement. Set on the piano’s page (Pro).	Die Inharmonizitätskurve wird als gerade Abschnitte über die Tasten gezogen. Ein Bruch beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite des Stegs oder der Spreize her gelesen. Eine gemessene Saite behält ihre eigene Messung. Gesetzt auf der Seite des Klaviers (Pro).
 settings.note.about	Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.	Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository.
 help.index	Topics	Themen
 help.qs.a4.title	1 · A4	1 · A4
@@ -157,10 +157,10 @@ help.qs.sampling.s1	Strike single strings, the others muted. The app catches the
 help.qs.sampling.s2	Spread the samples over the whole keyboard, in any order.	Verteilen Sie die Messpunkte über die ganze Tastatur, in beliebiger Reihenfolge.
 help.qs.sampling.s3	Six samples are the minimum; ten to fifteen give the better result.	Sechs Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis.
 help.qs.sampling.s4	Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.	Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde.
-help.qs.octaves.s1	Settings › Stretch, for the bass, the middle and the treble.	Einstellungen › Spreizung, für Bass, Mitte und Diskant.
+help.qs.octaves.s1	Settings › Stretch, for the bass, the midrange and the treble.	Einstellungen › Spreizung, für Bass, Mittellage und Diskant.
 help.qs.octaves.s2	An octave type names the partials made beatless: 4:2 puts the 4th partial of the lower note on the 2nd of the upper. The higher the numbers, the wider the octave. 4:1 is the double octave.	Ein Oktavtyp nennt die Teiltöne, die schwebungsfrei werden: 4:2 legt den 4. Teilton des unteren Tons auf den 2. des oberen. Je höher die Zahlen, desto weiter die Oktave. 4:1 ist die Doppeloktave.
-help.qs.octaves.s3	Set out: bass 6:3, middle 4:2, treble 4:1.	Voreingestellt: Bass 6:3, Mitte 4:2, Diskant 4:1.
-help.qs.octaves.s4	The width, in cents, widens the octave beyond beatless: the lower note flatter, the upper sharper.	Die Breite, in Cent, macht die Oktave weiter als schwebungsfrei: der untere Ton tiefer, der obere höher.
+help.qs.octaves.s3	Set out: bass 6:3, midrange 4:2, treble 4:1.	Voreingestellt: Bass 6:3, Mittellage 4:2, Diskant 4:1.
+help.qs.octaves.s4	The extra stretch, in cents, widens the octave beyond its type: the lower note flatter, the upper sharper.	Die zusätzliche Spreizung, in Cent, macht die Oktave weiter als ihr Typ: der untere Ton tiefer, der obere höher.
 help.qs.octaves.s5	Set them before you tune: every note's target is computed from them.	Stellen Sie die Oktaven vor dem Stimmen ein: das Ziel jedes Tons wird daraus berechnet.
 help.qs.tuning.s1	Strike a key and the screen is on it. Tap the note's name to choose a key by hand; tap it again and the screen follows the strike once more.	Schlagen Sie eine Taste an, und die Anzeige ist bei ihr. Tippen Sie auf den Namen des Tons, um eine Taste von Hand zu wählen; ein zweites Tippen, und die Anzeige folgt wieder dem Anschlag.
 help.qs.tuning.s2	Tune until the strobe on the right stands still. When it stands within your match window, the note is kept.	Stimmen Sie, bis das Stroboskop rechts steht. Steht es innerhalb Ihrer Toleranz, ist der Ton gespeichert.

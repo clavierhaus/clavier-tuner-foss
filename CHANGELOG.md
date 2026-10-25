@@ -7,6 +7,12 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-25
+- **Settings speak piano.** Reading is now Strobe; Match window, Tolerance;
+  Follow the key struck, Auto note switching; Octave width, Extra stretch;
+  Middle, Midrange (Mittellage); Breaks, Scale breaks; Display, Phone bars.
+  The notes under the (i) say the same. A page's name never breaks.
+
 ### 2026-10-24 (night)
 - **The start page's entries carry their note on the same line,** after a
   dot, in the same serif and smaller, where a handwritten line stood beneath.
