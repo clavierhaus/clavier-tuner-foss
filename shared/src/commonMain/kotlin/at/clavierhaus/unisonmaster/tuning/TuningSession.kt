@@ -126,8 +126,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     val temperamentNotes: List<Int>
         get() = (TunerSettings.TEMPERAMENT_HIGH downTo settings.temperamentLowMidi).toList()
 
-    /** True once every note of the temperament octave has been measured. */
-    val temperamentComplete: Boolean get() = temperamentNotes.all { it in measured }
+    /** True once every note of the temperament octave has been tuned ([tuned]); sampled is not tuned. */
+    val temperamentComplete: Boolean get() = temperamentNotes.all { it in tuned }
 
     /** True while the session walks the temperament octave first (the tuner's preference, until the octave is complete). */
     val gated: Boolean get() = !sampling && settings.temperamentFirst && !temperamentComplete
@@ -426,6 +426,24 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
 
     val measurements: Map<Int, NoteMeasurement> get() = measured
 
+    /**
+     * The notes tuned in this session: A4, which is tuned to the reference before the sampling, and
+     * every note recorded once the sampling has ended. A note only sampled is in [measurements] as the
+     * piano was found and is not here (Peter, 25 Oct 2026, the 1970 B: the progress showed the
+     * sampled treble as tuned). What the progress, the temperament octave and the walk call done.
+     */
+    val tuned: Set<Int> get() = if (MIDI_A4 in measured) tunedNotes + MIDI_A4 else tunedNotes.toSet()
+    private val tunedNotes = LinkedHashSet<Int>()
+
+    /**
+     * The tuned notes of a session saved earlier, continued ([tuned]); notes it no longer holds are
+     * left out. Only on a session restored, after its measurements.
+     */
+    fun restoreTuned(notes: Set<Int>) {
+        tunedNotes.clear()
+        tunedNotes += notes.filter { it in measured }
+    }
+
     var current: Int = MIDI_A4
         private set
 
@@ -440,6 +458,18 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     fun record(m: NoteMeasurement): Boolean {
         if (Notes.nearestMidi(m.f1Hz, a4Hz) != m.midi) return false
         measured[m.midi] = m.copy(partials = m.partials.filter { it.k == 1 || Partials.plausibleCents(it.k, it.cents) })
+        if (!sampling) tunedNotes += m.midi
+        return true
+    }
+
+    /**
+     * Keeps [m] in place of the note's measurement without tuning the note: the facts the strikes
+     * claim (its false beats) laid on a string as it stands, sampled or tuned ([tuned] unchanged).
+     */
+    fun keep(m: NoteMeasurement): Boolean {
+        val wasTuned = m.midi in tunedNotes
+        if (!record(m)) return false
+        if (!wasTuned) tunedNotes -= m.midi
         return true
     }
 
@@ -460,8 +490,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         current = midi
     }
 
-    /** The first note of the walk that has no measurement yet, or null when every note has one. */
-    fun nextUnmeasured(): Int? = notes.firstOrNull { it !in measured }
+    /** The first note of the walk not yet tuned ([tuned]), or null when every note is. */
+    fun nextUntuned(): Int? = notes.firstOrNull { it !in tuned }
 
     /**
      * The note Done moves to: the next one in the tuning order, so the walk
@@ -471,7 +501,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      */
     fun next(): Int? {
         if (sampling) return null
-        if (gated) return notes.firstOrNull { it in temperamentNotes && it !in measured }
+        if (gated) return notes.firstOrNull { it in temperamentNotes && it !in tuned }
         return notes.getOrNull(notes.indexOf(current) + 1)
     }
 

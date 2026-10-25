@@ -382,7 +382,7 @@ class TuningController(
     private fun keepFacts(s: TuningSession, midi: Int, claims: List<FalseBeat>) {
         keptClaimsMidi = midi
         caught?.takeIf { it.midi == midi }?.let { c -> c.measurement = c.measurement?.copy(falseBeats = claims) }
-        s.measurements[midi]?.let { s.record(it.copy(falseBeats = claims)) }
+        s.measurements[midi]?.let { s.keep(it.copy(falseBeats = claims)) }
         onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
 
@@ -418,16 +418,18 @@ class TuningController(
         val b: Double,
         /** Lowest note of the session. */
         val lowestMidi: Int,
-        /** Notes already measured. */
+        /** Notes already measured: sampled or tuned. */
         val measured: Set<Int>,
+        /** Notes tuned ([TuningSession.tuned]): A4 and what was recorded after the sampling; the progress's green. */
+        val tuned: Set<Int> = emptySet(),
         /**
-         * Every measured note's first partial, as cents from equal
+         * Every tuned note's first partial, as cents from equal
          * temperament on this session's A4: the tuning as executed.
          */
         val deviations: Map<Int, Double>,
         /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. */
         val curve: Map<Int, Double> = emptyMap(),
-        /** True once the temperament octave is measured throughout. */
+        /** True once the temperament octave is tuned throughout. */
         val temperamentComplete: Boolean,
         /**
          * True when A4 was measured from the piano in this session. False means the
@@ -442,7 +444,7 @@ class TuningController(
         /** Lowest and highest note the arrows may reach. */
         val stepLowMidi: Int,
         val stepHighMidi: Int,
-        /** True once every note of the session is measured. */
+        /** True once every note of the session is tuned. */
         val complete: Boolean,
         /** Sampling: single strings across the compass, before tuning. */
         val sampling: Boolean = false,
@@ -488,6 +490,7 @@ class TuningController(
             sampling = s.sampling,
             basis = s.frozenBasis,
             offsets = s.targetOffsetCents,
+            tuned = s.tuned,
         )
     }
 
@@ -549,6 +552,9 @@ class TuningController(
         // the basis saved with the session; a file from before 11 Oct 2026 has none, and its
         // measurements, tuned notes among them, become the basis -- the best that file can say
         if (!snap.sampling) s.finishSampling(snap.basis)
+        // the notes tuned; a file from before 25 Oct 2026 does not say, and the notes measured outside
+        // the sampling's basis are taken for them -- a sampled note tuned since is recorded when struck again
+        s.restoreTuned(snap.tuned ?: (s.measurements.keys - snap.basis.orEmpty().keys))
         s.targetOffsetCents = snap.offsets
         val resume = snap.currentMidi.takeIf { s.selectable(it) }
             ?: s.next()?.takeIf { s.selectable(it) }
@@ -644,14 +650,16 @@ class TuningController(
     private fun recorded(s: TuningSession) {
         _tuning.value = _tuning.value?.copy(
             measured = s.measurements.keys.toSet(),
+            tuned = s.tuned,
             deviations = deviationsOf(s),
-            complete = s.nextUnmeasured() == null,
+            complete = s.nextUntuned() == null,
         )
         onSessionChanged?.let { save -> snapshot()?.let(save) }
     }
 
+    /** The tuned notes' first partials, cents from equal temperament: the piano as tuned, never as sampled (25 Oct 2026). */
     private fun deviationsOf(s: TuningSession): Map<Int, Double> =
-        s.measurements.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) }
+        s.measurements.filterKeys { it in s.tuned }.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) }
 
     private fun publish(s: TuningSession) {
         val midi = s.current
@@ -666,6 +674,7 @@ class TuningController(
             b = b,
             lowestMidi = s.lowMidi,
             measured = s.measurements.keys.toSet(),
+            tuned = s.tuned,
             deviations = deviationsOf(s),
             // The tuning this piano's own inharmonicity asks for, every key of the
             // compass, in cents from equal temperament. It is the curve the targets
@@ -683,7 +692,7 @@ class TuningController(
             recordsOnLeaving = s.recordsOnLeaving,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,
-            complete = s.nextUnmeasured() == null,
+            complete = s.nextUntuned() == null,
             sampling = s.sampling,
             samplesIn = s.samplesIn,
             samplesNeeded = s.samplesNeeded,
@@ -1075,6 +1084,7 @@ class TuningController(
     private fun caughtChanged(s: TuningSession) {
         _tuning.value = _tuning.value?.copy(
             measured = s.measurements.keys.toSet(),
+            tuned = s.tuned,
             deviations = deviationsOf(s),
             samplesIn = s.samplesIn,
             samplesNeeded = s.samplesNeeded,

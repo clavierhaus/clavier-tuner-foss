@@ -277,7 +277,7 @@ fun BasicHub(
             }
             showProgress -> {
                 ProgressKeyboard(
-                    done = t.measured,
+                    done = t.tuned,
                     current = t.midi,
                     deviations = t.deviations,
                     curve = t.curve,

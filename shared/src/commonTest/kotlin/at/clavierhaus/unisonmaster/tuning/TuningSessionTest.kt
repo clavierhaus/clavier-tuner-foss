@@ -245,6 +245,33 @@ class TuningSessionTest {
         for (m in 21..108) if (m != 45) assertEquals(before.getValue(m), s.listening(m).targetHz, 1e-9, "offsets taken off, key $m")
     }
 
+    /**
+     * A sampled string is the piano as found, not a note tuned (Peter, 25 Oct 2026, the 1970 B: the
+     * progress line in the treble was the sampling's, under a caption saying "as tuned"). A4 is tuned
+     * before the sampling, to the reference, and counts; every other note counts once it is recorded
+     * in the tuning. The temperament octave sampled is not the temperament octave done.
+     */
+    @Test
+    fun aSampledStringIsNotATunedNote() {
+        val s = TuningSession(a4, foss)
+        s.record(measuredString(69, a4, 8e-4))
+        for (m in listOf(24, 57, 60, 64, 76, 93)) s.record(measuredString(m, et(m) * 0.995, 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        for (m in s.temperamentNotes) s.record(measuredString(m, et(m) * 0.995, 4e-4))
+        s.finishSampling()
+        assertEquals(setOf(69), s.tuned, "after the sampling only A4 is tuned")
+        assertFalse(s.temperamentComplete, "the temperament octave sampled is not tuned")
+        assertTrue(s.gated, "the temperament octave is still walked first")
+        assertEquals(s.notes.first { it != 69 }, s.nextUntuned(), "nothing but A4 is done")
+        s.record(measuredString(60, et(60), 4e-4))
+        assertEquals(setOf(60, 69), s.tuned, "C4 recorded in the tuning is tuned")
+        s.keep(s.measurements.getValue(76))
+        assertFalse(76 in s.tuned, "a fact kept on a sampled string does not tune it")
+        // a session that never sampled: whatever is recorded is tuned
+        val plain = TuningSession(a4, foss, sampling = false)
+        plain.record(measuredString(60, et(60), 4e-4))
+        assertEquals(setOf(60), plain.tuned)
+    }
+
     @Test
     fun aNewSessionSamplesThenTunes() {
         // one sampling law (4 Oct 2026): any six strings besides A4, where the tuner sees fit —

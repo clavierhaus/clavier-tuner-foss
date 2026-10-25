@@ -16,6 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Test-only keyed checksum; the app uses the Android Keystore. */
@@ -85,6 +86,8 @@ private val sample = SessionSnapshot(
     basis = mapOf(69 to 4.0e-4, 36 to 1.1e-4),
     // an edition's offsets over the targets: Pro's pitch raise (24 Oct 2026)
     offsets = mapOf(45 to 6.2, 69 to 3.0),
+    // the notes tuned, apart from the ones only sampled (25 Oct 2026)
+    tuned = setOf(68, 69),
 )
 
 class SessionStoreTest {
@@ -92,6 +95,22 @@ class SessionStoreTest {
     @Test
     fun theFormatRoundTripsExactly() {
         assertEquals(sample, SessionCodec.decode(SessionCodec.encode(sample)))
+    }
+
+    /**
+     * A file from before 25 Oct 2026 does not say which notes were tuned. Continued, the notes
+     * measured outside the sampling's basis are tuned, and A4; a sampled note is not, even if it was
+     * tuned since -- struck again, it is recorded again.
+     */
+    @Test
+    fun aFileWithoutTheTunedNotesTakesThemFromTheBasis() {
+        val old = SessionCodec.decode(SessionCodec.encode(sample).lines().filterNot { it.startsWith("tuned ") }.joinToString("\n"))
+        assertNull(old.tuned)
+        val c = TuningController(Queue(emptyList()))
+        c.restore(old.copy(basis = mapOf(69 to 4.0e-4, 36 to 1.1e-4, 68 to 3.9e-4)))
+        assertEquals(setOf(69), c.tuning.value!!.tuned, "G#4 was sampled: not tuned")
+        c.restore(old)
+        assertEquals(setOf(68, 69), c.tuning.value!!.tuned, "G#4 is outside the basis: tuned")
     }
 
     @Test
