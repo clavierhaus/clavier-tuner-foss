@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.5.0 -- 2026-10-26
+
 ### 2026-10-26
 - **Sampling stops at G6.** Above it a treble string has too few partials for
   its inharmonicity to be measured the same way twice, so sampling waited out
