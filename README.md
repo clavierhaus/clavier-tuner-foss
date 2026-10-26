@@ -32,8 +32,8 @@ wanted to see what his instruments actually do.
   string's strobes move together and stand still together, a false partial
   beats on its own. Take the cleanest string as the reference; a tap on a
   partial's button takes it out of the strobe and another brings it back.
-- **Measures first.** Strike single strings, mutes in, any keys in any order:
-  six are the minimum, 10 to 15 across the whole range give the best result.
+- **Measures first.** Strike single strings, mutes in, any keys up to G6 in
+  any order: six are the minimum, 10 to 15 spread up to G6 give the best result.
   From those strings the app measures the inharmonicity of the piano and
   computes where every note belongs before you tune the first one. The
   stretch comes from this instrument, not from a table. Each key says
@@ -75,6 +75,8 @@ first. Unisons are tuned by ear.
 - **Progress counted the sampling as tuning.** Keys only sampled stood green
   and in the line "as tuned". Now only what you tuned counts.
 - **Settings in piano words**, in English and German.
+- **"Too short" in the top octave while sampling.** Sampling now stops at G6;
+  above it a string cannot be measured reliably. Tuning up there is as before.
 - **"Partial 1" beside the note** is gone.
 - **Which microphone?** Settings › App › About says whether the phone gives
   the app its unprocessed microphone, or processes the sound itself.

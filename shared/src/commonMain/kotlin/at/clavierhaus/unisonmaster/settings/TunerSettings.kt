@@ -206,6 +206,16 @@ data class TunerSettings(
          * A6) left the engine on 4 Oct 2026.
          */
         const val MIN_SAMPLES = 6
+
+        /**
+         * The highest key sampling takes: G6 (Peter, 26 Oct 2026, 21:28). Above it a string's B does not
+         * repeat from strike to strike on the 225's takes of 22 Sept -- at partial 4, F6 0.16 c, G#6 4.4 c,
+         * B6 32 c, E7 109 c, against 0.05-0.16 c in C3-B4 -- because two or three partials are all a treble
+         * string offers the fit; a value that does not repeat is not a measurement, and as a sample it would
+         * bend the curve. Keys above are tuned as before, on the curve carried up from the samples below.
+         * G6 itself has no repeated take; the line between F6 (repeats) and G#6 (does not) is Peter's.
+         */
+        const val SAMPLE_HIGHEST_MIDI = 91
     }
 
     /** True for a wound string: below the lowest plain one. */

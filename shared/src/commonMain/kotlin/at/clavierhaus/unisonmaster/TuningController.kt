@@ -1030,6 +1030,8 @@ class TuningController(
     private fun catchKey(fit: KeyIdentifier.Fit, strikeHop: Long) {
         val s = session ?: return
         if (!s.sampling || !s.selectable(fit.midi)) return
+        // above G6 a string is not sampled: its B does not repeat there (TunerSettings.SAMPLE_HIGHEST_MIDI)
+        if (fit.midi > TunerSettings.SAMPLE_HIGHEST_MIDI) return
         // a key already sampled, struck again: its new measurement replaces the sample and it stays accepted
         // (A4 is the hub's reference and is only replaced by hand)
         val c = Caught(fit.midi, fit.f1, fit.b, strikeHop, null, accepted = fit.midi != TuningSession.MIDI_A4 && fit.midi in s.measurements)

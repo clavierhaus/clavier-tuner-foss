@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-10-26
+- **Sampling stops at G6.** Above it a treble string has too few partials for
+  its inharmonicity to be measured the same way twice, so sampling waited out
+  its whole window and a second strike said "too short" (Gregor, Clavio). Keys
+  above G6 are not taken while sampling and are tuned as before; the
+  instructions say "up to G6".
 - **No "partial 1" beside the note any more.** Which partial the reading is
   on told a tuner nothing he acts on; the strobe's bands say it all.
 - **Settings › App › About says which microphone the app hears through:**

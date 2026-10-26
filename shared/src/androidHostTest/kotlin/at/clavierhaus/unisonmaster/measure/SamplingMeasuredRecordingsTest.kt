@@ -110,4 +110,21 @@ class SamplingMeasuredRecordingsTest {
         assertTrue(abs(mid.keptB!! / mid.fullB - 1) < 0.015, "C4 kept B %.3e against %.3e over 2.5 s".format(mid.keptB, mid.fullB))
         assertTrue(abs(bass.keptB!! / bass.fullB - 1) < 0.04, "A#1 kept B %.3e against %.3e over 2.5 s".format(bass.keptB, bass.fullB))
     }
+
+    /**
+     * Sampling takes keys up to G6 and no higher (Peter, 26 Oct 2026, 21:28). Above it the string's B does not
+     * repeat from strike to strike -- on these takes F6 0.16 c at partial 4, G#6 4.4 c, B6 32 c, E7 109 c -- so
+     * a sample there would enter the curve as noise; the tuning above G6 is not touched. G6's centre string is
+     * caught and measured; A6's is not caught at all.
+     */
+    @Test
+    fun samplingTakesKeysUpToG6AndNoHigher() {
+        val dir = corpus() ?: run { println("SamplingMeasuredRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val g6 = sample(dir, "Boesendorfer_G6-C-s1_unproc_20260922-141210.wav", 91)
+        val a6 = sample(dir, "Boesendorfer_A6-C-s1_unproc_20260922-141248.wav", 93)
+        println("G6: states %s, measured %s s; A6: states %s".format(g6.states, g6.measuredAtS, a6.states))
+        assertTrue(TuningController.Measured.MEASURED in g6.states, "G6 is sampled: ${g6.states}")
+        assertTrue(a6.states.isEmpty(), "A6 is not caught while sampling: ${a6.states}")
+    }
 }
+
