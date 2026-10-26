@@ -216,14 +216,15 @@ class LayoutCheckTest {
     }
 
     // The panes, landscape, in dp. The Motorola edge 50 neo (2670 × 1220 px, 460 ppi) at its densities
-    // 3.0 and 2.75, and with the navigation bar standing at its side; a small 20:9 phone (1560 × 720 at
-    // 2.0, or any phone set to a large display size); the edge's system text at its largest.
+    // 3.0 and 2.75, and with the navigation bar standing at its side; the smallest phone the app is made for,
+    // the Pixel 4 of 2019 (2280 × 1080 px at 2.75: Peter, 26 Oct 2026, "we will not go below that" -- the
+    // 780 × 360 pane that stood here until then was "not a phone, it's a toy"); the edge's system text at its largest.
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun edge50neoGerman() = check("890x406", "de")
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun edge50neoEnglish() = check("890x406", "en")
     @Test @Config(qualifiers = "w971dp-h443dp-land-440dpi") fun edge50neoAt275German() = check("971x443", "de")
     @Test @Config(qualifiers = "w842dp-h406dp-land-480dpi") fun edge50neoNavigationBarGerman() = check("842x406", "de")
-    @Test @Config(qualifiers = "w780dp-h360dp-land-320dpi") fun smallPhoneGerman() = check("780x360", "de")
-    @Test @Config(qualifiers = "w780dp-h360dp-land-320dpi") fun smallPhoneEnglish() = check("780x360", "en")
+    @Test @Config(qualifiers = "w829dp-h392dp-land-440dpi") fun pixel4German() = check("829x392", "de")
+    @Test @Config(qualifiers = "w829dp-h392dp-land-440dpi") fun pixel4English() = check("829x392", "en")
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun largestTextGerman() = check("890x406", "de", 1.3f)
     // the Pixel 8 Pro (2992 × 1344 px at 3.0), the phone the store's screenshots are taken on
     @Test @Config(qualifiers = "w997dp-h448dp-land-480dpi") fun pixel8ProEnglish() = check("997x448", "en")

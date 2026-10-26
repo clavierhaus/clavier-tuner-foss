@@ -102,6 +102,11 @@ tuning.fundamental	fundamental	Grundton
 progress.caption	measured — the piano as tuned, in cents from equal temperament	gemessen — das Klavier wie gestimmt, in Cent gegen gleichstufig
 display.tooSmall	This display is too small for Clavier Tuner ({0} dp; needs at least {1}).	Dieser Bildschirm ist zu klein für Clavier Tuner ({0} dp; nötig sind mindestens {1}).
 about.version	Version	Version
+about.microphone	Microphone	Mikrofon
+about.mic.unprocessed	unprocessed	unbearbeitet
+about.mic.undeclared	unprocessed, not guaranteed by this phone	unbearbeitet, vom Telefon nicht zugesichert
+about.mic.processed	processed by the phone: readings can suffer	vom Telefon bearbeitet: Messungen können leiden
+about.mic.notYet	opens with the tuning screen	öffnet sich beim Stimmen
 about.core	Core	Kern
 about.typeface	Typeface	Schrift
 about.typefaceValue	DejaVu Serif · Bitstream Vera licence	DejaVu Serif · Bitstream-Vera-Lizenz

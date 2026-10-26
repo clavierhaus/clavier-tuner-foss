@@ -102,6 +102,11 @@ object K {
     const val progress_caption = "progress.caption"
     const val display_tooSmall = "display.tooSmall"
     const val about_version = "about.version"
+    const val about_microphone = "about.microphone"
+    const val about_mic_unprocessed = "about.mic.unprocessed"
+    const val about_mic_undeclared = "about.mic.undeclared"
+    const val about_mic_processed = "about.mic.processed"
+    const val about_mic_notYet = "about.mic.notYet"
     const val about_core = "about.core"
     const val about_typeface = "about.typeface"
     const val about_typefaceValue = "about.typefaceValue"
@@ -275,6 +280,11 @@ internal object StringsTable : Catalog {
         "progress.caption" to arrayOf("measured — the piano as tuned, in cents from equal temperament", "gemessen — das Klavier wie gestimmt, in Cent gegen gleichstufig"),
         "display.tooSmall" to arrayOf("This display is too small for Clavier Tuner ({0} dp; needs at least {1}).", "Dieser Bildschirm ist zu klein für Clavier Tuner ({0} dp; nötig sind mindestens {1})."),
         "about.version" to arrayOf("Version", "Version"),
+        "about.microphone" to arrayOf("Microphone", "Mikrofon"),
+        "about.mic.unprocessed" to arrayOf("unprocessed", "unbearbeitet"),
+        "about.mic.undeclared" to arrayOf("unprocessed, not guaranteed by this phone", "unbearbeitet, vom Telefon nicht zugesichert"),
+        "about.mic.processed" to arrayOf("processed by the phone: readings can suffer", "vom Telefon bearbeitet: Messungen können leiden"),
+        "about.mic.notYet" to arrayOf("opens with the tuning screen", "öffnet sich beim Stimmen"),
         "about.core" to arrayOf("Core", "Kern"),
         "about.typeface" to arrayOf("Typeface", "Schrift"),
         "about.typefaceValue" to arrayOf("DejaVu Serif · Bitstream Vera licence", "DejaVu Serif · Bitstream-Vera-Lizenz"),

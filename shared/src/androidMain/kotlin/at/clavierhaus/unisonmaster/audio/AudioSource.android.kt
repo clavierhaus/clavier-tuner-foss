@@ -20,7 +20,7 @@ class AndroidAudioSource(override val sampleRateHz: Int) : AudioSource {
     @Volatile
     private var running = false
 
-    /** Which source was actually opened — surface this in a debug UI later. */
+    /** Which source was actually opened; the screen reads it through [Microphone]. */
     var usedUnprocessed: Boolean = false
         private set
 
@@ -48,12 +48,15 @@ class AndroidAudioSource(override val sampleRateHz: Int) : AudioSource {
             ?.takeIf { it.state == AudioRecord.STATE_INITIALIZED }
         if (unprocessed != null) {
             usedUnprocessed = true
+            Microphone.opened(Microphone.Opened.UNPROCESSED)
             return unprocessed
         }
 
         usedUnprocessed = false
         return build(MediaRecorder.AudioSource.MIC).also {
             check(it.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord failed to initialise" }
+            // said on the About page (Microphone): a processed microphone is never used without the tuner told
+            Microphone.opened(Microphone.Opened.PROCESSED)
         }
     }
 

@@ -67,8 +67,6 @@ fun TuningPictureView(
      */
     marks: Boolean = true,
     onNoteTap: (() -> Unit)? = null,
-    /** A tap on the partial line opens the stretch of the region the note is in (blueprint §3: one tap). */
-    onStretchTap: (() -> Unit)? = null,
     /**
      * The tuning screen's two panels: the note and the partial on the left over an edition's panel, the
      * strobe on the right. Off on the A4 page, where the strobe has the width (Peter, 22 Oct 2026).
@@ -115,15 +113,9 @@ fun TuningPictureView(
         }
         // the partial line belongs to the bells; without them (the A4 page) it stood under the strobe and
         // was cut to "parti" (Peter, 23 Oct 2026)
-        // which partial the strobe's reading is on; the bells' anchor beside it left with the bells
-        // (Peter, 24 Oct 2026; Gregor had asked what "Vertikalachse: Teilton 1" was to tell him)
-        if (twoPanels) Place(0.17f, 0.08f, 0.30f, 0.10f) {
-            TextBlock(
-                listOf(t(K.tuning_partialOne, p.listened)),
-                Modifier.fillMaxSize().then(if (onStretchTap != null) Modifier.clickable(onClick = onStretchTap) else Modifier),
-                size = 13.sp, minSize = 10.sp, color = Color(Brand.WHITE_MUTED),
-            )
-        }
+        // No "partial N" beside the note since 26 Oct 2026 (Peter, after Gregor in the forum: irritating, no
+        // added value; which partial the reading is on matters only to someone tuning unisons with the app).
+        // Its tap into the stretch went with it; the info line at the top still opens the tuning's settings.
         // Two regions, two panels (Peter, 7 Oct 2026, 15:29): the strobe says when the string has
         // arrived -- it stops -- and the bells say where it stands and whether its partials agree,
         // a clean string's bells stacked on the anchor. The linear scale and its arrow said the

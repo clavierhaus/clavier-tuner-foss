@@ -94,7 +94,10 @@ fun BasicHub(
     onAutoNote: ((Boolean) -> Unit)? = null,
     /** Moves the temperament octave's low note (C3…A3) from the sampling page; null when the app does not offer it. */
     onTemperamentLow: ((Int) -> Unit)? = null,
-    /** Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf): the note's own octave type and width, one tap away. */
+    /**
+     * Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf). Nothing on the screen calls it since the
+     * "partial N" line it hung on left (26 Oct 2026); kept so both editions' calls stand until a place for it is chosen.
+     */
     onStretch: ((Int) -> Unit)? = null,
     /** The tuning screen's left panel, drawn by an edition (Pro: the unison toggle and its 2 x 2 grid); null leaves it blank. */
     leftPanel: (@Composable () -> Unit)? = null,
@@ -265,7 +268,6 @@ fun BasicHub(
                     // for a verdict that is a measurement.
                     marks = FALSE_MARKS_ON_TUNING,
                     onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
-                    onStretchTap = onStretch?.let { open -> { open(cfg.regionOf(t.midi)) } },
                 )
                 if (pickingNote) NotePicker(
                     lowMidi = t.stepLowMidi,

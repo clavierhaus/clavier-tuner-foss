@@ -5,6 +5,9 @@ import at.clavierhaus.unisonmaster.ui.num
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import at.clavierhaus.unisonmaster.audio.Microphone
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.Strings
@@ -116,6 +119,8 @@ fun TunerSettingsScreen(
                         SettingsSection(t(K.about_licence), info = ABOUT_NOTE)
                         ReadOnlyRow("Clavier Tuner", "Apache License 2.0")
                         ReadOnlyRow("clavierhaus.at", t(K.about_vienna))
+                        // which microphone the app hears through: on the right, where the small phone has the room
+                        MicrophoneRow()
                     }),
             )),
         ),
@@ -251,3 +256,27 @@ private val COMPASS_NOTE: String get() = t(K.settings_note_compass)
 private val UNWOUND_NOTE: String get() = t(K.settings_note_unwound)
 private val BREAKS_NOTE: String get() = t(K.settings_note_breaks)
 private val ABOUT_NOTE: String get() = t(K.settings_note_about)
+
+/**
+ * Which microphone the app hears through (26 Oct 2026): what the source opened ([Microphone]), and whether the
+ * phone declares its unprocessed source at all. Android makes that source optional; a phone without it must say
+ * so through PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED (Android CDD 5.11), and may still open the source with
+ * its own processing. So "unprocessed" is said only when both the source and the phone say it.
+ */
+@Composable
+private fun MicrophoneRow() {
+    val opened by Microphone.opened.collectAsState()
+    val context = LocalContext.current
+    val declared = remember {
+        runCatching {
+            (context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager)
+                .getProperty(android.media.AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null
+        }.getOrDefault(false)
+    }
+    val value = when (opened) {
+        Microphone.Opened.NOT_YET -> t(K.about_mic_notYet)
+        Microphone.Opened.PROCESSED -> t(K.about_mic_processed)
+        Microphone.Opened.UNPROCESSED -> if (declared) t(K.about_mic_unprocessed) else t(K.about_mic_undeclared)
+    }
+    ReadOnlyRow(t(K.about_microphone), value)
+}

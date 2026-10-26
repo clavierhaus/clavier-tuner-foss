@@ -348,7 +348,7 @@ state, the tuning screen, every settings page but Help's, the info line's
 window — fed by corpus strikes through the engine, on these panes: 890 × 406
 dp (the edge 50 neo at density 3.0), 971 × 443 (at 2.75), 842 × 406 (its
 navigation bar at the side), 780 × 360 (a small 20:9 phone, or any phone at a
-large display size), in English and German, and 890 × 406 at text × 1.3. It
+large display size; replaced on 26 Oct 2026, see below), in English and German, and 890 × 406 at text × 1.3. It
 reads every text back from its own layout and fails when one is cut, breaks
 inside a word, stands on another, is under 10 sp, or when an element holds
 two sizes. The pictures go to `ui/build/layout-check/`. It failed with 72
@@ -389,4 +389,22 @@ the targets (`TuningSession.targetOffsetCents`, `TuningController.setTargetOffse
 saved as `offset` lines in the session file). Every target the screen reads
 moves by it; the stretch and the check against a partner do not. The free
 edition never sets one.
+
+## 26 October 2026: the smallest phone is the Pixel 4
+
+Peter: 780 × 360 dp is "not a phone, it's a toy. We shouldn't bend backwards for
+phones like this. A Google Pixel 4 from 2019 has 1080 × 2280 and we will not go
+below that." `LayoutCheckTest`'s smallest pane is now the Pixel 4 in landscape at
+its density 2.75: 829 × 392 dp, English and German, in place of 780 × 360. What
+called for it: the About page, with the microphone row added under Version, was
+cut by one row on 780 × 360 and on nothing else.
+
+The same day the "partial N" line beside the note left the tuning screen (Peter,
+after Gregor in the forum: irritating, no added value; which partial the reading
+is on matters only to someone tuning unisons with the app), and with it the tap
+on it that opened the stretch's page; the info line at the top still opens the
+tuning's settings. The About page says which microphone the app hears through:
+unprocessed; unprocessed but not guaranteed by the phone (the phone does not
+declare the source, Android CDD 5.11); processed by the phone, when the source
+fell back to the ordinary microphone; or that it opens with the tuning screen.
 
