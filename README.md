@@ -70,6 +70,15 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.5
+
+- **Progress counted the sampling as tuning.** Keys only sampled stood green
+  and in the line "as tuned". Now only what you tuned counts.
+- **Settings in piano words**, in English and German.
+- **"Partial 1" beside the note** is gone.
+- **Which microphone?** Settings › App › About says whether the phone gives
+  the app its unprocessed microphone, or processes the sound itself.
+
 ## New in 0.4
 
 What testers found in 0.3, and what changed:

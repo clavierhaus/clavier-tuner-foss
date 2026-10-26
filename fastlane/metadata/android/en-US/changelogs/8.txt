@@ -1,0 +1,1 @@
+0.5.0: Progress shows the notes you tuned; keys only sampled stay white. Settings speak piano: Strobe, Tolerance, Extra stretch, Scale breaks. "Partial 1" beside the note is gone. Settings > App > About says whether the phone gives the app its unprocessed microphone or processes the sound itself.

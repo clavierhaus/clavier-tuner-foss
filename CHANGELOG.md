@@ -7,6 +7,19 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-26
+- **No "partial 1" beside the note any more.** Which partial the reading is
+  on told a tuner nothing he acts on; the strobe's bands say it all.
+- **Settings › App › About says which microphone the app hears through:**
+  unprocessed; unprocessed but not guaranteed by the phone; or processed by
+  the phone, when it has no unprocessed microphone and the app had to take
+  the ordinary one. Until now that happened without a word.
+
+### 2026-10-25 (evening)
+- **Progress shows the notes tuned, not the strings sampled.** A sampled key
+  is the piano as found: it stays white and out of the line until it is
+  tuned. "A3–A4 done" and "complete" wait for the tuning too.
+
 ### 2026-10-25
 - **Settings speak piano.** Reading is now Strobe; Match window, Tolerance;
   Follow the key struck, Auto note switching; Octave width, Extra stretch;
