@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.5.1 -- 2026-10-27
+
 ### 2026-10-27
 - **If the app stops on an error, it says so on the next start,** with the
   error itself and a button to copy it. It is kept on the phone and nothing

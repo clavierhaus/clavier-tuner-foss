@@ -23,14 +23,14 @@ android {
         applicationId = "at.clavierhaus.claviertuner"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
+        versionCode = 9
         // A plain version for the release: F-Droid's recipe names the versionName and it must
         // equal the APK's exactly (Build Metadata Reference, Builds.versionName). The commit the
         // APK was built from goes after it in DEBUG builds only (below): Settings shows it, so
         // "is the phone running the latest build?" is answered by a glance and not by reasoning
         // (8 Oct 2026: a free APK on the Pixel did not do what the checkout's code does, and
         // nothing on the phone could say which code it was).
-        versionName = "0.5.0"
+        versionName = "0.5.1"
     }
 
     buildFeatures {
