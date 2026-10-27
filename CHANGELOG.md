@@ -10,6 +10,7 @@ reconstructed from the commit history that day.
 ## 0.5.1 -- 2026-10-27
 
 ### 2026-10-27
+- **Settings › Piano › Range** (was a nautical word, now the technician's). The note under its (i): "The range is the 88 keys, A0 to C8." German unchanged: Tonumfang. The word is gone from code, tests and docs as well; the glossary records it once as retired.
 - **If the app stops on an error, it says so on the next start,** with the
   error itself and a button to copy it. It is kept on the phone and nothing
   is sent; a tester can paste it to us. (0.5.0 crashed twice for a tester in
@@ -88,9 +89,9 @@ reconstructed from the commit history that day.
   nothing is heard.
 
 ### 2026-10-19
-- **The compass is A0–C8.** The lowest key is no longer a setting: the app
+- **The range is A0–C8.** The lowest key is no longer a setting: the app
   tunes the 88 keys from A0 to C8, and a lowest key set earlier gives way to
-  A0. Settings › Piano › Compass shows it.
+  A0. Settings › Piano › Range shows it.
 - **The phone's own buttons show outside the tuning screen.** The status bar
   and the navigation bar (Back, Home, the app switcher) were hidden on every
   screen and came only for a moment after a swipe from the edge, so the app
@@ -330,7 +331,7 @@ reconstructed from the commit history that day.
   active tab and nothing else.
 - **The note name is the picture's one control; the arrows are gone.** The
   screen follows the key struck by default. A tap on the note name opens the
-  compass as a keyboard — one row per octave, bass at the bottom, nothing
+  range as a keyboard — one row per octave, bass at the bottom, nothing
   scrolls — and the key chosen there holds, with a thin line under the name
   saying so; a tap on the name then hands the choice back to the strike. The
   ◀ F3 ▶ stepper in the bottom row is removed.
@@ -426,7 +427,7 @@ reconstructed from the commit history that day.
 - **The tuning screen works in cents, not Hertz.** The scale under the band was
   a Hertz axis with its magnified middle third set by a match window in Hertz, so
   a tenth of a Hertz — one cent at F3 — was a twelfth of a cent at C7, and the
-  same picture meant forty different musical distances across the compass. At the
+  same picture meant forty different musical distances across the range. At the
   top of the piano it magnified a twelfth of a cent into a visible swing: a
   precision no measurement here has. The axis is now ±0.2 c in the middle third,
   ±2 c in the next, ±10 c to the edge, one meaning everywhere on the keyboard.
@@ -465,7 +466,7 @@ reconstructed from the commit history that day.
   tuner works to. The origin line now reads "A4 440.0 Hz assumed, not measured",
   in orange, in front of the numbers it governs.
 - **Progress draws the curve this piano asks for**, in blue, unbroken across the
-  whole compass: every key's target computed from the inharmonicity of the
+  whole range: every key's target computed from the inharmonicity of the
   strings that were sampled. It was being computed for every note and shown for
   none — the screen drew only how far the measured notes stand from equal
   temperament, a result and not a target, with a gap wherever two measured notes
@@ -597,7 +598,7 @@ reconstructed from the commit history that day.
 
 ### 2026-09-25
 - The key struck is identified by fitting a string (fundamental and B) to
-  the peaks heard, from every key of the compass as a start
+  the peaks heard, from every key of the range as a start
   (`KeyIdentifier` replaces `NoteDetector`). Below C7: 225 169/173, Steinway
   D 38/40, Bösendorfer 290 34/34, Steinway B 73/73, Kawai upright 54/55.
 - Following the key: from 8 hops after the strike, not once the level has

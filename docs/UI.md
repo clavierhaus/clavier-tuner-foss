@@ -65,7 +65,7 @@ The start of a tuning — the hub's A4 and the sampling — is one page,
 piano's inharmonicity* and the orders in a box; right, A4 (live, then set,
 green), the temperament octave's low note (C3…A3, a setting no longer
 pinned), the key caught from the last strike with Accept, the count with
-Done; along the bottom `SamplingKeyboard`, the whole compass. A tap on a
+Done; along the bottom `SamplingKeyboard`, the whole range. A tap on a
 sampled key offers Strike again or Remove (`TuningController.forgetSample`);
 on A4, setting it again starts the sampling over. No spectrum, no partials.
 
@@ -172,7 +172,7 @@ rule is taken out:
 
 **The one control on the picture** is the note name (3 Oct 2026). The screen
 follows the key struck by default (`TunerSettings.autoNote`). A tap on the
-name opens `NotePicker` — the session's compass as a keyboard, one row per
+name opens `NotePicker` — the session's range as a keyboard, one row per
 octave, nothing scrolls — and the key chosen there holds: the setting goes
 off and a thin line under the name says the key is the tuner's. A tap on the
 name then gives the choice back to the strike. The arrows that stepped the
@@ -224,7 +224,7 @@ The open tab and the open page are the orange ones. foss's tabs: Tuning
 (Temperament · Reading), Stretch (Bass · Middle · Treble · Breaks — one
 bass, wound and plain alike, since 4 Oct 2026, its width sliding from an
 octave above the plain-wire floor down to the lowest key), Piano
-(Compass), App (Language · Probe · About); Pro adds its own from the same
+(Range), App (Language · Probe · About); Pro adds its own from the same
 parts. A4 is not a setting.
 
 ## Settings: the (i) behind the entry (14 Oct 2026)
@@ -238,16 +238,16 @@ the window closes it, and so does Back. The ring is orange while its window is
 open. `SettingsPage` no longer has a note. Every row except `ActionRow` and
 `SettingsSection` take `info`, and `InfoButton` draws the ring and the window.
 No explanation stands on a settings page. A page note that spoke of two rows
-was split between them (Compass: lowest key, lowest unwound string). Help
+was split between them (Range: lowest key, lowest unwound string). Help
 pages have no foot line either. Quick start's pitch-raise line became the last
 line of its A4 section.
 
-## Settings: the compass is fixed (19 Oct 2026)
+## Settings: the range is fixed (19 Oct 2026)
 
-Peter: the free app's compass is A0–C8 and cannot be changed. The settings
+Peter: the free app's range is A0–C8 and cannot be changed. The settings
 model holds the lowest key at A0 whatever is stored or asked
 (`SettingsModel(lowestKeyFixed = TunerSettings.MIDI_A0)`, passed by this app's
-`MainActivity`), and Piano › Compass shows it as a plain row with its (i). An
+`MainActivity`), and Piano › Range shows it as a plain row with its (i). An
 edition that lets the tuner set the lowest key puts its own row there through
 `TunerSettingsScreen(lowestKeyRow = …)` and builds its model without the fixed
 key. The lowest unwound string stays a setting in both. From 4 to 19 Oct the
@@ -281,7 +281,7 @@ Help's exemption.
 | scope | lives in | examples |
 |---|---|---|
 | **App** — the tuner and the device | `TunerSettings`, this device | language, display, match window, reading memory, probe, licences |
-| **Piano** — the instrument's facts | the piano's record (Pro) | compass, lowest key, first plain wire, breaks, the stretch settled for it |
+| **Piano** — the instrument's facts | the piano's record (Pro) | range, lowest key, first plain wire, breaks, the stretch settled for it |
 | **This tuning** — today's choices | the session | A4 for this visit, pitch raise, temperament octave, a deviation from the piano's stretch |
 
 A value belongs to one scope and is shown in one place. The workflow holds

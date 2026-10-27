@@ -52,7 +52,7 @@ object K {
     const val settings_page_bass = "settings.page.bass"
     const val settings_page_middle = "settings.page.middle"
     const val settings_page_treble = "settings.page.treble"
-    const val settings_page_compass = "settings.page.compass"
+    const val settings_page_range = "settings.page.range"
     const val settings_page_breaks = "settings.page.breaks"
     const val settings_page_language = "settings.page.language"
     const val settings_page_probe = "settings.page.probe"
@@ -148,7 +148,7 @@ object K {
     const val settings_note_treble = "settings.note.treble"
     const val settings_note_temperament = "settings.note.temperament"
     const val settings_note_reading = "settings.note.reading"
-    const val settings_note_compass = "settings.note.compass"
+    const val settings_note_range = "settings.note.range"
     const val settings_note_unwound = "settings.note.unwound"
     const val settings_note_breaks = "settings.note.breaks"
     const val settings_note_about = "settings.note.about"
@@ -234,7 +234,7 @@ internal object StringsTable : Catalog {
         "settings.page.bass" to arrayOf("Bass", "Bass"),
         "settings.page.middle" to arrayOf("Midrange", "Mittellage"),
         "settings.page.treble" to arrayOf("Treble", "Diskant"),
-        "settings.page.compass" to arrayOf("Compass", "Tonumfang"),
+        "settings.page.range" to arrayOf("Range", "Tonumfang"),
         "settings.page.breaks" to arrayOf("Scale breaks", "Bruchstellen"),
         "settings.page.language" to arrayOf("Language", "Sprache"),
         "settings.page.probe" to arrayOf("Probe", "Sonde"),
@@ -330,7 +330,7 @@ internal object StringsTable : Catalog {
         "settings.note.treble" to arrayOf("Above A4, up to C8. The extra stretch at C8 is where the slide ends.", "Über A4 bis C8. Die zusätzliche Spreizung bei C8 ist das Ende des Gleitens."),
         "settings.note.temperament" to arrayOf("Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.", "Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt."),
         "settings.note.reading" to arrayOf("The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.", "Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert."),
-        "settings.note.compass" to arrayOf("The compass is the 88 keys, A0 to C8.", "Der Tonumfang sind die 88 Tasten, A0 bis C8."),
+        "settings.note.range" to arrayOf("The range is the 88 keys, A0 to C8.", "Der Tonumfang sind die 88 Tasten, A0 bis C8."),
         "settings.note.unwound" to arrayOf("The first plain string: the wound strings’ part of the inharmonicity curve ends here.", "Die erste Blanksaite: hier endet der Teil der Inharmonizitätskurve für die umsponnenen Saiten."),
         "settings.note.breaks" to arrayOf("The inharmonicity curve is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of the bridge or strut. A sampled string keeps its own measurement. Set on the piano’s page (Pro).", "Die Inharmonizitätskurve wird als gerade Abschnitte über die Tasten gezogen. Ein Bruch beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite des Stegs oder der Spreize her gelesen. Eine gemessene Saite behält ihre eigene Messung. Gesetzt auf der Seite des Klaviers (Pro)."),
         "settings.note.about" to arrayOf("Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.", "Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository."),

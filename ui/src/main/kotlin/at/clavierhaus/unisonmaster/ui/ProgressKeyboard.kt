@@ -25,7 +25,7 @@ private fun isBlack(midi: Int): Boolean = when ((midi % 12 + 12) % 12) {
 private fun whitesFrom(lowest: Int, midi: Int): Int = (lowest until midi).count { !isBlack(it) }
 
 /**
- * The whole compass at a glance: every key that has been tuned is green.
+ * The whole range at a glance: every key that has been tuned is green.
  *
  * A tuner's own question mid-session is "where am I, and what is left" — the
  * keyboard answers it in the shape the instrument already has, so nothing has
@@ -95,7 +95,7 @@ fun ProgressKeyboard(
 
         // --- the tuning as executed -------------------------------------
         // How far the tuning stands from equal temperament across the
-        // compass: the measured first partials, smoothed over the neighbouring
+        // range: the measured first partials, smoothed over the neighbouring
         // notes (a triangular window, ±3 semitones) and drawn as one line, no
         // point per note. It is a result, never followed — the target of a
         // string is its own measurement — and it is drawn so that no single

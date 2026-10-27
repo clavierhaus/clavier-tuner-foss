@@ -144,7 +144,7 @@ internal fun SamplingPage(
         // Two screens share this file and are told apart by the session (Peter, 7 Oct 2026, 09:23):
         // before it, the page serves one purpose -- A4 set to the pitch the tuner wants -- and carries
         // nothing else: no title, no orders, no keyboard; the picture has the width. From Done on it
-        // is the sampling page, with the orders on the left and the compass along the bottom.
+        // is the sampling page, with the orders on the left and the range along the bottom.
         val settingA4 = view == null
         Row(Modifier.fillMaxSize().padding(bottom = if (settingA4) 0.dp else keyboardH + 8.dp)) {
             if (!settingA4) {

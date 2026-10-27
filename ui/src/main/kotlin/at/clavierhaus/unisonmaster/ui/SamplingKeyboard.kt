@@ -13,7 +13,7 @@ import at.clavierhaus.unisonmaster.Brand
 
 /**
  * The piano's keyboard on the sampling page (Peter, 4 Oct 2026): every key
- * from the lowest of the compass to C8, 88 on a real piano. A sampled key
+ * from the lowest of the range to C8, 88 on a real piano. A sampled key
  * stands green, as A4 — the reference — does once it is set; the key caught
  * from the last strike and not yet kept is outlined orange, and the
  * temperament octave is a line under its keys.

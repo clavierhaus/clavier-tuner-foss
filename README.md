@@ -43,7 +43,7 @@ wanted to see what his instruments actually do.
   identified by fitting a string to what the microphone hears, not guessed
   from the loudest peak. Measured on recordings of six pianos (Bösendorfer
   225 and 290, Steinway B and D, Kawai, Samick): 49 of 49 keys of a walk
-  across the compass, 169 of 173 on the largest corpus.
+  across the range, 169 of 173 on the largest corpus.
 - **Tunes by the strobe.** For every note the app picks the partial a tuner
   would listen to in that register, synthesises its target, and shows the
   string against it as a strobe, to a tenth of a cent, 47 readings a second.
@@ -61,7 +61,7 @@ wanted to see what his instruments actually do.
 - **Carries your choices as settings.** Octave type and width per register —
   2:1, 4:2, 6:3, 8:4, 10:5, the double octave 4:1 and the twelfth 3:1; set
   out as bass 6:3, middle 4:2, treble 4:1 — the wound/plain break, the
-  temperament's reach, the match window. The compass is the 88 keys, A0 to
+  temperament's reach, the match window. The range is the 88 keys, A0 to
   C8. The measurement decides the rest.
 - **Out of the way when you want it.** The phone's Back and Home buttons show
   everywhere but on the tuning screen, which has the whole screen; Settings ›

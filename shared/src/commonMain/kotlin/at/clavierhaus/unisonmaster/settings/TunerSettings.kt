@@ -265,12 +265,12 @@ data class TunerSettings(
 /**
  * Holds the settings, persists every change, and exposes them as a flow.
  * [defaults] is what an unset value is. [lowestKeyFixed] is the one value an
- * edition fixes: the free app's compass is A0–C8 and cannot be changed, and
+ * edition fixes: the free app's range is A0–C8 and cannot be changed, and
  * Pro sets the lowest key down to C0 for the 225, the Imperial and the Érards
  * (Peter, 19 Oct 2026, 21:59). Whatever is stored, and whatever an update
  * asks, the fixed key is what the settings hold. Everything else the tuner
  * may set in one edition he may set in the other (foss and Pro are one tuner
- * since 4 Oct 2026; the compass and the temperament's order were the free
+ * since 4 Oct 2026; the range and the temperament's order were the free
  * app's pins from 25 Sept to then, and from 4 to 19 Oct nothing was pinned).
  */
 class SettingsModel(

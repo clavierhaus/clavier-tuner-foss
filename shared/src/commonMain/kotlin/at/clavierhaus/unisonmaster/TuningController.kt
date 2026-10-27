@@ -446,7 +446,7 @@ class TuningController(
         val stepHighMidi: Int,
         /** True once every note of the session is tuned. */
         val complete: Boolean,
-        /** Sampling: single strings across the compass, before tuning. */
+        /** Sampling: single strings across the range, before tuning. */
         val sampling: Boolean = false,
         /** Sampling: how many strings besides A4 are in, how many the sampling needs, and whether Done may end it. */
         val samplesIn: Int = 0,
@@ -575,7 +575,7 @@ class TuningController(
         publish(s)
     }
 
-    /** Arrows: one semitone down (-1) or up (+1), within the compass. */
+    /** Arrows: one semitone down (-1) or up (+1), within the range. */
     fun stepNote(delta: Int) {
         val s = session ?: return
         val to = s.stepped(delta)
@@ -629,7 +629,7 @@ class TuningController(
         // (Amendment 3), and the screen stops following to the key actually struck, because
         // it follows only while the note on screen is not being read. The key identifier is
         // what tells the two apart, so nothing moves until it has positively named this
-        // note. Measured on the 22 Sept walk across the compass: 79 of 80 keys followed
+        // note. Measured on the 22 Sept walk across the range: 79 of 80 keys followed
         // before 4 Oct, 65 with the readers following any coarse peak, 79 again with this.
         if (_heardMidi.value != session?.current) return
         val place = w.hz * f
@@ -643,7 +643,7 @@ class TuningController(
 
     /**
      * A note recorded from the still strobe reaches the view -- measured, its deviation, the
-     * compass complete or not -- without a publish: a publish would mint a generation and place
+     * range complete or not -- without a publish: a publish would mint a generation and place
      * this note's targets from its own measured B while the tuner is still on it, moving the
      * listened partial's target by the B difference (8.5 c on the F3 of the test) and resetting
      * the shown readers mid-strike. The measured B takes effect when the note is next selected,
@@ -679,7 +679,7 @@ class TuningController(
             tuned = s.tuned,
             deviations = deviationsOf(s),
             // The tuning this piano's own inharmonicity asks for, every key of the
-            // compass, in cents from equal temperament. It is the curve the targets
+            // range, in cents from equal temperament. It is the curve the targets
             // are already taken from -- built from the B of the strings that were
             // sampled, not from a stretch table -- and until now it was computed for
             // every note and shown for none, while Progress drew only how far the
@@ -1201,7 +1201,7 @@ class TuningController(
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
         var coarse: Double? = null
-        // the keys the identifier chooses from: the instrument's compass, nothing below it
+        // the keys the identifier chooses from: the instrument's range, nothing below it
         var identifierLow = -1
         var identifier = KeyIdentifier(sr, DETECT_SAMPLES)
         var identifierLong = KeyIdentifier(sr, SAMPLE_LONG_SAMPLES)

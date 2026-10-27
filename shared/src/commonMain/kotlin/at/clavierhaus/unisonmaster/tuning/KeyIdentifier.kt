@@ -13,11 +13,11 @@ import kotlin.math.round
 import kotlin.math.sqrt
 
 /**
- * Which key was struck — the whole compass, unmuted unisons or one string,
+ * Which key was struck — the whole range, unmuted unisons or one string,
  * from one spectrum (docs/DETECTION.md).
  *
  * Not a comb held against the peaks, but a string *fitted* to them: from
- * every key of the compass as a starting point, the peaks near its first
+ * every key of the range as a starting point, the peaks near its first
  * partials anchor a fit of the fundamental and the inharmonicity B; the
  * comb is then extended with the fitted model, refitting as it climbs, out
  * to [reachHz] — a wound string's energy lies in partials 5 to 50, and only

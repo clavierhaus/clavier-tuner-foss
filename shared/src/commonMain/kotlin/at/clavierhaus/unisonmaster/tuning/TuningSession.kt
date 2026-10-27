@@ -77,7 +77,7 @@ object Inharmonicity {
 
 /**
  * The tuning session (docs/ENGINE.md). A4 is set on the hub; then the
- * strings are **sampled** — single strings across the compass, each
+ * strings are **sampled** — single strings across the range, each
  * measured for its inharmonicity — and the instrument's curve is fitted
  * ([InharmonicityCurve]); then every note's target is computed from the
  * curve: the temperament octave to equal temperament on A4, every other
@@ -112,7 +112,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     var settings: TunerSettings = settings
     /** Lowest note of the session: the instrument's lowest key. */
     val lowMidi: Int get() = minOf(settings.lowestKeyMidi, settings.lowestUnwoundMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, MIDI_A4 - 1)
-    /** Highest note of the session: the top of the compass. */
+    /** Highest note of the session: the top of the range. */
     val highMidi: Int get() = MIDI_C8
     /**
      * The notes of the session in the order they are tuned: A4 first, then
@@ -201,7 +201,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** Lowest note the arrows may reach: the foot of the session, always. */
     val stepLowMidi: Int get() = lowMidi
 
-    /** Highest note the arrows may reach: the top of the compass, always. */
+    /** Highest note the arrows may reach: the top of the range, always. */
     val stepHighMidi: Int get() = highMidi
 
     /**
@@ -382,14 +382,14 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
 
     companion object {
         const val MIDI_A4 = 69
-        /** Top of the compass. */
+        /** Top of the range. */
         const val MIDI_C8 = 108
         /**
          * A partial is matched when it stands this close to its target, in cents.
          *
          * Cents, not Hertz. A tenth of a Hertz is a cent at F3 and a twelfth of a
          * cent at C7: the same window meant forty different things across the
-         * compass, and at the top of the piano it promised a precision no
+         * range, and at the top of the piano it promised a precision no
          * measurement here has (1 Oct 2026 -- "a false illusion of precision").
          *
          * Two numbers set it, and they are different kinds of number. The floor is
@@ -497,7 +497,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * The note Done moves to: the next one in the tuning order, so the walk
      * runs A4 down to the floor and then up from A#4 to the top. While the
      * temperament octave is walked first, the first note of it still
-     * without a measurement. Null at the end of the compass.
+     * without a measurement. Null at the end of the range.
      */
     fun next(): Int? {
         if (sampling) return null
@@ -505,7 +505,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         return notes.getOrNull(notes.indexOf(current) + 1)
     }
 
-    /** The note [delta] semitones away, kept within the compass. */
+    /** The note [delta] semitones away, kept within the range. */
     fun stepped(delta: Int): Int = (current + delta).coerceIn(stepLowMidi, stepHighMidi)
 
     /**

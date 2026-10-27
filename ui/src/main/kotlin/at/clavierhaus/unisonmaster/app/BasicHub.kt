@@ -211,7 +211,7 @@ fun BasicHub(
         // where it stands. "33 cents sharp", "That's F5", "flat" -- every word about pitch is gone
         // (Peter, 7 Oct 2026, 15:33: irritating, serving no purpose): the strobe says which way and
         // how far, the bells say where the partials agree, and a word beside them was a third
-        // place saying the same thing. "Complete" stays, said once when the compass is done.
+        // place saying the same thing. "Complete" stays, said once when the range is done.
         val state: Pair<String, Color> = when {
             t.sampling -> "" to Color(Brand.WHITE_MUTED)
             t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)

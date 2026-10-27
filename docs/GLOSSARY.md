@@ -40,6 +40,7 @@ German pass; a word marked ? is a proposal.
 | the tuner's width | the octave's width | Oktavbreite ? | TL/PM: octaves "wide"/"narrow" | |
 | inventory | Pianos | Klaviere | PM "piano files"; a dealer's inventory is stock | "the pianos you look after" |
 | lowest unwound string | lowest plain string | tiefste blanke Saite | R "wound string", "plain wire"; TL marks the same place as "highest wound string" | say either, never "unwound" |
+| compass | range | Tonumfang | Peter, 27 Oct 2026 | a nautical instrument, not a piano word; the only place it stands, so it is never used again |
 | curve breaks (settings) | struts (each as the first note above it) | Streben ? (Gussrahmen-Streben) | R "plate strut" | what the technician sees |
 
 ## 2. Words the trade owns, kept as they are
@@ -62,10 +63,10 @@ German pass; a word marked ? is a proposal.
 | tuning curve | Stimmkurve | TL | |
 | tuning lever (not "hammer") | Stimmhammer | R "tuning lever" | note the German is the hammer |
 | tuning pin, pinblock, hitch pin, agraffe, bridge (bass, long/treble), plate, plate strut, soundboard | Stimmwirbel, Stimmstock, Anhangstift, Agraffe, Steg (Bass-, Diskantsteg), Gussrahmen, Strebe, Resonanzboden | R | |
-| bass, tenor, treble; the break (bass break, tenor break) | Bass, Tenor, Diskant; Übergang / Bruch ? | R, TL "split-scale break" | regions of the compass |
+| bass, tenor, treble; the break (bass break, tenor break) | Bass, Tenor, Diskant; Übergang / Bruch ? | R, TL "split-scale break" | regions of the range |
 | wound string; plain (wire) string | umsponnene Saite; blanke Saite | R | |
 | stringing scale, scale | Mensur | R | the piano's scale, as the record calls it |
-| compass (A0–C8) | Umfang | R "88-key", PTG "compass" | |
+| range (A0–C8) | Tonumfang | R "88-key"; Peter, 27 Oct 2026 | the keys from the lowest to the highest |
 | speaking length | klingende Länge | R | |
 | electronic tuning device (ETD) | elektronisches Stimmgerät | R | |
 | tuning file | Stimmdatei | TL, PM | what other devices call a piano's saved tuning; ours is the piano's record |
@@ -92,7 +93,7 @@ Scale · Checklist · History*; Settings tabs: *Temperament · Piano · About ·
 Customers · License*; the measuring screen: *Measuring your piano — play any
 key; Keep; Done*; the tuning screen's button: *Partials*; the unison screen:
 *Unisons — muted string / unmuted*; Recordings (was Record Strikes): the
-studies *Every string · Drift · Compass · Reference · Wobble*.
+studies *Every string · Drift · Range · Reference · Wobble*.
 
 ## 5. Not decided yet
 

@@ -239,7 +239,7 @@ fun BeatBand(
  *
  * Cents and not Hertz. A tenth of a Hertz is a cent at F3 and a twelfth of a
  * cent at C7, so a Hertz scale gave the same width to forty times different
- * musical distances across the compass, and at the top of the piano it magnified
+ * musical distances across the range, and at the top of the piano it magnified
  * a twelfth of a cent into a visible swing — a precision no measurement here
  * has. One scale, one meaning, everywhere on the keyboard.
  */

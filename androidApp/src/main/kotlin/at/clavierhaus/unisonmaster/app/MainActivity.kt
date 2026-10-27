@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
     private val audioSource by lazy { createAudioSource() }
     private val controller by lazy { TuningController(audioSource) { System.currentTimeMillis() } }
     private val settingsModel by lazy {
-        // the free app's compass is A0–C8 and cannot be changed (Peter, 19 Oct 2026); Pro sets it down to C0
+        // the free app's range is A0–C8 and cannot be changed (Peter, 19 Oct 2026); Pro sets it down to C0
         SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)), lowestKeyFixed = TunerSettings.MIDI_A0)
     }
     /** The microphone runs only on the tuning screen. */

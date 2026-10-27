@@ -5,7 +5,7 @@ import kotlin.math.exp
 import kotlin.math.ln
 
 /**
- * The instrument's inharmonicity over the compass, from the strings
+ * The instrument's inharmonicity over the range, from the strings
  * sampled (docs/ENGINE.md §1): ln B against key number, one straight line
  * per segment. Physics, not one piano: on plain wire B grows roughly
  * geometrically up the scale (Young), so ln B is near a line within a

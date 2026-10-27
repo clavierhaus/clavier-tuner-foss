@@ -42,7 +42,7 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  *
  * - Tuning: Temperament · Reading
  * - Stretch: Wound · Bass · Middle · Treble · Breaks
- * - Piano: Compass
+ * - Piano: Range
  * - Help: one page, the index of topics on the left and the open topic on the right (14 Oct 2026);
  *   Quick start is the first topic, an edition adds its own after it, Pro the book's
  * - App: About
@@ -70,7 +70,7 @@ fun TunerSettingsScreen(
     /** Home: the hub, from the corner every screen shares. */
     onHome: () -> Unit,
     open: Pair<Int, Int>? = null,
-    /** Pages an edition adds to the Piano tab after Compass (Pro: the unison floors and the regimen a new piano starts from). */
+    /** Pages an edition adds to the Piano tab after Range (Pro: the unison floors and the regimen a new piano starts from). */
     extraPianoPages: List<SettingsPage> = emptyList(),
     /** Tabs an edition adds after Piano, before Help (Pro: the customers book). */
     extraTabs: List<SettingsTab> = emptyList(),
@@ -80,7 +80,7 @@ fun TunerSettingsScreen(
     extraAppPages: List<SettingsPage> = emptyList(),
     /**
      * The lowest key's row, for an edition that lets the tuner set it (Pro: down to C0). Without it the
-     * compass is the fixed A0–C8 of the free app (Peter, 19 Oct 2026), and the row only shows it.
+     * range is the fixed A0–C8 of the free app (Peter, 19 Oct 2026), and the row only shows it.
      */
     lowestKeyRow: (@Composable () -> Unit)? = null,
 ) {
@@ -96,7 +96,7 @@ fun TunerSettingsScreen(
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_compass), left = { CompassRows(s, model, lowestKeyRow) })) + extraPianoPages),
+            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow) })) + extraPianoPages),
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
@@ -233,10 +233,10 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 }
 
 @Composable
-private fun CompassRows(s: TunerSettings, model: SettingsModel, lowestKeyRow: (@Composable () -> Unit)?) {
+private fun RangeRows(s: TunerSettings, model: SettingsModel, lowestKeyRow: (@Composable () -> Unit)?) {
     SettingsSection(t(K.settings_piano))
-    // the free app's compass is fixed (SettingsModel.lowestKeyFixed); the row that sets it is Pro's
-    if (lowestKeyRow != null) lowestKeyRow() else ReadOnlyRow(t(K.settings_lowestKey), noteName(s.lowestKeyMidi), info = COMPASS_NOTE)
+    // the free app's range is fixed (SettingsModel.lowestKeyFixed); the row that sets it is Pro's
+    if (lowestKeyRow != null) lowestKeyRow() else ReadOnlyRow(t(K.settings_lowestKey), noteName(s.lowestKeyMidi), info = RANGE_NOTE)
     StepperRow(
         t(K.settings_lowestUnwound), noteName(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
@@ -252,7 +252,7 @@ private const val WIDTH_STEP = 0.5
 /** What the entries mean, each opened by the (i) behind its entry. */
 private val TEMPERAMENT_NOTE: String get() = t(K.settings_note_temperament)
 private val READING_NOTE: String get() = t(K.settings_note_reading)
-private val COMPASS_NOTE: String get() = t(K.settings_note_compass)
+private val RANGE_NOTE: String get() = t(K.settings_note_range)
 private val UNWOUND_NOTE: String get() = t(K.settings_note_unwound)
 private val BREAKS_NOTE: String get() = t(K.settings_note_breaks)
 private val ABOUT_NOTE: String get() = t(K.settings_note_about)

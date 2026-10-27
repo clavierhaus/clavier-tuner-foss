@@ -52,7 +52,7 @@ settings.page.reading	Strobe	Stroboskop
 settings.page.bass	Bass	Bass
 settings.page.middle	Midrange	Mittellage
 settings.page.treble	Treble	Diskant
-settings.page.compass	Compass	Tonumfang
+settings.page.range	Range	Tonumfang
 settings.page.breaks	Scale breaks	Bruchstellen
 settings.page.language	Language	Sprache
 settings.page.probe	Probe	Sonde
@@ -148,7 +148,7 @@ settings.note.middle	Up to the temperament octave. The extra stretch slides from
 settings.note.treble	Above A4, up to C8. The extra stretch at C8 is where the slide ends.	Über A4 bis C8. Die zusätzliche Spreizung bei C8 ist das Ende des Gleitens.
 settings.note.temperament	Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.	Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt.
 settings.note.reading	The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.	Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert.
-settings.note.compass	The compass is the 88 keys, A0 to C8.	Der Tonumfang sind die 88 Tasten, A0 bis C8.
+settings.note.range	The range is the 88 keys, A0 to C8.	Der Tonumfang sind die 88 Tasten, A0 bis C8.
 settings.note.unwound	The first plain string: the wound strings’ part of the inharmonicity curve ends here.	Die erste Blanksaite: hier endet der Teil der Inharmonizitätskurve für die umsponnenen Saiten.
 settings.note.breaks	The inharmonicity curve is drawn as straight runs over the keys. A break starts a new run, so a note not yet sampled is read from its own side of the bridge or strut. A sampled string keeps its own measurement. Set on the piano’s page (Pro).	Die Inharmonizitätskurve wird als gerade Abschnitte über die Tasten gezogen. Ein Bruch beginnt einen neuen Abschnitt, so wird ein noch nicht gemessener Ton von seiner eigenen Seite des Stegs oder der Spreize her gelesen. Eine gemessene Saite behält ihre eigene Messung. Gesetzt auf der Seite des Klaviers (Pro).
 settings.note.about	Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.	Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository.

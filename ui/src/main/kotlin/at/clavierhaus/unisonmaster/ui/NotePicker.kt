@@ -26,7 +26,7 @@ import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.tuning.Notes
 
 /**
- * The session's compass — every key the session can tune, [lowMidi] to
+ * The session's range — every key the session can tune, [lowMidi] to
  * [highMidi] as [at.clavierhaus.unisonmaster.tuning.TuningSession] gives
  * them — laid out as the keyboard reads: one row per octave, the bass at the
  * top left, the twelve notes left to right, the top treble at the bottom
@@ -53,7 +53,7 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (pc in 0 until 12) {
                         val midi = (octave + 1) * 12 + pc
-                        val inCompass = midi in lowMidi..highMidi
+                        val inRange = midi in lowMidi..highMidi
                         val isCurrent = midi == current
                         val black = pc in setOf(1, 3, 6, 8, 10)
                         Box(
@@ -62,7 +62,7 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
                                 .fillMaxHeight()
                                 .background(
                                     when {
-                                        !inCompass -> Color.Transparent
+                                        !inRange -> Color.Transparent
                                         isCurrent -> Color(Brand.ORANGE)
                                         black -> Color(Brand.KEY_BLACK)
                                         else -> Color(Brand.KEY_WHITE)
@@ -70,10 +70,10 @@ fun NotePicker(lowMidi: Int, highMidi: Int, current: Int, onPick: (Int) -> Unit,
                                     RoundedCornerShape(6.dp),
                                 )
                                 .then(if (isCurrent) Modifier.border(2.dp, Color(Brand.WHITE), RoundedCornerShape(6.dp)) else Modifier)
-                                .clickable(enabled = inCompass, onClick = { onPick(midi) }),
+                                .clickable(enabled = inRange, onClick = { onPick(midi) }),
                             contentAlignment = Alignment.Center,
                         ) {
-                            if (inCompass) FitText(
+                            if (inRange) FitText(
                                 noteName(midi),
                                 16.sp,
                                 color = Color(if (black && !isCurrent) Brand.WHITE else Brand.BLACK),

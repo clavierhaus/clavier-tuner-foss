@@ -643,7 +643,7 @@ class TuningControllerTest {
     @Test
     fun theCurveIsComputedForEveryKeyFromTheMeasuredInharmonicity() {
         // The sample set is a handful of notes; the curve it asks for covers the
-        // whole compass. Progress drew only how far the measured notes stand from
+        // whole range. Progress drew only how far the measured notes stand from
         // equal temperament -- a result, not a target -- while this was computed for
         // every key and shown for none.
         val (c, _) = controller()
@@ -657,7 +657,7 @@ class TuningControllerTest {
         val curve = t.curve
         assertTrue(curve.isNotEmpty(), "the curve is computed from the samples")
         for (m in t.lowestMidi..TuningSession.MIDI_C8) {
-            assertTrue(m in curve, "every key of the compass has a target: $m is missing")
+            assertTrue(m in curve, "every key of the range has a target: $m is missing")
         }
         // the shape inharmonicity forces: the treble stretched sharp of equal
         // temperament, the bass flat of it, both growing with distance from A4

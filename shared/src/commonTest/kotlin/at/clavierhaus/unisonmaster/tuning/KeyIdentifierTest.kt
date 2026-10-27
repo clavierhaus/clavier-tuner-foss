@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 private const val SR = 48_000
 
 /**
- * A key of the compass as the microphone hears it, unmuted: three strings
+ * A key of the range as the microphone hears it, unmuted: three strings
  * a little apart, a stiff string's partials, a bass string's weak
  * fundamental and dense upper partials, a treble string's few, the room's
  * rumble and a little noise. Every value is chosen to be unkind to a
@@ -55,7 +55,7 @@ private fun read(signal: FloatArray, fromS: Double = 0.15, a4: Double = 442.0): 
 class KeyIdentifierTest {
 
     @Test
-    fun everyKeyOfTheCompassIsReadAsItself() {
+    fun everyKeyOfTheRangeIsReadAsItself() {
         val wrong = (21..108).mapNotNull { midi -> val r = read(key(midi)); if (r != midi) "$midi→$r" else null }
         assertTrue(wrong.isEmpty(), "misread: $wrong")
     }

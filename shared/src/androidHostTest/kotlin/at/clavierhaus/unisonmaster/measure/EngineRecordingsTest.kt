@@ -234,7 +234,7 @@ class EngineRecordingsTest {
     }
 
     @Test
-    fun theScreenFollowsAWalkAcrossTheCompassKeyByKey() {
+    fun theScreenFollowsAWalkAcrossTheRangeKeyByKey() {
         val dir = day() ?: run { println("EngineRecordingsTest: no recordings of 22 September here"); return }
         val (a4, ms) = measured(dir)
         val b = partB(dir)
