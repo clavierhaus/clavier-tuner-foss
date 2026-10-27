@@ -553,8 +553,10 @@ class TuningController(
         // measurements, tuned notes among them, become the basis -- the best that file can say
         if (!snap.sampling) s.finishSampling(snap.basis)
         // the notes tuned; a file from before 25 Oct 2026 does not say, and the notes measured outside
-        // the sampling's basis are taken for them -- a sampled note tuned since is recorded when struck again
-        s.restoreTuned(snap.tuned ?: (s.measurements.keys - snap.basis.orEmpty().keys))
+        // the sampling's basis are taken for them -- a sampled note tuned since is recorded when struck again.
+        // A file saved while sampling has nothing tuned but A4: until 27 Oct 2026 such a file, which has no
+        // basis yet, had every sampled key taken for a tuned one
+        s.restoreTuned(snap.tuned ?: if (snap.sampling) emptySet() else (s.measurements.keys - snap.basis.orEmpty().keys))
         s.targetOffsetCents = snap.offsets
         val resume = snap.currentMidi.takeIf { s.selectable(it) }
             ?: s.next()?.takeIf { s.selectable(it) }

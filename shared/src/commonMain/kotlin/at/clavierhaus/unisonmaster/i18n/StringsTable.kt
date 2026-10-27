@@ -6,6 +6,10 @@ package at.clavierhaus.unisonmaster.i18n
 object K {
     const val app_settings = "app.settings"
     const val app_done = "app.done"
+    const val crash_title = "crash.title"
+    const val crash_text = "crash.text"
+    const val crash_copy = "crash.copy"
+    const val crash_close = "crash.close"
     const val app_progress = "app.progress"
     const val app_tuning = "app.tuning"
     const val app_partials = "app.partials"
@@ -184,6 +188,10 @@ internal object StringsTable : Catalog {
     override val table: Map<String, Array<String>> = mapOf(
         "app.settings" to arrayOf("Settings", "Einstellungen"),
         "app.done" to arrayOf("Done", "Fertig"),
+        "crash.title" to arrayOf("The app stopped last time", "Die App wurde beim letzten Mal beendet"),
+        "crash.text" to arrayOf("This is what went wrong. Please copy it and send it to us: it shows where to look.", "Das ist dabei schiefgegangen. Bitte kopieren Sie es und schicken Sie es uns: Es zeigt, wo wir suchen müssen."),
+        "crash.copy" to arrayOf("Copy", "Kopieren"),
+        "crash.close" to arrayOf("Close", "Schließen"),
         "app.progress" to arrayOf("Progress", "Fortschritt"),
         "app.tuning" to arrayOf("Tuning", "Stimmen"),
         "app.partials" to arrayOf("Partials", "Teiltöne"),

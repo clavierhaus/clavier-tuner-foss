@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // a crash is kept on the phone and shown on the next start, never sent (CrashNote, 27 Oct 2026)
+        CrashNote.install(this, packageManager.getPackageInfo(packageName, 0).versionName ?: "dev")
         // The screen stays on while the app is on it. A tuner's hands are on the piano, and the
         // phone's own timeout turned the screen off mid-tuning, which pauses the app and stops the
         // listening (17 Oct 2026, the first tuner's report after the F-Droid release; Peter: to be
@@ -101,6 +103,8 @@ class MainActivity : ComponentActivity() {
                 var screen by rememberSaveable { mutableStateOf("hub") }
                 var settingsFrom by rememberSaveable { mutableStateOf("hub") }
                 val settings by settingsModel.settings.collectAsState()
+                // the last crash's note, if the app stopped on an error last time
+                CrashNoteDialog()
                 LaunchedEffect(settings.language) {
                     // the words: the chosen language, or the phone's
                     Strings.use(settings.language.ifEmpty { java.util.Locale.getDefault().toLanguageTag() })

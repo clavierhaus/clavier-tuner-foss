@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-27
+- **If the app stops on an error, it says so on the next start,** with the
+  error itself and a button to copy it. It is kept on the phone and nothing
+  is sent; a tester can paste it to us. (0.5.0 crashed twice for a tester in
+  the Piano World forum, and there was nothing to go on.)
+- **A sampling saved by 0.4.1 and continued** no longer counts its sampled
+  keys as tuned.
+
 ## 0.5.0 -- 2026-10-26
 
 ### 2026-10-26

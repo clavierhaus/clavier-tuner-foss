@@ -1,0 +1,1 @@
+0.5.1: If the app stops on an error, the next start shows what went wrong, with a button to copy it for us. It stays on your phone; nothing is sent. A sampling saved by 0.4.1 and continued no longer counts its sampled keys as tuned.

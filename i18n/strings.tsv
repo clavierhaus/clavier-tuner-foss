@@ -6,6 +6,10 @@
 key	en	de
 app.settings	Settings	Einstellungen
 app.done	Done	Fertig
+crash.title	The app stopped last time	Die App wurde beim letzten Mal beendet
+crash.text	This is what went wrong. Please copy it and send it to us: it shows where to look.	Das ist dabei schiefgegangen. Bitte kopieren Sie es und schicken Sie es uns: Es zeigt, wo wir suchen müssen.
+crash.copy	Copy	Kopieren
+crash.close	Close	Schließen
 app.progress	Progress	Fortschritt
 app.tuning	Tuning	Stimmen
 app.partials	Partials	Teiltöne

@@ -1,0 +1,1 @@
+0.5.1: Wird die App durch einen Fehler beendet, zeigt der nächste Start, was schiefgegangen ist, mit einer Taste zum Kopieren für uns. Es bleibt auf Ihrem Telefon; nichts wird gesendet. Ein mit 0.4.1 gespeichertes Vermessen zählt beim Fortsetzen die vermessenen Tasten nicht mehr als gestimmt.

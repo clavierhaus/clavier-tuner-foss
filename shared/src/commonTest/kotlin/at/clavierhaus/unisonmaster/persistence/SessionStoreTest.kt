@@ -113,6 +113,35 @@ class SessionStoreTest {
         assertEquals(setOf(68, 69), c.tuning.value!!.tuned, "G#4 is outside the basis: tuned")
     }
 
+    /**
+     * A file 0.4.1 wrote in the middle of the sampling (27 Oct 2026, after a tester's crash report on 0.5.0): it has no
+     * basis yet and no tuned notes, and continued it must go on sampling with nothing tuned but A4 -- not take every
+     * sampled key for a tuned one -- and end its sampling as any other. A file from before 11 Oct 2026, a tuning with no
+     * basis at all, continues without a fault.
+     */
+    @Test
+    fun aSamplingSavedBy041ContinuesWithNothingTunedButA4() {
+        val a4 = 443.0
+        fun note(m: Int) = at.clavierhaus.unisonmaster.tuning.measuredString(m, TuningSession.targetF1(m, a4), 1e-4 * Math.pow(2.0, (m - 40) / 12.0))
+        val samples = listOf(69, 24, 33, 45, 52, 76, 81).map { note(it) }
+        val text = buildString {
+            append("clavierhaustuner-session 1\nsaved 1789000000000\na4 $a4\ncurrent 81\nsampling 1\n")
+            for (m in samples) append("note ${m.midi} ${m.f1Hz} ${m.b} ${m.residualCents} ${m.timeMs} 0\n")
+            append("end\n")
+        }
+        val old = SessionCodec.decode(text)
+        assertNull(old.tuned); assertNull(old.basis); assertTrue(old.sampling)
+        val c = TuningController(Queue(emptyList()))
+        c.restore(old)
+        assertTrue(c.tuning.value!!.sampling)
+        assertEquals(setOf(69), c.tuning.value!!.tuned, "still sampling: only A4 is tuned")
+        c.finishSampling()
+        assertEquals(setOf(69), c.tuning.value!!.tuned, "the sampling ended: still only A4")
+        // a tuning saved before 11 Oct 2026: no basis, no tuned notes; it continues
+        c.restore(old.copy(sampling = false))
+        assertTrue(c.tuning.value!!.tuned.containsAll(listOf(69)))
+    }
+
     @Test
     fun theFormatIsStrict() {
         val good = SessionCodec.encode(sample)
