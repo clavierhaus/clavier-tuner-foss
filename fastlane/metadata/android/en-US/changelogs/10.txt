@@ -1,0 +1,1 @@
+0.6.0: The strobe can show one band: Settings › Strobe › Bands › Octave partial. One band in every register, the partial on which the note meets its octave by the octave type you set (4:2 on the upper note: partial 2; in A3–A4, partial 2); the note is read and kept on it alone. A tap still adds any other partial. All partials stays the default.

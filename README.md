@@ -70,6 +70,15 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.6
+
+- **One band, if you want it.** Settings › Strobe › Bands: *All partials*, as
+  before and still the default, or *Octave partial*: one band in every
+  register, the partial on which the note meets its octave by the octave type
+  you set (4:2 on the upper note: partial 2; 6:3: partial 3; 2:1, 4:1, 3:1:
+  partial 1; in A3–A4, partial 2). The note is read and kept on that band
+  alone. A tap on a partial below still adds it beside the band.
+
 ## New in 0.5
 
 - **Progress counted the sampling as tuning.** Keys only sampled stood green
