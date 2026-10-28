@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.6.0 -- 2026-10-28
+
 ## 0.5.1 -- 2026-10-27
 
 ### 2026-10-28
