@@ -142,6 +142,17 @@ data class TunerSettings(
      */
     val cleanPartials: Boolean = true,
     /**
+     * The strobe shows one band, the octave's partial, instead of every partial heard (Gregor and
+     * Peter, 28 Oct 2026: a different number of bands from register to register irritates; "the
+     * option to show all partials should always be there"). The band is the partial on which the
+     * note meets its octave partner by the region's octave type -- 4:2 gives the upper note's partial
+     * 2 and the lower note's 4, 6:3 gives 3 and 6, 2:1, 4:1 and 3:1 the upper note's 1 -- which is
+     * the partial the target is computed on; in the temperament octave and on A4, which have no
+     * octave type, partial 2, as in 4:2 (Peter: "the most neutral one"). The note is read and kept
+     * on that partial alone. Off: every partial, as before.
+     */
+    val strobeOne: Boolean = false,
+    /**
      * The reading's memory, seconds: how far back the shown reading looks.
      * 0.15 s shows every wobble as it happens (Verituner's); longer steadies
      * the bell in a noisy room or on a string that wanders, at the price of
@@ -318,6 +329,7 @@ class SettingsModel(
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
             cleanPartials = b("cleanPartials", d.cleanPartials),
+            strobeOne = b("strobeOne", d.strobeOne),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             language = store.get("language") ?: d.language,
             helpTextSp = i("helpTextSp", d.helpTextSp).coerceIn(TunerSettings.MIN_HELP_SP, TunerSettings.MAX_HELP_SP),
@@ -351,6 +363,7 @@ class SettingsModel(
         store.put("autoNote", s.autoNote.toString())
         store.put("temperamentFirst", s.temperamentFirst.toString())
         store.put("cleanPartials", s.cleanPartials.toString())
+        store.put("strobeOne", s.strobeOne.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)
         store.put("helpTextSp", s.helpTextSp.toString())

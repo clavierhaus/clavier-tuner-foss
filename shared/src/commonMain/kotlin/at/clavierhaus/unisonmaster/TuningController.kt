@@ -731,7 +731,8 @@ class TuningController(
             // one picture of them all (docs/UI.md), not a mode that shows one and a mode that
             // shows six. Until 3 Oct 2026 only the listened partial was read outside Full
             // Spectrum, and the picture of a sounding string stood empty.
-            _shownPartials.value = (_targets.value.map { it.k } + listening.k).toSet()
+            // one band (TunerSettings.strobeOne): the octave's partial alone; a tap still adds another
+            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k) else (_targets.value.map { it.k } + listening.k).toSet()
             _activePartial.value = listening.k
         } else if (_activePartial.value !in _targets.value.map { it.k } && _activePartial.value != listening.k) {
             _activePartial.value = listening.k
@@ -1385,7 +1386,8 @@ class TuningController(
                         // the strike said which partials the string carries: read them all, up to
                         // the highest the tuner's setting offers, less what he hid
                         val cap = highestPartial(tv.targetHz)
-                        _shownPartials.value = (series.map { it.k }.filter { it <= cap } + tv.listening.k).toSet() - _hiddenPartials.value
+                        _shownPartials.value = if (_settings.value.strobeOne) (_shownPartials.value.filter { it in series.map { p -> p.k } } + tv.listening.k).toSet()
+                            else (series.map { it.k }.filter { it <= cap } + tv.listening.k).toSet() - _hiddenPartials.value
                         wantShown()
                         // and the clean partials are read against that series from here on, not the
                         // model's: until 3 Oct 2026 they kept the model's placing for the whole strike,
@@ -1468,7 +1470,10 @@ class TuningController(
                         // called false at a partial beating against its partner.
                         falseOnes = facts.map { it.k }
                     }
-                    cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
+                    // one band (TunerSettings.strobeOne): the reading is the octave's partial as its own reader has
+                    // it, never the clean partials together nor a stand-in -- what is shown decides (Peter,
+                    // 28 Oct 2026); the false beats above are judged as before
+                    if (!_settings.value.strobeOne || s.sampling) cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
                 }
                 _reading.value = Reading(
                     w.k, combinedHz ?: held, w.hz,

@@ -124,6 +124,10 @@ object K {
     const val settings_screen = "settings.screen"
     const val settings_followKey = "settings.followKey"
     const val settings_cleanTogether = "settings.cleanTogether"
+    const val settings_strobeShows = "settings.strobeShows"
+    const val settings_strobeAll = "settings.strobeAll"
+    const val settings_strobeOne = "settings.strobeOne"
+    const val settings_note_strobeOne = "settings.note.strobeOne"
     const val settings_highestPartial = "settings.highestPartial"
     const val settings_reading = "settings.reading"
     const val settings_readingMemory = "settings.readingMemory"
@@ -306,6 +310,10 @@ internal object StringsTable : Catalog {
         "settings.screen" to arrayOf("Note switching", "Tonwechsel"),
         "settings.followKey" to arrayOf("Auto note switching", "Automatischer Tonwechsel"),
         "settings.cleanTogether" to arrayOf("Average the clean partials", "Saubere Teiltöne mitteln"),
+        "settings.strobeShows" to arrayOf("Bands", "Bänder"),
+        "settings.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
+        "settings.strobeOne" to arrayOf("Octave partial", "Oktavteilton"),
+        "settings.note.strobeOne" to arrayOf("Octave partial: one band, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.", "Oktavteilton: ein Band, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert."),
         "settings.highestPartial" to arrayOf("Partials up to", "Teiltöne bis"),
         "settings.reading" to arrayOf("Strobe", "Stroboskop"),
         "settings.readingMemory" to arrayOf("Averaging time", "Mittelungszeit"),

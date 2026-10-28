@@ -280,8 +280,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     }
 
     private fun listeningAsComputed(midi: Int): Listening {
-        if (midi == MIDI_A4) return Listening(midi, 1, a4Hz, Source.REFERENCE)
-        val p = partner(midi) ?: return Listening(midi, 1, targetF1(midi, a4Hz), Source.TEMPERAMENT)
+        // one band (TunerSettings.strobeOne): A4 and the temperament octave read on partial 2, at the place
+        // the same target puts it -- the target is the fundamental's, as ever; only the partial read changes
+        if (midi == MIDI_A4) return onPartial2(Listening(midi, 1, a4Hz, Source.REFERENCE))
+        val p = partner(midi) ?: return onPartial2(Listening(midi, 1, targetF1(midi, a4Hz), Source.TEMPERAMENT))
         val (refMidi, ownK, refK) = p
         val type = settings.octaveTypeFor(midi)
         val c = curve
@@ -299,7 +301,8 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         }
         val ref = measured[refMidi]
         if (ref == null) {
-            val k = PartialMap.listening(midi)
+            // one band: the octave's partial, as everywhere else; otherwise the register's map
+            val k = if (settings.strobeOne) ownK else PartialMap.listening(midi)
             val hz = k * targetF1(midi, a4Hz) * Inharmonicity.ratio(k, predictedB(midi))
             return Listening(midi, k, hz, Source.PARTNER_UNTUNED, type, refMidi)
         }
@@ -311,6 +314,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val hz = refHz * 2.0.pow(sign * width / 1200.0)
         return Listening(midi, ownK, hz, Source.OCTAVE, type, refMidi, refHz, width, refModelled = measuredHz == null)
     }
+
+    /** [l], a fundamental's target, read on partial 2 when the strobe shows one band; unchanged otherwise. */
+    private fun onPartial2(l: Listening): Listening =
+        if (!settings.strobeOne) l else l.copy(k = 2, targetHz = 2 * l.targetHz * Inharmonicity.ratio(2, predictedB(l.midi)))
 
     /** B for [midi]: its own as sampled, else the curve's. */
     private fun bOf(midi: Int, c: InharmonicityCurve): Double = basis[midi]?.takeIf { it > 0 } ?: c.b(midi) ?: StringMeasure.DEFAULT_B

@@ -124,6 +124,10 @@ settings.temperamentFirst	Temperament first	Temperatur zuerst
 settings.screen	Note switching	Tonwechsel
 settings.followKey	Auto note switching	Automatischer Tonwechsel
 settings.cleanTogether	Average the clean partials	Saubere Teiltöne mitteln
+settings.strobeShows	Bands	Bänder
+settings.strobeAll	All partials	Alle Teiltöne
+settings.strobeOne	Octave partial	Oktavteilton
+settings.note.strobeOne	Octave partial: one band, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.	Oktavteilton: ein Band, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert.
 settings.highestPartial	Partials up to	Teiltöne bis
 settings.reading	Strobe	Stroboskop
 settings.readingMemory	Averaging time	Mittelungszeit

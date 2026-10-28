@@ -145,6 +145,10 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             SettingsSection(t(K.settings_screen))
             SwitchRow(t(K.settings_followKey), s.autoNote) { on -> model.update { it.copy(autoNote = on) } }
             SwitchRow(t(K.settings_cleanTogether), s.cleanPartials) { on -> model.update { it.copy(cleanPartials = on) } }
+            // every partial, or the octave's alone (Gregor and Peter, 28 Oct 2026); all partials stay the default
+            ChoiceRow(t(K.settings_strobeShows), listOf(t(K.settings_strobeAll), t(K.settings_strobeOne)), if (s.strobeOne) 1 else 0, info = t(K.settings_note_strobeOne)) { i ->
+                model.update { it.copy(strobeOne = i == 1) }
+            }
             StepperRow(
                 t(K.settings_highestPartial), noteName(s.highestPartialMidi),
                 canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,

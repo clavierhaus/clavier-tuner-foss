@@ -85,6 +85,7 @@ German pass; a word marked ? is a proposal.
 | string record | Saitenprotokoll ? | what one measured string leaves behind: partials, offsets, false beats |
 | the piano's fingerprint | — (prose only) | the partial ratios of all its strings, which only new wire changes |
 | measure while tuning | beim Stimmen messen | the minimal checklist: every note tuned is a note measured |
+| octave partial (Settings › Strobe › Bands: All partials / Octave partial) | Oktavteilton (Bänder: Alle Teiltöne / Oktavteilton) | the partial on which a note meets its octave by the octave type -- 4:2: the upper note's 2, the lower note's 4; in A3–A4 and on A4, partial 2 (Gregor and Peter, 28 Oct 2026) |
 
 ## 4. Screen by screen, what changes
 

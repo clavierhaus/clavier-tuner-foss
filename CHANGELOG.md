@@ -9,6 +9,15 @@ reconstructed from the commit history that day.
 
 ## 0.5.1 -- 2026-10-27
 
+### 2026-10-28
+- **The strobe can show one band.** Settings › Strobe › Bands: *All partials*,
+  as before and still the default, or *Octave partial*: one band, the partial
+  on which the note meets its octave by the octave type you set for its
+  register (4:2 on the upper note: partial 2; 6:3: partial 3; 2:1, 4:1 and 3:1:
+  partial 1). In the temperament octave and on A4, which have no octave type,
+  partial 2. The note is read and kept on that partial alone. A tester found
+  the number of bands changing from register to register irritating (Gregor).
+
 ### 2026-10-27
 - **Settings › Piano › Range** (was a nautical word, now the technician's). The note under its (i): "The range is the 88 keys, A0 to C8." German unchanged: Tonumfang. The word is gone from code, tests and docs as well; the glossary records it once as retired.
 - **If the app stops on an error, it says so on the next start,** with the

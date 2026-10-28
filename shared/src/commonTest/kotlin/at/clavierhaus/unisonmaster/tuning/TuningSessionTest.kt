@@ -383,4 +383,37 @@ class TwelfthOctaveTypeTest {
         val f4p3 = 3 * s.curveTargetF1(65, c) * Inharmonicity.ratio(3, 3.6e-4)
         assertEquals(0.0, TuningSession.centsOff(c6 * Inharmonicity.ratio(1, 9e-4), f4p3), 0.01, "C6's partial 1 on F4's partial 3")
     }
+
+}
+
+class OneBandTest {
+    private val a4 = 443.0
+    private val pro = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40)
+
+    /**
+     * One band (TunerSettings.strobeOne, Gregor and Peter, 28 Oct 2026): the note is read on the partial on
+     * which it meets its octave by the region's octave type, and A4 and the temperament octave on partial 2
+     * (4:2, "the most neutral one"), at the place the same target puts it. Off, as before: A4 and the
+     * temperament on the fundamental, an untuned partner's note on the register's map.
+     */
+    @Test
+    fun oneBandReadsTheOctavesPartialAndPartial2InTheTemperament() {
+        val off = TuningSession(a4, pro, sampling = false)
+        val on = TuningSession(a4, pro.copy(strobeOne = true), sampling = false)
+        // A4 and a note of the temperament octave: the fundamental off, partial 2 on, the same target pitch
+        for (m in listOf(69, 60)) {
+            assertEquals(1, off.listening(m).k)
+            assertEquals(2, on.listening(m).k)
+            val f1 = off.listening(m).targetHz
+            assertEquals(2 * f1 * Inharmonicity.ratio(2, on.predictedB(m)), on.listening(m).targetHz, 1e-9)
+        }
+        // E5 in the treble (4:1 by default), partner untuned: the map says partial 2, the octave type partial 1
+        assertEquals(PartialMap.listening(76), off.listening(76).k)
+        assertEquals(2, off.listening(76).k)
+        assertEquals(OctaveType.O4_1, on.listening(76).type)
+        assertEquals(1, on.listening(76).k)
+        // a treble set out as 4:2: the upper note's partial 2
+        val on42 = TuningSession(a4, pro.copy(strobeOne = true, octaveTreble = OctaveType.O4_2), sampling = false)
+        assertEquals(2, on42.listening(76).k)
+    }
 }

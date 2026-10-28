@@ -408,3 +408,17 @@ unprocessed; unprocessed but not guaranteed by the phone (the phone does not
 declare the source, Android CDD 5.11); processed by the phone, when the source
 fell back to the ordinary microphone; or that it opens with the tuning screen.
 
+
+## The strobe: all partials, or the octave partial (28 Oct 2026)
+
+Settings › Strobe › Bands chooses what the tuning screen's strobe shows. *All partials*, the
+default and always offered (Peter, 28 Oct 2026: "the option to show all partials should always be
+there"), is the picture as before: every partial the strike carries, each in its own band, one tap
+taking one out. *Octave partial* shows one band, the same in every register (Gregor: a number of
+bands that changes from register to register irritates): the partial on which the note meets its
+octave by the region's octave type, which is the partial the target is computed on
+(`TuningSession.partner`): 4:2 gives the upper note's partial 2 and the lower note's 4, 6:3 gives
+3 and 6, 2:1, 4:1 and 3:1 the upper note's 1. A4 and the temperament octave have no octave type
+and show partial 2, as in 4:2 (Peter: "the most neutral one"), read at the place the same target
+puts it. The note is read and kept on that band alone: the clean partials are not averaged into
+it and no other partial stands in for it -- what is shown decides. A tap still adds a band.
