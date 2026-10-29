@@ -60,8 +60,10 @@ wanted to see what his instruments actually do.
   leaves it. Continue tomorrow where you stopped.
 - **Carries your choices as settings.** Octave type and width per register —
   2:1, 4:2, 6:3, 8:4, 10:5, the double octave 4:1 and the twelfth 3:1; set
-  out as bass 6:3, middle 4:2, treble 4:1 — the wound/plain break, the
-  temperament's reach, the match window. The range is the 88 keys, A0 to
+  out as bass 6:3, middle 4:2, treble 4:1. The bass's type is beatless at the
+  lowest key, the treble's at C8, the middle's next to the temperament octave;
+  every octave between moves from one to the other key by key, so the tuning
+  curve has no break anywhere. Also the temperament's reach and the match window. The range is the 88 keys, A0 to
   C8. The measurement decides the rest.
 - **Out of the way when you want it.** The phone's Back and Home buttons show
   everywhere but on the tuning screen, which has the whole screen; Settings ›
@@ -135,8 +137,10 @@ The chain every proven tuning device uses, written down and testable:
 2. **The partial** is chosen by register (`measure/PartialMap`).
 3. **The target** is synthesised from the reference and the instrument's
    measured inharmonicity (`tuning/InharmonicityCurve`, `tuning/TuningSession`):
-   octaves of the chosen type chained outward from the temperament, each
-   partial where this piano's strings put it.
+   octaves chained outward from the temperament, each blended by key from the
+   middle's octave type to the outer one, each partial where this piano's
+   strings put it; the inharmonicity is one smooth line through the strings
+   measured.
 4. **The reading** is the phase of that partial against the target
    (`measure/PhaseReader`), shown only while the partial stands over the noise
    beside it. The clean partials are read together, a partial that beats on
