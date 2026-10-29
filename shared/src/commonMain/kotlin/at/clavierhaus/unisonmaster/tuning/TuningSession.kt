@@ -7,6 +7,7 @@ import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -185,9 +186,19 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** The inharmonicity every target is computed from: the sampling's, once it has ended. */
     private val basis: Map<Int, Double> get() = sampledB ?: measured.mapValues { it.value.b }
 
-    /** The instrument's inharmonicity curve from the sampling (from what is measured, while sampling). */
+    private var curveKept: Pair<Any, InharmonicityCurve>? = null
+
+    /**
+     * The instrument's inharmonicity curve from the sampling (from what is measured, while sampling). Fitted once
+     * for what it stands on and kept: the fit searches its slopes on a grid, and the screen asks for it many times
+     * a second.
+     */
     val curve: InharmonicityCurve
-        get() = InharmonicityCurve(basis, settings.lowestUnwoundMidi, settings.curveBreaks)
+        get() {
+            val key = basis to settings.curveBreaks
+            curveKept?.let { (k, c) -> if (k == key) return c }
+            return InharmonicityCurve(basis, settings.curveBreaks).also { curveKept = key to it }
+        }
 
     /**
      * True when leaving a note registers it as done with what was heard of
@@ -215,9 +226,9 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     enum class Source {
         /** A4: the reference set on the hub. */
         REFERENCE,
-        /** The temperament octave: equal temperament on A4. */
+        /** The temperament octave: equal temperament on A4, of the octave the middle's type makes beatless once the curve stands (29 Oct 2026). */
         TEMPERAMENT,
-        /** An octave of the region's type and width, computed on the curve from the samples. */
+        /** An octave blended from the middle's type to the outer one by key, widened by the width, computed on the curve from the samples. */
         CURVE,
         /** No curve yet (nothing sampled): an octave to a measured note. */
         OCTAVE,
@@ -251,14 +262,17 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val checkCents: Double? = null,
     )
 
-    /** The octave partner of [midi] and the partials that meet: (partner, own k, partner's k). Null inside the temperament octave. */
-    fun partner(midi: Int): Triple<Int, Int, Int>? {
-        val type = settings.octaveTypeFor(midi)
-        return when {
-            midi < settings.temperamentLowMidi -> Triple(midi + type.semitones, type.low, type.high)
-            midi > TunerSettings.TEMPERAMENT_HIGH -> Triple(midi - type.semitones, type.high, type.low)
-            else -> null
-        }
+    /**
+     * The octave partner of [midi] and the partials that meet, by the octave type it is read on
+     * ([TunerSettings.octaveTypeFor]): (partner, own k, partner's k). Null inside the temperament octave.
+     */
+    fun partner(midi: Int): Triple<Int, Int, Int>? = partnerBy(midi, settings.octaveTypeFor(midi))
+
+    /** The partner of [midi] by octave type [type]: above it in the bass, below it in the treble; null inside the temperament octave. */
+    private fun partnerBy(midi: Int, type: OctaveType): Triple<Int, Int, Int>? = when {
+        midi < settings.temperamentLowMidi -> Triple(midi + type.semitones, type.low, type.high)
+        midi > TunerSettings.TEMPERAMENT_HIGH -> Triple(midi - type.semitones, type.high, type.low)
+        else -> null
     }
 
     /**
@@ -283,7 +297,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         // one band (TunerSettings.strobeOne): A4 and the temperament octave read on partial 2, at the place
         // the same target puts it -- the target is the fundamental's, as ever; only the partial read changes
         if (midi == MIDI_A4) return onPartial2(Listening(midi, 1, a4Hz, Source.REFERENCE))
-        val p = partner(midi) ?: return onPartial2(Listening(midi, 1, targetF1(midi, a4Hz), Source.TEMPERAMENT))
+        val p = partner(midi) ?: return onPartial2(Listening(midi, 1, curve.let { c -> if (c.ready) curveTargetF1(midi, c) else targetF1(midi, a4Hz) }, Source.TEMPERAMENT))
         val (refMidi, ownK, refK) = p
         val type = settings.octaveTypeFor(midi)
         val c = curve
@@ -326,25 +340,57 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     private var curveCacheKey: Any? = null
 
     /**
-     * The computed stretch: the first partial of [midi] such that its
-     * octave of the region's type, widened by the region's width, meets the
-     * modelled partial of its partner, chained outward from the temperament
-     * octave (equal temperament on A4). The strings' inharmonicity is the
-     * curve's, or their own where measured.
+     * The computed stretch, note by note, chained outward from the temperament octave (equal temperament on A4):
+     * the first partial of [midi] where its octave meets its partner's modelled partial, widened by the width
+     * ([TunerSettings.widthFor]). The octave is blended (29 Oct 2026): the target lies [TunerSettings.outerShare]
+     * of the way, in cents, from where the middle's octave type is beatless to where the outer type is — the
+     * middle's alone next to the temperament octave, the outer's alone at the lowest key and at C8. Until 29 Oct
+     * each region's type held whole up to its border, and the 225's F3-G3, under 10:5 one key below G#3 under
+     * 4:2, stood 4-4.5 c flat of their neighbour's rule. The strings' inharmonicity is the curve's, or their own
+     * where measured.
      */
     fun curveTargetF1(midi: Int, c: InharmonicityCurve = curve): Double {
         val key = Triple(a4Hz, settings, basis)
         if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
         curveCache[midi]?.let { return it }
-        val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) targetF1(midi, a4Hz) else {
-            val (refMidi, ownK, refK) = partner(midi)!!
-            val refHz = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c))
-            val sign = if (midi < refMidi) -1.0 else 1.0
-            val target = refHz * 2.0.pow(sign * settings.widthFor(midi) / 1200.0)
-            target / (ownK * Inharmonicity.ratio(ownK, bOf(midi, c)))
+        val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) temperamentF1(midi, c) else {
+            val w = settings.outerShare(midi)
+            val middle = if (w < 1.0) octaveTargetF1(midi, settings.octaveMiddle, c) else 0.0
+            val outer = if (w > 0.0) octaveTargetF1(midi, settings.outerTypeFor(midi), c) else 0.0
+            when {
+                w <= 0.0 -> middle
+                w >= 1.0 -> outer
+                else -> exp((1 - w) * ln(middle) + w * ln(outer))
+            }
         }
         curveCache[midi] = v
         return v
+    }
+
+    /**
+     * The temperament octave on the curve (29 Oct 2026): equal temperament of the octave below A4 that the middle's
+     * octave type makes beatless — its lower note where that octave to A4 has no beat, the semitones between it
+     * dividing it equally — as TuneLab's middle interval "4:2 (A3-A4)" does. Equal temperament on plain 2:1 put
+     * A3 about a cent sharp of that octave and G#3, a beatless octave below G#4, a cent flatter than A3 beside it:
+     * a border at the temperament's edge (ContinuousStretchTest). A middle type that is not an octave (4:1, 3:1)
+     * leaves the temperament octave on 2:1. A4 is the reference and does not move.
+     */
+    private fun temperamentF1(midi: Int, c: InharmonicityCurve): Double {
+        val type = settings.octaveMiddle
+        if (type.semitones != 12 || midi == MIDI_A4) return targetF1(midi, a4Hz)
+        val below = MIDI_A4 - 12
+        val lowerF1 = type.high * a4Hz * Inharmonicity.ratio(type.high, bOf(MIDI_A4, c)) / (type.low * Inharmonicity.ratio(type.low, bOf(below, c)))
+        val octaveCents = centsOff(a4Hz, lowerF1)        // the stretched octave, 1200 c and its stretch
+        return a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0 * octaveCents / 1200.0)
+    }
+
+    /** The first partial of [midi] where its octave of type [type] to its partner is beatless, widened by the width. */
+    private fun octaveTargetF1(midi: Int, type: OctaveType, c: InharmonicityCurve): Double {
+        val (refMidi, ownK, refK) = partnerBy(midi, type)!!
+        val refHz = refK * curveTargetF1(refMidi, c) * Inharmonicity.ratio(refK, bOf(refMidi, c))
+        val sign = if (midi < refMidi) -1.0 else 1.0
+        val target = refHz * 2.0.pow(sign * settings.widthFor(midi) / 1200.0)
+        return target / (ownK * Inharmonicity.ratio(ownK, bOf(midi, c)))
     }
 
     /**

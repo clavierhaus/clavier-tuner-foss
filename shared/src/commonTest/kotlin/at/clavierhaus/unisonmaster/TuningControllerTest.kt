@@ -65,6 +65,13 @@ class TuningControllerTest {
      * them. A steady string read through the catch at 0.85 s and the remeasure: its clean partials,
      * which the screen reads together, do not jump at either.
      */
+    /** Where the curve puts [midi]'s first partial, with [measured] as its basis: the targets as a session computes them. */
+    private fun curveF1(midi: Int, measured: List<at.clavierhaus.unisonmaster.tuning.NoteMeasurement>, st: TunerSettings): Double {
+        val s = TuningSession(a4, st, sampling = false)
+        for (m in measured) s.record(m)
+        return s.curveTargetF1(midi)
+    }
+
     @Test
     fun aPublishWhileSamplingDoesNotCostTheCleanPartialsAHopOfSound() {
         val (c, src) = controller()
@@ -390,7 +397,8 @@ class TuningControllerTest {
     @Test
     fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
-        val gs4 = measuredString(68, et(68), 7e-4)
+        // G#4 where the curve puts it: the temperament octave stretched to a beatless 4:2 since 29 Oct 2026
+        val gs4 = measuredString(68, curveF1(68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4)), settings.copy(temperamentFirst = false)), 7e-4)
         c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4), sampling = false))
         val t = c.tuning.value!!
         assertEquals(4, t.listening.k)
@@ -783,8 +791,9 @@ class TuningControllerTest {
         val midi = mutableListOf<Pair<Double, Int?>>()
         val log = src.afterBuffer!!
         src.afterBuffer = { at -> log(at); midi += at to c.tuning.value?.midi }
-        // G4 struck while G#4 is on screen, three cents sharp
-        c.hear(src, SyntheticString.strike(et(67) * 2.0.pow(3.0 / 1200), 7e-4, 3.0))
+        // G4 struck while G#4 is on screen, three cents sharp of its target (the stretched temperament octave, 29 Oct 2026)
+        val g4 = curveF1(67, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4), measuredString(67, et(67), 7e-4)), settings)
+        c.hear(src, SyntheticString.strike(g4 * 2.0.pow(3.0 / 1200), 7e-4, 3.0))
         val followedAt = midi.first { it.first > 0.3 && it.second == 67 }.first
         val live = trail.filter { it.first >= followedAt && it.second.live }
         val first = live.first()

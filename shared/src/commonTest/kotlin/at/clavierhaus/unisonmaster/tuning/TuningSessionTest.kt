@@ -94,32 +94,34 @@ class TuningSessionTest {
         val gs4 = measuredString(68, et(68), 7e-4)
         s.record(gs4)
         assertEquals(-2.0, cents(s.listening(56).targetHz, gs4.partialHz(2)!!), 1e-9)
-        // the treble: A#4 is the upper note of a double octave (4:1) over A#2
-        val as2 = measuredString(46, et(46), 0.0)         // B unknown: the curve does not stand on it
-        s.record(as2)
-        val l = s.listening(70)
+        // the treble: C7, past half way to C8, is read as the upper note of a double octave (4:1) over C5; without a
+        // curve, on the octave alone, widened by the width blended to its place (29 Oct 2026)
+        val c5 = measuredString(72, et(72), 0.0)          // B unknown: the curve does not stand on it
+        s.record(c5)
+        val l = s.listening(96)
         assertEquals(OctaveType.O4_1, l.type)
-        assertEquals(46, l.refMidi)
+        assertEquals(72, l.refMidi)
         assertEquals(1, l.k)
-        assertEquals(3.0, cents(l.targetHz, as2.partialHz(4)!!), 1e-9)
-        assertEquals(3.0, l.widthCents)
+        val width = 2.0 + (3.0 - 2.0) * 26.0 / 38
+        assertEquals(width, cents(l.targetHz, c5.partialHz(4)!!), 1e-9)
+        assertEquals(width, l.widthCents, 1e-12)
     }
 
     @Test
-    fun theRegionsGiveTheOctaveType() {
+    fun theNoteIsReadOnTheOctaveTypeWithTheLargerShare() {
+        // F0 to G#3 is 39 steps (pro's lowest key): up to half way the middle's 4:2, beyond it the bass's
         val s = TuningSession(a4, pro, sampling = false)
-        for (m in listOf(56, 52, 39)) s.record(measuredString(m + 12, et(m + 12), 5e-4))
-        assertEquals(OctaveType.O4_2, s.listening(56).type)           // middle
-        assertEquals(4, s.listening(56).k)
-        assertEquals(OctaveType.O6_3, s.listening(52).type)           // bass: within an octave of E2
-        assertEquals(6, s.listening(52).k)
-        assertEquals(OctaveType.O6_3, s.listening(39).type)           // wound, below E2: the bass region's type, one bass since 4 Oct 2026
+        for (m in listOf(56, 52, 30)) s.record(measuredString(m + 12, et(m + 12), 5e-4))
+        assertEquals(OctaveType.O4_2, s.listening(56).type); assertEquals(4, s.listening(56).k)
+        assertEquals(OctaveType.O4_2, s.listening(52).type, "E3, an octave above E2: no border there any more (29 Oct 2026)")
+        assertEquals(OctaveType.O6_3, s.listening(30).type); assertEquals(6, s.listening(30).k)
+        // without a curve, the octave alone to its measured partner, widened by the width blended to its place
         val bass = TuningSession(a4, pro.copy(octaveBass = OctaveType.O8_4, widthBass = 10.0), sampling = false)
-        val e3 = measuredString(51, et(51), 5e-4)
-        bass.record(e3)
-        val l = bass.listening(39)
+        val ds2 = measuredString(39, et(39), 5e-4)
+        bass.record(ds2)
+        val l = bass.listening(27)
         assertEquals(8, l.k)
-        assertEquals(-10.0, cents(l.targetHz, e3.partialHz(4)!!), 1e-9)
+        assertEquals(-10.0 * 29.0 / 39, cents(l.targetHz, ds2.partialHz(4)!!), 1e-9)
     }
 
     @Test
@@ -160,13 +162,14 @@ class TuningSessionTest {
     }
 
     @Test
-    fun theInharmonicityOfAWoundStringComesFromAWoundString() {
+    fun beforeTheCurveOneStringStandsInAndThenTheLineRunsThroughTheFloor() {
         val s = TuningSession(a4, pro, sampling = false)
-        s.record(measuredString(40, et(40), 1.5e-4))       // E2, plain
-        s.record(measuredString(35, et(35), 6e-5))         // B1, wound
-        assertEquals(6e-5, s.predictedB(38), 1e-12)
-        assertEquals(1.5e-4, s.predictedB(45), 1e-12)
-        assertEquals(StringMeasure.DEFAULT_B, TuningSession(a4, pro, sampling = false).predictedB(50))
+        assertEquals(StringMeasure.DEFAULT_B, s.predictedB(50))
+        s.record(measuredString(35, et(35), 6e-5))         // B1, wound: the only string, it stands in
+        assertEquals(6e-5, s.predictedB(45), 1e-12)
+        s.record(measuredString(40, et(40), 1.5e-4))       // E2, plain: two strings, a line, no cut between them (29 Oct 2026)
+        val b38 = s.predictedB(38)
+        assertTrue(b38 > 6e-5 && b38 < 1.5e-4, "D2 on the line between B1 and E2: $b38")
     }
 
     @Test
@@ -324,17 +327,20 @@ class TuningSessionTest {
     }
 
     @Test
-    fun theCurveFitsLnBPerSegmentAndBreaksAtTheFloor() {
-        // plain wire doubling B every octave from 1e-4 at E2; wound strings flat at 6e-5
-        val samples = (40..96 step 4).associateWith { 1e-4 * 2.0.pow((it - 40) / 12.0) } + mapOf(20 to 6e-5, 32 to 6e-5)
-        val c = InharmonicityCurve(samples, 40)
+    fun theCurveIsOneSmoothLineAndBreaksOnlyWhereTheTunerMarksOne() {
+        // a part rising up the plain wire and a part falling down the wound bass, sampled at nine keys
+        fun b(m: Int) = 1.2e-4 * kotlin.math.exp(0.06 * (m - 60)) + 2.0e-4 * kotlin.math.exp(-0.08 * (m - 21))
+        val samples = listOf(21, 28, 36, 41, 45, 50, 57, 64, 76).associateWith { b(it) }
+        val c = InharmonicityCurve(samples)
         assertTrue(c.ready)
-        assertEquals(1e-4 * 2.0.pow(10 / 12.0), c.b(50)!!, 2e-6, "between samples, on the line")
-        assertEquals(1e-4 * 2.0.pow(60 / 12.0), c.b(100)!!, 2e-4 * 2.0.pow(60 / 12.0) * 0.02, "beyond the top, on the line")
-        assertEquals(6e-5, c.b(26)!!, 1e-9, "wound: its own segment, not the plain line")
-        // a break at C4 splits the plain line: below it, one flat run; above, another
+        for (m in listOf(24, 33, 39, 43, 48, 53, 60, 70))
+            assertEquals(1.0, c.b(m)!! / b(m), 0.02, "midi $m: between samples, on the line")
+        assertEquals(1.0, c.b(96)!! / b(96), 0.05, "beyond the top, on the line")
+        // no cut at the lowest plain string any more (29 Oct 2026): the line runs through it
+        assertEquals(1.0, c.b(43)!! / c.b(42)!!, 0.06, "G2 against F#2: one step of the same line")
+        // a break the tuner marks at C4 splits it: below it, one flat run; above, another
         val split = (40..56 step 4).associateWith { 2e-4 } + (60..96 step 4).associateWith { 8e-4 }
-        val d = InharmonicityCurve(split, 40, breaks = setOf(60))
+        val d = InharmonicityCurve(split, breaks = setOf(60))
         assertEquals(2e-4, d.b(58)!!, 1e-9); assertEquals(8e-4, d.b(61)!!, 1e-9)
     }
 
@@ -349,17 +355,19 @@ class TuningSessionTest {
         assertEquals(null, l.checkCents, "G#4 not tuned: nothing to check against")
         // the chain: G#4's second partial as the curve models it, a cent wide
         val bGs4 = s.curve.b(68)!!
-        val gs4p2 = 2 * et(68) * Inharmonicity.ratio(2, bGs4)
+        val gs4p2 = 2 * s.curveTargetF1(68) * Inharmonicity.ratio(2, bGs4)
         assertEquals(gs4p2 * 2.0.pow(-1.0 / 1200), l.targetHz, 1e-6)
         // G#4 tuned a cent sharp of the curve's place: the check says so
-        s.record(measuredString(68, et(68) * 2.0.pow(1.0 / 1200), bGs4))
+        s.record(measuredString(68, s.curveTargetF1(68) * 2.0.pow(1.0 / 1200), bGs4))
         val l2 = s.listening(56)
         assertEquals(l.targetHz, l2.targetHz, 1e-6, "the curve stays the target")
         assertEquals(-1.0, l2.checkCents!!, 0.05, "the partner stands a cent sharp: the octave to it a cent narrower")
-        // the treble chains upward the same way: A5 over A3 as a 4:1, the default since 23 Oct 2026
-        // (A5 over A4 as a 4:2 from 4 Oct to then)
+        // the treble chains upward the same way: A5, under half way to C8, read on the middle's 4:2 over A4;
+        // C8 on the treble's 4:1 over C6 (the default since 23 Oct 2026)
         val t = s.listening(81)
-        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(57, t.refMidi); assertEquals(OctaveType.O4_1, t.type)
+        assertEquals(TuningSession.Source.CURVE, t.source); assertEquals(69, t.refMidi); assertEquals(OctaveType.O4_2, t.type)
+        val top = s.listening(108)
+        assertEquals(84, top.refMidi); assertEquals(OctaveType.O4_1, top.type)
     }
 }
 
@@ -377,11 +385,11 @@ class TwelfthOctaveTypeTest {
         for ((m, b) in listOf(69 to 4e-4, 36 to 1.5e-4, 48 to 2e-4, 57 to 3e-4, 60 to 3.2e-4, 65 to 3.6e-4, 84 to 9e-4, 96 to 2e-3))
             s.record(measuredString(m, TuningSession.targetF1(m, a4), b))
         s.finishSampling()
-        assertEquals(Triple(65, 1, 3), s.partner(84), "C6's partner on the twelfth is F4, its partial 3")
+        assertEquals(Triple(89, 1, 3), s.partner(108), "C8's partner on the twelfth is F6, its partial 3")
         val c = s.curve
-        val c6 = s.curveTargetF1(84, c)
-        val f4p3 = 3 * s.curveTargetF1(65, c) * Inharmonicity.ratio(3, 3.6e-4)
-        assertEquals(0.0, TuningSession.centsOff(c6 * Inharmonicity.ratio(1, 9e-4), f4p3), 0.01, "C6's partial 1 on F4's partial 3")
+        val c8 = s.curveTargetF1(108, c)
+        val f6p3 = 3 * s.curveTargetF1(89, c) * Inharmonicity.ratio(3, c.b(89)!!)
+        assertEquals(0.0, TuningSession.centsOff(c8 * Inharmonicity.ratio(1, c.b(108)!!), f6p3), 0.01, "C8's partial 1 on F6's partial 3: the twelfth beatless at the top (29 Oct 2026: blended below it)")
     }
 
 }
@@ -407,11 +415,13 @@ class OneBandTest {
             val f1 = off.listening(m).targetHz
             assertEquals(2 * f1 * Inharmonicity.ratio(2, on.predictedB(m)), on.listening(m).targetHz, 1e-9)
         }
-        // E5 in the treble (4:1 by default), partner untuned: the map says partial 2, the octave type partial 1
+        // E5, under half way to C8, is read on the middle's 4:2 (29 Oct 2026): the upper note's partial 2;
+        // C7, past half way, on the treble's 4:1 (the default), partner untuned: the map says partial 1 here too
         assertEquals(PartialMap.listening(76), off.listening(76).k)
-        assertEquals(2, off.listening(76).k)
-        assertEquals(OctaveType.O4_1, on.listening(76).type)
-        assertEquals(1, on.listening(76).k)
+        assertEquals(OctaveType.O4_2, on.listening(76).type)
+        assertEquals(2, on.listening(76).k)
+        assertEquals(OctaveType.O4_1, on.listening(96).type)
+        assertEquals(1, on.listening(96).k)
         // a treble set out as 4:2: the upper note's partial 2
         val on42 = TuningSession(a4, pro.copy(strobeOne = true, octaveTreble = OctaveType.O4_2), sampling = false)
         assertEquals(2, on42.listening(76).k)

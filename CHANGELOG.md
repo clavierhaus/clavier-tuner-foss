@@ -7,6 +7,24 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-29
+- **The tuning curve has no borders.** The bass's octave type is beatless at
+  the lowest key, the treble's at C8, the middle's next to the temperament
+  octave; every octave between moves key by key from one to the other, and
+  the extra stretch with it. Until now each region's type held whole up to its
+  edge, and the bass's reached an octave above the lowest plain string: with
+  the bass at 10:5 and the lowest plain string set a few keys too high, F3–G3
+  were tuned 4–4.5 cents flatter than G#3 beside them, and the major thirds
+  from F3 up beat slower instead of faster. The lowest plain string no longer
+  changes the stretch.
+- **The temperament octave is stretched too:** the octave below A4 is a
+  beatless octave of the middle's type, divided equally (it was 2:1 by the
+  fundamentals, which left A3 about a cent sharp of the octave beside it).
+- **The inharmonicity curve is one smooth line** through the measured
+  strings, falling through the wound bass and rising up the plain wire, with
+  no cut at the lowest plain string. A break you mark (Pro) still starts a new
+  line. Strings not measured are predicted about twice as closely as before.
+
 ## 0.6.0 -- 2026-10-28
 
 ## 0.5.1 -- 2026-10-27

@@ -53,8 +53,10 @@ data class TunerSettings(
      * 14:34. Off by default: the professional's way.
      */
     val temperamentFirst: Boolean = false,
-    // STRETCH — three regions: the bass (the lowest key up to an octave above the lowest plain
-    // string, wound and plain alike — one region since 4 Oct 2026, Peter's word), the middle, the treble
+    // STRETCH — three octave types, no borders (29 Oct 2026): the middle's is beatless at the temperament octave's
+    // edges, the bass's at the lowest key, the treble's at C8, and every octave between blends by key from the
+    // middle's to the outer one ([outerShare]). Until then the bass's type held from the lowest key up to an octave
+    // above the lowest plain string, and the switch to the middle's on one key broke the 225's thirds F3-A3 (29 Oct).
     val octaveBass: OctaveType = OctaveType.O6_3,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
     /**
@@ -82,7 +84,6 @@ data class TunerSettings(
      * lower it goes (the 225's, 30 Sept): this is that.
      */
     val widthBassFar: Double? = null,
-    val widthMiddleFar: Double? = null,
     val widthTrebleFar: Double? = null,
     /** Interval weights 0..10 for the stretch calculation. */
     val weightOctave: Int = 10,
@@ -91,9 +92,10 @@ data class TunerSettings(
     val weightFifth: Int = 2,
     // PIANO
     /**
-     * Lowest plain (unwound) string; wound strings below it follow a different
-     * physics. The session runs down to here; the bass octave type takes over
-     * one octave above it.
+     * Lowest plain (unwound) string. The stretch does not depend on it (29 Oct 2026: set to G2 on the 225, whose
+     * plain wire starts at E2, it put the bass's 10:5 on F3-G3 through the old border an octave above it). Before
+     * the sampling has drawn a curve, a note not yet measured borrows the nearest measured string of its own kind
+     * of wire; the session runs down to here at least.
      */
     val lowestUnwoundMidi: Int = 43,           // G2
     /**
@@ -232,45 +234,63 @@ data class TunerSettings(
     /** True for a wound string: below the lowest plain one. */
     fun isWound(midi: Int): Boolean = midi < lowestUnwoundMidi
 
-    /** Below this note the bass octave type applies: an octave above the lowest plain string. */
-    val bassBoundaryMidi: Int get() = lowestUnwoundMidi + 12
-
-    /** The stretch region [midi] lies in, 0..2: bass, middle, treble — the order of the Stretch pages in Settings. */
+    /** The stretch page [midi] lies on, 0..2: bass, middle, treble — the order of the Stretch pages in Settings. */
     fun regionOf(midi: Int): Int = when {
-        midi <= bassBoundaryMidi -> 0
+        midi < temperamentLowMidi -> 0
         midi > TEMPERAMENT_HIGH -> 2
         else -> 1
     }
 
     /**
-     * Which octave type links [midi] to an already tuned note: the bass up
-     * to an octave above the plain-wire floor (the wound strings with it),
-     * the treble above the temperament octave, the middle in between.
+     * How far [midi]'s octave has moved from the middle's octave type towards the outer one, 0..1 (29 Oct 2026):
+     * 0 at the octave next to the temperament octave (G#3 below it, A#4 above it), 1 at the lowest key below and
+     * at C8 above, in equal steps by key between. Every octave's target lies this share of the way from where the
+     * middle's type makes it beatless to where the outer type does ([TuningSession.curveTargetF1]), so no key
+     * differs from its neighbour by more than one step and there is no border anywhere. Measured, not chosen:
+     * TuneLab's targets on the Samick (9 Oct, 3-part tuning 6:3 / 4:2 / 4:1, its own inharmonicity samples) put
+     * the octaves on this straight line from G#3 (share −0.05) to A0 (1.00) within 0.05 from F1 to G#3 except at
+     * its own inharmonicity breaks (Pro `docs/STRETCH.md`); its manual says the same in words —
+     * the lowest and highest intervals beatless, the rest blended gradually, note by note. 0 in the temperament
+     * octave, which has no octave type.
      */
-    fun octaveTypeFor(midi: Int): OctaveType = when {
-        midi <= bassBoundaryMidi -> octaveBass
+    fun outerShare(midi: Int): Double = when {
+        midi < temperamentLowMidi -> share(temperamentLowMidi - 1 - midi, temperamentLowMidi - 1 - lowestKeyMidi)
+        midi > TEMPERAMENT_HIGH -> share(midi - TEMPERAMENT_HIGH - 1, MIDI_C8 - TEMPERAMENT_HIGH - 1)
+        else -> 0.0
+    }
+
+    private fun share(steps: Int, span: Int): Double = if (span <= 0) 1.0 else (steps.toDouble() / span).coerceIn(0.0, 1.0)
+
+    /** The outer octave type on [midi]'s side of the temperament octave: the bass's below it, the treble's above, the middle's inside. */
+    fun outerTypeFor(midi: Int): OctaveType = when {
+        midi < temperamentLowMidi -> octaveBass
         midi > TEMPERAMENT_HIGH -> octaveTreble
         else -> octaveMiddle
     }
 
     /**
-     * The octave width for [midi], cents: its region's width at the end
-     * nearest the temperament octave, sliding to the far end's where one is
-     * set ([widthBassFar] …), by key — the bass from an octave above the
-     * plain-wire floor down to the lowest key.
+     * The octave type whose partials [midi] is read on: the one with the larger share in its target — the middle's
+     * up to half way ([outerShare] below one half), the outer one beyond. Which partial is read moves no target
+     * (TuneLab's manual, p. 17: the curve looks discontinuous where the partial changes, the tuning is not); it is
+     * the partial that speaks for the octave the note mostly stands on.
+     */
+    fun octaveTypeFor(midi: Int): OctaveType = if (outerShare(midi) >= 0.5) outerTypeFor(midi) else octaveMiddle
+
+    /**
+     * The octave width for [midi], cents, blended as the octave type is ([outerShare]): the middle's width next
+     * to the temperament octave, the outer region's at the far end — its far width where one is set
+     * ([widthBassFar], [widthTrebleFar]), sliding there from the region's own — in equal steps by key.
      */
     fun widthFor(midi: Int): Double {
-        val (near, far, nearMidi, farMidi) = when {
-            midi <= bassBoundaryMidi -> Region(widthBass, widthBassFar, bassBoundaryMidi, lowestKeyMidi)
-            midi > TEMPERAMENT_HIGH -> Region(widthTreble, widthTrebleFar, TEMPERAMENT_HIGH + 1, MIDI_C8)
-            else -> Region(widthMiddle, widthMiddleFar, temperamentLowMidi - 1, bassBoundaryMidi + 1)
+        val w = outerShare(midi)
+        val (own, far) = when {
+            midi < temperamentLowMidi -> widthBass to widthBassFar
+            midi > TEMPERAMENT_HIGH -> widthTreble to widthTrebleFar
+            else -> return widthMiddle
         }
-        if (far == null || farMidi == nearMidi) return near
-        val t = ((midi - nearMidi).toDouble() / (farMidi - nearMidi)).coerceIn(0.0, 1.0)
-        return near + (far - near) * t
+        val outer = own + ((far ?: own) - own) * w
+        return widthMiddle + (outer - widthMiddle) * w
     }
-
-    private data class Region(val near: Double, val far: Double?, val nearMidi: Int, val farMidi: Int)
 }
 
 /**
@@ -320,7 +340,7 @@ class SettingsModel(
             widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthTreble = f("widthTreble", d.widthTreble).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
             widthBassFar = fOrNull("widthBassFar"),
-            widthMiddleFar = fOrNull("widthMiddleFar"), widthTrebleFar = fOrNull("widthTrebleFar"),
+            widthTrebleFar = fOrNull("widthTrebleFar"),
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -352,7 +372,6 @@ class SettingsModel(
         store.put("widthMiddle", s.widthMiddle.toString())
         store.put("widthTreble", s.widthTreble.toString())
         store.put("widthBassFar", s.widthBassFar?.toString() ?: "")
-        store.put("widthMiddleFar", s.widthMiddleFar?.toString() ?: "")
         store.put("widthTrebleFar", s.widthTrebleFar?.toString() ?: "")
         store.put("weightOctave", s.weightOctave.toString())
         store.put("weightTwelfth", s.weightTwelfth.toString())

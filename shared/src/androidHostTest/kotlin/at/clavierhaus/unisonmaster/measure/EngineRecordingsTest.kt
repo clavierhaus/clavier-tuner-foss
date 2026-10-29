@@ -130,7 +130,7 @@ class EngineRecordingsTest {
             val region = when {
                 midi in settings.temperamentLowMidi..TunerSettings.TEMPERAMENT_HIGH -> "temperament"
                 settings.isWound(midi) -> "wound"
-                midi <= settings.bassBoundaryMidi -> "bass"
+                midi < settings.temperamentLowMidi -> "plain bass"
                 midi > TunerSettings.TEMPERAMENT_HIGH -> "treble"
                 else -> "middle"
             }

@@ -416,7 +416,8 @@ default and always offered (Peter, 28 Oct 2026: "the option to show all partials
 there"), is the picture as before: every partial the strike carries, each in its own band, one tap
 taking one out. *Octave partial* shows one band, the same in every register (Gregor: a number of
 bands that changes from register to register irritates): the partial on which the note meets its
-octave by the region's octave type, which is the partial the target is computed on
+octave by the octave type it is read on (`TunerSettings.octaveTypeFor`: the middle's up to half way to
+the end of the range, the outer type's beyond, since 29 Oct 2026), which is the partial the target is read on
 (`TuningSession.partner`): 4:2 gives the upper note's partial 2 and the lower note's 4, 6:3 gives
 3 and 6, 2:1, 4:1 and 3:1 the upper note's 1. A4 and the temperament octave have no octave type
 and show partial 2, as in 4:2 (Peter: "the most neutral one"), read at the place the same target
