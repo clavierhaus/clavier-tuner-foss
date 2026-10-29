@@ -141,12 +141,13 @@ class EngineRecordingsTest {
             val sorted = v.sorted()
             println("%-11s n=%2d  median %+5.2f c   p10..p90 %+5.1f..%+5.1f".format(region, v.size, sorted[v.size / 2], sorted[v.size / 10], sorted[v.size * 9 / 10]))
         }
-        // beatless octaves of the set types (width 0): the middle and the treble were
-        // tuned within a few cents of them; the bass was tuned wider — the tuner's
-        // width, a setting, printed here and not asserted
+        // beatless octaves of the set types (width 0): the plain strings below the temperament and the
+        // treble were tuned within a few cents of them; the wound bass was tuned wider — the tuner's
+        // width, a setting, printed here and not asserted. "plain bass" was "bass" and "middle", split
+        // an octave above the lowest plain string, until the stretch lost its borders (29 Oct 2026)
         fun median(r: String) = byRegion[r]!!.sorted().let { it[it.size / 2] }
         assertTrue(abs(median("temperament")) < 2.0, "temperament ${median("temperament")}")
-        assertTrue(abs(median("middle")) < 3.0, "middle ${median("middle")}")
+        assertTrue(abs(median("plain bass")) < 3.0, "plain bass ${median("plain bass")}")
         assertTrue(abs(median("treble")) < 4.0, "treble ${median("treble")}")
     }
 
