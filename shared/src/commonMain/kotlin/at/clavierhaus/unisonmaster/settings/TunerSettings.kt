@@ -226,7 +226,7 @@ data class TunerSettings(
          * how often both stand within 20 dB of their string's loudest, per register (Pro research/ProbeOctaveStyle.kt;
          * the Knight upright of VCSL, BiVib's Yamaha DU1A at two strengths, the Samick SG 172 A0-A4; Pro docs/STRETCH.md
          * §8). In the bass A0-B1, 4:2, 6:3 and 10:5 are heard in 62-100 % of the octaves, 2:1 in 37-73 % (the first
-         * partial is weak there) and 8:4 in 6-62 %; at the temperament octave A3-A4, 2:1 in 72-100 %, 4:2 in 18-100 %,
+         * partial is weak there) and 8:4 in 6-62 %; at the temperament octave A3-A4, 2:1 in 72-100 %, 4:2 in 18-42 %,
          * 6:3 in 0-16 %; in the treble A#4-B5, 2:1 in 75-100 %, 4:1 in 66-85 %, 3:1 in 64-66 %, 4:2 in 16-28 %, the
          * wider ones never. 4:1 in the bass and 4:1 or 3:1 in the middle also never gave a target: the partner crossed
          * the temperament octave and the chain came back to where it began (OctaveChoicesTest).
