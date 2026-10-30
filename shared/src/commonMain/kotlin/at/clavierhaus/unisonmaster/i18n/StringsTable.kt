@@ -128,6 +128,11 @@ object K {
     const val settings_strobeAll = "settings.strobeAll"
     const val settings_strobeOne = "settings.strobeOne"
     const val settings_note_strobeOne = "settings.note.strobeOne"
+    const val settings_strobeCount = "settings.strobeCount"
+    const val settings_strobeCountAll = "settings.strobeCountAll"
+    const val settings_note_strobeCount = "settings.note.strobeCount"
+    const val settings_strobeTogether = "settings.strobeTogether"
+    const val settings_note_strobeTogether = "settings.note.strobeTogether"
     const val settings_highestPartial = "settings.highestPartial"
     const val settings_reading = "settings.reading"
     const val settings_readingMemory = "settings.readingMemory"
@@ -314,6 +319,11 @@ internal object StringsTable : Catalog {
         "settings.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
         "settings.strobeOne" to arrayOf("Octave partial", "Oktavteilton"),
         "settings.note.strobeOne" to arrayOf("Octave partial: one band, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.", "Oktavteilton: ein Band, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert."),
+        "settings.strobeCount" to arrayOf("Number of bands", "Anzahl der Bänder"),
+        "settings.strobeCountAll" to arrayOf("all", "alle"),
+        "settings.note.strobeCount" to arrayOf("How many bands the strobe shows: the lowest partials offered for the note, the band being tuned always among them. All, or any number from 1.", "Wie viele Bänder das Stroboskop zeigt: die tiefsten Teiltöne des Tons, das gestimmte Band immer dabei. Alle oder jede Zahl ab 1."),
+        "settings.strobeTogether" to arrayOf("Bands appear together", "Bänder erscheinen gemeinsam"),
+        "settings.note.strobeTogether" to arrayOf("On: the row comes up at once, when every band has been read, at most 0.8 s after the first. Off: each band comes up as soon as its partial is read. Either way a band fades in over 0.3 s.", "Ein: die Reihe erscheint auf einmal, sobald jedes Band gelesen ist, höchstens 0,8 s nach dem ersten. Aus: jedes Band erscheint, sobald sein Teilton gelesen ist. In beiden Fällen blendet ein Band über 0,3 s ein."),
         "settings.highestPartial" to arrayOf("Partials up to", "Teiltöne bis"),
         "settings.reading" to arrayOf("Strobe", "Stroboskop"),
         "settings.readingMemory" to arrayOf("Averaging time", "Mittelungszeit"),

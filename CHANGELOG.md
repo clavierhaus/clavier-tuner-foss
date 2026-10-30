@@ -7,6 +7,19 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-30
+- **The key struck is caught sooner:** about 0.17 s after the strike instead
+  of 0.26 s, with no more wrong keys named than before.
+- **The strobe's row stands at once.** Every partial offered for the note has
+  its band from the moment the note is on screen; a band fills in as soon as
+  its partial is read, and fades in over 0.3 s. Until now the row grew band by
+  band as the partials were read, the low ones last.
+- **Settings › Strobe › Number of bands:** all, as before, or any number from
+  1: the lowest partials, the band being tuned always among them.
+- **Settings › Strobe › Bands appear together:** off, each band comes up as
+  it is read; on, the row comes up at once when every band has been read, at
+  most 0.8 s after the first.
+
 ### 2026-10-29
 - **The tuning curve has no borders.** The bass's octave type is beatless at
   the lowest key, the treble's at C8, the middle's next to the temperament

@@ -74,6 +74,21 @@ private const val FALSE_MARKS_ON_TUNING = true
 /** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
 private val SAMPLING_SEATS: List<Int> = (1..5).toList()
 
+/**
+ * The tuning screen's bands, in seats fixed for the note from the moment it is on screen, so the whole row
+ * stands at once and never grows band by band (Peter, 30 Oct 2026: "make all partials you can catch visible at
+ * the same time"). The seats are the partials offered under the strobe (1 to [offered], the chips' row) less the
+ * ones the tuner took out, the lowest [count] of them with the band being tuned always among them, or all for 0.
+ * A seat whose partial is not read stands empty. With one band (strobeOne) the seats are what the engine reads.
+ */
+internal fun strobeSeats(offered: Int, tuned: Int, hidden: Set<Int>, count: Int, oneBand: Boolean, shown: Set<Int>): List<Int> {
+    if (oneBand) return (shown + tuned).sorted()
+    val all = ((1..offered).toSet() - hidden + tuned).sorted()
+    if (count <= 0 || all.size <= count) return all
+    val lowest = all.take(count)
+    return if (tuned in lowest) lowest else (lowest.dropLast(1) + tuned).sorted()
+}
+
 @Composable
 fun BasicHub(
     controller: TuningController,
@@ -115,6 +130,7 @@ fun BasicHub(
     val a4 by controller.referenceA4Hz.collectAsState()
     val tuning by controller.tuning.collectAsState()
     val shownTuning by controller.shownPartials.collectAsState()
+    val hiddenTuning by controller.hiddenPartials.collectAsState()
     val suggested by controller.suggested.collectAsState()
     val active by controller.activePartial.collectAsState()
     val targets by controller.targets.collectAsState()
@@ -152,7 +168,8 @@ fun BasicHub(
                 falsePartials = read?.falsePartials?.toSet() ?: emptySet(), dropped = emptySet(),
                 matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
                 // while sampling the stripes are partials 1-5 in fixed seats (Peter, 7 Oct 2026)
-                seats = if (t.sampling) SAMPLING_SEATS else null,
+                seats = if (t.sampling) SAMPLING_SEATS else strobeSeats(controller.highestPartial(liveTarget), read?.k ?: l.k,
+                    hiddenTuning, cfg.strobeCount, cfg.strobeOne, shownTuning),
             )
         }
         // Since 22 Oct 2026 the A4 page shows the string's partials 2 and up as strobes too, each against the
@@ -257,6 +274,7 @@ fun BasicHub(
                     follows = follows,
                     left = leftPanel,
                     greenBands = greenBands, dimBands = dimBands,
+                    together = cfg.strobeTogether,
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,

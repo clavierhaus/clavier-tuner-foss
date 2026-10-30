@@ -49,6 +49,19 @@ A tuning feature is built here, once.
 The unison screen is Pro's (Peter, 4 Oct 2026, 15:26: "a USP for Pro
 only") and lives in Pro, not here. The free app has no *The Unisons* door.
 
+## The strobe's row: fixed seats, a fade, a number (30 Oct 2026)
+
+On the tuning screen the bands stand in seats fixed for the note: the
+partials offered under the strobe (the chips' row) less the ones the tuner
+took out, the lowest *Number of bands* of them with the band being tuned
+always among them, or all (`BasicHub.strobeSeats`). Until now the row was
+chosen from what sounded (`autoFour`) and grew band by band as the partials
+were read. A seat whose partial is not read stands as an empty frame. A
+band comes up over 0.3 s from the frame in which it is first read
+(`picture/BandFade`); with *Bands appear together* the row waits for every
+band, at most 0.8 s after the first, and comes up as one. With *Octave
+partial* the seats are what the engine reads, as before.
+
 ## The app between the phone and the screens (30 Oct 2026)
 
 What the free app's `MainActivity` did between the phone and the screens —

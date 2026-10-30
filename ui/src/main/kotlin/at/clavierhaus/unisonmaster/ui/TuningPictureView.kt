@@ -25,7 +25,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.picture.BandFade
 import at.clavierhaus.unisonmaster.picture.BandPhase
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import kotlin.math.abs
 import androidx.compose.foundation.background
@@ -83,6 +85,8 @@ fun TuningPictureView(
     /** Bands an edition draws green, and bands it dims (24 Oct 2026): the picture's colours, its own reasons. */
     greenBands: Set<Int> = emptySet(),
     dimBands: Set<Int> = emptySet(),
+    /** The bands come up together, or each as it is read (TunerSettings.strobeTogether, 30 Oct 2026). */
+    together: Boolean = false,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -130,10 +134,10 @@ fun TuningPictureView(
             // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where
             // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
-            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands) } }
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands, together) } }
         } else if (hint != null) Place(0.00f, HINT_BAND + 0.02f, 1.00f, 0.98f - HINT_BAND) {
-            Panel { Bands(p, marks, greenBands, dimBands) }
-        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands) } }   // the full width, column over the button below it
+            Panel { Bands(p, marks, greenBands, dimBands, together) }
+        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands, together) } }   // the full width, column over the button below it
     }
 }
 
@@ -148,7 +152,7 @@ private fun Panel(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet()) {
+private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet(), together: Boolean = false) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
@@ -158,6 +162,8 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
     // elapsed session to every whisper in the reading, so the pattern teleported between frames
     // and stillness at the target could not be drawn (picture/BandPhase.kt has the measurement).
     val carried = remember(p.note) { BandPhase() }
+    // how far each band has come up (picture/BandFade.kt): over 0.3 s from its first reading, or the row at once
+    val fade = remember(p.note) { BandFade((TunerSettings.STROBE_FADE_S * 1000).toLong(), (TunerSettings.STROBE_TOGETHER_WAIT_S * 1000).toLong()) }
     Canvas(Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
         val top = h * 0.05f; val base = h * 0.93f
@@ -173,6 +179,7 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
             p.bells.firstOrNull { it.k == k }?.let { k to -(it.hz - it.targetHz) / k }
         }.toMap()
         val phases = carried.advance(millis, rates)
+        val strength = fade.alphas(millis, ks.filter { k -> p.bells.any { it.k == k } }.toSet(), ks.toSet(), together)
         // the gaps are what keep bands apart; a lone band has nothing to keep apart from and takes
         // more of its column (Peter, 7 Oct 2026: the one band of the A4 screen, larger)
         val bandShare = if (ks.size == 1) 0.72f else 0.52f
@@ -181,7 +188,8 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
             val bx = i * cw + (cw - bw) / 2f
             val bh = base - top
             val b = p.bells.firstOrNull { it.k == k }
-            if (b == null) {
+            val a = strength[k] ?: 0f
+            if (b == null || a == 0f) {
                 // a fixed seat with nothing in it: its frame stands, so the row never closes up
                 drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.18f), Offset(bx, top), Size(bw, bh), style = Stroke(1f))
                 continue
@@ -198,7 +206,7 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
                 k in greens -> Color(Brand.GO_GREEN)
                 marks && k in p.falseMarked -> Color(Brand.FALSE_VIOLET)
                 else -> Color(Brand.ORANGE)
-            }
+            }.let { it.copy(alpha = it.alpha * a) }
             clipRect(bx, top, bx + bw, base) {
                 val solid = sh * 0.46f
                 for (seg in 0..k) {

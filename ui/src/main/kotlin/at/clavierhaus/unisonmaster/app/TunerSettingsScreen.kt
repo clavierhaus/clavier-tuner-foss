@@ -149,6 +149,22 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             ChoiceRow(t(K.settings_strobeShows), listOf(t(K.settings_strobeAll), t(K.settings_strobeOne)), if (s.strobeOne) 1 else 0, info = t(K.settings_note_strobeOne)) { i ->
                 model.update { it.copy(strobeOne = i == 1) }
             }
+            // how many of them, or all; and whether the row comes up at once (Peter, 30 Oct 2026). One step
+            // below all is the most there are; the stepper runs 1, 2 … MAX_STROBE_COUNT, all
+            if (!s.strobeOne) {
+                StepperRow(
+                    t(K.settings_strobeCount),
+                    if (s.strobeCount == 0) t(K.settings_strobeCountAll) else s.strobeCount.toString(),
+                    canDecrease = s.strobeCount != 1,
+                    canIncrease = s.strobeCount != 0,
+                    info = t(K.settings_note_strobeCount),
+                    onDecrease = { model.update { it.copy(strobeCount = if (it.strobeCount == 0) TunerSettings.MAX_STROBE_COUNT else it.strobeCount - 1) } },
+                    onIncrease = { model.update { it.copy(strobeCount = if (it.strobeCount >= TunerSettings.MAX_STROBE_COUNT) 0 else it.strobeCount + 1) } },
+                )
+                SwitchRow(t(K.settings_strobeTogether), s.strobeTogether, info = t(K.settings_note_strobeTogether)) { on ->
+                    model.update { it.copy(strobeTogether = on) }
+                }
+            }
             StepperRow(
                 t(K.settings_highestPartial), noteName(s.highestPartialMidi),
                 canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,

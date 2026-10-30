@@ -155,6 +155,19 @@ data class TunerSettings(
      */
     val strobeOne: Boolean = false,
     /**
+     * How many bands the strobe shows: the lowest so many of the partials offered for the note, the band
+     * being tuned always among them; 0 for all of them (Peter, 30 Oct 2026: "TuneLab gets away with 4, but
+     * we should give a user a chance to choose any number he wants -- alternatively show all partials").
+     */
+    val strobeCount: Int = 0,
+    /**
+     * The bands come up together: nothing is drawn until every band of the row has been read, or until
+     * [STROBE_TOGETHER_WAIT_S] after the first came up, and then all at once. Off: each band comes up
+     * as soon as its own partial is read. Either way a band fades in over [STROBE_FADE_S] (Peter, 30 Oct
+     * 2026: "a middle ground: we offer it in Settings").
+     */
+    val strobeTogether: Boolean = false,
+    /**
      * The reading's memory, seconds: how far back the shown reading looks.
      * 0.15 s shows every wobble as it happens (Verituner's); longer steadies
      * the bell in a noisy room or on a string that wanders, at the price of
@@ -190,6 +203,16 @@ data class TunerSettings(
     val showStatusBar: Boolean = true,
 ) {
     companion object {
+        /** The most bands [strobeCount] can ask for: every partial the app reads. */
+        const val MAX_STROBE_COUNT = at.clavierhaus.unisonmaster.measure.Partials.MAX
+        /** A band fades in over this, seconds, from the moment it is drawn (Peter, 30 Oct 2026: "smooth their appearance for 300 ms"). */
+        const val STROBE_FADE_S = 0.3
+        /**
+         * With [strobeTogether], the row waits for its slowest band no longer than this, seconds, after its first band
+         * came up; a band read later joins on its own. The slowest first readings of the strobe on the 225's single
+         * strings were 0.77 s (C3, partial 8) and 0.83 s (C2, partial 8) after the strike (SAMICK findings §34).
+         */
+        const val STROBE_TOGETHER_WAIT_S = 0.8
         /** Help's text size runs from [MIN_HELP_SP] to [MAX_HELP_SP] in steps of [HELP_SP_STEP] (Peter, 12 Oct 2026: 12 to 22). */
         const val MIN_HELP_SP = 12
         const val MAX_HELP_SP = 22
@@ -350,6 +373,8 @@ class SettingsModel(
             autoNote = b("autoNote", d.autoNote),
             cleanPartials = b("cleanPartials", d.cleanPartials),
             strobeOne = b("strobeOne", d.strobeOne),
+            strobeCount = i("strobeCount", d.strobeCount).coerceIn(0, TunerSettings.MAX_STROBE_COUNT),
+            strobeTogether = b("strobeTogether", d.strobeTogether),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             language = store.get("language") ?: d.language,
             helpTextSp = i("helpTextSp", d.helpTextSp).coerceIn(TunerSettings.MIN_HELP_SP, TunerSettings.MAX_HELP_SP),
@@ -383,6 +408,8 @@ class SettingsModel(
         store.put("temperamentFirst", s.temperamentFirst.toString())
         store.put("cleanPartials", s.cleanPartials.toString())
         store.put("strobeOne", s.strobeOne.toString())
+        store.put("strobeCount", s.strobeCount.toString())
+        store.put("strobeTogether", s.strobeTogether.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("language", s.language)
         store.put("helpTextSp", s.helpTextSp.toString())
