@@ -227,13 +227,15 @@ data class TunerSettings(
          * the Knight upright of VCSL, BiVib's Yamaha DU1A at two strengths, the Samick SG 172 A0-A4; Pro docs/STRETCH.md
          * §8). In the bass A0-B1, 4:2, 6:3 and 10:5 are heard in 62-100 % of the octaves, 2:1 in 37-73 % (the first
          * partial is weak there) and 8:4 in 6-62 %; at the temperament octave A3-A4, 2:1 in 72-100 %, 4:2 in 18-42 %,
-         * 6:3 in 0-16 %; in the treble A#4-B5, 2:1 in 75-100 %, 4:1 in 66-85 %, 3:1 in 64-66 %, 4:2 in 16-28 %, the
-         * wider ones never. 4:1 in the bass and 4:1 or 3:1 in the middle also never gave a target: the partner crossed
+         * 6:3 in 0-16 %; in the treble A#4-B5, 2:1 in 75-100 %, 4:1 in 66-85 %, 3:1 in 64-66 %, 4:2 in 16-28 % on the
+         * uprights and 42-71 % on two grands (VCSL's Steinway B and Kawai, measured the same evening), the wider ones
+         * never. 4:2 stays in the treble on Peter's word (23 Oct 2026: "4:2 should stay"); taken out with the rest on 30 Oct
+         * and put back the same evening when the grands were measured. 4:1 in the bass and 4:1 or 3:1 in the middle also never gave a target: the partner crossed
          * the temperament octave and the chain came back to where it began (OctaveChoicesTest).
          */
         val BASS_OCTAVES: List<OctaveType> = listOf(OctaveType.O4_2, OctaveType.O6_3, OctaveType.O10_5)
         val MIDDLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2)
-        val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_1, OctaveType.O3_1)
+        val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2, OctaveType.O4_1, OctaveType.O3_1)
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave: A4, the note the session is defined on. */

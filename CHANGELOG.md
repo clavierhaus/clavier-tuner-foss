@@ -21,10 +21,10 @@ reconstructed from the commit history that day.
 - **Settings › Piano › Range no longer shows the lowest plain string:** it has
   changed no target since the tuning curve lost its borders (29 Oct).
 - **Each region offers only the octave types its strings sound.** Bass 4:2,
-  6:3, 10:5; middle 2:1, 4:2; treble 2:1, 4:1, 3:1. Measured on the strings of
+  6:3, 10:5; middle 2:1, 4:2; treble 2:1, 4:2, 4:1, 3:1. Measured on the strings of
   three small pianos: in the low bass the first partial and the eighth are too
-  weak for 2:1 and 8:4, at A3–A4 the sixth for 6:3, in the treble the fourth
-  and above of the lower note for 4:2 and wider. A type stored by an earlier
+  weak for 2:1 and 8:4, at A3–A4 the sixth for 6:3, in the treble the sixth
+  and above of the lower note for 6:3 and wider. A type stored by an earlier
   version that is no longer offered goes back to the region's default. 4:1 in
   the bass, and 4:1 or 3:1 in the middle, gave no target at all and hung the
   tuning.
