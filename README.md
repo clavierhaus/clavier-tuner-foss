@@ -72,6 +72,22 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.7
+
+- **A new tuning curve, with no borders.** The bass's octave type is beatless
+  at the lowest key, the treble's at C8, the midrange's next to the
+  temperament octave; every octave between moves key by key from one to the
+  other, and the extra stretch with it. Until 0.6 each region's type held
+  whole up to its edge, which could leave a few keys of the low tenor several
+  cents flat of their neighbours.
+- **The temperament octave is stretched too:** the octave below A4 is a
+  beatless octave of the midrange's type, divided equally. It was 2:1 by the
+  fundamentals, which is narrower on a piano with much inharmonicity.
+- **One smooth inharmonicity line** through the measured strings, with no cut
+  at the lowest plain string. On the recordings we have, strings not measured
+  are predicted about twice as closely as before.
+- The targets have changed: a tuning saved with 0.6 is best begun again.
+
 ## New in 0.6
 
 - **One band, if you want it.** Settings › Strobe › Bands: *All partials*, as
