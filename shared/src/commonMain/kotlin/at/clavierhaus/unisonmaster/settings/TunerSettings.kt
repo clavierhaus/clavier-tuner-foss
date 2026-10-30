@@ -219,6 +219,21 @@ data class TunerSettings(
         const val HELP_SP_STEP = 2
         /** Help's text size one step up ([direction] +1, A+) or down (−1, A−), kept within its range. */
         fun helpTextStep(sp: Int, direction: Int): Int = (sp + direction * HELP_SP_STEP).coerceIn(MIN_HELP_SP, MAX_HELP_SP)
+        /**
+         * The octave types offered per region (30 Oct 2026, Peter: "check our offered choices against real usability
+         * in the respective registers and reduce those choices"). Every type was offered everywhere until then. What
+         * is kept is what the strings of three small pianos and the Samick sound: of each type's two meeting partials,
+         * how often both stand within 20 dB of their string's loudest, per register (Pro research/ProbeOctaveStyle.kt;
+         * the Knight upright of VCSL, BiVib's Yamaha DU1A at two strengths, the Samick SG 172 A0-A4; Pro docs/STRETCH.md
+         * §8). In the bass A0-B1, 4:2, 6:3 and 10:5 are heard in 62-100 % of the octaves, 2:1 in 37-73 % (the first
+         * partial is weak there) and 8:4 in 6-62 %; at the temperament octave A3-A4, 2:1 in 72-100 %, 4:2 in 18-100 %,
+         * 6:3 in 0-16 %; in the treble A#4-B5, 2:1 in 75-100 %, 4:1 in 66-85 %, 3:1 in 64-66 %, 4:2 in 16-28 %, the
+         * wider ones never. 4:1 in the bass and 4:1 or 3:1 in the middle also never gave a target: the partner crossed
+         * the temperament octave and the chain came back to where it began (OctaveChoicesTest).
+         */
+        val BASS_OCTAVES: List<OctaveType> = listOf(OctaveType.O4_2, OctaveType.O6_3, OctaveType.O10_5)
+        val MIDDLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2)
+        val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_1, OctaveType.O3_1)
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave: A4, the note the session is defined on. */
@@ -346,7 +361,14 @@ class SettingsModel(
 
     private fun load(): TunerSettings = fixed(loadStored())
 
-    private fun fixed(s: TunerSettings): TunerSettings = lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s
+    private fun fixed(s: TunerSettings): TunerSettings = offered(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s)
+
+    /** A region's octave type no longer offered (30 Oct 2026), as an earlier version may have stored it: the region's default. */
+    private fun offered(s: TunerSettings): TunerSettings = s.copy(
+        octaveBass = s.octaveBass.takeIf { it in TunerSettings.BASS_OCTAVES } ?: defaults.octaveBass,
+        octaveMiddle = s.octaveMiddle.takeIf { it in TunerSettings.MIDDLE_OCTAVES } ?: defaults.octaveMiddle,
+        octaveTreble = s.octaveTreble.takeIf { it in TunerSettings.TREBLE_OCTAVES } ?: defaults.octaveTreble,
+    )
 
     private fun loadStored(): TunerSettings {
         val d = defaults

@@ -50,7 +50,8 @@ fun tuningInfoLine(s: TunerSettings, a4Hz: Double): String =
 /** The window behind the line. [onChange] changes the settings in force; [onClose] closes it. */
 @Composable
 fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings) -> Unit, onClose: () -> Unit) {
-    val octaves = OctaveType.entries
+    // the widest region's choices lay out the heading's column; each region offers its own (30 Oct 2026)
+    val octaves = widestOctaves
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.fillMaxWidth(0.92f).background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(16.dp),
@@ -79,11 +80,11 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                region(t(K.settings_page_bass), octaves, s.octaveBass, s.widthBass,
+                region(t(K.settings_page_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass,
                     { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBass = w) } })
-                region(t(K.settings_page_middle), octaves, s.octaveMiddle, s.widthMiddle,
+                region(t(K.settings_page_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle,
                     { o -> onChange { it.copy(octaveMiddle = o) } }, { w -> onChange { it.copy(widthMiddle = w) } })
-                region(t(K.settings_page_treble), octaves, s.octaveTreble, s.widthTreble,
+                region(t(K.settings_page_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble,
                     { o -> onChange { it.copy(octaveTreble = o) } }, { w -> onChange { it.copy(widthTreble = w) } })
             }
             Spacer(Modifier.height(8.dp))
@@ -110,7 +111,12 @@ private fun region(
     // one row a region, low to high: its name, its octave type, its width
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(name, Modifier.weight(1f), color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
-        Choices(octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
+        // the regions offer different choices (30 Oct 2026): each sits in a box as wide as the widest row's, unseen
+        // beneath, so that the width column stands straight
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Choices(widestOctaves.map { it.label }, -1) {} }
+            Choices(octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
+        }
         Spacer(Modifier.width(16.dp))
         Stepper(
             if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
@@ -121,6 +127,10 @@ private fun region(
         )
     }
 }
+
+/** The region whose octave-type choices lay out widest; the info window's column is as wide as they are. */
+private val widestOctaves: List<OctaveType> = listOf(TunerSettings.BASS_OCTAVES, TunerSettings.MIDDLE_OCTAVES, TunerSettings.TREBLE_OCTAVES)
+    .maxBy { o -> o.sumOf { it.label.length + 2 } }
 
 private fun tenths(x: Double) = kotlin.math.round(x * 10) / 10
 private const val WIDTH_STEP = 0.5

@@ -12,7 +12,7 @@ class SettingsTest {
         val store = MemoryStore()
         val a = SettingsModel(store)
         assertEquals(TunerSettings(), a.settings.value)
-        a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O6_3, octaveBass = OctaveType.O8_4, lowestUnwoundMidi = 40, widthBass = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
+        a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O2_1, octaveBass = OctaveType.O10_5, lowestUnwoundMidi = 40, widthBass = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
         assertEquals(false, b.settings.value.autoNote)
@@ -22,8 +22,8 @@ class SettingsTest {
         SettingsModel(other).update { it.copy(temperamentFirst = true) }
         assertEquals(true, SettingsModel(other).settings.value.temperamentFirst, "the temperament's order is the tuner's choice and is kept")
         assertEquals(0.3, b.settings.value.matchCents)
-        assertEquals(OctaveType.O6_3, b.settings.value.octaveMiddle)
-        assertEquals(OctaveType.O8_4, b.settings.value.octaveBass)
+        assertEquals(OctaveType.O2_1, b.settings.value.octaveMiddle)
+        assertEquals(OctaveType.O10_5, b.settings.value.octaveBass)
         assertEquals(40, b.settings.value.lowestUnwoundMidi)
         assertEquals(9.5, b.settings.value.widthBass)
         assertEquals(2.0, b.settings.value.widthTreble)

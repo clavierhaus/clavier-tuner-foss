@@ -58,8 +58,9 @@ wanted to see what his instruments actually do.
   tuning as it stands. No Done to tap.
 - **Keeps the session.** One sealed file on the phone, under a key that never
   leaves it. Continue tomorrow where you stopped.
-- **Carries your choices as settings.** Octave type and width per register —
-  2:1, 4:2, 6:3, 8:4, 10:5, the double octave 4:1 and the twelfth 3:1; set
+- **Carries your choices as settings.** Octave type and width per register,
+  each register offering the types its strings sound — bass 4:2, 6:3, 10:5;
+  middle 2:1, 4:2; treble 2:1, the double octave 4:1 and the twelfth 3:1; set
   out as bass 6:3, middle 4:2, treble 4:1. The bass's type is beatless at the
   lowest key, the treble's at C8, the middle's next to the temperament octave;
   every octave between moves from one to the other key by key, so the tuning

@@ -20,6 +20,14 @@ reconstructed from the commit history that day.
   concert grand six were enough, on a spinet or a small upright they are not.
 - **Settings › Piano › Range no longer shows the lowest plain string:** it has
   changed no target since the tuning curve lost its borders (29 Oct).
+- **Each region offers only the octave types its strings sound.** Bass 4:2,
+  6:3, 10:5; middle 2:1, 4:2; treble 2:1, 4:1, 3:1. Measured on the strings of
+  three small pianos: in the low bass the first partial and the eighth are too
+  weak for 2:1 and 8:4, at A3–A4 the sixth for 6:3, in the treble the fourth
+  and above of the lower note for 4:2 and wider. A type stored by an earlier
+  version that is no longer offered goes back to the region's default. 4:1 in
+  the bass, and 4:1 or 3:1 in the middle, gave no target at all and hung the
+  tuning.
 - **Settings › Strobe › Bands appear together:** off, each band comes up as
   it is read; on, the row comes up at once when every band has been read, at
   most 0.8 s after the first.

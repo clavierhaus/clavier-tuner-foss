@@ -203,15 +203,15 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
 
 /** The Stretch tab: one page per region, named as the engine names them. */
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
-    val octaves = OctaveType.entries
+    // each region offers only the octave types its strings sound (TunerSettings.BASS_OCTAVES, 30 Oct 2026)
     return listOf(
         SettingsPage(t(K.settings_page_bass),
-            left = { RegionLeft(t(K.settings_note_bass), octaves, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
+            left = { RegionLeft(t(K.settings_note_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
             right = { RegionRight(s.widthBass, s.widthBassFar, t(K.settings_theLowestKey)) { w -> model.update { it.copy(widthBassFar = w) } } }),
         SettingsPage(t(K.settings_page_middle),
-            left = { RegionLeft(t(K.settings_note_middle), octaves, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
+            left = { RegionLeft(t(K.settings_note_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
         SettingsPage(t(K.settings_page_treble),
-            left = { RegionLeft(t(K.settings_note_treble), octaves, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
+            left = { RegionLeft(t(K.settings_note_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
         SettingsPage(t(K.settings_page_breaks),
             left = {
