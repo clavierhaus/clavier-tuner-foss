@@ -52,17 +52,17 @@ class EngineRecordingsTest {
     }
 
     // the 225 as its tuner tuned it in June: the treble by double octaves (4:1) — said here, since the
-    // default became 4:2 on 4 Oct 2026 and the corpus is the piano as it was tuned, not as the default would
+    // default became 4:2 on 4 Oct 2026 and the recordings are the piano as it was tuned, not as the default would
     private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = false, octaveTreble = OctaveType.O4_1)
 
-    /** Part A: one string per key; where a key was taken again, the last take. */
+    /** Part A: one string per key; where a key was taken again, the last recording. */
     private fun partA(dir: File): Map<Int, File> {
         val rows = File(dir, "Boesendorfer_manifest.csv").readLines().drop(1).map { it.split(",") }
         val out = LinkedHashMap<Int, File>()
         for (r in rows.filter { it[3].startsWith("A") }.sortedBy { it[0] }) {
-            val take = r[1]
-            if (!Regex("""^[A-G]#?\d-[LC]-s1$""").matches(take)) continue
-            val midi = Notes.midi(take.substringBefore("-")) ?: continue
+            val stem = r[1]
+            if (!Regex("""^[A-G]#?\d-[LC]-s1$""").matches(stem)) continue
+            val midi = Notes.midi(stem.substringBefore("-")) ?: continue
             out[midi] = File(dir, r[2])
         }
         return out
@@ -83,7 +83,7 @@ class EngineRecordingsTest {
 
     private fun measured(dir: File): Pair<Double, Map<Int, NoteMeasurement>> {
         val files = partA(dir)
-        val a4File = files[69] ?: error("no A4 take")
+        val a4File = files[69] ?: error("no A4 recording")
         val (sr, x) = readWav(a4File)
         val a4Hz = StringMeasure.measure(x, sr, 69, 443.0)!!.f1Hz
         val a4 = TuningSession.roundToTenth(a4Hz)
@@ -223,7 +223,7 @@ class EngineRecordingsTest {
         }
     }
 
-    /** Part B: every key as it stood, unmuted; the last take of each. */
+    /** Part B: every key as it stood, unmuted; the last recording of each. */
     private fun partB(dir: File): Map<Int, File> {
         val rows = File(dir, "Boesendorfer_manifest.csv").readLines().drop(1).map { it.split(",") }
         val out = LinkedHashMap<Int, File>()

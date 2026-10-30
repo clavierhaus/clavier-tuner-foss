@@ -376,7 +376,7 @@ reconstructed from the commit history that day.
   false-beat verdict is the spread of a partial's readings over two seconds;
   as a partial fades to within 15 dB of the noise beside it, the floor's phase
   scatters the reading by a cent and more, and on the Samick's clean F3 the
-  engine called 22 partials false over nine single-string takes, every one of
+  engine called 22 partials false over nine single-string recordings, every one of
   them past 4.6 s into the strike — the red-violet bells and chips Peter saw on
   a string with no false beat. Now a reading counts towards the spread only
   while the partial stands 25 dB over the noise beside it (measured: the
@@ -470,8 +470,8 @@ reconstructed from the commit history that day.
 - **Reverted within the hour: taking the reference from `measurements[A4]`.** It
   replaced a reference that was knowably wrong (the 440 default) with one nobody
   can vouch for: on the Samick session it found 439.6 Hz, a figure Peter had
-  never seen and 0.7 cents from the 439.418 the corpus measures across nine
-  single-string takes. A reference from an unidentified strike is not a
+  never seen and 0.7 cents from the 439.418 the recordings measure across nine
+  single-string recordings. A reference from an unidentified strike is not a
   measurement — it only looks like one, which is worse. **Where the reference
   comes from is still open**; it is chosen deliberately or it is not a reference.
 - **The tuning screen always shows the A4 it is working from.** Every figure on
@@ -510,7 +510,7 @@ reconstructed from the commit history that day.
   Directive — **the only truth is a verifiable, reproducible measurement from an
   uncompressed, unaltered source of sound** — is the law the rest follow from:
   no lossy audio or processing anywhere in the chain, a measurement is
-  reproducible or it is not one, the corpus is evidence and is never edited, and
+  reproducible or it is not one, the recordings are evidence and are never edited, and
   where the ear and a measurement disagree the measurement is the suspect. With
   it: the verification order, the questions to answer before changing anything,
   build and test discipline, and a standing orders ledger of the ten failures of
@@ -522,7 +522,7 @@ reconstructed from the commit history that day.
   path entirely — f1 and B stay, since the curve is built from them. Until today
   a table measured during sampling, hours earlier and possibly on another
   string, furnished the targets of the string now sounding, and a clean string's
-  bells would not stand on one line. Measured on the 30 Sept corpus: one
+  bells would not stand on one line. Measured on the 30 Sept recordings: one
   string's ratios repeat from strike to strike within 0.04–0.11 cents over all
   twelve partials, so deriving them afresh costs nothing in steadiness.
 - `docs/RULES.md` gains the two standing laws decided at the instrument:

@@ -9,7 +9,7 @@ package at.clavierhaus.unisonmaster.audio
  * [AudioSource] promises — mono PCM float in [-1, 1] — and nothing else
  * changes anywhere above it.
  *
- * Understands what the recorder writes and what the corpora hold: PCM
+ * Understands what the recorder writes and what the recordings hold: PCM
  * 16-bit and 32-bit float, mono or stereo (the left channel is taken, as
  * the phone records mono anyway). Anything else is refused by name rather
  * than played as noise.
@@ -41,7 +41,7 @@ object WavPcm {
         var bits = 0
         var dataAt = -1
         var dataLen = 0
-        // walk the chunks: the recorder's header is plain, the corpora's may not be
+        // walk the chunks: the recorder's header is plain, the recordings' headers may not be
         var p = 12
         while (p + 8 <= bytes.size) {
             val id = tag(bytes, p)

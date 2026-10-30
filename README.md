@@ -43,7 +43,7 @@ wanted to see what his instruments actually do.
   identified by fitting a string to what the microphone hears, not guessed
   from the loudest peak. Measured on recordings of six pianos (Bösendorfer
   225 and 290, Steinway B and D, Kawai, Samick): 49 of 49 keys of a walk
-  across the range, 169 of 173 on the largest corpus.
+  across the range, 169 of 173 on the largest set of recordings.
 - **Tunes by the strobe.** For every note the app picks the partial a tuner
   would listen to in that register, synthesises its target, and shows the
   string against it as a strobe, to a tenth of a cent, 47 readings a second.
@@ -150,7 +150,7 @@ The chain every proven tuning device uses, written down and testable:
 
 Raw 48 kHz PCM, the microphone unprocessed; no third-party DSP; the same code
 on every platform. The engine is judged against recordings: the core tests
-run on synthetic strings, the corpus tests on recordings of real pianos. The
+run on synthetic strings, the recording tests on recordings of real pianos. The
 engine (`shared/`) and the screens (`ui/`) are a Kotlin Multiplatform library
 with an iOS stub; only the Android app exists today.
 

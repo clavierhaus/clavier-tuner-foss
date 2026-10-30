@@ -131,7 +131,7 @@ data class TunerSettings(
     /**
      * How close a partial must stand to its target to turn green, in cents.
      * Cents and not Hertz: a tenth of a Hertz is a cent at F3 and a twelfth of a
-     * cent at C7. The default is about twice the scatter the corpus shows between
+     * cent at C7. The default is about twice the scatter the recordings show between
      * strikes of one string, so green cannot promise more than the measurement has.
      */
     /** The tuner's tolerance, cents; [at.clavierhaus.unisonmaster.tuning.TuningSession.MATCH_CENTS] says where the figure comes from. */
@@ -168,7 +168,7 @@ data class TunerSettings(
      * A red button on the tuning screen that records what the microphone
      * hears, from tap to tap: uncompressed PCM, the unprocessed source,
      * 48 kHz, 16 bit, one WAV per recording in the phone's Recordings. For
-     * the workshop's corpus and for hearing again what the app read. Off by
+     * the workshop's recordings and for hearing again what the app read. Off by
      * default: about 6 MB a minute.
      */
     val recordPcm: Boolean = false,
@@ -222,7 +222,7 @@ data class TunerSettings(
 
         /**
          * The highest key sampling takes: G6 (Peter, 26 Oct 2026, 21:28). Above it a string's B does not
-         * repeat from strike to strike on the 225's takes of 22 Sept -- at partial 4, F6 0.16 c, G#6 4.4 c,
+         * repeat from strike to strike on the 225's recordings of 22 Sept -- at partial 4, F6 0.16 c, G#6 4.4 c,
          * B6 32 c, E7 109 c, against 0.05-0.16 c in C3-B4 -- because two or three partials are all a treble
          * string offers the fit; a value that does not repeat is not a measurement, and as a sample it would
          * bend the curve. Keys above are tuned as before, on the curve carried up from the samples below.

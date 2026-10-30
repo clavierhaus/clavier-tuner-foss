@@ -47,7 +47,7 @@ import kotlin.math.sqrt
  *
  * Checked on five instruments through three microphones (a Bösendorfer
  * 225 and 290, two Steinways, a Kawai upright): one decision per strike
- * names the key below C7 on all but a handful of takes, and those are the
+ * names the key below C7 on all but a handful of recordings, and those are the
  * takes (a neighbour ringing louder, a mislabelled strike).
  */
 class KeyIdentifier(

@@ -12,6 +12,6 @@ class NoteNamesTest {
         assertEquals("A#1", noteName(34, "de"))     // A#1 stays
         assertEquals("C4", noteName(60, "de"))
         assertEquals("B1", noteName(35, "en"))
-        assertEquals("B1", Notes.name(35), "the corpus' names never change with the language")
+        assertEquals("B1", Notes.name(35), "the recordings' names never change with the language")
     }
 }

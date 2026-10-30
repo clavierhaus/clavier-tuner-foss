@@ -18,7 +18,7 @@ import kotlin.test.fail
  * A sampled string struck again, and the next strike before the new measurement is complete: what is
  * kept is the string measured from everything heard up to that strike, not the measurement of the
  * decision 0.85 s after its own (SAMICK findings §29: in the bass 10.6 % off the full measurement,
- * median of 209 takes, where the strikes of one string agree to 1.3 %). The 225's B0, left string
+ * median of 209 recordings, where the strikes of one string agree to 1.3 %). The 225's B0, left string
  * (22 Sept): struck, measured in full and accepted; struck again, and that strike struck again 1.1 s
  * after itself, before the half second of history the measurement needs to call itself complete
  * (1.36 s at the earliest). Until 18 Oct 2026 the decision's measurement stood, because the second
@@ -29,12 +29,12 @@ import kotlin.test.fail
  * string cut short is the one struck again, which stays accepted; and Accept is checked closed while
  * the first strike is still measuring.
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
 class SamplingCutRecordingsTest {
     private val hop = 1024
 
-    private fun corpus(): File? {
+    private fun recordings(): File? {
         val base = System.getenv("CLAVIER_DATA")?.let { File(it) } ?: run {
             var d: File? = File(".").absoluteFile
             while (d != null && !File(d, "data/recordings").isDirectory) d = d.parentFile
@@ -59,7 +59,7 @@ class SamplingCutRecordingsTest {
 
     @Test
     fun aStringStruckAgainBeforeItsMeasurementIsCompleteKeepsAllItHadUpToTheStrike() {
-        val dir = corpus() ?: run { println("SamplingCutRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val dir = recordings() ?: run { println("SamplingCutRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val a4File = File(dir, "Boesendorfer_A4-C-s1_unproc_20260922-140748.wav")
         val bassFile = File(dir, "Boesendorfer_B0-L-s1_unproc_20260922-135541.wav")
         assertTrue(a4File.isFile && bassFile.isFile, "missing ${a4File.name} or ${bassFile.name}")
@@ -77,7 +77,7 @@ class SamplingCutRecordingsTest {
         bass.copyInto(sig, lead + full, at, at + gap)
         bass.copyInto(sig, lead + full + gap, at, minOf(bass.size, at + 3 * sr))
         val againHop = (lead + full) / hop
-        val secondHop = (lead + full + gap) / hop     // the hop the cutting strike's take begins in; the engine hears it rise in this one or the next
+        val secondHop = (lead + full + gap) / hop     // the hop the cutting strike's recording begins in; the engine hears it rise in this one or the next
 
         lateinit var c: TuningController
         val keptB = HashMap<Int, Double>()
@@ -100,13 +100,13 @@ class SamplingCutRecordingsTest {
         assertTrue(!readyWhileMeasuring, "Accept stood open while the first strike was still being measured")
         assertTrue(againCaught > 0, "B0 struck again was never caught anew")
         val decision = keptB[againCaught] ?: fail("B0 was never kept at its catch: ${keptB.keys.sorted().take(5)}")
-        assertTrue(cutHop in secondHop..secondHop + 1, "the second strike is heard at hop $cutHop and the measurement called short there; the take begins in hop $secondHop")
+        assertTrue(cutHop in secondHop..secondHop + 1, "the second strike is heard at hop $cutHop and the measurement called short there; the recording begins in hop $secondHop")
         val atCut = keptB[cutHop] ?: fail("nothing kept at the second strike's hop")
         // everything heard up to the second strike: the ring as it stood before the hop the strike was heard in
         val upTo = sig.copyOfRange(maxOf(0, cutHop * hop - 3 * sr), cutHop * hop)
         val want = StringMeasure.measure(upTo, sr, 23, 443.0 * Math.pow(2.0, (23 - 69) / 12.0), timeMs = 0L)?.b ?: fail("B0 not measurable up to the strike")
         println("B0: B kept at the decision %.3e, at the second strike %.3e, measured from all up to it %.3e".format(decision, atCut, want))
-        assertTrue(abs(decision / want - 1) > 0.01, "the take does not tell the two apart: the decision's B %.3e, all up to the strike %.3e".format(decision, want))
+        assertTrue(abs(decision / want - 1) > 0.01, "the recording does not tell the two apart: the decision's B %.3e, all up to the strike %.3e".format(decision, want))
         assertTrue(abs(atCut / want - 1) < 0.003,
             "kept at the second strike: B %.3e, where everything heard up to it measures %.3e (the decision's was %.3e)".format(atCut, want, decision))
     }

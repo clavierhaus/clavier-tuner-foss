@@ -122,7 +122,7 @@ column wherever an earlier row carries a "?" for the same thing.
 | ours | Deutsch | note |
 |---|---|---|
 | address | *Sie, Ihr, Ihre* | explanations address the tuner with *Sie*; short orders stay in the infinitive (*Taste anschlagen*) |
-| note names | A1, A#1, C4 … **H** for B | only the screen; files and the corpus keep B (`noteName` vs `Notes.name`) |
+| note names | A1, A#1, C4 … **H** for B | only the screen; files and the recordings keep B (`noteName` vs `Notes.name`) |
 | sampling, to sample, a sample | *Vermessen*, *messen*, *Messpunkt* | not *Sampling*: on Clavio it was read as recording sounds for playback |
 | Continue Tuning / New Tuning | *Stimmung fortsetzen* / *Neue Stimmung* | the home screen's doors |
 | match window | *Toleranz* | |

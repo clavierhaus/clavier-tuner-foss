@@ -40,7 +40,7 @@ class FeedableAudioSource(val live: AudioSource) : AudioSource {
      * Plays [pcm] in place of the microphone from the next [start] on.
      * Refuses a file recorded at another rate rather than resampling it:
      * a resampler would be one more thing between the recording and the
-     * reading, and every corpus here is already at the phone's rate.
+     * reading, and every set of recordings here is already at the phone's rate.
      */
     fun feed(name: String, pcm: WavPcm.Pcm) {
         require(pcm.sampleRateHz == live.sampleRateHz) {

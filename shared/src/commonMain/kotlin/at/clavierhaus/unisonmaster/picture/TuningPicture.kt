@@ -26,7 +26,7 @@ import kotlin.math.abs
  * "I am quiet", not "the string moved". A bell much wider than the narrowest
  * — [Builder.WIDE_FACTOR] times it, and over [Builder.WIDE_CENTS] — is
  * *wide*: it does not anchor the line (a needle outranks a wide bell) and
- * does not veto "on". On the Samick's nine single-string F3 takes the loud
+ * does not veto "on". On the Samick's nine single-string F3 recordings the loud
  * partials read 0.2–0.5 c wide and the floor-huggers 2–6 c. The picture does
  * not say *why* a bell is wide — the floor, a false string, three strings
  * struck together all widen it, and on the Samick session width and depth
@@ -283,7 +283,7 @@ class TuningPicture(
             const val ANCHOR_HOLD_S = 0.5
             /**
              * A bell this many times wider than the narrowest counted one is wide. Measured on
-             * the Samick's nine single-string F3 takes (3 Oct 2026): loud partials 0.2–0.5 c,
+             * the Samick's nine single-string F3 recordings (3 Oct 2026): loud partials 0.2–0.5 c,
              * partials at the floor 2–6 c — four times apart at the least.
              */
             const val WIDE_FACTOR = 3.0

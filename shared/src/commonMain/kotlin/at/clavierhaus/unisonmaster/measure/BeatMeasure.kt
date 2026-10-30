@@ -24,7 +24,7 @@ import kotlin.math.sqrt
  * is neither -- it read 0.35 c on an audible 0.67 Hz beat with planes 3.5 dB
  * apart and 0.5 c on inaudible polarisation doublets, wrong both ways (§20, §21).
  * On the readers' own series the power swing separates the classes outright:
- * the clean F3's partials give m of 0.02-0.32 on 36 partial-takes, the Samick's
+ * the clean F3's partials give m of 0.02-0.32 on 36 partials of the recordings, the Samick's
  * left A4 gives m ≥ 1.0 at 0.63-0.67 Hz on both its false partials on all three
  * strikes, and the 16 Sept A3's partials 3 and 4 measure 0.63-0.68 and
  * 0.86-0.92 Hz where ESPRIT found 0.595 and 0.932 (FALSE-BEATS §6). A beat
@@ -138,7 +138,7 @@ object BeatMeasure {
     /**
      * … and this much more of it than a parabola does. A beat slower than the window -- the 0.25 Hz
      * wow of the Samick's A4, the Bösendorfer A3's 0.23 Hz -- leaves a bump a parabola explains
-     * as well as the best sinusoid; a beat inside the window does not. On the corpus the real
+     * as well as the best sinusoid; a beat inside the window does not. On the recordings the real
      * beats stand 0.17-0.92 over the parabola, the wows under 0.2 on every window but a few early
      * ones, and those the tally's repeatability rule refuses.
      */

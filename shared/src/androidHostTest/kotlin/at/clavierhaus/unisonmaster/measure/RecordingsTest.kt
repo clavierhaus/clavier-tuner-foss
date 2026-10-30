@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 
 /**
  * The reader on the recordings as they are: the committed WAV files of
- * data/recordings, decoded and nothing else. Each single-string take is
+ * data/recordings, decoded and nothing else. Each single-string recording is
  * read on its listening partial (PartialMap) against equal temperament on
  * A4 440 — the reference is only a place to measure from; the cents are
  * the result — and the three strikes of a note must agree. The table is
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
  */
 class RecordingsTest {
     private companion object {
-        val TAKE = Regex("""^(D|Boesendorfer)_([A-G]#?\d)-([CLRU])-s(\d)""")
+        val RECORDING_NAME = Regex("""^(D|Boesendorfer)_([A-G]#?\d)-([CLRU])-s(\d)""")
     }
 
     private data class Wav(val sampleRate: Int, val samples: FloatArray)
@@ -60,9 +60,9 @@ class RecordingsTest {
 
     private data class Result(val file: String, val note: String, val k: Int, val cents: Double, val spread: Double, val levelDbfs: Double, val quality: Double)
 
-    /** The take read on its listening partial over the decay, 0.5 s to 2.5 s after the strike: what the screen shows there. */
+    /** The recording read on its listening partial over the decay, 0.5 s to 2.5 s after the strike: what the screen shows there. */
     private fun measure(f: File, strobe: Boolean): Result? {
-        val m = TAKE.find(f.name) ?: return null
+        val m = RECORDING_NAME.find(f.name) ?: return null
         val note = m.groupValues[2]
         val midi = Notes.midi(note) ?: return null
         val wav = readWav(f)
@@ -80,7 +80,7 @@ class RecordingsTest {
         }
         if (strike < 0) return null
         // the reader is set where the finder places the partial, as the hub sets it
-        // on the A4 string: the takes are the piano as tuned (A4 443, the treble
+        // on the A4 string: the recordings are the piano as tuned (A4 443, the treble
         // stretched), and 440 is only where the table counts cents from
         val window = strike + wav.sampleRate / 4
         val placed = if (window + 16384 <= wav.samples.size)
@@ -108,18 +108,18 @@ class RecordingsTest {
     /**
      * Both readers the screen has: the four stages, which read the bells and the clean partials,
      * and the window, which reads the strobe (17 Oct 2026). The strobe's is the one the tuner turns
-     * the pin by, and it is held to the same corpus.
+     * the pin by, and it is held to the same recordings.
      */
     @Test
     fun everySingleStringTakeReadsSteadilyOnItsListeningPartialAndTheStrikesAgree() {
         val dir = recordingsDir()
         if (dir == null) { println("RecordingsTest: no data/recordings here, nothing read"); return }
-        val files = dir.walkTopDown().filter { it.isFile && it.name.endsWith(".wav") && !it.name.contains("-U-") && TAKE.containsMatchIn(it.name) }.sortedBy { it.name }.toList()
+        val files = dir.walkTopDown().filter { it.isFile && it.name.endsWith(".wav") && !it.name.contains("-U-") && RECORDING_NAME.containsMatchIn(it.name) }.sortedBy { it.name }.toList()
         assertTrue(files.isNotEmpty(), "no recordings under $dir")
-        for (window in listOf(false, true)) readTheCorpus(files, window)
+        for (window in listOf(false, true)) readTheRecordings(files, window)
     }
 
-    private fun readTheCorpus(files: List<File>, window: Boolean) {
+    private fun readTheRecordings(files: List<File>, window: Boolean) {
         val all = files.mapNotNull { measure(it, window) }
         println(if (window) "the strobe's reader, the window:" else "the four stages:")
         println("file                                                 note  k   cents   spread   level   quality")
@@ -134,21 +134,21 @@ class RecordingsTest {
         // sixth partial to 0.07 c), and a string's reading over two seconds of
         // decay moves by a fraction of a cent to two cents — the 225's C5 on
         // its second partial moves 2.1–2.4 c on every strike, which is the
-        // string, not the reader. Single takes that moved more are named
+        // string, not the reader. Single recordings that moved more are named
         // here for the next session; a note fails only when its strikes
         // disagree or most of them are unsteady.
         val moved = results.filter { it.spread > 2.0 }
         if (moved.isNotEmpty()) println("moved more than 2 cents over the decay: ${moved.map { "${it.file} (%.1f c)".format(it.spread) }}")
-        // one string on one day: the strikes of a take series (…-s1, -s2, -s3 of a
-        // note, recorded minutes apart); a take with a case (soft, hard) stands
+        // one string on one day: the strikes of a recording series (…-s1, -s2, -s3 of a
+        // note, recorded minutes apart); a recording with a case (soft, hard) stands
         // alone — a harder strike is a sharper string, not a disagreement
         val byNote = results.groupBy { r ->
             val day = Regex("""_(\d{8})-\d{6}""").find(r.file)?.groupValues?.get(1) ?: ""
             val case = Regex("""-s\d(-[a-z]+)?""").find(r.file)?.groupValues?.get(1) ?: ""
             r.file.substringBefore("-s") + case + day
         }
-        // Most strikes of a string agree within 1.5 cents; a take that does not
-        // is named, not averaged in: on the 16th a C7 take has B6 louder than
+        // Most strikes of a string agree within 1.5 cents; a recording that does not
+        // is named, not averaged in: on the 16th a C7 recording has B6 louder than
         // C7 (another key sounding), on the 22nd G#2 was taken three times and
         // one of them stands 4 cents off the other two. The recording is what
         // it is; the reader must agree with the majority of it.

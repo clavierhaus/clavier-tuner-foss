@@ -306,7 +306,7 @@ dashed outline or a struck number carries the cue without colour.
   law walls. Green before any push.
 - The probe (`docs/PROBE.md`): any 48 kHz recording played where the
   microphone's buffers arrive, so a screen is judged on the same strike by
-  everyone. The corpus takes in the Pro repository are the reference strikes.
+  everyone. The recordings in the Pro repository are the reference strikes.
 - `ui/` and `androidApp/` compile only with the Android SDK. A change there is
   unverified until it builds on a machine that has one, and its commit says so.
 
@@ -345,7 +345,7 @@ in the elements has a line 1.25 times its size.
 **`LayoutCheckTest`** (`ui/src/test`, `:ui:testDebugUnitTest`) draws the
 screens with Robolectric on the JVM — the A4 page, the sampling page in each
 state, the tuning screen, every settings page but Help's, the info line's
-window — fed by corpus strikes through the engine, on these panes: 890 × 406
+window — fed by recorded strikes through the engine, on these panes: 890 × 406
 dp (the edge 50 neo at density 3.0), 971 × 443 (at 2.75), 842 × 406 (its
 navigation bar at the side), 780 × 360 (a small 20:9 phone, or any phone at a
 large display size; replaced on 26 Oct 2026, see below), in English and German, and 890 × 406 at text × 1.3. It
@@ -353,7 +353,7 @@ reads every text back from its own layout and fails when one is cut, breaks
 inside a word, stands on another, is under 10 sp, or when an element holds
 two sizes. The pictures go to `ui/build/layout-check/`. It failed with 72
 faults on the edge in German before the change and passes after. It needs
-the corpus (`CLAVIER_DATA`) and says so when it has none.
+the recordings (`CLAVIER_DATA`) and says so when it has none.
 
 Two things the check made visible and this change decided: the sampling
 page's subtitle left (at the largest text the orders no longer fitted under

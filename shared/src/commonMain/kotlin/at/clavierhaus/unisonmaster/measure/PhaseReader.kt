@@ -48,7 +48,7 @@ import kotlin.math.sqrt
  *
  * **The strobe's reader** ([window], 17 Oct 2026; Peter, 22:24: "build a strobe that comes up
  * reasonably fast, significantly faster than now"). The four stages give a rate only after the
- * twenty time constants of the strike's skip, 3.2 / bandHz s: on the corpus 1.07 s after the
+ * twenty time constants of the strike's skip, 3.2 / bandHz s: on the recordings 1.07 s after the
  * strike on A0-B1's sixth partials (median), 0.64 s on the temperament octave's fundamentals.
  * With [window] the rate is read instead from a Blackman-Harris window over the last
  * [WINDOW_LOBES] / semitoneHz seconds of the demodulated partial: its main lobe ends at the

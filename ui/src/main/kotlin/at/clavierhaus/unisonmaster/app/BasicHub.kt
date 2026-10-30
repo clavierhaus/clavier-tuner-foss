@@ -64,7 +64,7 @@ import kotlin.math.abs
 /**
  * Whether the tuning screen colours a partial by the engine's false-beat claim. Off from 7 Oct
  * 2026, 15:56: the claim was a spread in cents and the ear's criterion is a rate in hertz, and the
- * two disagree in both directions on the corpus (SAMICK-2026-09-30-FINDINGS §20, §21). On again
+ * two disagree in both directions on the recordings (SAMICK-2026-09-30-FINDINGS §20, §21). On again
  * since 8 Oct 2026: the claim is the rate, measured from the band power (BeatMeasure) with the
  * string alone while sampling and kept as the string's facts, and in tuning the colour is those
  * facts -- never a beat heard with the unison sounding, which could be the unison's.

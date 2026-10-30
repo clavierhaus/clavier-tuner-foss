@@ -118,14 +118,14 @@ class TuningController(
          * 18 Oct 2026, 15:52: "Why hard-code a fixed value at all? A note is done when the software
          * can say: I have captured all measurable partials"). Until then it was measured once more
          * at a fixed 2.5 s, and an Accept followed by the next strike sooner kept the measurement of
-         * the decision: in the bass B 10.6 % off the full one (median of 209 takes), where a
+         * the decision: in the bass B 10.6 % off the full one (median of 209 recordings), where a
          * string's strikes agree to 1.3 % (SAMICK findings §29).
          */
         const val SAMPLE_STEP_HOPS = 12L
         /**
          * Complete: [SAMPLE_STILL_HOPS] more sound (half a second, a choice, not a measurement)
          * moved the partial the string's octaves meet on (the octave type's higher partial, 6 for
-         * 6:3, 4 for 4:2) by less than [SAMPLE_STILL_CENTS]. On the 209 takes this completes the
+         * 6:3, 4 for 4:2) by less than [SAMPLE_STILL_CENTS]. On the 209 recordings this completes the
          * middle at 1.4 s, the bass at 1.9 s, the top at 2.4 s, where the measurement's own decay
          * window ends it, with B as close to the 2.5 s measurement as the string's strikes are to
          * each other -- in C3-B4 0.7 % against 0.3 %, 0.04 c at the octave's partial (§30). A
@@ -884,7 +884,7 @@ class TuningController(
      * hours ago furnish today's targets, and the screen then shows agreement or
      * disagreement that has nothing to do with the string now sounding.
      *
-     * Measured on the 30 September corpus: the ratios repeat from strike to
+     * Measured on the 30 September recordings: the ratios repeat from strike to
      * strike on one string to within 0.04-0.11 cents over all twelve partials,
      * so deriving them afresh each time costs nothing in steadiness. Against
      * them a clean string's partials stand on one line, which is what the
@@ -1452,7 +1452,7 @@ class TuningController(
                         // The string sounds alone (the mutes are in, by the orders of the sampling
                         // page), so a beat heard is the string's own. A false beat is claimed only
                         // when it repeats across strikes at one rate, never from one (FalseBeatTally,
-                        // and the corpus rule of three strikes): what this strike hears is evidence
+                        // and the recordings rule of three strikes): what this strike hears is evidence
                         // towards the claim; the claim is what the screen is told and, the moment it
                         // is made, what the note's measurement keeps.
                         for (k in cr.falseBeating) {

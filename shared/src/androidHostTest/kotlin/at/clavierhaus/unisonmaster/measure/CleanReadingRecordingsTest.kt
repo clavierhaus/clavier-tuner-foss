@@ -13,14 +13,14 @@ import kotlin.test.assertTrue
  * tuner's ear says so (3 Oct), and so does the spectrum, one line per
  * partial with nothing within 25 dB of it while the partial stands. Read
  * against its own series, as the controller reads a string once the strike
- * has spoken, no partial of any take may be called false at any hop of the
+ * has spoken, no partial of any recording may be called false at any hop of the
  * strike — before 3 Oct the engine called partials 2, 3 and 8 of the first
- * take false as they decayed onto the room's floor. Skipped where the
+ * recording false as they decayed onto the room's floor. Skipped where the
  * recordings are not checked out ([CLAVIER_DATA] or a `data/recordings`
  * directory up the tree).
  */
 class CleanReadingRecordingsTest {
-    private fun takes(): List<File> {
+    private fun strikes(): List<File> {
         val base = System.getenv("CLAVIER_DATA")?.let { File(it) } ?: run {
             var d: File? = File(".").absoluteFile
             while (d != null && !File(d, "data/recordings").isDirectory) d = d.parentFile
@@ -34,9 +34,9 @@ class CleanReadingRecordingsTest {
     fun noPartialOfTheSamicksCleanF3IsCalledFalseOnAnyStrike() = cleanF3CallsNothing(combine = true)
 
     /**
-     * The same takes read the way an unmeasured string is read -- the partial being tuned alone,
+     * The same recordings read the way an unmeasured string is read -- the partial being tuned alone,
      * the others judged but not combined. Until 7 Oct 2026 this way called k2 false on two of the
-     * nine takes at exactly 0.30 c, the hysteresis floor, because the false list was taken from
+     * nine recordings at exactly 0.30 c, the hysteresis floor, because the false list was taken from
      * "neither clean nor disagreeing" and that is every steady partial but one here; at the piano
      * a clean G#4 had k2 and k4 claimed and coloured after three strikes (Peter, 15:22).
      */
@@ -44,9 +44,9 @@ class CleanReadingRecordingsTest {
     fun noPartialOfTheSamicksCleanF3IsCalledFalseWhenReadUncombined() = cleanF3CallsNothing(combine = false)
 
     private fun cleanF3CallsNothing(combine: Boolean) {
-        val files = takes()
-        if (files.isEmpty()) { println("CleanReadingRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
-        assertTrue(files.size == 9, "nine takes of F3: ${files.map { it.name }}")
+        val files = strikes()
+        if (files.isEmpty()) { println("CleanReadingRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        assertTrue(files.size == 9, "nine recordings of F3: ${files.map { it.name }}")
         val hop = 1024
         val called = LinkedHashMap<String, String>()
         for (f in files) {

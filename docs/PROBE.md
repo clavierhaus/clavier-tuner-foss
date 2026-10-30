@@ -22,7 +22,7 @@ Two things are deliberately kept honest:
   be read quite differently from the same file played at its own speed.
 - **No resampling.** A file at another sample rate is refused by name rather
   than converted. A resampler would be one more thing standing between the
-  recording and the reading, and every corpus here is already at 48 kHz.
+  recording and the reading, and every set of recordings here is already at 48 kHz.
 
 ## Using it
 
@@ -55,7 +55,7 @@ not a feature, and a tuner who forgets it is tuning to yesterday's piano.
 - Watching a change to the engine against a known string before it is carried
   to an instrument — the same recording before and after, which the piano can
   never give twice.
-- Reading a corpus take on the screen instead of in a table, which is how a
+- Reading a recording on the screen instead of in a table, which is how a
   tuner judges whether a number is usable.
 
 Its limit: a recording cannot answer a question about the microphone itself,

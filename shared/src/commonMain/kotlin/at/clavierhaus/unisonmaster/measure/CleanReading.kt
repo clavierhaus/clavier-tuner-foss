@@ -24,10 +24,10 @@ import kotlin.math.sqrt
  * is judged only from readings in which the partial stands
  * [JUDGE_OVER_NOISE_DB] over the noise beside it. A partial decaying onto
  * the room's floor scatters by the floor's phase, not the string's: on the
- * Samick's clean F3 (nine single-string takes of 30 Sept 2026, read 3 Oct)
+ * Samick's clean F3 (nine single-string recordings of 30 Sept 2026, read 3 Oct)
  * the largest two-second spread of any partial was 0.22–0.30 c while it
  * stood 25 dB or more over the noise beside it, 0.27–0.52 c at 20 dB, and
- * 0.32–0.88 c at 15 dB — three partials of one take were called false for
+ * 0.32–0.88 c at 15 dB — three partials of one recording were called false for
  * it. A partial read only at less than that is present, and is shown, but
  * is neither counted nor accused; its verdict, when it had one, expires
  * with the readings that made it. The
@@ -279,7 +279,7 @@ class CleanReading(
         /**
          * A partial is averaged into the string's reading only while its readings over the strike
          * spread less than this, cents: the clean F3's partials spread 0.14-0.30 c while 25 dB over
-         * the noise beside them (30 Sept 2026, nine takes), and a partial dying through its reader's
+         * the noise beside them (30 Sept 2026, nine recordings), and a partial dying through its reader's
          * filter scatters by whole cents. This is steadiness for the combination, not a verdict on
          * the string: the false-beat verdict is BeatMeasure's.
          */
@@ -287,7 +287,7 @@ class CleanReading(
         /**
          * A reading goes into the beat's window only while the partial stands this far over the
          * noise beside it. The reader's own gate is 10 dB and the spread's judge 25; the beat sits
-         * between, measured on the corpus (8 Oct 2026): the Samick's E6 stands 22-24 dB over the
+         * between, measured on the recordings (8 Oct 2026): the Samick's E6 stands 22-24 dB over the
          * noise through its one window and must be kept, and the strays -- a clean F3's partial
          * at 7 s into its decay, C7's listened partial at the end of a session -- are read in the
          * 10-15 dB tail, where the power is as much the room's as the string's.
@@ -308,7 +308,7 @@ class CleanReading(
         /**
          * A reading counts towards a partial's spread only while the partial stands this far
          * over the noise beside it (PhaseReader's own measure; its gate is 10 dB). Nearer the
-         * floor the scatter is the floor's, not the string's. Measured on the nine F3 takes of
+         * floor the scatter is the floor's, not the string's. Measured on the nine F3 recordings of
          * 30 Sept 2026 (research: the largest two-second spread of any partial, by depth):
          * ≥ 30 dB 0.14–0.30 c, ≥ 25 dB 0.22–0.30 c, ≥ 22 dB 0.24–0.52 c, ≥ 20 dB 0.26–0.52 c,
          * ≥ 15 dB 0.32–0.88 c. 25 dB is where no clean take came within 0.2 c of the old

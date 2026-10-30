@@ -694,7 +694,7 @@ class TuningControllerTest {
         assertEquals(t.listening.targetHz, after.first { it.k == k }.hz, t.listening.targetHz * 1e-6,
             "the listened partial stays on the target it is tuned to")
         // and every other partial is now where this string put it, not where the model did
-        // within the measurement's own repeatability: on the 30 Sept corpus one
+        // within the measurement's own repeatability: on the 30 Sept recordings one
         // string's ratios repeat from strike to strike within 0.04-0.11 cents, so a
         // quarter of a cent is the honest bar for a single synthetic strike
         for (p in after.filter { it.k in 2..6 }) {

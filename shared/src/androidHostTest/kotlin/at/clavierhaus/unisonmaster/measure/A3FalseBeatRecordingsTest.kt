@@ -22,10 +22,10 @@ import kotlin.test.fail
  * and not 1. Partial 2 at 0.43 Hz sits under the floor by less than a two-second window can
  * resolve and is reported, not asserted.
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
 class A3FalseBeatRecordingsTest {
-    private fun corpus(): File? {
+    private fun recordings(): File? {
         val base = System.getenv("CLAVIER_DATA")?.let { File(it) } ?: run {
             var d: File? = File(".").absoluteFile
             while (d != null && !File(d, "data/recordings").isDirectory) d = d.parentFile
@@ -45,15 +45,15 @@ class A3FalseBeatRecordingsTest {
 
     @Test
     fun theA3CentreStringIsClaimedFalseAtPartials3And4AndNotAt1() {
-        val dir = corpus() ?: run { println("A3FalseBeatRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
-        val takes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
-        takes.forEach { assertTrue(it.isFile, "missing ${it.name}") }
-        val pcm = takes.map { WavPcm.read(it.readBytes()) }
+        val dir = recordings() ?: run { println("A3FalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val strikes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
+        strikes.forEach { assertTrue(it.isFile, "missing ${it.name}") }
+        val pcm = strikes.map { WavPcm.read(it.readBytes()) }
         val sr = pcm.first().sampleRateHz
         val a4 = 443.0
         val midi = 57
         val m = StringMeasure.measure(pcm[0].samples.copyOfRange(0, minOf(pcm[0].samples.size, sr * 3)), sr, midi, a4 * Math.pow(2.0, (midi - 69) / 12.0), timeMs = 0L)
-            ?: fail("A3 could not be measured from ${takes[0].name}")
+            ?: fail("A3 could not be measured from ${strikes[0].name}")
         val all = FloatArray(pcm.sumOf { it.samples.size }); var at = 0
         for (p in pcm) { p.samples.copyInto(all, at); at += p.samples.size }
         lateinit var c: TuningController
@@ -79,9 +79,9 @@ class A3FalseBeatRecordingsTest {
      */
     @Test
     fun theReferenceStringTunedAloneIsClaimedFalseAsSamplingClaimsIt() {
-        val dir = corpus() ?: run { println("A3FalseBeatRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
-        val takes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
-        val pcm = takes.map { WavPcm.read(it.readBytes()) }
+        val dir = recordings() ?: run { println("A3FalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val strikes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
+        val pcm = strikes.map { WavPcm.read(it.readBytes()) }
         val sr = pcm.first().sampleRateHz
         val a4 = 443.0; val midi = 57
         val m = StringMeasure.measure(pcm[0].samples.copyOfRange(0, minOf(pcm[0].samples.size, sr * 3)), sr, midi, a4 * Math.pow(2.0, (midi - 69) / 12.0), timeMs = 0L)

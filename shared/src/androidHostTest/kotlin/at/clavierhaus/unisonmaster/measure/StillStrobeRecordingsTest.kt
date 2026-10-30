@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
  * strobe, with no Done: the listened partial inside the match window for HOLD_S without a
  * break (Peter at the piano, 7 Oct 2026, 16:20 -- "it's done when the strobe is still").
  *
- * The corpus: the 22 September tuning of C3 on the 225, 52 s, which EngineRecordingsTest
+ * The recordings: the 22 September tuning of C3 on the 225, 52 s, which EngineRecordingsTest
  * reads as ending at +0.28 c on partial 6 -- inside the 1.5 c window -- with the tuner
  * tapping nothing. Played through the controller with the session restored on C3 and
  * every other measured note in, C3 must be in the session's measurements at the end, and
@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
  * which ends at -11.48 c, is read beside it and reported, not asserted: whether it passed
  * through the window on the way is the recording's to say.
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
 class StillStrobeRecordingsTest {
     private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = false, octaveTreble = OctaveType.O4_1)
@@ -66,7 +66,7 @@ class StillStrobeRecordingsTest {
 
     @Test
     fun theStillStrobeRecordsTheNoteWithoutDone() {
-        val dir = day() ?: run { println("StillStrobeRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val dir = day() ?: run { println("StillStrobeRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val (a4, ms) = measured(dir)
         val cases = listOf("session_20260922-145847_unproc.wav" to "C3", "session_20260922-145032_unproc.wav" to "C2")
         val outcome = LinkedHashMap<String, String>()

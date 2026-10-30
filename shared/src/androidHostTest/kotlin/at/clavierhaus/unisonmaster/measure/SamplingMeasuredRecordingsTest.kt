@@ -26,12 +26,12 @@ import kotlin.test.fail
  * At that moment the kept B stands as close to the string measured over 2.5 s as the probe found
  * (§30: 1.4 % in the bass, 0.7 % in the middle, median; here 0.2 % and 0.6 %).
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
 class SamplingMeasuredRecordingsTest {
     private val hop = 1024
 
-    private fun corpus(): File? {
+    private fun recordings(): File? {
         val base = System.getenv("CLAVIER_DATA")?.let { File(it) } ?: run {
             var d: File? = File(".").absoluteFile
             while (d != null && !File(d, "data/recordings").isDirectory) d = d.parentFile
@@ -56,9 +56,9 @@ class SamplingMeasuredRecordingsTest {
 
     private class Run(val measuredAtS: Double?, val states: List<TuningController.Measured>, val keptB: Double?, val fullB: Double)
 
-    private fun sample(dir: File, take: String, midi: Int): Run {
+    private fun sample(dir: File, fileName: String, midi: Int): Run {
         val a4File = File(dir, "Boesendorfer_A4-C-s1_unproc_20260922-140748.wav")
-        val f = File(dir, take)
+        val f = File(dir, fileName)
         assertTrue(a4File.isFile && f.isFile, "missing ${a4File.name} or ${f.name}")
         val a4pcm = WavPcm.read(a4File.readBytes()); val sr = a4pcm.sampleRateHz
         val a4at = strike(a4pcm.samples)
@@ -70,7 +70,7 @@ class SamplingMeasuredRecordingsTest {
         val sig = FloatArray(lead) + x.copyOfRange(at, minOf(x.size, at + 4 * sr))
         val strikeS = lead.toDouble() / sr
         val fullRing = sig.copyOfRange(0, lead + (2.5 * sr).toInt())
-        val full = StringMeasure.measure(fullRing, sr, midi, 443.0 * 2.0.pow((midi - 69) / 12.0), timeMs = 0L)?.b ?: fail("$take not measurable over 2.5 s")
+        val full = StringMeasure.measure(fullRing, sr, midi, 443.0 * 2.0.pow((midi - 69) / 12.0), timeMs = 0L)?.b ?: fail("$fileName not measurable over 2.5 s")
 
         lateinit var c: TuningController
         var measuredAt: Double? = null; var keptB: Double? = null
@@ -94,7 +94,7 @@ class SamplingMeasuredRecordingsTest {
 
     @Test
     fun aSampledStringIsMeasuredWhenMoreSoundNoLongerChangesItAndThePageIsTold() {
-        val dir = corpus() ?: run { println("SamplingMeasuredRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val dir = recordings() ?: run { println("SamplingMeasuredRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val mid = sample(dir, "Boesendorfer_C4-C-s1_unproc_20260922-140620.wav", 60)
         val bass = sample(dir, "Boesendorfer_A#1-L-s1_unproc_20260922-135758.wav", 34)
         for ((name, r) in listOf("C4" to mid, "A#1" to bass))
@@ -113,13 +113,13 @@ class SamplingMeasuredRecordingsTest {
 
     /**
      * Sampling takes keys up to G6 and no higher (Peter, 26 Oct 2026, 21:28). Above it the string's B does not
-     * repeat from strike to strike -- on these takes F6 0.16 c at partial 4, G#6 4.4 c, B6 32 c, E7 109 c -- so
+     * repeat from strike to strike -- on these recordings F6 0.16 c at partial 4, G#6 4.4 c, B6 32 c, E7 109 c -- so
      * a sample there would enter the curve as noise; the tuning above G6 is not touched. G6's centre string is
      * caught and measured; A6's is not caught at all.
      */
     @Test
     fun samplingTakesKeysUpToG6AndNoHigher() {
-        val dir = corpus() ?: run { println("SamplingMeasuredRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val dir = recordings() ?: run { println("SamplingMeasuredRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val g6 = sample(dir, "Boesendorfer_G6-C-s1_unproc_20260922-141210.wav", 91)
         val a6 = sample(dir, "Boesendorfer_A6-C-s1_unproc_20260922-141248.wav", 93)
         println("G6: states %s, measured %s s; A6: states %s".format(g6.states, g6.measuredAtS, a6.states))

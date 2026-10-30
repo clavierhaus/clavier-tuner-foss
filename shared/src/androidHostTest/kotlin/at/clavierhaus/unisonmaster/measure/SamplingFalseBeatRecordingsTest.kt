@@ -33,17 +33,17 @@ import kotlin.test.fail
  *     publishes a strike twice (caught, then remeasured), so the window was
  *     wiped mid-strike before a spread could stand.
  *
- * What the engine claims on this corpus, since 8 Oct 2026 by the beat measured from the band
+ * What the engine claims on these recordings, since 8 Oct 2026 by the beat measured from the band
  * power (BeatMeasure: rate 0.5-8 Hz, second plane within 10 dB, the findings' own line): partials
  * 2 and 3 on all three strikes -- the §8 answer -- and not 1 (0.25 Hz, too slow), not 4-6 (no
  * second plane). From 7 Oct to 8 Oct the verdict was a spread over 0.5 c and claimed only 2;
  * 3 read 0.39 / 0.42 / 0.35 c against that line (§20) and the doc here said why in words rather
  * than assert the miss. The miss is gone, and so are the words.
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct).
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
 class SamplingFalseBeatRecordingsTest {
-    private fun corpus(): File? {
+    private fun recordings(): File? {
         val base = System.getenv("CLAVIER_DATA")?.let { File(it) } ?: run {
             var d: File? = File(".").absoluteFile
             while (d != null && !File(d, "data/recordings").isDirectory) d = d.parentFile
@@ -68,7 +68,7 @@ class SamplingFalseBeatRecordingsTest {
 
     @Test
     fun whileSamplingTheEnginesFalseClaimsReachTheReadingAndTheTargetsStandOnTheMeasuredB() {
-        val dir = corpus() ?: run { println("SamplingFalseBeatRecordingsTest: no corpus (CLAVIER_DATA or data/recordings); nothing checked"); return }
+        val dir = recordings() ?: run { println("SamplingFalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val left = (1..3).map { File(dir, "Samick_A4-L-s${it}_unproc_20260930-161258.wav") }
         left.forEach { assertTrue(it.isFile, "missing ${it.name}") }
         val pcm = left.map { WavPcm.read(it.readBytes()) }
@@ -79,7 +79,7 @@ class SamplingFalseBeatRecordingsTest {
         val a4 = 439.2
         val m = StringMeasure.measure(pcm[0].samples.copyOfRange(0, minOf(pcm[0].samples.size, sr * 3)), sr, TuningSession.MIDI_A4, a4, timeMs = 0L)
             ?: fail("A4 could not be measured from ${left[0].name}")
-        assertTrue(abs(TuningSession.centsOff(m.f1Hz, a4)) < 5.0, "A4 measured at %.2f Hz, far from the corpus's 439.2".format(m.f1Hz))
+        assertTrue(abs(TuningSession.centsOff(m.f1Hz, a4)) < 5.0, "A4 measured at %.2f Hz, far from the recordings' 439.2".format(m.f1Hz))
         assertTrue(m.b > 1e-4, "A4's B measured as ${m.b}")
 
         val all = FloatArray(pcm.sumOf { it.samples.size })
@@ -122,10 +122,10 @@ class SamplingFalseBeatRecordingsTest {
         println(trace.joinToString("\n"))
         assertTrue(hopsInSampling > 0, "the controller never ran in sampling")
         assertTrue(claimedOver.isNotEmpty(), "nothing was ever claimed false while sampling: the detector is not running there, or its window does not survive the sampling republishes")
-        assertTrue(2 in claimedOver, "the left string's A5 (partial 2, 0.55 Hz by the corpus) was not claimed false while sampling; claimed: $claimedOver")
-        assertTrue(3 in claimedOver, "the left string's E6 (partial 3, 0.67 Hz, planes 3.5 dB apart by the corpus -- the audible one) was not claimed false; claimed: $claimedOver")
-        assertTrue(1 !in claimedOver, "partial 1 beats at 0.25 Hz by the corpus, too slow to hear, and was claimed false")
-        for (k in 4..6) assertTrue(k !in claimedOver, "partial $k is clean by the corpus (second plane does not sustain) but was claimed false")
+        assertTrue(2 in claimedOver, "the left string's A5 (partial 2, 0.55 Hz by the recordings) was not claimed false while sampling; claimed: $claimedOver")
+        assertTrue(3 in claimedOver, "the left string's E6 (partial 3, 0.67 Hz, planes 3.5 dB apart by the recordings -- the audible one) was not claimed false; claimed: $claimedOver")
+        assertTrue(1 !in claimedOver, "partial 1 beats at 0.25 Hz by the recordings, too slow to hear, and was claimed false")
+        for (k in 4..6) assertTrue(k !in claimedOver, "partial $k is clean by the recordings (second plane does not sustain) but was claimed false")
 
         // The claims are the string's facts and are kept with its measurement (since 8 Oct 2026):
         // A4 is the reference and the strikes do not re-measure it, so the facts must reach the

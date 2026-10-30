@@ -14,7 +14,7 @@ data class FalseBeat(val k: Int, val rateHz: Double, val depthDb: Double)
  * How many separate strikes of the note each partial has been heard beating
  * against itself in, and therefore which partials may be called false.
  *
- * A false beat is claimed only when it repeats. CLAUDE.md, of the corpus:
+ * A false beat is claimed only when it repeats. CLAUDE.md, of the recordings:
  * "Three strikes per string is the minimum for any claim about a false beat:
  * a rate that does not repeat is not a rate." The engine's judgement of a
  * single strike is evidence towards that claim and is not the claim.
@@ -42,7 +42,7 @@ class FalseBeatTally(private val strikesNeeded: Int = STRIKES) {
      * again keeps the rate of its best-fitting window: one strike is one strike, and its rate of
      * record is the one its own evidence trusts most.
      *
-     * Two other choices were tried on the corpus on 8 Oct 2026 (evening) and were worse where it
+     * Two other choices were tried on the recordings on 8 Oct 2026 (evening) and were worse where it
      * matters, which is the claim: the median over the strike's windows claimed the Bösendorfer
      * A3's slow fundamental (a 0.23 Hz wow, FALSE-BEATS §6) and its partial 7; the window in
      * which the partial stood loudest claimed both as well. The best-fitting window claims what
@@ -72,7 +72,7 @@ class FalseBeatTally(private val strikesNeeded: Int = STRIKES) {
      * The claims as the string's facts: for each partial in [claimed], the median rate and the
      * median depth over the strikes that made the claim. A median, not a mean: three strikes is
      * the minimum, and one window that fitted a harmonic of the rate must not pull the figure.
-     * The rate is as fine as a two-second window reads it, which on the corpus is within a
+     * The rate is as fine as a two-second window reads it, which on the recordings is within a
      * quarter of the ESPRIT figure and no finer (SAMICK findings, 8 Oct 2026).
      */
     fun claims(): List<FalseBeat> = claimed().map { k ->
@@ -103,7 +103,7 @@ class FalseBeatTally(private val strikesNeeded: Int = STRIKES) {
     fun clear() = strikes.clear()
 
     companion object {
-        /** The corpus rule: three strikes per string is the minimum for any claim about a false beat. */
+        /** The recordings rule: three strikes per string is the minimum for any claim about a false beat. */
         const val STRIKES = 3
         /** Strikes agree on a rate when each lies within this factor of their median: two and a half steps of BeatMeasure's 8 % grid. */
         const val RATE_AGREE = 1.25

@@ -75,13 +75,13 @@ class CleanReadingTest {
      * floor is built as the recordings show it — not white, but many weak
      * steady components spread over the ±85 c the reader's neighbour probes
      * cover, together [floorDb] under each partial's first level. On the
-     * Samick's nine F3 takes (30 Sept, read with the engine on 3 Oct) the
+     * Samick's nine F3 recordings (30 Sept, read with the engine on 3 Oct) the
      * largest two-second spread of any partial was 0.22–0.30 c while it
      * stood 25 dB or more over the noise beside it, 0.27–0.52 c at 20 dB
      * and 0.32–0.88 c at 15 dB, and the engine called 22 partials false over
-     * the nine takes, all of them past 4.6 s into the strike; this string
-     * does the same. The partials decay in [tau] seconds (the takes' in
-     * 1.1–2.3 s); the floor under partial 1 is set deeper, as the takes' is
+     * the nine recordings, all of them past 4.6 s into the strike; this string
+     * does the same. The partials decay in [tau] seconds (the recordings' in
+     * 1.1–2.3 s); the floor under partial 1 is set deeper, as the recordings' is
      * — their partial 1 never fell under 26 dB over the noise beside it.
      */
     private fun decayingCleanString(f1: Double, b: Double, seconds: Double, floorDb: (Int) -> Double, tau: Double = 2.0, seed: Int = 7): FloatArray {

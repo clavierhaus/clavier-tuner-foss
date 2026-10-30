@@ -51,7 +51,7 @@ import java.io.File
  * carries two sizes of type).
  *
  * Each screen is put on each pane of [PANES] by Robolectric, which lays it out and draws it natively on
- * the JVM, fed the strikes of the corpus through the engine exactly as the microphone feeds it. Every
+ * the JVM, fed the strikes of the recordings through the engine exactly as the microphone feeds it. Every
  * piece of text on it is then read back from its own layout:
  * - **cut**: the text runs past its box (`hasVisualOverflow`), or its container clips it;
  * - **broken word**: a line ends inside a word, as "Übernehmen" became "Ü / h" and "gemessen"
@@ -62,8 +62,8 @@ import java.io.File
  * Every picture is written to `ui/build/layout-check/<pane>-<language>/`, so the eye can follow the
  * machine. Help scrolls by law (docs/UI.md) and is not drawn here.
  *
- * Says so when it cannot find its corpus, instead of passing (ledger, 5 Oct 2026). The corpus is found
- * as every corpus test finds it: `CLAVIER_DATA`, or `data/recordings` above the working directory.
+ * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct 2026). The recordings are found
+ * as every recording test finds it: `CLAVIER_DATA`, or `data/recordings` above the working directory.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -89,7 +89,7 @@ class LayoutCheckTest {
         return base?.let { File(it, "2026-09-22") }?.takeIf { File(it, "Boesendorfer_manifest.csv").isFile }
     }
 
-    /** One string's strike from the corpus, from [fromS] to [toS] seconds after its onset (a hop 6 dB over the five before). */
+    /** One string's strike from the recordings, from [fromS] to [toS] seconds after its onset (a hop 6 dB over the five before). */
     private fun strike(dir: File, name: String, fromS: Double, toS: Double): FloatArray {
         val f = dir.listFiles()!!.filter { it.name.startsWith("Boesendorfer_$name") }.minByOrNull { it.name }!!
         val p = WavPcm.read(f.readBytes()); val x = p.samples; val h = 1024
@@ -160,7 +160,7 @@ class LayoutCheckTest {
     }
 
     private fun check(pane: String, lang: String, fontScale: Float = 1f) {
-        val corpus = day() ?: run { println("LayoutCheckTest: no recordings of 22 September here; nothing drawn, nothing checked"); return }
+        val recordings = day() ?: run { println("LayoutCheckTest: no recordings of 22 September here; nothing drawn, nothing checked"); return }
         Strings.use(lang)
         val where = "$pane, $lang" + if (fontScale != 1f) ", text ×$fontScale" else ""
         val dir = File("build/layout-check/$pane-$lang" + if (fontScale != 1f) "-text$fontScale" else "")
@@ -188,17 +188,17 @@ class LayoutCheckTest {
         // A4, its string sounding
         c.setReference(439.4)
         show("tune", tune)
-        c.hear(src, strike(corpus, "A4-C-s1", -0.2, 3.0)); look(where, dir, "02-a4")
+        c.hear(src, strike(recordings, "A4-C-s1", -0.2, 3.0)); look(where, dir, "02-a4")
         c.acceptLive()
         // sampling: nothing yet; a key measuring; measured; kept; a short one
         look(where, dir, "03-sampling")
-        c.hear(src, strike(corpus, "C4-C-s1", -0.2, 0.6)); look(where, dir, "04-sampling-measuring")
-        c.hear(src, strike(corpus, "G3-C-s1", -0.2, 3.0)); look(where, dir, "05-sampling-measured")
+        c.hear(src, strike(recordings, "C4-C-s1", -0.2, 0.6)); look(where, dir, "04-sampling-measuring")
+        c.hear(src, strike(recordings, "G3-C-s1", -0.2, 3.0)); look(where, dir, "05-sampling-measured")
         c.acceptLive(); look(where, dir, "06-sampling-kept")
-        c.hear(src, strike(corpus, "C1-L-s1", -0.2, 0.9)); c.hear(src, strike(corpus, "G3-C-s1", -0.2, 0.3)); look(where, dir, "07-sampling-short")
+        c.hear(src, strike(recordings, "C1-L-s1", -0.2, 0.9)); c.hear(src, strike(recordings, "G3-C-s1", -0.2, 0.3)); look(where, dir, "07-sampling-short")
         // tuning, on the strings sampled
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
-        c.hear(src, strike(corpus, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
+        c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
         // settings, every page but Help's (Help scrolls by law)
         for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
             show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }
