@@ -36,6 +36,9 @@ jobs:
         run: ./gradlew --no-daemon :ui:testDebugUnitTest
       - name: APK
         run: ./gradlew --no-daemon :androidApp:assembleDebug
+      - name: Tests counted
+        if: always()
+        run: python3 scripts/test-count.py shared ui
       - name: Test reports
         if: failure()
         uses: actions/upload-artifact@v4
@@ -64,6 +67,9 @@ jobs:
         run: ./gradlew --no-daemon :shared:compileKotlinIosArm64 :shared:compileKotlinIosX64 :shared:compileKotlinIosSimulatorArm64
       - name: Core suite on the iOS simulator
         run: ./gradlew --no-daemon :shared:iosSimulatorArm64Test
+      - name: Tests counted
+        if: always()
+        run: python3 scripts/test-count.py shared
       - name: Test reports
         if: failure()
         uses: actions/upload-artifact@v4
