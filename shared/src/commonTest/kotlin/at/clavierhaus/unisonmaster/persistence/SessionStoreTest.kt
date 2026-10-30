@@ -18,6 +18,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.math.pow
 
 /** Test-only keyed checksum; the app uses the Android Keystore. */
 private class TestSealer(key: String) : Sealer {
@@ -122,7 +123,7 @@ class SessionStoreTest {
     @Test
     fun aSamplingSavedBy041ContinuesWithNothingTunedButA4() {
         val a4 = 443.0
-        fun note(m: Int) = at.clavierhaus.unisonmaster.tuning.measuredString(m, TuningSession.targetF1(m, a4), 1e-4 * Math.pow(2.0, (m - 40) / 12.0))
+        fun note(m: Int) = at.clavierhaus.unisonmaster.tuning.measuredString(m, TuningSession.targetF1(m, a4), 1e-4 * 2.0.pow((m - 40) / 12.0))
         val samples = listOf(69, 24, 33, 45, 52, 76, 81).map { note(it) }
         val text = buildString {
             append("clavierhaustuner-session 1\nsaved 1789000000000\na4 $a4\ncurrent 81\nsampling 1\n")

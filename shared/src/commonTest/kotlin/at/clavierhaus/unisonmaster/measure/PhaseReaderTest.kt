@@ -8,6 +8,7 @@ import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import at.clavierhaus.unisonmaster.format
 
 private const val SR = 48_000
 

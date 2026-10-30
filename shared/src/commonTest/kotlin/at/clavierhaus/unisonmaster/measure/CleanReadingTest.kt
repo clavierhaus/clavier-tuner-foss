@@ -8,6 +8,7 @@ import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import at.clavierhaus.unisonmaster.format
 
 class CleanReadingTest {
     private val sr = 48_000
@@ -89,7 +90,7 @@ class CleanReadingTest {
         val out = FloatArray(n)
         val phase = DoubleArray(10)
         val start = (0.3 * sr).toInt()
-        val rnd = java.util.Random(seed.toLong())
+        val rnd = at.clavierhaus.unisonmaster.JavaRandom(seed.toLong())
         val perPartial = 24
         val roomHz = ArrayList<Double>(); val roomA = ArrayList<Double>(); val roomPhase = ArrayList<Double>()
         for (k in 1..8) for (j in 0 until perPartial) {
@@ -128,7 +129,7 @@ class CleanReadingTest {
         while (i + hop <= x.size) {
             if (i == (0.3 * sr).toInt() / hop * hop) r.strike()
             val res = r.push(x.copyOfRange(i, i + hop), 4, combine = true)
-            for (k in res.falseBeating) everCalledFalse.putIfAbsent(k, "at %.2f s, spread %.2f c".format(i.toDouble() / sr, res.partials.first { it.k == k }.spreadCents))
+            for (k in res.falseBeating) if (k !in everCalledFalse) everCalledFalse.put(k, "at %.2f s, spread %.2f c".format(i.toDouble() / sr, res.partials.first { it.k == k }.spreadCents))
             everPresent = maxOf(everPresent, res.partials.count { it.present })
             i += hop
         }

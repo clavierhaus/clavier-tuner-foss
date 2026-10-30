@@ -31,7 +31,9 @@ class InharmonicityCurve(
     private class Segment(val from: Int, val to: Int, val model: ((Int) -> Double)?)
 
     private val segments: List<Segment>
-    private val all = samples.filter { it.value > 0.0 }.toSortedMap()
+    // Ascending by key, as the sorted map it was until 30 Oct 2026; built with common
+    // collections (toSortedMap exists only on the JVM), so the fit adds in the same order.
+    private val all: Map<Int, Double> = samples.filter { it.value > 0.0 }.entries.sortedBy { it.key }.associate { it.toPair() }
 
     init {
         val cuts = breaks.filter { it in 1..127 }.sorted()

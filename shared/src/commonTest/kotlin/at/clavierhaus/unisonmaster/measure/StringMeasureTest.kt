@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import at.clavierhaus.unisonmaster.format
 
 class StringMeasureTest {
     private val sr = 48_000
