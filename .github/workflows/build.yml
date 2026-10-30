@@ -1,7 +1,7 @@
 # Every push builds the engine for Android and for iOS and runs the same tests on both;
 # a red build on either platform is a broken build.
 #
-#   android: the core suite on the JVM, the screens' layout check, and the APK itself.
+#   android: the core suite on the JVM, the screens' tests, and the APK itself.
 #   ios:     the engine compiled for every iOS target and the core suite run on the iOS
 #            simulator. Apple's toolchain runs only on macOS, so this job runs on GitHub's
 #            macOS machines.
@@ -32,7 +32,9 @@ jobs:
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-37.0" "build-tools;37.0.0" > /dev/null
       - name: Core suite (JVM)
         run: ./gradlew --no-daemon :shared:testAndroidHostTest
-      - name: Layout check
+      # LayoutCheckTest draws the screens from the recordings, which never come to foss: here it says
+      # "nothing drawn, nothing checked" and passes. The screens are drawn and checked in Pro's CI.
+      - name: Screens' tests (the layout check draws in Pro's CI only)
         run: ./gradlew --no-daemon :ui:testDebugUnitTest
       - name: APK
         run: ./gradlew --no-daemon :androidApp:assembleDebug

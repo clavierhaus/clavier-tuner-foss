@@ -149,7 +149,18 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
             ChoiceRow(t(K.settings_strobeShows), listOf(t(K.settings_strobeAll), t(K.settings_strobeOne)), if (s.strobeOne) 1 else 0, info = t(K.settings_note_strobeOne)) { i ->
                 model.update { it.copy(strobeOne = i == 1) }
             }
-            // how many of them, or all; and whether the row comes up at once (Peter, 30 Oct 2026). One step
+            StepperRow(
+                t(K.settings_highestPartial), noteName(s.highestPartialMidi),
+                canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
+                canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
+                onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
+                onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
+            )
+        },
+        right = {
+            SettingsSection(t(K.settings_reading))
+            // how many bands, or all, and whether the row comes up at once (Peter, 30 Oct 2026), beside the
+            // left column, which holds no more on the smallest phone. One step
             // below all is the most there are; the stepper runs 1, 2 … MAX_STROBE_COUNT, all
             if (!s.strobeOne) {
                 StepperRow(
@@ -165,16 +176,6 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
                     model.update { it.copy(strobeTogether = on) }
                 }
             }
-            StepperRow(
-                t(K.settings_highestPartial), noteName(s.highestPartialMidi),
-                canDecrease = s.highestPartialMidi > TunerSettings.MIN_HIGHEST_PARTIAL,
-                canIncrease = s.highestPartialMidi < TunerSettings.MAX_HIGHEST_PARTIAL,
-                onDecrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi - 1) } },
-                onIncrease = { model.update { it.copy(highestPartialMidi = it.highestPartialMidi + 1) } },
-            )
-        },
-        right = {
-            SettingsSection(t(K.settings_reading))
             val steps = TunerSettings.MEMORY_STEPS
             val i = steps.indexOfFirst { kotlin.math.abs(it - s.readingMemoryS) < 1e-6 }.let { if (it < 0) 0 else it }
             StepperRow(
