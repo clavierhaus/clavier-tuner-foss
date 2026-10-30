@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.7.0 -- 2026-10-31
+
 ### 2026-10-30
 - **The key struck is caught sooner:** about 0.17 s after the strike instead
   of 0.26 s, with no more wrong keys named than before.
