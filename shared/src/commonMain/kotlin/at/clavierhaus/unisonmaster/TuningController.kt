@@ -73,8 +73,13 @@ class TuningController(
         const val MAX_SHOWN = 6
         /** The key struck is named on this many samples ([KeyIdentifier]) ... */
         const val DETECT_SAMPLES = 16384
-        /** ... from this many hops after the strike (half the window of it: the treble is gone in half a second) to this many (1.5 s) ... */
-        const val DETECT_FROM_HOPS = 8L
+        /**
+         * ... from this many hops after the strike to this many (1.5 s) ... Four hops (85 ms) since 30 Oct 2026, eight
+         * (half the window) before: on every key of the 225 (22 Sept, 193 recordings; SAMICK findings §35) the key is
+         * named at 171 ms median instead of 256, a wrong key named first on 1 recording as before, none fewer named.
+         * Asked every hop, or two in a row instead of three, it named the key sooner still and a wrong key first on 5-17 % of them.
+         */
+        const val DETECT_FROM_HOPS = 4L
         const val DETECT_UNTIL_HOPS = 70L
         /** ... every other hop, and the same key this many times in a row. */
         const val DETECT_EVERY = 2L

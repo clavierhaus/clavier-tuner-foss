@@ -795,6 +795,8 @@ class TuningControllerTest {
         val g4 = curveF1(67, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4), measuredString(67, et(67), 7e-4)), settings)
         c.hear(src, SyntheticString.strike(g4 * 2.0.pow(3.0 / 1200), 7e-4, 3.0))
         val followedAt = midi.first { it.first > 0.3 && it.second == 67 }.first
+        // named from the fourth hop after the strike (30 Oct 2026, SAMICK findings §35): from the eighth, 0.26 s
+        assertTrue(followedAt - 0.3 <= 0.22, "G4 named %.2f s after the strike".format(followedAt - 0.3))
         val live = trail.filter { it.first >= followedAt && it.second.live }
         val first = live.first()
         assertTrue(first.first - 0.3 <= 0.40, "followed at %.2f s, the strobe up at %.2f s after the strike".format(followedAt - 0.3, first.first - 0.3))
