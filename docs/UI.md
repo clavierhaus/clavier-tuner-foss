@@ -49,6 +49,21 @@ A tuning feature is built here, once.
 The unison screen is Pro's (Peter, 4 Oct 2026, 15:26: "a USP for Pro
 only") and lives in Pro, not here. The free app has no *The Unisons* door.
 
+## The app between the phone and the screens (30 Oct 2026)
+
+What the free app's `MainActivity` did between the phone and the screens —
+which screen is in front, the microphone on the tuning screen only, the
+tuning saved on pause and restored when the phone makes the app again, the
+system bars, the words — moved into the `ui` library as `TunerApp` and
+`TunerAppScreen`. They are plain Kotlin and Compose with no Android type in
+them. What only the phone has is asked of it through `Phone` (the app's
+version, the phone's language, whether the microphone is allowed, the
+system bars) and the Back gesture is handed in; `MainActivity` makes the
+parts, implements `Phone`, and forwards `onResume`, `onPause` and the
+microphone's permission. Nothing the tuner sees or does changed.
+`TunerAppTest` checks the moved logic. Pro's `MainActivity` still carries
+its own until it is moved the same way.
+
 The recorder is Pro's (blueprint §18.5, 4 Oct 2026): the red button on the
 tuning and unison screens, the play button, the *Recordings* door and the
 `RecordStrikesScreen` behind it — the reference recording belongs to the
