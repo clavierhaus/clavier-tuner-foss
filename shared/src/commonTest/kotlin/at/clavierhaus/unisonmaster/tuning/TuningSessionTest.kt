@@ -210,10 +210,10 @@ class TuningSessionTest {
     fun aSampleTakenBackLeavesTheSamplingAndA4StaysTheReference() {
         val s = TuningSession(a4, pro)
         s.record(measuredString(69, a4, 8e-4))
-        for (m in listOf(24, 33, 45, 52, 76, 93)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        for (m in listOf(24, 33, 40, 45, 52, 64, 76, 93)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
         assertTrue(s.samplingReady)
         assertTrue(s.forget(33), "a sampled string is taken back")
-        assertFalse(33 in s.measurements); assertEquals(5, s.samplesIn); assertFalse(s.samplingReady, "five again: Done waits")
+        assertFalse(33 in s.measurements); assertEquals(7, s.samplesIn); assertFalse(s.samplingReady, "seven again: Done waits")
         assertFalse(s.forget(33), "nothing left to take back")
         assertFalse(s.forget(69), "A4 is the reference, not a sample")
         s.record(measuredString(33, et(33), 8e-5))
@@ -277,7 +277,7 @@ class TuningSessionTest {
 
     @Test
     fun aNewSessionSamplesThenTunes() {
-        // one sampling law (4 Oct 2026): any six strings besides A4, where the tuner sees fit —
+        // one sampling law (4 Oct 2026): any eight strings besides A4 (six until 30 Oct), where the tuner sees fit —
         // the same whether he then walks the temperament octave first or not
         for (way in listOf(foss, pro)) {
             val s = TuningSession(a4, way)
@@ -287,10 +287,10 @@ class TuningSessionTest {
             s.record(measuredString(69, a4, 8e-4))
             assertFalse(s.samplingReady)
             // none of these is in the temperament octave; none was in the set of 25 Sept but C1 and A6
-            for (m in listOf(24, 33, 45, 52, 76)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
-            assertFalse(s.samplingReady, "five in, six needed"); assertEquals(5, s.samplesIn)
+            for (m in listOf(24, 33, 40, 45, 52, 64, 76)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+            assertFalse(s.samplingReady, "seven in, eight needed"); assertEquals(7, s.samplesIn)
             s.record(measuredString(93, et(93), 3e-3))
-            assertTrue(s.samplingReady, "six strings, wherever they stand, end the sampling")
+            assertTrue(s.samplingReady, "eight strings, wherever they stand, end the sampling")
             s.finishSampling()
             assertFalse(s.sampling)
             assertTrue(s.curve.ready)

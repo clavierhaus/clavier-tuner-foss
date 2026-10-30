@@ -33,7 +33,7 @@ wanted to see what his instruments actually do.
   beats on its own. Take the cleanest string as the reference; a tap on a
   partial's button takes it out of the strobe and another brings it back.
 - **Measures first.** Strike single strings, mutes in, any keys up to G6 in
-  any order: six are the minimum, 10 to 15 spread up to G6 give the best result.
+  any order: eight are the minimum, 10 to 15 spread up to G6 give the best result.
   From those strings the app measures the inharmonicity of the piano and
   computes where every note belongs before you tune the first one. The
   stretch comes from this instrument, not from a table. Each key says
@@ -118,7 +118,7 @@ What testers found in 0.3, and what changed:
   checked on five phone sizes, in English and German and at the largest
   system text size: a button's word never breaks, and no text is cut.
 - **Sampling instructions that named keys.** They now say only what to do:
-  single strings, any keys, any order; six at least, 10 to 15 for the best
+  single strings, any keys, any order; eight at least, 10 to 15 for the best
   result; let each ring until it says measured, then Accept.
 - **A strobe on the sampling page nobody needed.** A sample is measured, not
   tuned; the sampling page has no strobe any more. A4 keeps its strobe, now

@@ -241,7 +241,9 @@ data class TunerSettings(
          * is prescribed — the set of 25 Sept (A3–A4 with C1 G2 C3 and G5 C6
          * A6) left the engine on 4 Oct 2026.
          */
-        const val MIN_SAMPLES = 6
+        // eight since 30 Oct 2026 (Peter: "not relevant for a concert grand, but for a spinet or smaller upright it
+        // is"), six before
+        const val MIN_SAMPLES = 8
 
         /**
          * The highest key sampling takes: G6 (Peter, 26 Oct 2026, 21:28). Above it a string's B does not

@@ -577,14 +577,14 @@ class TuningControllerTest {
         assertEquals(21, t.caught); assertTrue(t.caughtAccepted); assertFalse(c.acceptReady())
         assertEquals(-8.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "replaced")
         assertEquals(1, t.samplesIn, "E2 was never kept")
-        // five more, kept: Done opens, and ends the sampling at A4's neighbour
-        for ((m, b) in listOf(33 to 8e-5, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 76 to 1.0e-3)) {
+        // seven more, kept: Done opens, and ends the sampling at A4's neighbour
+        for ((m, b) in listOf(33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
             c.hear(src, SyntheticString.strike(et(m), b, 3.0))
             assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
             assertNotNull(c.acceptLive(), "kept ${m}")
         }
         t = c.tuning.value!!
-        assertEquals(6, t.samplesIn); assertEquals(6, t.samplesNeeded); assertTrue(t.samplingReady); assertTrue(c.doneReady())
+        assertEquals(8, t.samplesIn); assertEquals(8, t.samplesNeeded); assertTrue(t.samplingReady); assertTrue(c.doneReady())
         c.finishSampling()
         t = c.tuning.value!!
         assertFalse(t.sampling); assertEquals(68, t.midi); assertTrue(t.curveReady)
@@ -593,19 +593,19 @@ class TuningControllerTest {
     @Test
     fun theTemperamentFirstWalkSamplesLikeAnyOther() {
         // one sampling law (4 Oct 2026): the walk's preference changes the route after the sampling, not what is sampled —
-        // six strings wherever the tuner strikes them end it, none of the set of 25 Sept required
+        // eight strings wherever the tuner strikes them end it, none of the set of 25 Sept required
         val (c, src) = controller(settings.copy(lowestKeyMidi = 21, temperamentFirst = true))
         c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
         c.acceptLive()
         var t = c.tuning.value!!
         assertTrue(t.sampling); assertEquals(TunerSettings.MIN_SAMPLES, t.samplesNeeded)
-        for ((m, b) in listOf(21 to 1.2e-4, 33 to 8e-5, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 76 to 1.0e-3)) {
+        for ((m, b) in listOf(21 to 1.2e-4, 33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
             c.hear(src, SyntheticString.strike(et(m), b, 3.0))
             assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
             assertNotNull(c.acceptLive(), "kept ${m}")
         }
         t = c.tuning.value!!
-        assertEquals(6, t.samplesIn); assertTrue(t.samplingReady); assertTrue(c.doneReady())
+        assertEquals(8, t.samplesIn); assertTrue(t.samplingReady); assertTrue(c.doneReady())
         c.finishSampling()
         t = c.tuning.value!!
         assertFalse(t.sampling); assertFalse(t.recordsOnLeaving, "the walk itself is still the temperament octave first, asking Done")

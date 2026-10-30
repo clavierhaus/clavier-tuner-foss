@@ -83,6 +83,11 @@ fun TunerSettingsScreen(
      * range is the fixed A0–C8 of the free app (Peter, 19 Oct 2026), and the row only shows it.
      */
     lowestKeyRow: (@Composable () -> Unit)? = null,
+    /**
+     * The lowest plain string's row, for an edition that keeps it (Pro). The free app has none since 30 Oct
+     * 2026 (Peter: "isn't relevant anymore"): since 29 Oct it changes no target.
+     */
+    lowestPlainRow: Boolean = false,
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
@@ -96,7 +101,7 @@ fun TunerSettingsScreen(
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow) })) + extraPianoPages),
+            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow, lowestPlainRow) })) + extraPianoPages),
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
@@ -254,11 +259,11 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
 }
 
 @Composable
-private fun RangeRows(s: TunerSettings, model: SettingsModel, lowestKeyRow: (@Composable () -> Unit)?) {
+private fun RangeRows(s: TunerSettings, model: SettingsModel, lowestKeyRow: (@Composable () -> Unit)?, lowestPlainRow: Boolean) {
     SettingsSection(t(K.settings_piano))
     // the free app's range is fixed (SettingsModel.lowestKeyFixed); the row that sets it is Pro's
     if (lowestKeyRow != null) lowestKeyRow() else ReadOnlyRow(t(K.settings_lowestKey), noteName(s.lowestKeyMidi), info = RANGE_NOTE)
-    StepperRow(
+    if (lowestPlainRow) StepperRow(
         t(K.settings_lowestUnwound), noteName(s.lowestUnwoundMidi),
         canDecrease = s.lowestUnwoundMidi > TunerSettings.MIN_UNWOUND,
         canIncrease = s.lowestUnwoundMidi < TunerSettings.MAX_UNWOUND,

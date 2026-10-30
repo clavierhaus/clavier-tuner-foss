@@ -16,6 +16,10 @@ reconstructed from the commit history that day.
   band as the partials were read, the low ones last.
 - **Settings › Strobe › Number of bands:** all, as before, or any number from
   1: the lowest partials, the band being tuned always among them.
+- **Sampling needs eight strings besides A4** before Done, six until now: on a
+  concert grand six were enough, on a spinet or a small upright they are not.
+- **Settings › Piano › Range no longer shows the lowest plain string:** it has
+  changed no target since the tuning curve lost its borders (29 Oct).
 - **Settings › Strobe › Bands appear together:** off, each band comes up as
   it is read; on, the row comes up at once when every band has been read, at
   most 0.8 s after the first.
