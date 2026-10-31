@@ -73,6 +73,17 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.7.1
+
+- **Every strobe stands where the note as played puts it,** from its first
+  reading: a strobe other than the one being tuned stands at the tuned
+  strobe's target times the ratio between the two partials as read. No strobe
+  is placed by a model and then moved. *Strobe smoothing* (Settings › Tuning ›
+  Reading) sets how far back that ratio is averaged.
+- **The piano's size recommends the bass's octave type:** the window behind
+  the tuning line opens after sampling, with a switch for a grand of 210 cm
+  (6′11″) or longer — on, bass 10:5; off, 6:3. Every type stays yours.
+
 ## New in 0.7
 
 - **A new tuning curve, with no borders.** The bass's octave type is beatless
