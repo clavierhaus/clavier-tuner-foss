@@ -3,10 +3,10 @@ import UIKit
 import ClavierTuner
 
 // The iPhone app shows the tuner's screens, which are Kotlin (the ui module); MainViewController
-// builds the app around the phone's microphone, settings and lifecycle (MainViewController.kt).
+// (TunerEntry) builds the app around the phone's microphone, settings and lifecycle (MainViewController.kt).
 struct TunerView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        TunerEntry.shared.viewController()
     }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
