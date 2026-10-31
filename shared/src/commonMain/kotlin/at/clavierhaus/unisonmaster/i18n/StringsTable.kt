@@ -133,6 +133,9 @@ object K {
     const val settings_note_strobeCount = "settings.note.strobeCount"
     const val settings_strobeTogether = "settings.strobeTogether"
     const val settings_note_strobeTogether = "settings.note.strobeTogether"
+    const val settings_strobeSmoothing = "settings.strobeSmoothing"
+    const val settings_strobeSmoothingWhole = "settings.strobeSmoothingWhole"
+    const val settings_note_strobeSmoothing = "settings.note.strobeSmoothing"
     const val settings_highestPartial = "settings.highestPartial"
     const val settings_reading = "settings.reading"
     const val settings_readingMemory = "settings.readingMemory"
@@ -315,15 +318,18 @@ internal object StringsTable : Catalog {
         "settings.screen" to arrayOf("Note switching", "Tonwechsel"),
         "settings.followKey" to arrayOf("Auto note switching", "Automatischer Tonwechsel"),
         "settings.cleanTogether" to arrayOf("Average the clean partials", "Saubere Teiltöne mitteln"),
-        "settings.strobeShows" to arrayOf("Bands", "Bänder"),
+        "settings.strobeShows" to arrayOf("Strobes", "Strobes"),
         "settings.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
         "settings.strobeOne" to arrayOf("Octave partial", "Oktavteilton"),
-        "settings.note.strobeOne" to arrayOf("Octave partial: one band, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.", "Oktavteilton: ein Band, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert."),
-        "settings.strobeCount" to arrayOf("Number of bands", "Anzahl der Bänder"),
+        "settings.note.strobeOne" to arrayOf("Octave partial: one strobe, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.", "Oktavteilton: ein Strobe, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert."),
+        "settings.strobeCount" to arrayOf("Number of strobes", "Anzahl der Strobes"),
         "settings.strobeCountAll" to arrayOf("all", "alle"),
-        "settings.note.strobeCount" to arrayOf("How many bands the strobe shows: the lowest partials offered for the note, the band being tuned always among them. All, or any number from 1.", "Wie viele Bänder das Stroboskop zeigt: die tiefsten Teiltöne des Tons, das gestimmte Band immer dabei. Alle oder jede Zahl ab 1."),
-        "settings.strobeTogether" to arrayOf("Bands appear together", "Bänder erscheinen gemeinsam"),
-        "settings.note.strobeTogether" to arrayOf("On: the row comes up at once, when every band has been read, at most 0.8 s after the first. Off: each band comes up as soon as its partial is read. Either way a band fades in over 0.3 s.", "Ein: die Reihe erscheint auf einmal, sobald jedes Band gelesen ist, höchstens 0,8 s nach dem ersten. Aus: jedes Band erscheint, sobald sein Teilton gelesen ist. In beiden Fällen blendet ein Band über 0,3 s ein."),
+        "settings.note.strobeCount" to arrayOf("How many strobes are shown: the lowest partials offered for the note, the strobe being tuned always among them. All, or any number from 1.", "Wie viele Strobes gezeigt werden: die tiefsten Teiltöne des Tons, der gestimmte Strobe immer dabei. Alle oder jede Zahl ab 1."),
+        "settings.strobeTogether" to arrayOf("Strobes appear together", "Strobes erscheinen gemeinsam"),
+        "settings.note.strobeTogether" to arrayOf("On: the row comes up at once, when every strobe has been read, at most 0.8 s after the first. Off: each strobe comes up as soon as its partial is read. Either way a strobe fades in over 0.3 s.", "Ein: die Reihe erscheint auf einmal, sobald jeder Strobe gelesen ist, höchstens 0,8 s nach dem ersten. Aus: jeder Strobe erscheint, sobald sein Teilton gelesen ist. In beiden Fällen blendet ein Strobe über 0,3 s ein."),
+        "settings.strobeSmoothing" to arrayOf("Strobe smoothing", "Strobe-Glättung"),
+        "settings.strobeSmoothingWhole" to arrayOf("whole", "ganz"),
+        "settings.note.strobeSmoothing" to arrayOf("Every strobe but the one being tuned stands where the note as played puts it: at the tuned strobe's target times the ratio between the two partials as read. Smoothing is how far back that ratio is averaged. Whole: averaged over the whole strike, every wobble and false beat shows. Shorter: the strobes follow the tuned one more closely.", "Jeder Strobe außer dem gestimmten steht dort, wo der Anschlag ihn hinstellt: am Ziel des gestimmten Strobes mal dem Verhältnis der beiden Teiltöne, wie gelesen. Die Glättung ist, wie weit dieses Verhältnis zurück gemittelt wird. Ganz: über den ganzen Anschlag gemittelt, jede Schwebung der Saite in sich zeigt sich. Kürzer: die Strobes folgen dem gestimmten enger."),
         "settings.highestPartial" to arrayOf("Partials up to", "Teiltöne bis"),
         "settings.reading" to arrayOf("Strobe", "Stroboskop"),
         "settings.readingMemory" to arrayOf("Averaging time", "Mittelungszeit"),

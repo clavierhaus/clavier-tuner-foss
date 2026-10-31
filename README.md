@@ -91,8 +91,8 @@ first. Unisons are tuned by ear.
 - **The key struck is caught sooner,** about 0.17 s after the strike instead of
   0.26 s, and **the strobe's row stands at once:** every band the note offers
   is there from the start and fades in over 0.3 s as its partial is read.
-  Settings › Strobe › *Number of bands* shows all of them or the lowest few,
-  the band being tuned always among them; *Bands appear together* holds the
+  Settings › Strobe › *Number of strobes* shows all of them or the lowest few,
+  the one being tuned always among them; *Strobes appear together* holds the
   row until every band is read.
 - **Each register offers only the octave types its strings sound:** bass 4:2,
   6:3, 10:5; middle 2:1, 4:2; treble 2:1, 4:2, 4:1, 3:1.

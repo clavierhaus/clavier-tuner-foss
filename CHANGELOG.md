@@ -7,6 +7,20 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-31
+- **Every strobe stands where the note as played puts it, from its first
+  reading.** A strobe other than the one being tuned stands at the tuned
+  strobe's target times the ratio between the two partials as read since the
+  key was played. Until now the others were placed by the string model for
+  the first 1.5 s and then moved to the string's own places: on a string that
+  had not moved, a strobe could move by several cents. A strobe whose partial
+  has not yet been read with the tuned one is not drawn.
+- **Settings › Tuning › Reading › Strobe smoothing:** how far back that ratio
+  is averaged, from 0.15 s to the whole strike (the default). The whole strike
+  shows every wobble and false beat; shorter steadies the strobes.
+- **"Bands" are "strobes" in Settings:** Strobes, Number of strobes, Strobes
+  appear together.
+
 ## 0.7.0 -- 2026-10-31
 
 ### 2026-10-30

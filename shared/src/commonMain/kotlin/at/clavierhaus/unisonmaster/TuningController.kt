@@ -1,6 +1,7 @@
 package at.clavierhaus.unisonmaster
 
 import at.clavierhaus.unisonmaster.audio.AudioSource
+import at.clavierhaus.unisonmaster.measure.BandPlaces
 import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.ReadingSpread
 import at.clavierhaus.unisonmaster.measure.PartialFinder
@@ -1205,6 +1206,9 @@ class TuningController(
         // how well each shown partial is read: the spread of its last half second, cleared
         // at a strike and dropped with the partial (the bell's width, docs/UI.md)
         val shownSpread = HashMap<Int, ReadingSpread>()
+        // where the other bands stand: each partial's ratio to the tuned one as read since this strike (BandPlaces)
+        val places = BandPlaces()
+        var placesStrike = -1L; var placesMidi = -1
         var peakDb = -200.0
         val recent = DoubleArray(PhaseReader.ONSET_LOOKBACK) { -200.0 }
         var coarse: Double? = null
@@ -1526,10 +1530,20 @@ class TuningController(
                 }
                 for ((k, r) in shownReaders) r.push(chunk)?.let { if (it.shown) { shownHeld[k] = it; shownAt[k] = hop; shownSpread.getOrPut(k) { ReadingSpread() }.push(it.cents) } }
                 shownAt.entries.removeAll { (k, at) -> if (hop - at > holdHops(sr)) { shownHeld.remove(k); shownSpread.remove(k); true } else false }
+                // the other bands' places, from this strike alone: every partial read this hop together with the
+                // tuned one gives its ratio to it; a new strike or a new note starts them afresh (Law 2)
+                if (t != null) {
+                    if (strikeHop != placesStrike || t.midi != placesMidi) { places.clear(); placesStrike = strikeHop; placesMidi = t.midi }
+                    places.windowHops = (_settings.value.bandAveragingS * sr / HOP).toLong()
+                    val fresh = HashMap<Int, Double>()
+                    for ((k, at) in shownAt) if (at == hop) shownHeld[k]?.let { fresh[k] = it.hz }
+                    if (rd != null && rd.shown) fresh[w.k] = rd.hz
+                    fresh[t.listening.k]?.let { tuned -> for ((k, hz) in fresh) if (k != t.listening.k) places.push(hop, k, hz, tuned) }
+                }
                 // the listened partial's own reader feeds its width the same way
                 if (rd != null && rd.shown) shownSpread.getOrPut(w.k) { ReadingSpread() }.push(rd.cents)
                 else if (held == null) shownSpread.remove(w.k)
-                if (t != null) spectrum(finder, t, w.k, held, rd?.takeIf { it.shown }, shownHeld, shownSpread)
+                if (t != null) spectrum(finder, t, w.k, held, rd?.takeIf { it.shown }, shownHeld, shownSpread) { k -> places.ratio(k, hop) }
             } finally { runAfterHop() } }
             true
         } catch (e: Exception) {
@@ -1562,6 +1576,7 @@ class TuningController(
     private fun spectrum(
         finder: PartialFinder?, t: TuningView, activeK: Int, activeHz: Double?, activeReading: PhaseReader.Reading?,
         held: Map<Int, PhaseReader.Reading>, spread: Map<Int, ReadingSpread>,
+        ratio: (Int) -> Double? = { null },
     ) {
         val read = LinkedHashMap<Int, Double>()
         activeHz?.let { read[activeK] = it }
@@ -1575,8 +1590,13 @@ class TuningController(
             val top = peaks.values.filterNotNull().maxOrNull()
             if (top != null) levels = peaks.mapNotNull { (k, db) -> db?.let { k to (1.0 + (it - top) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0) } }.toMap()
         }
-        _livePartials.value = read.entries.sortedBy { it.key }.map { (k, hz) ->
-            LivePartial(k, hz, TuningSession.centsOff(hz, targetOf(t, k)), levels[k] ?: 1.0, spread[k]?.widthCents,
+        // the band being tuned against its target; every other band where this strike puts it, at the tuned
+        // target times its ratio as read since the strike, and not drawn until that ratio is read (31 Oct 2026:
+        // no band stands on a model's place)
+        val tunedK = t.listening.k
+        _livePartials.value = read.entries.sortedBy { it.key }.mapNotNull { (k, hz) ->
+            val place = if (k == tunedK) targetOf(t, k) else ratio(k)?.let { t.listening.targetHz * it } ?: return@mapNotNull null
+            LivePartial(k, hz, TuningSession.centsOff(hz, place), levels[k] ?: 1.0, spread[k]?.widthCents,
                 (held[k] ?: if (k == activeK) activeReading else null)?.let { it.levelDbfs - it.noiseDbfs })
         }
         if (finder != null) {

@@ -53,12 +53,12 @@ only") and lives in Pro, not here. The free app has no *The Unisons* door.
 
 On the tuning screen the bands stand in seats fixed for the note: the
 partials offered under the strobe (the chips' row) less the ones the tuner
-took out, the lowest *Number of bands* of them with the band being tuned
+took out, the lowest *Number of strobes* (until 31 Oct 2026 *Number of bands*) of them with the band being tuned
 always among them, or all (`BasicHub.strobeSeats`). Until now the row was
 chosen from what sounded (`autoFour`) and grew band by band as the partials
 were read. A seat whose partial is not read stands as an empty frame. A
 band comes up over 0.3 s from the frame in which it is first read
-(`picture/BandFade`); with *Bands appear together* the row waits for every
+(`picture/BandFade`); with *Strobes appear together* (until 31 Oct *Bands appear together*) the row waits for every
 band, at most 0.8 s after the first, and comes up as one. With *Octave
 partial* the seats are what the engine reads, as before.
 
@@ -451,3 +451,16 @@ the end of the range, the outer type's beyond, since 29 Oct 2026), which is the 
 and show partial 2, as in 4:2 (Peter: "the most neutral one"), read at the place the same target
 puts it. The note is read and kept on that band alone: the clean partials are not averaged into
 it and no other partial stands in for it -- what is shown decides. A tap still adds a band.
+
+
+## The other strobes stand where the note as played puts them (31 October 2026)
+
+Every strobe but the one being tuned is drawn against the tuned strobe's target times the ratio between its partial
+and the tuned partial as the two have been read together since the key was played (`measure/BandPlaces`). Not drawn
+until that ratio has been read: no strobe stands on a model's place. *Strobe smoothing* (Settings › Tuning ›
+Reading, `TunerSettings.bandAveragingS`) is how far back the ratio is averaged — 0.15, 0.3, 0.6, 1.2 s or the whole
+strike, the default. Until that day the others were drawn against the model's place for 1.5 s and against the
+string's measured series after (Pro findings §34). The readers still listen where the series says once it is
+measured; that moves where a partial is listened for, never where its strobe is drawn.
+`BandsFromStrikeRecordingsTest` plays single strings of the 225 through the controller: at 0.15 s every strobe stays
+within 0.5 c (median) of the tuned one over the first 1.5 s; before the change, placed by the model, up to 5.6 c.

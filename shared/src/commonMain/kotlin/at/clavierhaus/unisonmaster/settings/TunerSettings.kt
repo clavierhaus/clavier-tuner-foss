@@ -174,6 +174,12 @@ data class TunerSettings(
      * a beat shown slower than it is. The tuner's control over the averaging.
      */
     val readingMemoryS: Double = 0.15,
+    /**
+     * The strobe's equalizer, seconds: how far back the ratio that places each band other than the one being tuned
+     * is averaged ([at.clavierhaus.unisonmaster.measure.BandPlaces]). 0, the default: the whole strike so far, every
+     * wobble and false beat shown against it; shorter evens the bands' wobble out (Peter, 31 Oct 2026).
+     */
+    val bandAveragingS: Double = 0.0,
     /** Partials above this note are not offered: nothing up there helps a tuning. */
     val highestPartialMidi: Int = 99,          // D#7
     // RECORDING
@@ -245,6 +251,8 @@ data class TunerSettings(
         const val MIN_MEMORY_S = 0.15
         const val MAX_MEMORY_S = 1.2
         val MEMORY_STEPS = listOf(0.15, 0.3, 0.6, 1.2)
+        /** The equalizer's steps, seconds, shortest first; 0 is the whole strike. */
+        val BAND_AVERAGING_STEPS = listOf(0.15, 0.3, 0.6, 1.2, 0.0)
         const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
         const val MAX_LOWEST_KEY = 40          // E2: never above the lowest plain string in practice
         const val MIN_UNWOUND = 28             // E1
@@ -402,6 +410,7 @@ class SettingsModel(
             strobeCount = i("strobeCount", d.strobeCount).coerceIn(0, TunerSettings.MAX_STROBE_COUNT),
             strobeTogether = b("strobeTogether", d.strobeTogether),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
+            bandAveragingS = f("bandAveragingS", d.bandAveragingS).takeIf { it in TunerSettings.BAND_AVERAGING_STEPS } ?: d.bandAveragingS,
             language = store.get("language") ?: d.language,
             helpTextSp = i("helpTextSp", d.helpTextSp).coerceIn(TunerSettings.MIN_HELP_SP, TunerSettings.MAX_HELP_SP),
             curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
@@ -437,6 +446,7 @@ class SettingsModel(
         store.put("strobeCount", s.strobeCount.toString())
         store.put("strobeTogether", s.strobeTogether.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
+        store.put("bandAveragingS", s.bandAveragingS.toString())
         store.put("language", s.language)
         store.put("helpTextSp", s.helpTextSp.toString())
         store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))

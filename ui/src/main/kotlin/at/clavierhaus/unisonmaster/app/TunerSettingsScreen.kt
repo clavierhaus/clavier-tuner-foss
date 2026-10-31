@@ -181,6 +181,18 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
                     model.update { it.copy(strobeTogether = on) }
                 }
             }
+            // how far back the other strobes' ratios are averaged (Peter, 31 Oct 2026: "Strobe-Glättung"); the
+            // whole strike last, after the longest step
+            val smooth = TunerSettings.BAND_AVERAGING_STEPS
+            val si = smooth.indexOfFirst { kotlin.math.abs(it - s.bandAveragingS) < 1e-6 }.let { if (it < 0) smooth.size - 1 else it }
+            StepperRow(
+                t(K.settings_strobeSmoothing), if (smooth[si] == 0.0) t(K.settings_strobeSmoothingWhole) else num(smooth[si], 2) + " s",
+                canDecrease = si > 0,
+                canIncrease = si < smooth.size - 1,
+                info = t(K.settings_note_strobeSmoothing),
+                onDecrease = { model.update { it.copy(bandAveragingS = smooth[si - 1]) } },
+                onIncrease = { model.update { it.copy(bandAveragingS = smooth[si + 1]) } },
+            )
             val steps = TunerSettings.MEMORY_STEPS
             val i = steps.indexOfFirst { kotlin.math.abs(it - s.readingMemoryS) < 1e-6 }.let { if (it < 0) 0 else it }
             StepperRow(
