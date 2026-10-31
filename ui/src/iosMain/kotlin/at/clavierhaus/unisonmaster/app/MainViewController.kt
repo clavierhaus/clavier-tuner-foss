@@ -78,6 +78,12 @@ private val app: TunerApp by lazy {
     )
 }
 
+/** What the iOS app calls: `TunerEntry.shared.viewController()` in Swift (iosApp/). */
+object TunerEntry {
+    /** The view controller the iOS app shows: the tuner's screens. */
+    fun viewController(): UIViewController = MainViewController()
+}
+
 /** The view controller the iOS app shows: the tuner's screens. */
 fun MainViewController(): UIViewController {
     app.start(recreated = false)

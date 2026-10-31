@@ -98,6 +98,8 @@ jobs:
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
       - name: The screens as a framework for the iPhone
         run: ./gradlew --no-daemon :ui:linkReleaseFrameworkIosArm64
+      - name: What the framework offers Swift
+        run: grep -n "TunerEntry\|MainViewController" ui/build/bin/iosArm64/releaseFramework/ClavierTuner.framework/Headers/ClavierTuner.h | head -20
       - name: The Xcode project from iosApp/project.yml
         run: brew install xcodegen && cd iosApp && xcodegen generate
       - name: The app, unsigned, for a device
