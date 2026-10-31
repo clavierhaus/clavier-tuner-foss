@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.7.2 -- 2026-10-31
+
 ### 2026-10-31 (afternoon)
 - **What the strobe shows is chosen beside it, on the tuning screen:** three
   lines, one active -- *All partials*; *Limit to* 4, more or fewer with − and
