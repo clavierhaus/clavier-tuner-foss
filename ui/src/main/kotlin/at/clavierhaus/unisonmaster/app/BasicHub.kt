@@ -45,6 +45,7 @@ import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.settings.TunerSettings
+import at.clavierhaus.unisonmaster.settings.StrobeMode
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.ui.formatHz
 import java.util.Locale
@@ -177,7 +178,7 @@ fun BasicHub(
                 matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
                 // while sampling the stripes are partials 1-5 in fixed seats (Peter, 7 Oct 2026)
                 seats = if (t.sampling) SAMPLING_SEATS else strobeSeats(controller.highestPartial(liveTarget), read?.k ?: l.k,
-                    hiddenTuning, cfg.strobeCount, cfg.strobeOne, shownTuning),
+                    hiddenTuning, if (cfg.strobeMode == StrobeMode.LIMIT) cfg.strobeCount else 0, cfg.strobeOne, shownTuning),
             )
         }
         // Since 22 Oct 2026 the A4 page shows the string's partials 2 and up as strobes too, each against the
@@ -280,7 +281,12 @@ fun BasicHub(
                     matchCents = cfg.matchCents,
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                     follows = follows,
-                    left = leftPanel,
+                    // the left panel: what the strobe shows, chosen beside it (StrobeChoice, 31 Oct 2026), and at the end of
+                    // its third line whatever an edition draws there (Pro's unison switch)
+                    left = {
+                        if (onChangeSettings != null) StrobeChoice(cfg, onChangeSettings, Modifier.padding(8.dp), beside = leftPanel)
+                        else leftPanel?.invoke()
+                    },
                     greenBands = greenBands, dimBands = dimBands,
                     together = cfg.strobeTogether,
                     // No red-violet on the tuning screen until the engine measures a rate. The claim

@@ -1,0 +1,1 @@
+0.7.2: What the strobe shows is now chosen beside it on the tuning screen: All partials, Limit to 4 (more or fewer with − and +), or One strobe, averaged. The note on screen takes the choice at once; before, the octave partial still showed every strobe until the next note.

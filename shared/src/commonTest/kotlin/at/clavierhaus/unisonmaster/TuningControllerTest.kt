@@ -809,8 +809,26 @@ class TuningControllerTest {
         assertTrue(abs(worst.second.cents!! - 3.0) < 0.1,
             "the followed key is read right from its first reading: %+.2f c at %.2f s".format(worst.second.cents, worst.first - 0.3))
     }
-}
 
+    /**
+     * What the strobe shows is changed beside the strobe and the note on screen takes it at once (Peter, 31 Oct 2026:
+     * "Octave partial still shows all strobes"). Until then the shown partials were set only on a change of note, so the
+     * note on screen kept every strobe after the switch to one band. One band shows the clean partials together.
+     */
+    @Test
+    fun theStrobesModeChangedMidNoteIsTakenAtOnce() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 67, listOf(measuredString(69, a4, 8e-4), measuredString(67, et(67), 7e-4)), sampling = false))
+        c.selectNote(67)
+        c.hear(src, SyntheticString.strike(et(67), 7e-4, 2.5))
+        val before = c.shownPartials.value
+        assertTrue(before.size > 1, "all partials: $before")
+        c.applySettings(c.settings.value.copy(strobeMode = at.clavierhaus.unisonmaster.settings.StrobeMode.ONE))
+        assertEquals(setOf(c.tuning.value!!.listening.k), c.shownPartials.value, "one band, at once, on the note on screen")
+        c.applySettings(c.settings.value.copy(strobeMode = at.clavierhaus.unisonmaster.settings.StrobeMode.ALL))
+        assertTrue(c.shownPartials.value.size > 1, "all again: ${c.shownPartials.value}")
+    }
+}
 
 /** Plays [signal] and calls [afterHop] with the position after every buffer. */
 private object TappedSource : AudioSource {

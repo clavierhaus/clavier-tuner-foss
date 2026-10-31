@@ -30,6 +30,24 @@ class SettingsTest {
         assertEquals(0.0, b.settings.value.widthMiddle)
     }
 
+    /**
+     * What the strobe shows is one of three, kept with the rest (StrobeMode, 31 Oct 2026), and a phone that kept the two
+     * settings from before reads them as what they meant: the octave's partial is one band, a number is the limit, 0 all.
+     */
+    @Test
+    fun theStrobesModeIsKeptAndTheOldSettingsAreReadAsWhatTheyMeant() {
+        val store = MemoryStore()
+        assertEquals(StrobeMode.ALL, SettingsModel(store).settings.value.strobeMode)
+        assertEquals(4, SettingsModel(store).settings.value.strobeCount, "the limit is 4 until changed")
+        SettingsModel(store).update { it.copy(strobeMode = StrobeMode.LIMIT, strobeCount = 6) }
+        assertEquals(StrobeMode.LIMIT, SettingsModel(store).settings.value.strobeMode)
+        assertEquals(6, SettingsModel(store).settings.value.strobeCount)
+        fun old(vararg kv: Pair<String, String>) = SettingsModel(MemoryStore().also { st -> kv.forEach { (k, v) -> st.put(k, v) } }).settings.value
+        assertEquals(StrobeMode.ONE, old("strobeOne" to "true", "strobeCount" to "0").strobeMode)
+        old("strobeOne" to "false", "strobeCount" to "5").let { assertEquals(StrobeMode.LIMIT, it.strobeMode); assertEquals(5, it.strobeCount) }
+        old("strobeOne" to "false", "strobeCount" to "0").let { assertEquals(StrobeMode.ALL, it.strobeMode); assertEquals(4, it.strobeCount) }
+    }
+
     /** Help's text size (Peter, 12 Oct 2026): A− and A+ step it from 12 to 22 sp, and the phone keeps it. */
     @Test
     fun helpsTextSizeIsKeptAndStaysWithinItsSteps() {

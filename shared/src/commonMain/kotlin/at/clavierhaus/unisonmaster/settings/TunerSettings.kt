@@ -23,6 +23,21 @@ class MemoryStore : KeyValueStore {
  * lower note, [high] when it is the upper one — against the measured
  * partial of the note already tuned (docs/ENGINE.md).
  */
+/**
+ * What the strobe shows, chosen beside it on the tuning screen (Peter, 31 Oct 2026: "three options: All partials --
+ * Limit to 4 (changeable to more or less by + and -) and one strobe only with an average display ... three menu items in
+ * three lines and only one can be active"). Until then two settings under Settings › Tuning › Strobe carried it, and
+ * switching to the octave's partial left the note on screen with all its strobes until the next note.
+ */
+enum class StrobeMode {
+    /** Every partial offered for the note, less the ones the tuner took out. */
+    ALL,
+    /** The lowest [TunerSettings.strobeCount] of them, the band being tuned always among them. */
+    LIMIT,
+    /** One band, the octave's partial, whose motion is the clean partials read together. */
+    ONE,
+}
+
 enum class OctaveType(val label: String, val low: Int, val high: Int, val semitones: Int = 12) {
     O2_1("2:1", 2, 1), O4_2("4:2", 4, 2), O6_3("6:3", 6, 3), O8_4("8:4", 8, 4), O10_5("10:5", 10, 5),
     /** The double octave. */
@@ -152,23 +167,14 @@ data class TunerSettings(
      * Partials reads that partial alone either way.
      */
     val cleanPartials: Boolean = true,
+    /** What the strobe shows: every partial, the lowest [strobeCount], or one band (StrobeMode, 31 Oct 2026). */
+    val strobeMode: StrobeMode = StrobeMode.ALL,
     /**
-     * The strobe shows one band, the octave's partial, instead of every partial heard (Gregor and
-     * Peter, 28 Oct 2026: a different number of bands from register to register irritates; "the
-     * option to show all partials should always be there"). The band is the partial on which the
-     * note meets its octave partner by the region's octave type -- 4:2 gives the upper note's partial
-     * 2 and the lower note's 4, 6:3 gives 3 and 6, 2:1, 4:1 and 3:1 the upper note's 1 -- which is
-     * the partial the target is computed on; in the temperament octave and on A4, which have no
-     * octave type, partial 2, as in 4:2 (Peter: "the most neutral one"). The note is read and kept
-     * on that partial alone. Off: every partial, as before.
+     * How many bands [StrobeMode.LIMIT] shows: the lowest so many of the partials offered for the note, the band
+     * being tuned always among them (Peter, 30 Oct 2026: "TuneLab gets away with 4, but we should give a user a
+     * chance to choose any number he wants"; 31 Oct: "Limit to 4"). 1 to [MAX_STROBE_COUNT].
      */
-    val strobeOne: Boolean = false,
-    /**
-     * How many bands the strobe shows: the lowest so many of the partials offered for the note, the band
-     * being tuned always among them; 0 for all of them (Peter, 30 Oct 2026: "TuneLab gets away with 4, but
-     * we should give a user a chance to choose any number he wants -- alternatively show all partials").
-     */
-    val strobeCount: Int = 0,
+    val strobeCount: Int = 4,
     /**
      * The bands come up together: nothing is drawn until every band of the row has been read, or until
      * [STROBE_TOGETHER_WAIT_S] after the first came up, and then all at once. Off: each band comes up
@@ -217,6 +223,16 @@ data class TunerSettings(
     val showNavigationBar: Boolean = true,
     val showStatusBar: Boolean = true,
 ) {
+    /**
+     * One band ([StrobeMode.ONE]), the octave's partial: the partial on which the note meets its octave partner by the
+     * region's octave type -- 4:2 gives the upper note's partial 2 and the lower note's 4, 6:3 gives 3 and 6, 2:1, 4:1
+     * and 3:1 the upper note's 1 -- which is the partial the target is computed on; in the temperament octave and on
+     * A4, which have no octave type, partial 2, as in 4:2 (Gregor and Peter, 28 Oct 2026). Its motion is the clean
+     * partials read together (Peter, 31 Oct 2026: "one strobe only with an average display"); until then it was that
+     * partial's own reader alone.
+     */
+    val strobeOne: Boolean get() = strobeMode == StrobeMode.ONE
+
     companion object {
         /** The most bands [strobeCount] can ask for: every partial the app reads. */
         const val MAX_STROBE_COUNT = at.clavierhaus.unisonmaster.measure.Partials.MAX
@@ -420,8 +436,14 @@ class SettingsModel(
             lowestKeyMidi = i("lowestKeyMidi", d.lowestKeyMidi).coerceIn(TunerSettings.MIN_LOWEST_KEY, TunerSettings.MAX_LOWEST_KEY),
             autoNote = b("autoNote", d.autoNote),
             cleanPartials = b("cleanPartials", d.cleanPartials),
-            strobeOne = b("strobeOne", d.strobeOne),
-            strobeCount = i("strobeCount", d.strobeCount).coerceIn(0, TunerSettings.MAX_STROBE_COUNT),
+            // the mode, or, from a phone that kept the two settings before 31 Oct 2026, what they meant: the octave's
+            // partial is one band, a number is the limit, and 0 was all
+            strobeMode = store.get("strobeMode")?.let { m -> StrobeMode.entries.firstOrNull { it.name == m } } ?: when {
+                b("strobeOne", false) -> StrobeMode.ONE
+                i("strobeCount", 0) > 0 -> StrobeMode.LIMIT
+                else -> d.strobeMode
+            },
+            strobeCount = i("strobeCount", d.strobeCount).let { if (it <= 0) d.strobeCount else it }.coerceIn(1, TunerSettings.MAX_STROBE_COUNT),
             strobeTogether = b("strobeTogether", d.strobeTogether),
             longGrand = b("longGrand", d.longGrand),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
@@ -457,7 +479,7 @@ class SettingsModel(
         store.put("autoNote", s.autoNote.toString())
         store.put("temperamentFirst", s.temperamentFirst.toString())
         store.put("cleanPartials", s.cleanPartials.toString())
-        store.put("strobeOne", s.strobeOne.toString())
+        store.put("strobeMode", s.strobeMode.name)
         store.put("strobeCount", s.strobeCount.toString())
         store.put("strobeTogether", s.strobeTogether.toString())
         store.put("longGrand", s.longGrand.toString())

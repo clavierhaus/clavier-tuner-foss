@@ -126,13 +126,9 @@ object K {
     const val settings_screen = "settings.screen"
     const val settings_followKey = "settings.followKey"
     const val settings_cleanTogether = "settings.cleanTogether"
-    const val settings_strobeShows = "settings.strobeShows"
-    const val settings_strobeAll = "settings.strobeAll"
-    const val settings_strobeOne = "settings.strobeOne"
-    const val settings_note_strobeOne = "settings.note.strobeOne"
-    const val settings_strobeCount = "settings.strobeCount"
-    const val settings_strobeCountAll = "settings.strobeCountAll"
-    const val settings_note_strobeCount = "settings.note.strobeCount"
+    const val tuning_strobeAll = "tuning.strobeAll"
+    const val tuning_strobeLimit = "tuning.strobeLimit"
+    const val tuning_strobeOne = "tuning.strobeOne"
     const val settings_strobeTogether = "settings.strobeTogether"
     const val settings_note_strobeTogether = "settings.note.strobeTogether"
     const val settings_strobeSmoothing = "settings.strobeSmoothing"
@@ -322,13 +318,9 @@ internal object StringsTable : Catalog {
         "settings.screen" to arrayOf("Note switching", "Tonwechsel"),
         "settings.followKey" to arrayOf("Auto note switching", "Automatischer Tonwechsel"),
         "settings.cleanTogether" to arrayOf("Average the clean partials", "Saubere Teiltöne mitteln"),
-        "settings.strobeShows" to arrayOf("Strobes", "Strobes"),
-        "settings.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
-        "settings.strobeOne" to arrayOf("Octave partial", "Oktavteilton"),
-        "settings.note.strobeOne" to arrayOf("Octave partial: one strobe, the partial on which the note meets its octave by the octave type (4:2 on the upper note: partial 2), and in A3–A4 partial 2. The note is read and kept on it alone.", "Oktavteilton: ein Strobe, der Teilton, auf dem der Ton seine Oktave nach dem Oktavtyp trifft (4:2 am oberen Ton: Teilton 2), in A3–A4 Teilton 2. Der Ton wird allein darauf gelesen und gespeichert."),
-        "settings.strobeCount" to arrayOf("Number of strobes", "Anzahl der Strobes"),
-        "settings.strobeCountAll" to arrayOf("all", "alle"),
-        "settings.note.strobeCount" to arrayOf("How many strobes are shown: the lowest partials offered for the note, the strobe being tuned always among them. All, or any number from 1.", "Wie viele Strobes gezeigt werden: die tiefsten Teiltöne des Tons, der gestimmte Strobe immer dabei. Alle oder jede Zahl ab 1."),
+        "tuning.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
+        "tuning.strobeLimit" to arrayOf("Limit to", "Begrenzt auf"),
+        "tuning.strobeOne" to arrayOf("One strobe, averaged", "Ein Strobe, gemittelt"),
         "settings.strobeTogether" to arrayOf("Strobes appear together", "Strobes erscheinen gemeinsam"),
         "settings.note.strobeTogether" to arrayOf("On: the row comes up at once, when every strobe has been read, at most 0.8 s after the first. Off: each strobe comes up as soon as its partial is read. Either way a strobe fades in over 0.3 s.", "Ein: die Reihe erscheint auf einmal, sobald jeder Strobe gelesen ist, höchstens 0,8 s nach dem ersten. Aus: jeder Strobe erscheint, sobald sein Teilton gelesen ist. In beiden Fällen blendet ein Strobe über 0,3 s ein."),
         "settings.strobeSmoothing" to arrayOf("Strobe smoothing", "Strobe-Glättung"),

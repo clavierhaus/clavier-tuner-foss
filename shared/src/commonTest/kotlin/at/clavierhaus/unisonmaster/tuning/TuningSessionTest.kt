@@ -407,7 +407,7 @@ class OneBandTest {
     @Test
     fun oneBandReadsTheOctavesPartialAndPartial2InTheTemperament() {
         val off = TuningSession(a4, pro, sampling = false)
-        val on = TuningSession(a4, pro.copy(strobeOne = true), sampling = false)
+        val on = TuningSession(a4, pro.copy(strobeMode = at.clavierhaus.unisonmaster.settings.StrobeMode.ONE), sampling = false)
         // A4 and a note of the temperament octave: the fundamental off, partial 2 on, the same target pitch
         for (m in listOf(69, 60)) {
             assertEquals(1, off.listening(m).k)
@@ -423,7 +423,7 @@ class OneBandTest {
         assertEquals(OctaveType.O4_1, on.listening(96).type)
         assertEquals(1, on.listening(96).k)
         // a treble set out as 4:2: the upper note's partial 2
-        val on42 = TuningSession(a4, pro.copy(strobeOne = true, octaveTreble = OctaveType.O4_2), sampling = false)
+        val on42 = TuningSession(a4, pro.copy(strobeMode = at.clavierhaus.unisonmaster.settings.StrobeMode.ONE, octaveTreble = OctaveType.O4_2), sampling = false)
         assertEquals(2, on42.listening(76).k)
     }
 }

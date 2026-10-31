@@ -1,0 +1,1 @@
+0.7.2: Was das Stroboskop zeigt, wird jetzt direkt daneben auf dem Stimmbildschirm gewählt: Alle Teiltöne, Begrenzt auf 4 (mehr oder weniger mit − und +) oder Ein Strobe, gemittelt. Der Ton auf dem Bildschirm übernimmt die Wahl sofort; bisher zeigte der Oktavteilton bis zum nächsten Ton noch alle Strobes.

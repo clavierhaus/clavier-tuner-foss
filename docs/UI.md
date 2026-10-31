@@ -464,3 +464,28 @@ string's measured series after (Pro findings §34). The readers still listen whe
 measured; that moves where a partial is listened for, never where its strobe is drawn.
 `BandsFromStrikeRecordingsTest` plays single strings of the 225 through the controller: at 0.15 s every strobe stays
 within 0.5 c (median) of the tuned one over the first 1.5 s; before the change, placed by the model, up to 5.6 c.
+
+## 31 October 2026: what the strobe shows, beside the strobe
+
+Peter: "Octave partial still shows all strobes. We need three options: All
+partials - Limit to 4 (changeable to more or less by + and -) and one strobe
+only with an average display ... right into the tuning window left to the
+strobes. Three menu items in three lines and only one can be active."
+
+The left panel of the tuning screen holds `StrobeChoice`: *All partials*,
+*Limit to* N (4 by default, 1 to `MAX_STROBE_COUNT`), *One strobe, averaged*.
+The settings carry one `StrobeMode` and the limit; a phone that kept the two
+settings of before reads them as what they meant (one band, a number, all).
+*Number of strobes* and *Octave partial* left Settings › Tuning › Strobe.
+
+The fault: `TuningController.publish` set the shown partials only when the
+note changed, so a switch to one band left the note on screen with every
+strobe until the next note. A change of mode now takes the note on screen at
+once (`TuningControllerTest.theStrobesModeChangedMidNoteIsTakenAtOnce`, which
+fails without it). One band's motion is the clean partials read together,
+whatever *Average the clean partials* says; from 28 Oct until today it was the
+octave partial's own reader alone.
+
+An edition's own left panel (Pro's unison switch) stands at the end of the
+third line, where the panel has width to spare; on the Pixel 4 it has no
+height below the three lines.

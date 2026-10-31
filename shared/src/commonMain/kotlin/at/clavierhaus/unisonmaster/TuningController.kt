@@ -670,6 +670,9 @@ class TuningController(
     private fun deviationsOf(s: TuningSession): Map<Int, Double> =
         s.measurements.filterKeys { it in s.tuned }.mapValues { (m, v) -> TuningSession.centsOff(v.f1Hz, TuningSession.targetF1(m, s.a4Hz)) }
 
+    /** The strobe's mode the shown partials were last set for ([publish]). */
+    private var shownMode: at.clavierhaus.unisonmaster.settings.StrobeMode? = null
+
     private fun publish(s: TuningSession) {
         val midi = s.current
         val listening = s.listening(midi)
@@ -730,6 +733,15 @@ class TuningController(
         )
         _tuning.value = view
         _suggested.value = listening.k
+        // the strobe's mode changed beside the strobe (StrobeMode, 31 Oct 2026): the note on screen takes it at once.
+        // Until then the shown partials were set only when the note changed, and switching to one band left the
+        // note on screen with every strobe until the next note
+        val modeChanged = _settings.value.strobeMode != shownMode
+        shownMode = _settings.value.strobeMode
+        if (modeChanged && !noteChanged) {
+            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k)
+                else (_targets.value.map { it.k } + listening.k).toSet() - _hiddenPartials.value
+        }
         if (noteChanged) {
             _liveHz.value = null
             _fullSpectrum.value = false
@@ -1442,7 +1454,9 @@ class TuningController(
                 var combinedHz: Double? = null
                 var used: List<Int> = emptyList()
                 var falseOnes: List<Int> = emptyList()
-                if (_settings.value.cleanPartials && t != null && w.k == t.listening.k && s != null) {
+                // the clean partials are read together when the tuner asks for it, and always for one band, whose motion is
+                // their average (StrobeMode.ONE, 31 Oct 2026)
+                if ((_settings.value.cleanPartials || _settings.value.strobeOne) && t != null && w.k == t.listening.k && s != null) {
                     if (cleanGeneration != w.generation) {
                         // A new generation resets the window only when it is a different string or a
                         // different anchor partial; the same string published again keeps what it has
@@ -1489,10 +1503,10 @@ class TuningController(
                         // called false at a partial beating against its partner.
                         falseOnes = facts.map { it.k }
                     }
-                    // one band (TunerSettings.strobeOne): the reading is the octave's partial as its own reader has
-                    // it, never the clean partials together nor a stand-in -- what is shown decides (Peter,
-                    // 28 Oct 2026); the false beats above are judged as before
-                    if (!_settings.value.strobeOne || s.sampling) cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
+                    // one band (StrobeMode.ONE) shows the clean partials together, as every mode does with them on: Peter,
+                    // 31 Oct 2026, "one strobe only with an average display". From 28 Oct until then it was the octave's
+                    // partial as its own reader had it
+                    cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
                 }
                 _reading.value = Reading(
                     w.k, combinedHz ?: held, w.hz,

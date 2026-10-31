@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-10-31 (afternoon)
+- **What the strobe shows is chosen beside it, on the tuning screen:** three
+  lines, one active -- *All partials*; *Limit to* 4, more or fewer with − and
+  +; *One strobe, averaged*, one band whose motion is the clean partials read
+  together. It left Settings › Tuning › Strobe, where *Octave partial* still
+  showed every strobe on the note on screen: the choice was taken only from
+  the next note on. Now the note on screen takes it at once.
+
 ## 0.7.1 -- 2026-10-31
 
 ### 2026-10-31

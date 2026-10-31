@@ -73,6 +73,13 @@ wanted to see what his instruments actually do.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.7.2
+
+- **What the strobe shows is chosen beside it** on the tuning screen, three
+  lines, one active: *All partials*, *Limit to* 4 (more or fewer with − and
+  +), or *One strobe, averaged*. This replaces *Number of strobes* and *Octave
+  partial* in Settings, and the note on screen takes the choice at once.
+
 ## New in 0.7.1
 
 - **Every strobe stands where the note as played puts it,** from its first
