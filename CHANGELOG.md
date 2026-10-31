@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.7.1 -- 2026-10-31
+
 ### 2026-10-31
 - **Every strobe stands where the note as played puts it, from its first
   reading.** A strobe other than the one being tuned stands at the tuned
