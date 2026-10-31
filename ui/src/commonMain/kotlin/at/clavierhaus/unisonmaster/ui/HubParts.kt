@@ -48,14 +48,11 @@ import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.Notes
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.exp
 import kotlin.math.floor
 
-/** DejaVu Serif, bundled: the typeface of the clavierhaus title. */
-val DejaVuSerif = FontFamily(Font(R.font.dejavu_serif))
 
 private val GREY_ON = Color(Brand.RULE)
 private val GREY_OFF = Color(0xFF1C1C1C)
@@ -83,7 +80,7 @@ fun formatHz(hz: Double): String = num(hz, 1) + " Hz"
  * writes a number its own way (13 Oct 2026, German first).
  */
 fun num(x: Double, places: Int): String {
-    val s = String.format(Locale.ROOT, "%.${places}f", x)
+    val s = fmt("%.${places}f", x)
     return if (at.clavierhaus.unisonmaster.i18n.Strings.language.value.startsWith("de")) s.replace('.', ',') else s
 }
 

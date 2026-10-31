@@ -50,17 +50,6 @@ fun ProgressKeyboard(
     val lowest = lowestMidi.coerceIn(0, MIDI_A0)
     val whiteKeys = (lowest..MIDI_C8).count { !isBlack(it) }
     fun whitesBelow(midi: Int) = whitesFrom(lowest, midi)
-    val labelPaint = android.graphics.Paint().apply {
-        color = Color(Brand.WHITE_MUTED).toArgb()
-        textSize = 20f
-        textAlign = android.graphics.Paint.Align.CENTER
-        isAntiAlias = true
-    }
-    val captionPaint = android.graphics.Paint().apply {
-        color = Color(Brand.WHITE_MUTED).toArgb()
-        textSize = 18f
-        isAntiAlias = true
-    }
     Canvas(modifier) {
         // the curve stands above the keys, over the same note axis
         val curveBand = if (deviations.isEmpty()) 0f else size.height * 0.42f
@@ -154,13 +143,9 @@ fun ProgressKeyboard(
                     strokeWidth = 2.5f,
                 )
             }
-            drawContext.canvas.nativeCanvas.drawText(
-                "%+.0f c".format(roomUp / pxPerCent), 2f, mid - roomUp + 14f, captionPaint,
-            )
-            drawContext.canvas.nativeCanvas.drawText(
-                "%+.0f c".format(-roomDown / pxPerCent), 2f, mid + roomDown, captionPaint,
-            )
-            drawContext.canvas.nativeCanvas.drawText(t(K.progress_caption), 2f, curveBand - 2f, captionPaint)
+            drawLabel(fmt("%+.0f c", (roomUp / pxPerCent).toDouble()), 2f, mid - roomUp + 14f, Color(Brand.WHITE_MUTED), 18f)
+            drawLabel(fmt("%+.0f c", (-roomDown / pxPerCent).toDouble()), 2f, mid + roomDown, Color(Brand.WHITE_MUTED), 18f)
+            drawLabel(t(K.progress_caption), 2f, curveBand - 2f, Color(Brand.WHITE_MUTED), 18f)
         }
 
         // where the session stands
@@ -175,12 +160,10 @@ fun ProgressKeyboard(
         }
 
         // one landmark per octave
-        drawContext.canvas.nativeCanvas.let { canvas ->
-            for (midi in lowest..MIDI_C8) {
-                if (midi % 12 != 0) continue          // every C
-                val x = whitesBelow(midi) * w + w / 2f
-                canvas.drawText("C${midi / 12 - 1}", x, size.height - 6f, labelPaint)
-            }
+        for (midi in lowest..MIDI_C8) {
+            if (midi % 12 != 0) continue          // every C
+            val x = whitesBelow(midi) * w + w / 2f
+            drawLabel("C${midi / 12 - 1}", x, size.height - 6f, Color(Brand.WHITE_MUTED), 20f, LabelAlign.CENTER)
         }
     }
 }

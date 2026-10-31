@@ -1,0 +1,37 @@
+# The iPhone app: a shell that shows the screens of the ui module (Compose Multiplatform), linked as the static
+# framework ClavierTuner (31 Oct 2026). XcodeGen makes the Xcode project from this file on GitHub's macOS machines;
+# the project itself is never committed. Signing is left to whoever installs the app (TestFlight later; for now a
+# sideloading tool signs the unsigned .ipa with the tuner's own Apple ID).
+name: ClavierTuner
+options:
+  bundleIdPrefix: at.clavierhaus
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  ClavierTuner:
+    type: application
+    platform: iOS
+    sources:
+      - iosApp
+    info:
+      path: iosApp/Info.plist
+      properties:
+        CFBundleDisplayName: Clavier Tuner
+        CFBundleShortVersionString: "0.7.1"
+        CFBundleVersion: "12"
+        NSMicrophoneUsageDescription: "Clavier Tuner listens to the string you strike to measure it. Nothing is recorded or sent."
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        CADisableMinimumFrameDurationOnPhone: true
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
+        TARGETED_DEVICE_FAMILY: "1"
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ui/build/bin/iosArm64/releaseFramework"
+        OTHER_LDFLAGS: ["-framework", "ClavierTuner", "-lc++"]
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        ENABLE_BITCODE: "NO"

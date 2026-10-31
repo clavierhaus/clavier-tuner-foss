@@ -49,4 +49,4 @@ fun TunerHub(
 
 /** "15 Sep", "15. Sep." — the day the saved tuning was last used, in the language in force. */
 private fun lastUsed(ms: Long): String =
-    java.text.SimpleDateFormat(t(K.hub_dateFormat), java.util.Locale.forLanguageTag(at.clavierhaus.unisonmaster.i18n.Strings.language.value)).format(java.util.Date(ms))
+    at.clavierhaus.unisonmaster.ui.formatDate(ms, t(K.hub_dateFormat), at.clavierhaus.unisonmaster.i18n.Strings.language.value)

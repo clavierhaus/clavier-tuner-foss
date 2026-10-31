@@ -8,6 +8,9 @@ lifecycle = "2.11.0"
 coreKtx = "1.19.0"
 robolectric = "4.17"
 junit = "4.13.2"
+composeMultiplatform = "1.12.2"
+# Compose Multiplatform's Material 3 is versioned on its own; this is the one built with 1.12
+composeMaterial3 = "1.12.0-alpha03"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -23,7 +26,13 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
+
 [plugins]
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

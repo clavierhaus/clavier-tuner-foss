@@ -11,3 +11,9 @@ androidApp/keystore.properties
 *.jks
 *.keystore
 tmp/
+
+# the iPhone app: XcodeGen makes the project, xcodebuild the rest
+iosApp/*.xcodeproj/
+iosApp/build/
+iosApp/Payload/
+iosApp/*.ipa

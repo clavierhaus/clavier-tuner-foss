@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -218,7 +217,7 @@ fun InfoButton(title: String, text: String) {
         Box(Modifier.size(20.dp).border(1.5.dp, tint, CircleShape), contentAlignment = Alignment.Center) {
             // the letter set without the font's padding, so its box is the ring's and nothing of it is cut
             Text("i", color = tint, fontWeight = FontWeight.Bold,
-                style = TextStyle(fontFamily = DejaVuSerif, fontSize = 12.sp, lineHeight = 12.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                style = TextStyle(fontFamily = DejaVuSerif, fontSize = 12.sp, lineHeight = 12.sp, platformStyle = NoFontPadding))
         }
     }
     if (open) {

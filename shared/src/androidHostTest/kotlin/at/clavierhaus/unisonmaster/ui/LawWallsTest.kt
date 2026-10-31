@@ -64,8 +64,12 @@ class LawWallsTest {
     fun nothingScrollsAndNoTextIsCutBeyondWhatStoodWhenTheWallWasRaised() {
         val root = repoRoot()
         val found = HashMap<String, Int>()
-        for (module in listOf("ui", "androidApp")) {
-            File(root, "$module/src/main").walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
+        // the screens' code, wherever its source sets put it: ui's common, Android and iOS sets since the port to the
+        // iPhone (31 Oct 2026), androidApp's main
+        val dirs = listOf("ui/src/commonMain", "ui/src/androidMain", "ui/src/iosMain", "androidApp/src/main")
+        for (dir in dirs) {
+            val module = dir.substringBefore('/')
+            File(root, dir).walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
                 val n = count(f.readText())
                 if (n > 0 && "$module/${f.name}" !in EXEMPT) found["$module/${f.name}"] = n
             }

@@ -38,7 +38,6 @@ import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.TuningSession
-import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -60,10 +59,10 @@ const val CENTS_SPAN = 8.0
  */
 private fun cents2(measuredHz: Double, targetHz: Double): String {
     val c = 1200.0 * kotlin.math.ln(measuredHz / targetHz) / kotlin.math.ln(2.0)
-    return String.format(Locale.ROOT, "%+.2f", c)
+    return fmt("%+.2f", c)
 }
 
-private fun hz1(hz: Double): String = String.format(Locale.ROOT, "%.1f", hz)
+private fun hz1(hz: Double): String = fmt("%.1f", hz)
 
 /**
  * One line per shown partial: number, note, target (blue, static) and the
