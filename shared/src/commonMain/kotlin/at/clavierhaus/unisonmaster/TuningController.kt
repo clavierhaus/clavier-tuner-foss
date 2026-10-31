@@ -851,6 +851,14 @@ class TuningController(
         return true
     }
 
+    private val _samplingDone = MutableStateFlow(0)
+    /**
+     * How many times the sampling was ended with Done in this run: the tuning screen opens the window of the
+     * tuning's settings when it moves (Peter, 29 and 31 Oct 2026: after A4 and the samples, the piano's size and
+     * the octave types it recommends). A tuning restored past its sampling does not move it.
+     */
+    val samplingDone: StateFlow<Int> = _samplingDone.asStateFlow()
+
     /** Done while sampling: the sampling ends, the curve stands on what is in, the tuning begins. */
     fun finishSampling() {
         val s = session ?: return
@@ -858,6 +866,7 @@ class TuningController(
         s.finishSampling()
         caught = null
         publish(s)
+        _samplingDone.value += 1
     }
 
     /** Done can be tapped: while tuning a live match, while sampling once enough strings are in. */

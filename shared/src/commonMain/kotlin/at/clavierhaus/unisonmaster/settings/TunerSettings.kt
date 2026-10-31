@@ -58,6 +58,15 @@ data class TunerSettings(
     // middle's to the outer one ([outerShare]). Until then the bass's type held from the lowest key up to an octave
     // above the lowest plain string, and the switch to the middle's on one key broke the 225's thirds F3-A3 (29 Oct).
     val octaveBass: OctaveType = OctaveType.O6_3,
+    /**
+     * A grand of 210 cm (6 ft 11 in) or longer (Peter, 31 Oct 2026): the size the bass's octave type is recommended
+     * by -- 10:5 on such a grand, 6:3 on anything shorter ([withLongGrand]). His ear in the low bass, where it is the
+     * yardstick: "10:5 is better for grand pianos > 210cm, other than that 6:3 should be fine". The app cannot tell
+     * the size from the strings: on the eight pianos measured, a 211 cm Steinway B, a Yamaha grand and a Yamaha
+     * upright stand at the same B in the low bass (Pro STRETCH §11). A recommendation only: the type stays the
+     * tuner's to change.
+     */
+    val longGrand: Boolean = false,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
     /**
      * 4:1 by default since 23 Oct 2026 (Peter, at the Steinway B: "4:2 should stay, but treble default
@@ -251,6 +260,8 @@ data class TunerSettings(
         const val MIN_MEMORY_S = 0.15
         const val MAX_MEMORY_S = 1.2
         val MEMORY_STEPS = listOf(0.15, 0.3, 0.6, 1.2)
+        /** The bass's octave type recommended for a piano of the size given ([longGrand]). */
+        fun recommendedBass(longGrand: Boolean): OctaveType = if (longGrand) OctaveType.O10_5 else OctaveType.O6_3
         /** The equalizer's steps, seconds, shortest first; 0 is the whole strike. */
         val BAND_AVERAGING_STEPS = listOf(0.15, 0.3, 0.6, 1.2, 0.0)
         const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
@@ -331,6 +342,9 @@ data class TunerSettings(
      * to the temperament octave, the outer region's at the far end — its far width where one is set
      * ([widthBassFar], [widthTrebleFar]), sliding there from the region's own — in equal steps by key.
      */
+    /** The size given, and the bass's octave type set to what it recommends; the tuner may change the type after. */
+    fun withLongGrand(on: Boolean): TunerSettings = copy(longGrand = on, octaveBass = recommendedBass(on))
+
     fun widthFor(midi: Int): Double {
         val w = outerShare(midi)
         val (own, far) = when {
@@ -409,6 +423,7 @@ class SettingsModel(
             strobeOne = b("strobeOne", d.strobeOne),
             strobeCount = i("strobeCount", d.strobeCount).coerceIn(0, TunerSettings.MAX_STROBE_COUNT),
             strobeTogether = b("strobeTogether", d.strobeTogether),
+            longGrand = b("longGrand", d.longGrand),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             bandAveragingS = f("bandAveragingS", d.bandAveragingS).takeIf { it in TunerSettings.BAND_AVERAGING_STEPS } ?: d.bandAveragingS,
             language = store.get("language") ?: d.language,
@@ -445,6 +460,7 @@ class SettingsModel(
         store.put("strobeOne", s.strobeOne.toString())
         store.put("strobeCount", s.strobeCount.toString())
         store.put("strobeTogether", s.strobeTogether.toString())
+        store.put("longGrand", s.longGrand.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("bandAveragingS", s.bandAveragingS.toString())
         store.put("language", s.language)

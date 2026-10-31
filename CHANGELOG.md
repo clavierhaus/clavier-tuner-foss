@@ -18,6 +18,11 @@ reconstructed from the commit history that day.
 - **Settings › Tuning › Reading › Strobe smoothing:** how far back that ratio
   is averaged, from 0.15 s to the whole strike (the default). The whole strike
   shows every wobble and false beat; shorter steadies the strobes.
+- **The piano's size recommends the bass's octave type.** The window behind
+  the tuning line (tap it) has a switch, *Grand 210 cm (6′11″) or longer*:
+  on, the bass is set to 10:5; off, to 6:3. It is a recommendation: the
+  octave types below it stay yours to change. The window now opens by itself
+  when the sampling is ended with Done.
 - **"Bands" are "strobes" in Settings:** Strobes, Number of strobes, Strobes
   appear together.
 

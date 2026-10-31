@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -144,6 +145,13 @@ fun BasicHub(
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
     // the tuning's settings between the gear and the name, a tap opening the ones that matter while tuning
     var infoOpen by remember { mutableStateOf(false) }
+    // the window opens by itself when the tuner ends the sampling with Done (Peter, 29 and 31 Oct 2026: after A4
+    // and the samples, the piano's size and the octave types it recommends); never on a tuning restored past it
+    val samplingDone by controller.samplingDone.collectAsState()
+    val seenDone = remember { mutableStateOf(samplingDone) }
+    LaunchedEffect(samplingDone) {
+        if (samplingDone != seenDone.value) { seenDone.value = samplingDone; if (onChangeSettings != null) infoOpen = true }
+    }
     Corners(onSettings = onSettings, onHome = onHome, info = tuningInfoLine(cfg, a4),
         onInfo = if (onChangeSettings != null) ({ infoOpen = true }) else null)
     if (infoOpen && onChangeSettings != null) TuningInfoDialog(cfg, onChangeSettings) { infoOpen = false }

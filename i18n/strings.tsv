@@ -95,6 +95,8 @@ tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
 tuning.info	A4 = {0} · equal temperament {1}–A4 · octaves {2}	A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}
 tuning.infoTitle	This tuning	Diese Stimmung
+tuning.longGrand	Grand 210 cm (6′11″) or longer	Flügel ab 210 cm
+tuning.note.longGrand	Sets the bass's octave type: 10:5 on a grand of 210 cm or longer, 6:3 on anything shorter. A recommendation: any type can still be chosen below.	Setzt den Oktavtyp des Basses: 10:5 auf einem Flügel ab 210 cm, 6:3 auf allem Kürzeren. Eine Empfehlung: jeder Typ bleibt unten wählbar.
 tuning.partialsNot	 · not {0}	 · ohne {0}
 tuning.follows	follows the key · 	folgt der Taste · 
 tuning.leavingKeeps	leaving a note keeps it	Weitergehen speichert den Ton

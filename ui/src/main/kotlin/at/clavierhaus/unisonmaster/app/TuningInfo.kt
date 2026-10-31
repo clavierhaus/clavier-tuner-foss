@@ -31,6 +31,7 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.Choices
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.Stepper
+import at.clavierhaus.unisonmaster.ui.SwitchRow
 import at.clavierhaus.unisonmaster.ui.formatHz
 import at.clavierhaus.unisonmaster.ui.num
 
@@ -61,6 +62,10 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                 Spacer(Modifier.weight(1f))
                 Chip(t(K.app_done), selected = true, enabled = true, onClick = onClose)
             }
+            Spacer(Modifier.height(8.dp))
+            // the piano's size, which recommends the bass's octave type (Peter, 31 Oct 2026); the type below stays the
+            // tuner's to change
+            SwitchRow(t(K.tuning_longGrand), s.longGrand, info = t(K.tuning_note_longGrand)) { on -> onChange { it.withLongGrand(on) } }
             Spacer(Modifier.height(8.dp))
             // a table: the columns say "octave type" and "width" once, each region is a row of its name
             // and its two controls (24 Oct 2026: the name of the width, said three times, left the width
