@@ -28,6 +28,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
+        # the app's own Swift module must not share the framework's name, or `import ClavierTuner` is ignored
+        PRODUCT_MODULE_NAME: ClavierTunerApp
         TARGETED_DEVICE_FAMILY: "1"
         FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ui/build/bin/iosArm64/releaseFramework"
         OTHER_LDFLAGS: ["-framework", "ClavierTuner", "-lc++"]
