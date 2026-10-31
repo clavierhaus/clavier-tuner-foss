@@ -39,10 +39,6 @@ fun SamplingKeyboard(
     val lowest = lowestMidi.coerceAtMost(A0)
     val keys = lowest..C8
     val whites = keys.count { !black(it) }
-    val labelPaint = android.graphics.Paint().apply {
-        color = Color(Brand.WHITE_MUTED).toArgb(); textSize = 22f
-        textAlign = android.graphics.Paint.Align.CENTER; isAntiAlias = true
-    }
     Canvas(modifier) {
         val w = size.width / whites
         val labelBand = 30f
@@ -61,7 +57,7 @@ fun SamplingKeyboard(
             val x = whitesBelow(lowest, m) * w
             drawRect(fill(m), Offset(x + 0.5f, 0f), Size((w - 1f).coerceAtLeast(1f), h))
             if (m == caught && m !in sampled) drawRect(orange, Offset(x + 2f, 2f), Size(w - 4f, h - 4f), style = Stroke(4f))
-            if (m % 12 == 0) drawContext.canvas.nativeCanvas.drawText(Notes12.name(m), x + w / 2f, h + labelBand - 4f, labelPaint)
+            if (m % 12 == 0) drawLabel(Notes12.name(m), x + w / 2f, h + labelBand - 4f, Color(Brand.WHITE_MUTED), 22f, LabelAlign.CENTER)
         }
         for (m in keys) if (black(m)) {
             val x = whitesBelow(lowest, m) * w - w * 0.31f

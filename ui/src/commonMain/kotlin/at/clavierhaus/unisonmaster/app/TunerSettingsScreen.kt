@@ -1,12 +1,12 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.ui.microphoneDeclaresUnprocessed
 import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.ui.num
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import at.clavierhaus.unisonmaster.audio.Microphone
 import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.i18n.K
@@ -29,7 +29,6 @@ import at.clavierhaus.unisonmaster.ui.SettingsSection
 import at.clavierhaus.unisonmaster.ui.SettingsTab
 import at.clavierhaus.unisonmaster.ui.StepperRow
 import at.clavierhaus.unisonmaster.ui.SwitchRow
-import java.util.Locale
 import kotlin.math.round
 
 private fun tenths(x: Double) = round(x * 10.0) / 10.0
@@ -291,13 +290,7 @@ private val ABOUT_NOTE: String get() = t(K.settings_note_about)
 @Composable
 private fun MicrophoneRow() {
     val opened by Microphone.opened.collectAsState()
-    val context = LocalContext.current
-    val declared = remember {
-        runCatching {
-            (context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager)
-                .getProperty(android.media.AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null
-        }.getOrDefault(false)
-    }
+    val declared = microphoneDeclaresUnprocessed()
     val value = when (opened) {
         Microphone.Opened.NOT_YET -> t(K.about_mic_notYet)
         Microphone.Opened.PROCESSED -> t(K.about_mic_processed)

@@ -81,7 +81,7 @@ object CrashNote {
 
 /** The window that shows the last crash's note on the next start, with Copy and Close; nothing when there is none. */
 @Composable
-fun CrashNoteDialog() {
+actual fun CrashNoteDialog() {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     var note by remember { mutableStateOf(CrashNote.read(context)) }

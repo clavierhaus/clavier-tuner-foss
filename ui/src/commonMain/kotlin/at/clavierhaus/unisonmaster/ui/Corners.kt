@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -101,10 +100,10 @@ fun BoxScope.Corners(
     // top left: the gear, alone
     Box(Modifier.align(Alignment.TopStart).padding(start = CORNER_INSET - blur, top = CORNER_INSET - blur).padding(blur)) {
         if (shadowed) {
-            Icon(painterResource(R.drawable.ui_settings_gear), null, tint = Color.Black, modifier = Modifier.offset(shift, shift).blur(blur).size(GEAR))
+            Icon(gearPainter(), null, tint = Color.Black, modifier = Modifier.offset(shift, shift).blur(blur).size(GEAR))
         }
         Icon(
-            painterResource(R.drawable.ui_settings_gear), t(K.app_settings),
+            gearPainter(), t(K.app_settings),
             tint = if (settingsOpen) Color(Brand.ORANGE) else Color(Brand.WHITE),
             modifier = Modifier.size(GEAR).clickable(onClick = onSettings),
         )

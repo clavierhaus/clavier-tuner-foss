@@ -1,6 +1,8 @@
 package at.clavierhaus.unisonmaster.app
 
 import kotlin.math.pow
+import at.clavierhaus.unisonmaster.ui.fmt
+import at.clavierhaus.unisonmaster.ui.nowMs
 import at.clavierhaus.unisonmaster.ui.num
 import at.clavierhaus.unisonmaster.i18n.noteName
 import androidx.compose.foundation.background
@@ -48,7 +50,6 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.settings.StrobeMode
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.ui.formatHz
-import java.util.Locale
 import kotlin.math.abs
 
 /**
@@ -175,7 +176,7 @@ fun BasicHub(
                 partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
                 targets = targets.associate { it.k to it.hz },
                 falsePartials = read?.falsePartials?.toSet() ?: emptySet(), dropped = emptySet(),
-                matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+                matchCents = cfg.matchCents, nowMs = nowMs(),
                 // while sampling the stripes are partials 1-5 in fixed seats (Peter, 7 Oct 2026)
                 seats = if (t.sampling) SAMPLING_SEATS else strobeSeats(controller.highestPartial(liveTarget), read?.k ?: l.k,
                     hiddenTuning, if (cfg.strobeMode == StrobeMode.LIMIT) cfg.strobeCount else 0, cfg.strobeOne, shownTuning),
@@ -193,7 +194,7 @@ fun BasicHub(
                     upper.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
                 targets = mapOf(1 to a4) + upper.associate { it.k to it.hz * 2.0.pow(-it.cents / 1200.0) },
                 falsePartials = emptySet(), dropped = emptySet(),
-                matchCents = cfg.matchCents, nowMs = System.currentTimeMillis(),
+                matchCents = cfg.matchCents, nowMs = nowMs(),
                 // one column per partial button under the strobe, in the same order and width (Peter,
                 // 23 Oct 2026: the strobe columns correspond to the buttons below); a partial taken out
                 // keeps its empty column, so the two rows never shift against each other
@@ -219,10 +220,10 @@ fun BasicHub(
             TuningSession.Source.REFERENCE -> t(K.origin_reference)
             TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
             TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, noteName(l.refMidi!!)) +
-                (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless))
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else t(K.origin_beatless))
             TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, noteName(l.refMidi!!))
             TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, noteName(l.refMidi!!)) +
-                (if (l.widthCents > 0.0) t(K.origin_wide, String.format(Locale.ROOT, "%.1f", l.widthCents)) else t(K.origin_beatless)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else t(K.origin_beatless)) +
                 (l.checkCents?.let { t(K.origin_check, noteName(l.refMidi!!), num(abs(it), 1), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
         // Every number on this screen is derived from the A4 reference, and the

@@ -370,7 +370,7 @@ made `FitText` step down for a height that was never short. The widths are
 shares now (law 1), the keyboard's height too (28 % of the page), and text
 in the elements has a line 1.25 times its size.
 
-**`LayoutCheckTest`** (`ui/src/test`, `:ui:testDebugUnitTest`) draws the
+**`LayoutCheckTest`** (`ui/src/androidHostTest`, `:ui:testAndroidHostTest`; `ui/src/test` and `:ui:testDebugUnitTest` until 31 Oct 2026) draws the
 screens with Robolectric on the JVM — the A4 page, the sampling page in each
 state, the tuning screen, every settings page but Help's, the info line's
 window — fed by recorded strikes through the engine, on these panes: 890 × 406

@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.sp
 import at.clavierhaus.unisonmaster.Brand
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.t
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.min
@@ -139,7 +138,7 @@ fun NoteBlock(
 fun MeasuredBlock(hz: Double?, partial: Int? = null, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.End) {
         Text(
-            hz?.let { String.format(Locale.ROOT, if (partial != null) "%.2f" else "%.1f", it) } ?: "—",
+            hz?.let { fmt(if (partial != null) "%.2f" else "%.1f", it) } ?: "—",
             color = Color(Brand.WHITE),
             fontFamily = DejaVuSerif,
             fontSize = 66.sp,
@@ -281,20 +280,10 @@ fun TargetScale(
         }
         // and the window said in cents, above the posts, so the green is a number
         run {
-            val wp = android.graphics.Paint().apply {
-                color = edge.toArgb(); textSize = h * 0.18f; isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            drawContext.canvas.nativeCanvas.drawText(
-                String.format(Locale.ROOT, "\u00b1%.1f", m), right + h * 0.12f, top + h * 0.16f, wp,
-            )
+            drawLabel(fmt("\u00b1%.1f", m), right + h * 0.12f, top + h * 0.16f, edge, h * 0.18f)
         }
         // axis and ticks
         drawLine(Color(Brand.WHITE).copy(alpha = 0.35f), Offset(8f, axisY), Offset(w - 8f, axisY), 2f)
-        val paint = android.graphics.Paint().apply {
-            color = labelColor; textSize = h * 0.2f; isAntiAlias = true
-            textAlign = android.graphics.Paint.Align.CENTER
-        }
         var t = -SCALE_C
         while (t <= SCALE_C + 1e-9) {
             val x = xOf(t)
@@ -304,11 +293,11 @@ fun TargetScale(
             if (labelled) {
                 val label = when {
                     t == 0.0 -> "0"
-                    t == SCALE_C -> String.format(Locale.ROOT, "+%.0f c", t)
-                    t > 0 -> String.format(Locale.ROOT, "+%.0f", t)
-                    else -> String.format(Locale.ROOT, "−%.0f", abs(t))
+                    t == SCALE_C -> fmt("+%.0f c", t)
+                    t > 0 -> fmt("+%.0f", t)
+                    else -> fmt("−%.0f", abs(t))
                 }
-                drawContext.canvas.nativeCanvas.drawText(label, x, h * 0.95f, paint)
+                drawLabel(label, x, h * 0.95f, Color(labelColor), h * 0.2f, LabelAlign.CENTER)
             }
             t += 5.0
         }
