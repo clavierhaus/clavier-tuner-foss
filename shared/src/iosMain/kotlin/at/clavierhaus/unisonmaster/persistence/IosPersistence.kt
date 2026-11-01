@@ -70,7 +70,18 @@ import platform.posix.memcpy
  *
  * Layout: [format 1 byte][Apple's ECIES message: ephemeral public key, ciphertext, 16-byte tag]
  */
-class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.session") : Sealer {
+class KeychainSealer private constructor(private val tag: String, private val inKeychain: Boolean) : Sealer {
+
+    constructor(tag: String = "at.clavierhaus.claviertuner.session") : this(tag, inKeychain = true)
+
+    internal companion object {
+        /**
+         * The same seal under a key held in memory only, never in the keychain: for the simulator suite, whose test
+         * process has no keychain at all (errSecNotAvailable, -25291, CI run 41341321396). It checks the seal and
+         * its refusal; whether the key is kept in the keychain across a restart is seen only on a phone.
+         */
+        fun inMemory(): KeychainSealer = KeychainSealer("in-memory", inKeychain = false)
+    }
 
     override fun seal(plain: ByteArray): ByteArray {
         val pub = SecKeyCopyPublicKey(privateKey()) ?: error("no public key")
@@ -96,7 +107,7 @@ class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.sess
     }
 
     /** The key from the keychain, made there the first time. Kept for the app's life. */
-    private val key: SecKeyRef by lazy { find() ?: make() }
+    private val key: SecKeyRef by lazy { if (inKeychain) find() ?: make() else make() }
     private fun privateKey(): SecKeyRef = key
 
     private fun find(): SecKeyRef? = memScoped {
@@ -118,9 +129,11 @@ class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.sess
         val bits = alloc<kotlinx.cinterop.IntVar>().apply { value = 256 }
         val size = CFNumberCreate(null, kCFNumberIntType, bits.ptr)
         val priv = dict()
-        CFDictionaryAddValue(priv, kSecAttrIsPermanent, kCFBooleanTrue)
-        CFDictionaryAddValue(priv, kSecAttrApplicationTag, tagData)
-        CFDictionaryAddValue(priv, kSecAttrAccessible, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+        if (inKeychain) {
+            CFDictionaryAddValue(priv, kSecAttrIsPermanent, kCFBooleanTrue)
+            CFDictionaryAddValue(priv, kSecAttrApplicationTag, tagData)
+            CFDictionaryAddValue(priv, kSecAttrAccessible, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+        }
         val p = dict()
         CFDictionaryAddValue(p, kSecAttrKeyType, kSecAttrKeyTypeECSECPrimeRandom)
         CFDictionaryAddValue(p, kSecAttrKeySizeInBits, size)
@@ -128,30 +141,28 @@ class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.sess
         val err = alloc<CFErrorRefVar>()
         val k = SecKeyCreateRandomKey(p, err.ptr)
         CFRelease(p); CFRelease(priv); CFRelease(size); CFRelease(tagData)
-        // the keychain's own code, so a refusal says why (-34018: the process may not use the keychain)
+        // the keychain's own code, so a refusal says why (-25291: no keychain, as in the simulator suite)
         k ?: error("the keychain refused to make the key: " + (err.value?.let { CFErrorGetCode(it) } ?: "no code") + ", search said $lastFindStatus")
     }
 
     /** The keychain's answer to the last search for the key, for a refusal to name. */
     private var lastFindStatus = 0
+}
 
-    private companion object {
-        const val FORMAT: Byte = 1
+private const val FORMAT: Byte = 1
 
-        fun dict(): CFMutableDictionaryRef? =
-            CFDictionaryCreateMutable(null, 0, kCFTypeDictionaryKeyCallBacks.ptr, kCFTypeDictionaryValueCallBacks.ptr)
+private fun dict(): CFMutableDictionaryRef? =
+    CFDictionaryCreateMutable(null, 0, kCFTypeDictionaryKeyCallBacks.ptr, kCFTypeDictionaryValueCallBacks.ptr)
 
-        fun cfData(b: ByteArray): CFDataRef? =
-            if (b.isEmpty()) CFDataCreate(null, null, 0)
-            else b.usePinned { CFDataCreate(null, it.addressOf(0).reinterpret(), b.size.toLong()) }
+private fun cfData(b: ByteArray): CFDataRef? =
+    if (b.isEmpty()) CFDataCreate(null, null, 0)
+    else b.usePinned { CFDataCreate(null, it.addressOf(0).reinterpret(), b.size.toLong()) }
 
-        fun bytes(d: CFDataRef): ByteArray {
-            val n = CFDataGetLength(d).toInt()
-            val out = ByteArray(n)
-            if (n > 0) out.usePinned { memcpy(it.addressOf(0), CFDataGetBytePtr(d), n.toULong()) }
-            return out
-        }
-    }
+private fun bytes(d: CFDataRef): ByteArray {
+    val n = CFDataGetLength(d).toInt()
+    val out = ByteArray(n)
+    if (n > 0) out.usePinned { memcpy(it.addressOf(0), CFDataGetBytePtr(d), n.toULong()) }
+    return out
 }
 
 /**

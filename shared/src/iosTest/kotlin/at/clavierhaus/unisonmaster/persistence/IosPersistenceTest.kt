@@ -10,7 +10,9 @@ import kotlin.test.assertNull
 
 /**
  * The iPhone's saved tuning (1 Nov 2026), run on the simulator in CI: the file is written whole, read back,
- * set aside and removed; the seal opens what it sealed and refuses a file changed by one bit. Each test is
+ * set aside and removed; the seal opens what it sealed and refuses a file changed by one bit. The seal runs
+ * under a key held in memory: the simulator suite's process has no keychain (-25291), so the key's keeping in
+ * the keychain across a restart is checked on the phone, by Continue after the app was closed. Each test is
  * one that fails if the part it checks does nothing: a pass-through sealer opens the changed file, and a
  * save file that keeps nothing reads back null.
  */
@@ -37,7 +39,7 @@ class IosPersistenceTest {
 
     @Test
     fun theSealOpensWhatItSealedAndRefusesAChange() {
-        val s = KeychainSealer("at.clavierhaus.claviertuner.test")
+        val s = KeychainSealer.inMemory()
         val plain = "A4 440.0 and every note measured".encodeToByteArray()
         val sealed = try { s.seal(plain) } catch (e: IllegalStateException) { throw AssertionError("seal: ${e.message}") }
         assertEquals(1.toByte(), sealed[0])
@@ -51,7 +53,7 @@ class IosPersistenceTest {
     @Test
     fun aSessionSurvivesTheStoreBeingMadeAgain() {
         val dir = tempDir()
-        val sealer = KeychainSealer("at.clavierhaus.claviertuner.test")
+        val sealer = KeychainSealer.inMemory()
         val snap = SessionSnapshot(savedAtMs = 1L, a4Hz = 440.0, currentMidi = 69, measurements = emptyList())
         SessionStore(IosSaveFile(dir), sealer).save(snap)
         val back = SessionStore(IosSaveFile(dir), sealer).load()
