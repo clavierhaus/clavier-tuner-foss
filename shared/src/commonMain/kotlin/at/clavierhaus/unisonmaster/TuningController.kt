@@ -238,9 +238,20 @@ class TuningController(
      * Partials the tuner has switched off: on the hub's Full Spectrum, and on the tuning screen, where a
      * partial taken off stays off through every strike of the note until a tap brings it back (Peter,
      * 22 Oct 2026: "Tapping a partial button is a deliberate choice and should not automagically be
-     * changed back"). A new note starts with none.
+     * changed back"). Since 1 Nov 2026 each note keeps its own: a partial taken off a note is still off when the
+     * tuner comes back to that note (Peter: "this deactivation for the note must stay"); another note has its own,
+     * and a new tuning starts with none.
      */
     val hiddenPartials: StateFlow<Set<Int>> = _hiddenPartials.asStateFlow()
+
+    /** The partials taken off each note of this tuning, by key: the tuner's choice, kept until the tuning ends. */
+    private val hiddenByNote = mutableMapOf<Int, Set<Int>>()
+
+    /** The tuning screen's hidden partials set, and kept for the note on screen. */
+    private fun hideOnNote(hidden: Set<Int>) {
+        _hiddenPartials.value = hidden
+        _tuning.value?.let { if (hidden.isEmpty()) hiddenByNote.remove(it.midi) else hiddenByNote[it.midi] = hidden }
+    }
 
     private val _shownPartials = MutableStateFlow(setOf(1))
     /** Partials displayed on the tuning screen's Full Spectrum; the listened one is always among them. */
@@ -291,7 +302,7 @@ class TuningController(
             k !in shown -> {
                 val available = _targets.value.map { it.k }.toSet() + _liveAudible.value
                 if (k !in available) return
-                _hiddenPartials.value = _hiddenPartials.value - k
+                hideOnNote(_hiddenPartials.value - k)
                 _shownPartials.value = shown + k
                 setActive(k)
                 wantShown()
@@ -299,7 +310,7 @@ class TuningController(
             // ... and one tap removes it again, and it stays off: the next strike builds the shown
             // partials less the hidden ones (until 22 Oct 2026 it came back with the next strike)
             else -> {
-                _hiddenPartials.value = _hiddenPartials.value + k
+                hideOnNote(_hiddenPartials.value + k)
                 _shownPartials.value = shown - k
                 if (_activePartial.value == k) setActive(listened)
                 wantShown()
@@ -541,6 +552,7 @@ class TuningController(
         _activePartial.value = 1
         _fullSpectrum.value = false
         _hiddenPartials.value = emptySet()
+        hiddenByNote.clear()
         _suggested.value = null
         _targets.value = emptyList()
         _targetHz.value = _referenceA4Hz.value
@@ -745,13 +757,14 @@ class TuningController(
         if (noteChanged) {
             _liveHz.value = null
             _fullSpectrum.value = false
-            _hiddenPartials.value = emptySet()
+            // the note's own partials taken off, if the tuner took any off it before (1 Nov 2026)
+            _hiddenPartials.value = hiddenByNote[midi].orEmpty()
             // every partial the note can carry is read, on every note: the tuning screen is
             // one picture of them all (docs/UI.md), not a mode that shows one and a mode that
             // shows six. Until 3 Oct 2026 only the listened partial was read outside Full
             // Spectrum, and the picture of a sounding string stood empty.
             // one band (TunerSettings.strobeOne): the octave's partial alone; a tap still adds another
-            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k) else (_targets.value.map { it.k } + listening.k).toSet()
+            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k) else (_targets.value.map { it.k } + listening.k).toSet() - (_hiddenPartials.value - listening.k)
             _activePartial.value = listening.k
         } else if (_activePartial.value !in _targets.value.map { it.k } && _activePartial.value != listening.k) {
             _activePartial.value = listening.k

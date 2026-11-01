@@ -222,6 +222,34 @@ class TuningControllerTest {
     }
 
     /**
+     * A partial taken off a note stays off for that note when the tuner goes to another note and comes back
+     * (Peter, 1 Nov 2026: "when I remove one of them by tapping on the corresponding note, this deactivation for
+     * the note must stay"). Until then a new note started with none hidden, and coming back to the note brought
+     * the partial back. Another note keeps its own partials; a new tuning starts with none hidden.
+     */
+    @Test
+    fun aPartialTakenOffANoteStaysOffWhenTheTunerComesBackToIt() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val k = c.shownPartials.value.filter { it != c.tuning.value!!.listening.k }.max()
+        c.tapPartial(k)
+        assertFalse(k in c.shownPartials.value, "taken off")
+        c.selectNote(70)
+        c.hear(src, SyntheticString.strike(et(70), 7e-4, 3.0))
+        assertTrue(c.hiddenPartials.value.isEmpty(), "another note keeps its own: ${c.hiddenPartials.value}")
+        c.selectNote(68)
+        assertEquals(68, c.tuning.value!!.midi)
+        assertTrue(k in c.hiddenPartials.value, "back on the note, partial $k is still off: ${c.hiddenPartials.value}")
+        assertFalse(k in c.shownPartials.value, "and not shown: ${c.shownPartials.value}")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertFalse(k in c.shownPartials.value, "struck again, still off: ${c.shownPartials.value}")
+        c.tapPartial(k)
+        c.selectNote(70); c.selectNote(68)
+        assertTrue(k in c.shownPartials.value, "brought back by a tap, it stays back: ${c.shownPartials.value}")
+    }
+
+    /**
      * A string of its own stiffness, struck once; its partial 4 — the one
      * being tuned — dies away at 2.7 s while the others ring on. Once the
      * strike has spoken (1.5 s in) the string's own series is the targets of
