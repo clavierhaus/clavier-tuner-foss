@@ -39,7 +39,7 @@ class IosPersistenceTest {
     fun theSealOpensWhatItSealedAndRefusesAChange() {
         val s = KeychainSealer("at.clavierhaus.claviertuner.test")
         val plain = "A4 440.0 and every note measured".encodeToByteArray()
-        val sealed = s.seal(plain)
+        val sealed = try { s.seal(plain) } catch (e: IllegalStateException) { throw AssertionError("seal: ${e.message}") }
         assertEquals(1.toByte(), sealed[0])
         assertContentEquals(plain, s.open(sealed))
         // not the plain text: the bytes on disk say nothing of the tuning

@@ -13,6 +13,8 @@ import platform.CoreFoundation.CFDataCreate
 import platform.CoreFoundation.CFDataGetBytePtr
 import platform.CoreFoundation.CFDataGetLength
 import platform.CoreFoundation.CFDataRef
+import platform.CoreFoundation.CFErrorGetCode
+import platform.CoreFoundation.CFErrorRefVar
 import platform.CoreFoundation.CFDictionaryAddValue
 import platform.CoreFoundation.CFDictionaryCreateMutable
 import platform.CoreFoundation.CFMutableDictionaryRef
@@ -107,6 +109,7 @@ class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.sess
         val out = alloc<CFTypeRefVar>()
         val status = SecItemCopyMatching(q, out.ptr)
         CFRelease(q); CFRelease(tagData)
+        lastFindStatus = status
         if (status == errSecSuccess) out.value?.reinterpret() else null
     }
 
@@ -122,10 +125,15 @@ class KeychainSealer(private val tag: String = "at.clavierhaus.claviertuner.sess
         CFDictionaryAddValue(p, kSecAttrKeyType, kSecAttrKeyTypeECSECPrimeRandom)
         CFDictionaryAddValue(p, kSecAttrKeySizeInBits, size)
         CFDictionaryAddValue(p, kSecPrivateKeyAttrs, priv)
-        val k = SecKeyCreateRandomKey(p, null)
+        val err = alloc<CFErrorRefVar>()
+        val k = SecKeyCreateRandomKey(p, err.ptr)
         CFRelease(p); CFRelease(priv); CFRelease(size); CFRelease(tagData)
-        k ?: error("the keychain refused to make the key")
+        // the keychain's own code, so a refusal says why (-34018: the process may not use the keychain)
+        k ?: error("the keychain refused to make the key: " + (err.value?.let { CFErrorGetCode(it) } ?: "no code") + ", search said $lastFindStatus")
     }
+
+    /** The keychain's answer to the last search for the key, for a refusal to name. */
+    private var lastFindStatus = 0
 
     private companion object {
         const val FORMAT: Byte = 1
