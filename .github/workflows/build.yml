@@ -1,17 +1,25 @@
-# Every push builds the engine for Android and for iOS and runs the same tests on both;
-# a red build on either platform is a broken build.
+# The engine for Android and for iOS, the same tests on both; a red build on either platform is a
+# broken build.
 #
-#   android: the core suite on the JVM, the screens' tests, and the APK itself.
-#   ios:     the engine compiled for every iOS target and the core suite run on the iOS
-#            simulator. Apple's toolchain runs only on macOS, so this job runs on GitHub's
-#            macOS machines.
-#   ipa:     the iPhone app itself (iosApp/, the screens as one framework), built unsigned for a
-#            device and kept as a download: ClavierTuner.ipa, signed by whoever installs it.
+#   android: on every push that changes code -- the core suite on the JVM, the screens' tests, and the
+#            APK itself. A push of docs or texts alone starts nothing (paths-ignore below).
+#   ios:     by hand only (Actions > build > Run workflow) -- the engine compiled for every iOS target
+#            and the core suite and the screens' iPhone checks run on the iOS simulator. Apple's
+#            toolchain runs only on macOS, so this job runs on GitHub's macOS machines.
+#   ipa:     by hand only -- the iPhone app itself (iosApp/, the screens as one framework), built
+#            unsigned for a device and kept as a download: ClavierTuner.ipa, signed by whoever installs it.
+#
+# Why by hand (Peter, 2 Nov 2026): "only when I decide that a new version needs to be churned out and
+# that will only happen after I test android". The same rule as Pro's, whose free allowance the two
+# Mac jobs had spent in two days by running on every push.
 
 name: build
 
 on:
   push:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
   workflow_dispatch:
 
@@ -53,6 +61,7 @@ jobs:
             ui/build/reports/tests
 
   ios:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -84,6 +93,7 @@ jobs:
             ui/build/reports/tests
 
   ipa:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
