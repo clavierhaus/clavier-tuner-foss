@@ -326,6 +326,30 @@ class TuningSessionTest {
         }
     }
 
+    /**
+     * Where a key's partials stand when it is on its target (2 Nov 2026): the target's own first partial and the
+     * inharmonicity the target was computed with -- the sampled string's B, the curve's where the key was not
+     * sampled -- never a string's later strike (Rule 9). Two keys' partials from here are the beat their interval
+     * has on target; Pro's aural companion took a tuned strike's B for it until this day, so its expected beats
+     * moved while the targets stood.
+     */
+    @Test
+    fun aTargetsPartialsStandOnTheSamplingsInharmonicity() {
+        val s = TuningSession(a4, pro)
+        s.record(measuredString(69, a4, 8e-4))
+        for (m in listOf(21, 28, 33, 38, 45, 52, 57, 60, 76, 88, 96)) s.record(measuredString(m, et(m), 1e-4 * 2.0.pow((m - 40) / 12.0)))
+        s.finishSampling()
+        val sampledB = s.measurements.getValue(57).b
+        val before = s.targetPartialHz(57, 4)
+        assertEquals(4 * s.curveTargetF1(57) * Inharmonicity.ratio(4, sampledB), before, 1e-9, "A3 was sampled: its own B")
+        assertEquals(5 * s.curveTargetF1(53) * Inharmonicity.ratio(5, s.curve.b(53)!!), s.targetPartialHz(53, 5), 1e-9,
+            "F3 was not sampled: the curve's B")
+        // A3 tuned after the sampling, its strike measured at twice the sampled B
+        assertTrue(s.record(measuredString(57, et(57), 2 * sampledB)))
+        assertEquals(2 * sampledB, s.measurements.getValue(57).b, 1e-15, "the tuned strike is recorded with its own B")
+        assertEquals(before, s.targetPartialHz(57, 4), 1e-9, "a tuned strike moved where the target's partial stands")
+    }
+
     @Test
     fun theCurveIsOneSmoothLineAndBreaksOnlyWhereTheTunerMarksOne() {
         // a part rising up the plain wire and a part falling down the wound bass, sampled at nine keys

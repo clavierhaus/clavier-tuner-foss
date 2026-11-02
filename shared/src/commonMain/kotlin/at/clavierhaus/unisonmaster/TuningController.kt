@@ -534,6 +534,18 @@ class TuningController(
         return s.curveTargetF1(midi)
     }
 
+    /**
+     * Where partial [k] of [midi] stands when the key is on its computed target, with the inharmonicity that target
+     * was computed with (the sampling's, Rule 9); null while sampling or without a session. Pro's aural companion
+     * takes an interval's beat on target from two keys' partials here (2 Nov 2026), so that no second B stands
+     * beside the engine's.
+     */
+    fun computedPartialHz(midi: Int, k: Int): Double? {
+        val s = session ?: return null
+        if (s.sampling || !s.curve.ready) return null
+        return s.targetPartialHz(midi, k)
+    }
+
     /** The offsets in force over the targets, cents by key; empty without a session or an edition's offsets. */
     fun targetOffsets(): Map<Int, Double> = session?.targetOffsetCents ?: emptyMap()
 

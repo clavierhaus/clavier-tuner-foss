@@ -336,6 +336,14 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** B for [midi]: its own as sampled, else the curve's. */
     private fun bOf(midi: Int, c: InharmonicityCurve): Double = basis[midi]?.takeIf { it > 0 } ?: c.b(midi) ?: StringMeasure.DEFAULT_B
 
+    /**
+     * Where partial [k] of [midi] stands when the key is on its computed target: the target's first partial
+     * ([curveTargetF1]) with the inharmonicity it was computed with -- the sampled string's own B, the curve's where
+     * the key was not sampled, never a later strike (Rule 9). Two keys' partials from here are the beat their
+     * interval has when both are on target (Pro's aural companion, 2 Nov 2026).
+     */
+    fun targetPartialHz(midi: Int, k: Int): Double = k * curveTargetF1(midi) * Inharmonicity.ratio(k, bOf(midi, curve))
+
     private val curveCache = HashMap<Int, Double>()
     private var curveCacheKey: Any? = null
 
