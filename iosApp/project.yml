@@ -29,6 +29,7 @@ targets:
         UILaunchScreen: {}
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         CADisableMinimumFrameDurationOnPhone: true
         ITSAppUsesNonExemptEncryption: false
     settings:
@@ -36,7 +37,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
         # the app's own Swift module must not share the framework's name, or `import ClavierTuner` is ignored
         PRODUCT_MODULE_NAME: ClavierTunerApp
-        TARGETED_DEVICE_FAMILY: "1"
+        # the iPhone and the iPad, one app on every screen (CLAUDE.md, Peter, 2 Nov 2026: "For the customer
+        # management, an iPad is much more suitable than an iPhone")
+        TARGETED_DEVICE_FAMILY: "1,2"
         FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ui/build/bin/iosArm64/releaseFramework"
         OTHER_LDFLAGS: ["-framework", "ClavierTuner", "-lc++"]
         CODE_SIGNING_ALLOWED: "NO"
