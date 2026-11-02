@@ -13,6 +13,12 @@ targets:
     platform: iOS
     sources:
       - iosApp
+      # the faces and the hub's photograph: the same files as Android's res/, carried into the app's bundle
+      # (2 Nov 2026) and read by ui's PlatformParts.ios.kt; nothing is copied into this folder
+      - path: ../ui/src/androidMain/res/font
+        buildPhase: resources
+      - path: ../ui/src/androidMain/res/raw
+        buildPhase: resources
     info:
       path: iosApp/Info.plist
       properties:

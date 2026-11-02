@@ -35,10 +35,10 @@ import platform.darwin.dispatch_get_main_queue
  * events forwarded to it -- the same app as Android's MainActivity mounts, drawn by the same screens. What is here is
  * only what an iPhone has.
  *
- * Not yet carried over: the bundled faces and the hub's photograph (PlatformParts.ios.kt) and the status bar's
- * hiding while tuning. The saved tuning came on 1 Nov 2026: one sealed file in Application Support, its key in the
- * keychain (IosSaveFile, KeychainSealer), so Continue works after a restart as on Android. The crash note came on
- * 2 Nov 2026 (CrashNote.ios.kt), kept in the same folder.
+ * Not yet carried over: the home indicator's hiding while tuning (the status bar the iPhone hides by itself in
+ * landscape). The saved tuning came on 1 Nov 2026: one sealed file in Application Support, its key in the keychain
+ * (IosSaveFile, KeychainSealer), so Continue works after a restart as on Android. On 2 Nov 2026 came the crash note
+ * (CrashNote.ios.kt), kept in the same folder, and the faces and the hub's photograph (PlatformParts.ios.kt).
  */
 
 /** The tuner's settings in the phone's user defaults: the iPhone's preferences. */

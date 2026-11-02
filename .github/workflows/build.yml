@@ -115,6 +115,9 @@ jobs:
           cd iosApp
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/ClavierTuner.app Payload/
+          # the faces and the photograph went into the bundle (PlatformParts.ios.kt reads them from there)
+          ls Payload/ClavierTuner.app/dejavu_serif.ttf Payload/ClavierTuner.app/dejavu_serif_bold.ttf \
+             Payload/ClavierTuner.app/allura_regular.ttf Payload/ClavierTuner.app/hub_background.jpg
           zip -qry ClavierTuner.ipa Payload
           ls -la ClavierTuner.ipa
       - uses: actions/upload-artifact@v4
