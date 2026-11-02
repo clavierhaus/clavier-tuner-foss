@@ -50,6 +50,10 @@ kotlin {
             implementation(libs.androidx.compose.ui)
             implementation(libs.androidx.compose.material3)
         }
+        // the iPhone's own checks (the crash note, 2 Nov 2026), run on the simulator by CI's ios job
+        iosTest.dependencies {
+            implementation(kotlin("test"))
+        }
         getByName("androidHostTest").dependencies {
             implementation(libs.junit)
             implementation(libs.robolectric)

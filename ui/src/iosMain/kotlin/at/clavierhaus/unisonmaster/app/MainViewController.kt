@@ -14,11 +14,14 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.nowMs
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionRecordPermissionGranted
+import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
 import platform.Foundation.NSLocale
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
+import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDefaults
+import platform.Foundation.NSUserDomainMask
 import platform.Foundation.preferredLanguages
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
@@ -32,9 +35,10 @@ import platform.darwin.dispatch_get_main_queue
  * events forwarded to it -- the same app as Android's MainActivity mounts, drawn by the same screens. What is here is
  * only what an iPhone has.
  *
- * Not yet carried over: the bundled faces and the hub's photograph (PlatformParts.ios.kt), the status bar's hiding
- * while tuning, and the crash note. The saved tuning came on 1 Nov 2026: one sealed file in Application Support,
- * its key in the keychain (IosSaveFile, KeychainSealer), so Continue works after a restart as on Android.
+ * Not yet carried over: the bundled faces and the hub's photograph (PlatformParts.ios.kt) and the status bar's
+ * hiding while tuning. The saved tuning came on 1 Nov 2026: one sealed file in Application Support, its key in the
+ * keychain (IosSaveFile, KeychainSealer), so Continue works after a restart as on Android. The crash note came on
+ * 2 Nov 2026 (CrashNote.ios.kt), kept in the same folder.
  */
 
 /** The tuner's settings in the phone's user defaults: the iPhone's preferences. */
@@ -71,8 +75,15 @@ object TunerEntry {
     fun viewController(): UIViewController = MainViewController()
 }
 
+/** The app's own folder under Application Support, where the saved tuning lies (IosSaveFile's default). */
+private fun appFolder(): String =
+    ((NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, true).firstOrNull() as? String) ?: "") +
+        "/ClavierTuner"
+
 /** The view controller the iOS app shows: the tuner's screens. */
 fun MainViewController(): UIViewController {
+    // the last crash's note, kept beside the saved tuning and shown on the next start (2 Nov 2026)
+    CrashNote.install(IosPhone.version, appFolder())
     app.start(recreated = false)
     // the screen stays on while the app is in front: a tuner's hands are on the piano (Android: FLAG_KEEP_SCREEN_ON)
     UIApplication.sharedApplication.idleTimerDisabled = true

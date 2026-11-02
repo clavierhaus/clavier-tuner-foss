@@ -70,16 +70,18 @@ jobs:
       - name: Engine for iPhone and simulators
         run: ./gradlew --no-daemon :shared:compileKotlinIosArm64 :shared:compileKotlinIosX64 :shared:compileKotlinIosSimulatorArm64
       - name: Core suite on the iOS simulator
-        run: ./gradlew --no-daemon :shared:iosSimulatorArm64Test
+        run: ./gradlew --no-daemon --continue :shared:iosSimulatorArm64Test :ui:iosSimulatorArm64Test
       - name: Tests counted
         if: always()
-        run: python3 scripts/test-count.py shared
+        run: python3 scripts/test-count.py shared ui
       - name: Test reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ios-test-reports
-          path: shared/build/reports/tests
+          path: |
+            shared/build/reports/tests
+            ui/build/reports/tests
 
   ipa:
     runs-on: macos-latest
