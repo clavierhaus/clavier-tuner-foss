@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.7.3 -- 2026-11-04
+
 ### 2026-11-04
 - **Back from the settings, the start screen offers Continue.** Coming home
   from the settings showed the tuning as it was saved when the app started:
