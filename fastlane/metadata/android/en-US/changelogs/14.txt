@@ -1,0 +1,1 @@
+0.7.3, bug fixes: back from the settings, the start screen offers Continue (it showed the tuning as saved at the app's start). The phone's bars follow their settings on the tuning screen too. A partial taken off a note stays off when you come back to that note.

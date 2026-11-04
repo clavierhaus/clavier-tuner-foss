@@ -1,0 +1,1 @@
+0.7.3, Fehlerbehebungen: Aus den Einstellungen zurück bietet der Startbildschirm Fortsetzen an (er zeigte die Stimmung wie beim Start der App gespeichert). Die Systemleisten folgen ihren Einstellungen auch beim Stimmen. Ein abgewählter Teilton bleibt abgewählt, wenn man zum Ton zurückkehrt.

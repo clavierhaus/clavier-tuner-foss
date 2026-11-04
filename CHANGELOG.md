@@ -7,6 +7,24 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-04
+- **Back from the settings, the start screen offers Continue.** Coming home
+  from the settings showed the tuning as it was saved when the app started:
+  no Continue on a first tuning, and on a later one an older state of it,
+  which Continue would have loaded. The start screen now takes the tuning
+  under way however it is reached (reported by Gregor).
+- **The phone's bars follow their settings on the tuning screen too.**
+  Settings › App › Phone bars ruled every screen but the tuning screen, which
+  hid both bars always. Now each bar shows or hides as set, everywhere, and the
+  picture stands inside a bar that shows. Off, the tuning screen has the whole
+  screen, as before.
+
+### 2026-11-01
+- **A partial taken off a note stays off for that note.** Tapped off on the
+  tuning screen, it stayed off only while the note was on screen; going on and
+  coming back lit it again. Each note now keeps its own choice until the
+  tuning ends; a new tuning starts with all partials on.
+
 ## 0.7.2 -- 2026-10-31
 
 ### 2026-10-31 (afternoon)
