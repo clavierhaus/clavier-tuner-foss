@@ -98,6 +98,9 @@ class TunerApp(
     internal fun screenShown(screen: String) {
         micWanted = screen == "tune"
         if (micWanted && phone.hasMic()) controller.startLive() else controller.stopLive()
+        // the hub offers the tuning under way however it is reached -- from the settings' Home too (Gregor,
+        // 4 Nov 2026: Continue was not offered there, the hub showed what was saved when the app started)
+        if (screen == "hub") saveForHub()
     }
 
     internal fun saveForHub() {

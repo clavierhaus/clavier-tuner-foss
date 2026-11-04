@@ -93,6 +93,25 @@ class TunerAppTest {
         assertTrue(fresh.lastTuning.value is SessionStore.Load.Ok)
     }
 
+    /**
+     * Gregor, 4 Nov 2026: from the settings back to the start screen, Continue was not offered. The settings' Home
+     * went to the hub without the tuning saved for it; the hub showed what was saved when the app started -- nothing
+     * on a first tuning, an older state of it otherwise. The hub now takes the tuning under way whichever way it is
+     * reached.
+     */
+    @Test fun theHubOffersTheTuningUnderWayHoweverItIsReached() {
+        val app = app(MemoryFile(), TestPhone(mic = true))
+        app.start(recreated = false)
+        app.newTuning()
+        app.screenShown("tune")
+        app.controller.restore(SessionSnapshot(savedAtMs = 1L, a4Hz = 443.0, currentMidi = 69, measurements = emptyList(), sampling = true))
+        app.screenShown("settings")
+        app.screenShown("hub")
+        val last = app.lastTuning.value
+        assertTrue("Continue offered after Settings › Home: $last", last is SessionStore.Load.Ok)
+        assertEquals(443.0, (last as SessionStore.Load.Ok).snapshot.a4Hz, 1e-9)
+    }
+
     @Test fun theBarsShowAtTheStart() {
         val phone = TestPhone(mic = true)
         app(MemoryFile(), phone).start(recreated = false)
