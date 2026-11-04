@@ -253,7 +253,7 @@ internal object StringsTable : Catalog {
         "settings.page.display" to arrayOf("Phone bars", "Systemleisten"),
         "settings.navigationBar" to arrayOf("Navigation bar", "Navigationsleiste"),
         "settings.statusBar" to arrayOf("Status bar", "Statusleiste"),
-        "settings.note.bars" to arrayOf("The phone’s status and navigation bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.", "Status- und Navigationsleiste des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz."),
+        "settings.note.bars" to arrayOf("The phone’s status and navigation bars, on every screen. Off, the screens have their room; a swipe from the edge shows the bars for a moment.", "Status- und Navigationsleiste des Telefons, auf jeder Seite. Aus, haben die Seiten ihren Platz; ein Wisch vom Rand zeigt die Leisten kurz."),
         "settings.language" to arrayOf("Language", "Sprache"),
         "settings.language.system" to arrayOf("System", "System"),
         "hub.continue.verb" to arrayOf("Continue", "Stimmung"),

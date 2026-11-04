@@ -146,7 +146,9 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
             controller.applySettings(settings)
         }
         LaunchedEffect(screen, settings.showNavigationBar, settings.showStatusBar) {
-            app.phone.systemBars(hidden = screen == "tune", navigation = settings.showNavigationBar, status = settings.showStatusBar)
+            // each bar as the tuner set it under Settings › App, on every screen, the tuning screen too (Peter,
+            // 4 Nov 2026: "These settings do not work in tuning mode"); until then the tuning screen hid both always
+            app.phone.systemBars(hidden = false, navigation = settings.showNavigationBar, status = settings.showStatusBar)
         }
         LaunchedEffect(screen) { app.screenShown(screen) }
         // where Settings opens: null = where it last was; the tuning screen asks for the stretch's page (tab 1)
@@ -157,7 +159,8 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
             screen = "hub"
         }
         // where the bars show, the picture stands inside them; behind them the screens' black
-        OnePicture(Modifier.background(Color(Brand.BLACK)).then(if (screen == "tune") Modifier else Modifier.windowInsetsPadding(WindowInsets.systemBars))) {
+        // where a bar shows the picture stands inside it, on every screen; a hidden bar takes no room
+        OnePicture(Modifier.background(Color(Brand.BLACK)).windowInsetsPadding(WindowInsets.systemBars)) {
             when (screen) {
                 "settings" -> {
                     backHandler { screen = settingsFrom }

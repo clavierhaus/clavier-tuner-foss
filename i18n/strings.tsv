@@ -61,7 +61,7 @@ settings.page.about	About	Über
 settings.page.display	Phone bars	Systemleisten
 settings.navigationBar	Navigation bar	Navigationsleiste
 settings.statusBar	Status bar	Statusleiste
-settings.note.bars	The phone’s status and navigation bars outside the tuning screen, which always has the whole screen. Off, the other screens have it too; a swipe from the edge shows the bars for a moment.	Status- und Navigationsleiste des Telefons außerhalb des Stimmens, das immer den ganzen Bildschirm hat. Aus, haben ihn die anderen Seiten auch; ein Wisch vom Rand zeigt die Leisten kurz.
+settings.note.bars	The phone’s status and navigation bars, on every screen. Off, the screens have their room; a swipe from the edge shows the bars for a moment.	Status- und Navigationsleiste des Telefons, auf jeder Seite. Aus, haben die Seiten ihren Platz; ein Wisch vom Rand zeigt die Leisten kurz.
 settings.language	Language	Sprache
 settings.language.system	System	System
 hub.continue.verb	Continue	Stimmung

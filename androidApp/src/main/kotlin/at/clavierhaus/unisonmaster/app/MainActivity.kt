@@ -85,7 +85,8 @@ class MainActivity : ComponentActivity(), Phone {
     }
 
     /**
-     * The status and navigation bars: hidden while tuning, shown everywhere else (Peter, 19 Oct 2026).
+     * The status and navigation bars: each as the tuner set it, on every screen since 4 Nov 2026 (until then
+     * hidden while tuning, shown everywhere else, Peter, 19 Oct 2026; [hidden] is no longer asked for by the app).
      * Until then they were hidden on every screen, and two testers in the forum found no way to close
      * the app: the Back, Home and Recents buttons only came for a moment after a swipe from the edge.
      * Hidden, a swipe from the edge still shows them for a moment, as before.
