@@ -419,7 +419,13 @@ class TuningController(
     }
 
     /** The target of partial [k] of the note on screen: the listened partial's own, any other placed by the string's model. */
-    private fun targetOf(t: TuningView, k: Int): Double =
+    /**
+     * Where partial [k] of the note on screen ([t]) stands on its target, Hz: the partial listened to at the
+     * target, a shown partial at its own target, any other from the target f1 and the string's B. Public since
+     * 5 Nov 2026 so that a screen beside the strobe reads the engine's rule rather than repeating it
+     * (Amendment 3: two places that work out the same number, one of them wrong one day).
+     */
+    fun targetOf(t: TuningView, k: Int): Double =
         if (k == t.listening.k) t.listening.targetHz
         else _targets.value.firstOrNull { it.k == k }?.hz ?: (k * t.targetHz * Inharmonicity.ratio(k, t.b))
 
