@@ -21,6 +21,7 @@ import at.clavierhaus.unisonmaster.TuningController
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.persistence.SessionStore
 import at.clavierhaus.unisonmaster.settings.SettingsModel
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.OnePicture
 
 /*
@@ -123,6 +124,10 @@ class TunerApp(
 fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) -> Unit) {
     val controller = app.controller
     val settingsModel = app.settingsModel
+    /** A change of the stretch from the hub: the tuning's own while one is under way, else the defaults (5 Nov 2026). */
+    val tuneOrDefault: ((TunerSettings) -> TunerSettings) -> Unit = { change ->
+        if (!controller.changeTuning(change)) settingsModel.update(change)
+    }
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(Brand.ORANGE),
@@ -188,8 +193,9 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                         onHome = { backToHub() },
                         onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
                         onStretch = { region -> openSettings(1 to region) },
-                        onTemperamentLow = { low -> settingsModel.update { it.copy(temperamentLowMidi = low) } },
-                        onChangeSettings = { change -> settingsModel.update(change) },
+                        // the tuning's own stretch, saved with it; without a tuning, the defaults (5 Nov 2026)
+                        onTemperamentLow = { low -> tuneOrDefault { it.copy(temperamentLowMidi = low) } },
+                        onChangeSettings = { change -> tuneOrDefault(change) },
                     )
                 }
                 else -> {

@@ -2,6 +2,9 @@ package at.clavierhaus.unisonmaster.persistence
 
 import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.measure.Partials
+import at.clavierhaus.unisonmaster.settings.OctaveType
+import at.clavierhaus.unisonmaster.settings.Stretch
+import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 
@@ -28,6 +31,11 @@ data class SessionSnapshot(
      * in a file saved before then.
      */
     val tuned: Set<Int>? = null,
+    /**
+     * The tuning's own stretch, its temperament octave and each region's octave type and width (Stretch, since
+     * 5 Nov 2026). Null in a file saved before then.
+     */
+    val stretch: Stretch? = null,
 )
 
 /**
@@ -42,6 +50,8 @@ data class SessionSnapshot(
  *     basis <midi> <b>                          (the sampled inharmonicity, any number; since 11 Oct 2026)
  *     offset <midi> <cents>                     (an edition's offset of the target, any number; since 24 Oct 2026)
  *     tuned <midi>                              (a note tuned, not only sampled, any number; since 25 Oct 2026)
+ *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <longGrand 0|1>
+ *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
  *     f <k> <rateHz> <depthDb>                  (the string's false beats, any number; since 8 Oct 2026)
@@ -76,6 +86,12 @@ object SessionCodec {
             rateHz.isFinite() && rateHz > 0.0 && rateHz <= 50.0 &&
             depthDb.isFinite() && depthDb in 0.0..60.0
 
+    private fun widthInRange(w: Double?) = w == null || (w.isFinite() && w in 0.0..TunerSettings.MAX_WIDTH_CENTS)
+
+    private fun stretchInRange(t: Stretch) =
+        t.temperamentLowMidi in TunerSettings.MIN_TEMPERAMENT_LOW..TunerSettings.MAX_TEMPERAMENT_LOW &&
+            listOf(t.widthBass, t.widthMiddle, t.widthTreble, t.widthBassFar, t.widthTrebleFar).all { widthInRange(it) }
+
     fun encode(s: SessionSnapshot): String = buildString {
         append("$HEADER $VERSION\n")
         append("saved ${s.savedAtMs}\n")
@@ -85,6 +101,10 @@ object SessionCodec {
         s.basis?.toList()?.sortedBy { it.first }?.forEach { (midi, b) -> if (midi in 12..108 && b.isFinite() && b in 0.0..0.1) append("basis $midi $b\n") }
         s.offsets.toList().sortedBy { it.first }.forEach { (midi, c) -> if (midi in 12..108 && c.isFinite() && c in -100.0..100.0) append("offset $midi $c\n") }
         s.tuned?.sorted()?.forEach { midi -> if (midi in 12..108) append("tuned $midi\n") }
+        s.stretch?.takeIf { stretchInRange(it) }?.let { t ->
+            append("stretch ${t.temperamentLowMidi} ${t.octaveBass.name} ${t.octaveMiddle.name} ${t.octaveTreble.name} ")
+            append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} ${if (t.longGrand) 1 else 0}\n")
+        }
         for (m in s.measurements) {
             if (!noteInRange(m.midi, m.f1Hz, m.b, m.residualCents, m.timeMs)) continue
             val ps = m.partials.filter { partialInRange(it.k, it.cents, it.levelDb, it.sustainS) }
@@ -151,6 +171,21 @@ object SessionCodec {
         while (i < lines.size && lines[i].startsWith("tuned ")) {
             (tuned ?: LinkedHashSet<Int>().also { tuned = it }) += int(tokens("tuned", 1)[0], 12, 108)
         }
+        // the tuning's own stretch: a file from before 5 Nov 2026 has none; a value out of range drops it, and the
+        // tuning takes the defaults, as such a file does
+        var stretch: Stretch? = null
+        if (i < lines.size && lines[i].startsWith("stretch ")) {
+            val t = tokens("stretch", 10)
+            fun type(n: String) = OctaveType.entries.firstOrNull { it.name == n }
+            fun w(n: String) = if (n == "-") null else n.toDoubleOrNull() ?: Double.NaN
+            val low = t[0].toIntOrNull()
+            val types = listOf(type(t[1]), type(t[2]), type(t[3]))
+            val long = when (t[9]) { "0" -> false; "1" -> true; else -> null }
+            if (low != null && types.all { it != null } && long != null) {
+                val c = Stretch(low, types[0]!!, types[1]!!, types[2]!!, w(t[4]) ?: Double.NaN, w(t[5]) ?: Double.NaN, w(t[6]) ?: Double.NaN, w(t[7]), w(t[8]), long)
+                if (stretchInRange(c)) stretch = c
+            }
+        }
 
         // Structure — header, version, line shapes, the end marker — must be
         // right, or the file is not a session and is refused. Values are
@@ -197,7 +232,7 @@ object SessionCodec {
             notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs, falseBeats))
         }
         if (i != lines.size) fail("data after end")
-        return SessionSnapshot(saved, a4, current, notes, sampling, basis, offsets, tuned)
+        return SessionSnapshot(saved, a4, current, notes, sampling, basis, offsets, tuned, stretch)
     }
 }
 

@@ -11,6 +11,7 @@ import at.clavierhaus.unisonmaster.measure.FalseBeatTally
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
+import at.clavierhaus.unisonmaster.settings.Stretch
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
@@ -160,11 +161,42 @@ class TuningController(
     }
 
     private val _settings = MutableStateFlow(TunerSettings())
-    /** The settings in force (see [applySettings]). */
+    /** The settings in force: the app's ([applySettings]) with the tuning's own stretch ([changeTuning]) over them. */
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
 
-    /** Called by the app whenever the settings change; re-targets the session if there is one. */
+    /** The settings as the app holds them: for a tuning, the defaults of its stretch. */
+    private var defaults = TunerSettings()
+
+    /**
+     * The tuning's own stretch ([Stretch], 5 Nov 2026): taken from the defaults when the tuning begins, saved and
+     * continued with it, changed only by [changeTuning]. Null without a tuning.
+     */
+    private var tuningStretch: Stretch? = null
+
+    /**
+     * Called by the app whenever the settings change. A tuning under way keeps its own stretch, so a change to the
+     * defaults of the stretch moves none of its targets (Rule 9); everything else re-targets it as before.
+     */
     fun applySettings(s: TunerSettings) {
+        defaults = s
+        inForce()
+    }
+
+    /**
+     * Changes the stretch of the tuning under way, and of it only (the hub's window, the sampling page's temperament
+     * octave). False without a tuning: then the change is the app's, to its defaults.
+     */
+    fun changeTuning(change: (TunerSettings) -> TunerSettings): Boolean {
+        if (session == null) return false
+        tuningStretch = change(_settings.value).stretch()
+        inForce()
+        onSessionChanged?.let { save -> snapshot()?.let(save) }
+        return true
+    }
+
+    /** Puts the defaults with the tuning's stretch over them in force, and re-targets the tuning. */
+    private fun inForce() {
+        val s = tuningStretch?.let { defaults.withStretch(it) } ?: defaults
         _settings.value = s
         val session = session ?: return
         session.settings = s
@@ -515,6 +547,7 @@ class TuningController(
             basis = s.frozenBasis,
             offsets = s.targetOffsetCents,
             tuned = s.tuned,
+            stretch = tuningStretch,
         )
     }
 
@@ -563,6 +596,8 @@ class TuningController(
         _a4Status.value = A4Status(null, false)
         shortSamples.clear()
         session = null
+        tuningStretch = null
+        _settings.value = defaults
         _tuning.value = null
         _reading.value = null
         _liveHz.value = null
@@ -584,6 +619,10 @@ class TuningController(
         session = null
         shortSamples.clear()
         setReference(snap.a4Hz)
+        // the stretch saved with the tuning; a file from before 5 Nov 2026 has none and takes the defaults in force,
+        // which it keeps from then on
+        tuningStretch = snap.stretch ?: defaults.stretch()
+        _settings.value = defaults.withStretch(tuningStretch!!)
         val s = TuningSession(_referenceA4Hz.value, _settings.value)
         for (m in snap.measurements) if (m.midi in s.notes) s.record(m)
         // the basis saved with the session; a file from before 11 Oct 2026 has none, and its
@@ -836,6 +875,9 @@ class TuningController(
             // the reference is the pitch the tuner chose on the sampling page and tuned the string to,
             // not the string as it happens to stand: until 5 Oct 2026 this overwrote his choice with
             // the reading, so there was never a pitch to aim at (Peter, 15:55)
+            // a new tuning takes its stretch from the defaults (5 Nov 2026)
+            tuningStretch = defaults.stretch()
+            _settings.value = defaults.withStretch(tuningStretch!!)
             val s = TuningSession(_referenceA4Hz.value, _settings.value)
             s.record(m)
             session = s

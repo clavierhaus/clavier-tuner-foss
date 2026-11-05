@@ -371,7 +371,41 @@ data class TunerSettings(
         val outer = own + ((far ?: own) - own) * w
         return widthMiddle + (outer - widthMiddle) * w
     }
+
+    /** The stretch this tuning is tuned to ([Stretch]). */
+    fun stretch(): Stretch = Stretch(
+        temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
+        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, longGrand,
+    )
+
+    /** These settings with [s] as the stretch. */
+    fun withStretch(s: Stretch): TunerSettings = copy(
+        temperamentLowMidi = s.temperamentLowMidi, octaveBass = s.octaveBass, octaveMiddle = s.octaveMiddle,
+        octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
+        widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, longGrand = s.longGrand,
+    )
 }
+
+/**
+ * The settings that make a tuning's targets out of its sampling: the temperament octave and each region's octave type
+ * and width, with the piano's size that recommends the bass's. A tuning keeps its own (Peter, 5 Nov 2026, after a treble tuned at 3:1 on the 225 was to be corrected
+ * to 4:1: Settings › Stretch is the default for future tunings, changed in the tuning itself): it takes them from the
+ * defaults when it begins, the hub's window changes them for this tuning only, and they are saved and continued with
+ * it, so a change to the defaults moves no target of a tuning under way (Rule 9).
+ */
+data class Stretch(
+    val temperamentLowMidi: Int,
+    val octaveBass: OctaveType,
+    val octaveMiddle: OctaveType,
+    val octaveTreble: OctaveType,
+    val widthBass: Double,
+    val widthMiddle: Double,
+    val widthTreble: Double,
+    val widthBassFar: Double?,
+    val widthTrebleFar: Double?,
+    /** The piano's size the bass's octave type was recommended by ([TunerSettings.longGrand]): the window's switch. */
+    val longGrand: Boolean,
+)
 
 /**
  * Holds the settings, persists every change, and exposes them as a flow.
