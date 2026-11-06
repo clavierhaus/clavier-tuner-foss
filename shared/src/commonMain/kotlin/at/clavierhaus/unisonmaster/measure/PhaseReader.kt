@@ -189,7 +189,7 @@ class PhaseReader(
         alpha = 1 - exp(-2 * PI * bandHz / sampleRate)
         // a full-band error must turn less than half a cycle per block, and a
         // block is never longer than a hop, so every hop yields a reading
-        block = (sampleRate / (2.5 * bandHz)).toInt().coerceIn(8, MAX_BLOCK)
+        block = (sampleRate / (2.5 * bandHz)).toInt().coerceIn(8 * EngineRate.scaleOf(sampleRate), MAX_BLOCK * EngineRate.scaleOf(sampleRate))
         val tau = 1.0 / (2 * PI * bandHz)
         settleSamples = (SETTLE_TIME_CONSTANTS * tau * STAGES * sampleRate).toLong()
         main.tune(hz)
@@ -341,7 +341,7 @@ class PhaseReader(
     companion object {
         /** Half-width of the band around the target: 50 cents wide in all, Reyburn's narrowest; a semitone away is 54 dB down. */
         const val DEFAULT_BAND_CENTS = 25.0
-        /** The longest block the rate is read over: 1024 samples, one hop at 48 kHz. */
+        /** The longest block the rate is read over: 1024 samples, one hop at 48 kHz; × [EngineRate.scaleOf] at 48 kHz × 2^n. */
         const val MAX_BLOCK = 1024
         /** Verituner's exponential memory. */
         const val DEFAULT_MEMORY_S = 0.15

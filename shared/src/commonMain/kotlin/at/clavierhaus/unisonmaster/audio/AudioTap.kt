@@ -16,9 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class AudioTap(
     private val source: AudioSource,
-    /** Samples per buffer; the hop of the readers behind the taps. */
-    private val hop: Int = 1024,
+    /** Samples per buffer; the hop of the readers behind the taps. Null: the engine's hop at the source's rate. */
+    private val hopSamples: Int? = null,
 ) {
+    private val hop: Int get() = hopSamples ?: at.clavierhaus.unisonmaster.measure.EngineRate.hopOf(source.sampleRateHz)
     val sampleRateHz: Int get() = source.sampleRateHz
 
     private val _listening = MutableStateFlow(false)
