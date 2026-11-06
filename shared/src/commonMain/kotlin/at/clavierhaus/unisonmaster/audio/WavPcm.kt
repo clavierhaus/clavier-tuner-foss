@@ -9,8 +9,9 @@ package at.clavierhaus.unisonmaster.audio
  * [AudioSource] promises — mono PCM float in [-1, 1] — and nothing else
  * changes anywhere above it.
  *
- * Understands what the recorder writes and what the recordings hold: PCM
- * 16-bit and 32-bit float, mono or stereo (the left channel is taken, as
+ * Understands what the recorders write and what the recordings hold: PCM
+ * 16-bit and 24-bit (Pro's recorder from an audio interface, since 6 Nov
+ * 2026), and 32-bit float, mono or stereo (the left channel is taken, as
  * the phone records mono anyway). Anything else is refused by name rather
  * than played as noise.
  */
@@ -77,6 +78,16 @@ object WavPcm {
                     out[i] = s / 32768f
                 }
             }
+            format == 1 && bits == 24 -> {
+                val step = 3 * channels
+                frames = dataLen / step
+                out = FloatArray(frames)
+                for (i in 0 until frames) {
+                    val at = dataAt + i * step
+                    val v = (bytes[at].toInt() and 0xFF) or ((bytes[at + 1].toInt() and 0xFF) shl 8) or (bytes[at + 2].toInt() shl 16)
+                    out[i] = v / 8_388_608f
+                }
+            }
             format == 3 && bits == 32 -> {
                 val step = 4 * channels
                 frames = dataLen / step
@@ -85,7 +96,7 @@ object WavPcm {
                     out[i] = Float.fromBits(u32(bytes, dataAt + i * step))
                 }
             }
-            else -> throw NotSupported("WAV format $format at $bits bits is not read here; 16-bit PCM or 32-bit float.")
+            else -> throw NotSupported("WAV format $format at $bits bits is not read here; 16- or 24-bit PCM or 32-bit float.")
         }
         if (frames == 0) throw NotSupported("The WAV file is empty.")
         return Pcm(rate, out)
