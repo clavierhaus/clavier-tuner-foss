@@ -117,7 +117,7 @@ class CleanReading(
     /** The hop of the last strike: the beat is measured from [SUSTAIN_S] after it. */
     private var strikeHop = 0L
     /** Seconds per hop, from the chunks pushed. */
-    private var hopS = EngineRate.hopOf(sampleRate).toDouble() / sampleRate
+    private var hopS = 1024.0 / sampleRate
     /** The last beat measured on each partial, for the record (Pro's false-beat map wants the rate and the depth). */
     private val beat = arrayOfNulls<BeatMeasure.Beat>(count + 1)
 

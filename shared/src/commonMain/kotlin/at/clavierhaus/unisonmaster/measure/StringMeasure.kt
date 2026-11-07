@@ -74,7 +74,7 @@ object StringMeasure {
     }
 
     /** The phase reading at [hz] over [seg]: the median of the readings that were shown. */
-    fun readByPhase(seg: FloatArray, sampleRate: Int, hz: Double, hop: Int = EngineRate.hopOf(sampleRate)): Double? {
+    fun readByPhase(seg: FloatArray, sampleRate: Int, hz: Double, hop: Int = 1024): Double? {
         val reader = PhaseReader(sampleRate, hz)
         val values = ArrayList<Double>()
         val chunk = FloatArray(hop)
@@ -93,7 +93,7 @@ object StringMeasure {
      * The decay of the last strike in [samples]: from [SKIP_S] after the
      * last jump in level to at most [LENGTH_S] later. Null when too short.
      */
-    fun decay(samples: FloatArray, sampleRate: Int, hop: Int = EngineRate.hopOf(sampleRate)): FloatArray? {
+    fun decay(samples: FloatArray, sampleRate: Int, hop: Int = 1024): FloatArray? {
         val hops = samples.size / hop
         if (hops < 8) return null
         val db = DoubleArray(hops) { h ->

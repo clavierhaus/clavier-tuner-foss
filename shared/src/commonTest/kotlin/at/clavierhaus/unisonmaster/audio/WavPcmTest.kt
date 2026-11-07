@@ -77,25 +77,10 @@ class WavPcmTest {
     @Test
     fun refusesWhatItCannotPlayByName() {
         assertFailsWith<WavPcm.NotSupported> { WavPcm.read(ByteArray(100)) }
-        // 8-bit PCM: no recorder of ours writes it
+        // 24-bit PCM: common in studios, never written here
         val e = assertFailsWith<WavPcm.NotSupported> {
-            WavPcm.read(wav(1, 8, 1, 48_000, ByteArray(30)))
+            WavPcm.read(wav(1, 24, 1, 48_000, ByteArray(30)))
         }
-        assertTrue(e.message!!.contains("8 bits"), "the refusal names the format: ${e.message}")
-    }
-
-    @Test
-    fun readsTwentyFourBitAtNinetySixKilohertz() {
-        // Pro's recorder from an audio interface, 6 Nov 2026: +0.5, -0.5, the smallest step and full scale, little-endian
-        val body = byteArrayOf(0, 0, 0x40, 0, 0, 0xC0.toByte(), 1, 0, 0, 0xFF.toByte(), 0xFF.toByte(), 0x7F)
-        val pcm = WavPcm.read(wav(1, 24, 1, 96_000, body))
-        assertEquals(96_000, pcm.sampleRateHz)
-        assertEquals(4, pcm.samples.size)
-        assertEquals(0.5f, pcm.samples[0]); assertEquals(-0.5f, pcm.samples[1])
-        assertEquals(1f / 8_388_608f, pcm.samples[2], "the 24th bit is kept, not rounded to 16")
-        assertTrue(abs(pcm.samples[3] - 1f) < 1e-6)
-        // and the left channel of a stereo one
-        val stereo = WavPcm.read(wav(1, 24, 2, 96_000, byteArrayOf(0, 0, 0x40, 0, 0, 0xC0.toByte())))
-        assertEquals(listOf(0.5f), stereo.samples.toList())
+        assertTrue(e.message!!.contains("24"), "the refusal names the format: ${e.message}")
     }
 }

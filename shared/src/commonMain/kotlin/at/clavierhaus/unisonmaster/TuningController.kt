@@ -2,7 +2,6 @@ package at.clavierhaus.unisonmaster
 
 import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.measure.BandPlaces
-import at.clavierhaus.unisonmaster.measure.EngineRate
 import at.clavierhaus.unisonmaster.measure.LivePartial
 import at.clavierhaus.unisonmaster.measure.ReadingSpread
 import at.clavierhaus.unisonmaster.measure.PartialFinder
@@ -99,9 +98,9 @@ class TuningController(
         const val LIVE_PARTIALS_S = 1.5
 
         fun livePartialsHops(sampleRate: Int): Long =
-            (LIVE_PARTIALS_S * sampleRate / EngineRate.hopOf(sampleRate)).toLong().coerceAtLeast(1L)
+            (LIVE_PARTIALS_S * sampleRate / HOP).toLong().coerceAtLeast(1L)
 
-        fun holdHops(sampleRate: Int): Long = (HOLD_S * sampleRate / EngineRate.hopOf(sampleRate)).toLong().coerceAtLeast(1L)
+        fun holdHops(sampleRate: Int): Long = (HOLD_S * sampleRate / HOP).toLong().coerceAtLeast(1L)
         const val DETECT_RUN = 3
         /** After this many hops (half a second) only a lower key may replace the key named: a decaying strike never becomes a higher note. */
         const val DETECT_SETTLED_HOPS = 24L
@@ -1018,7 +1017,7 @@ class TuningController(
     private fun measureNote(t: TuningView, k: Int, hz: Double, upToHop: Long = hops): NoteMeasurement? {
         val f1Guess = hz / (k * Inharmonicity.ratio(k, t.b))
         val all = ringSnapshot()
-        val cut = ((hops - upToHop).coerceAtLeast(0) * hopSize).coerceAtMost(all.size.toLong()).toInt()
+        val cut = ((hops - upToHop).coerceAtLeast(0) * HOP).coerceAtMost(all.size.toLong()).toInt()
         val m = StringMeasure.measure(all.copyOfRange(0, all.size - cut), audioSource.sampleRateHz, t.midi, f1Guess, t.b, timeMs = clock())
         val f1 = m?.f1Hz ?: f1Guess
         val own = MeasuredPartial(k, TuningSession.centsOff(hz, k * f1), 0.0, 0.0)
@@ -1105,7 +1104,7 @@ class TuningController(
         val back = (SAMPLE_STILL_HOPS / SAMPLE_STEP_HOPS).toInt()
         val still = a.history.size > back &&
             1200.0 / ln(2.0) * (k * k - 1) / 2.0 * abs(a.history.last() - a.history[a.history.size - 1 - back]) < SAMPLE_STILL_CENTS
-        val windowFull = since * hopSize >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * sr
+        val windowFull = since * HOP >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * sr
         if (still || windowFull) {
             a.state = Measured.MEASURED
             a4Kept = a.measurement ?: NoteMeasurement(TuningSession.MIDI_A4, a.f1, 0.0, 0.0, listOf(MeasuredPartial(1, 0.0, 0.0, 0.0)), clock())
@@ -1173,7 +1172,7 @@ class TuningController(
         val back = (SAMPLE_STILL_HOPS / SAMPLE_STEP_HOPS).toInt()
         val still = c.history.size > back &&
             1200.0 / ln(2.0) * (k * k - 1) / 2.0 * abs(m.b - c.history[c.history.size - 1 - back]) < SAMPLE_STILL_CENTS
-        val windowFull = since * hopSize >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * audioSource.sampleRateHz
+        val windowFull = since * HOP >= (StringMeasure.SKIP_S + StringMeasure.LENGTH_S) * audioSource.sampleRateHz
         if (still || windowFull) c.state = Measured.MEASURED
         if (c.accepted) {
             s.record(m)
@@ -1224,10 +1223,7 @@ class TuningController(
     @Volatile private var lastShown: Shown? = null
     @Volatile private var hops = 0L
 
-    /** The ring, sized to the rate of the last start of listening (a source's rate may change between starts: Pro's interface). */
-    private var ring = FloatArray((RING_S * audioSource.sampleRateHz).toInt())
-    /** The hop of the last start of listening, in samples ([EngineRate.hopOf]). */
-    @Volatile private var hopSize = EngineRate.hopOf(audioSource.sampleRateHz)
+    private val ring = FloatArray((RING_S * audioSource.sampleRateHz).toInt())
     @Volatile private var ringPos = 0
     @Volatile private var ringFilled = 0
 
@@ -1274,15 +1270,6 @@ class TuningController(
     fun startLive(): Boolean {
         if (_live.value) return true
         val sr = audioSource.sampleRateHz
-        // the engine's sample counts at this rate: the same durations at 48 kHz × 2^n (EngineRate, 6 Nov 2026)
-        val scale = EngineRate.scaleOf(sr)
-        val hopN = HOP * scale
-        val detectN = DETECT_SAMPLES * scale
-        val finderN = FINDER_SAMPLES * scale
-        val longN = SAMPLE_LONG_SAMPLES * scale
-        val earlyN = SAMPLE_EARLY_SAMPLES * scale
-        hopSize = hopN
-        if (ring.size != (RING_S * sr).toInt()) { ring = FloatArray((RING_S * sr).toInt()); ringPos = 0; ringFilled = 0 }
         var reader: PhaseReader? = null
         var readerGeneration = -1
         val shownReaders = HashMap<Int, PhaseReader>()
@@ -1321,8 +1308,8 @@ class TuningController(
         var coarse: Double? = null
         // the keys the identifier chooses from: the instrument's range, nothing below it
         var identifierLow = -1
-        var identifier = KeyIdentifier(sr, detectN)
-        var identifierLong = KeyIdentifier(sr, longN)
+        var identifier = KeyIdentifier(sr, DETECT_SAMPLES)
+        var identifierLong = KeyIdentifier(sr, SAMPLE_LONG_SAMPLES)
         var strikeHop = -1_000_000L
         var livePartialsStrike = -1L
         var strikePeakDb = -200.0
@@ -1331,11 +1318,11 @@ class TuningController(
         var followed = false
         var early: KeyIdentifier.Fit? = null
         var decided = false
-        val earlyHop = ((SAMPLE_EARLY_AT_S * sr + earlyN) / hopN).toLong() + 1
-        val longHop = ((SAMPLE_LONG_AT_S * sr + longN) / hopN).toLong() + 1
+        val earlyHop = ((SAMPLE_EARLY_AT_S * sr + SAMPLE_EARLY_SAMPLES) / HOP).toLong() + 1
+        val longHop = ((SAMPLE_LONG_AT_S * sr + SAMPLE_LONG_SAMPLES) / HOP).toLong() + 1
         _live.value = true
         return try {
-            audioSource.start(hopN) { chunk -> try {
+            audioSource.start(HOP) { chunk -> try {
                 if (!_live.value) return@start
                 tap?.invoke(chunk)
                 toRing(chunk)
@@ -1357,8 +1344,8 @@ class TuningController(
                 recent[(hop % recent.size).toInt()] = db
                 _liveLevel.value = if (rms < SILENCE_RMS) 0.0 else (1.0 + (db - peakDb) / LEVEL_RANGE_DB).coerceIn(0.0, 1.0)
 
-                val finderDue = hop % FINDER_EVERY == 0L && ringFilled >= finderN
-                val finder = if (finderDue) PartialFinder(lastSamples(finderN), sr) else null
+                val finderDue = hop % FINDER_EVERY == 0L && ringFilled >= FINDER_SAMPLES
+                val finder = if (finderDue) PartialFinder(lastSamples(FINDER_SAMPLES), sr) else null
                 val w = wanted
                 if (w == null) {
                     // the hub: the reader goes where the finder places the A4 string
@@ -1452,14 +1439,14 @@ class TuningController(
                 val since = hop - strikeHop
                 val low = session?.lowMidi ?: 21
                 if (low != identifierLow) {
-                    identifier = KeyIdentifier(sr, detectN, low, TuningSession.MIDI_C8)
-                    identifierLong = KeyIdentifier(sr, longN, low, TuningSession.MIDI_C8)
+                    identifier = KeyIdentifier(sr, DETECT_SAMPLES, low, TuningSession.MIDI_C8)
+                    identifierLong = KeyIdentifier(sr, SAMPLE_LONG_SAMPLES, low, TuningSession.MIDI_C8)
                     identifierLow = low
                 }
-                if (since in DETECT_FROM_HOPS..DETECT_UNTIL_HOPS && hop % DETECT_EVERY == 0L && ringFilled >= detectN && strikePeakDb - db < DETECT_DECAY_DB) {
+                if (since in DETECT_FROM_HOPS..DETECT_UNTIL_HOPS && hop % DETECT_EVERY == 0L && ringFilled >= DETECT_SAMPLES && strikePeakDb - db < DETECT_DECAY_DB) {
                     val all = ringSnapshot()
                     // what sounded before the strike — the room, a note still ringing — is not the strike
-                    val key = identifier.detectIn(all, _referenceA4Hz.value, backgroundEnd = (all.size - since * hopN).toInt())
+                    val key = identifier.detectIn(all, _referenceA4Hz.value, backgroundEnd = (all.size - since * HOP).toInt())
                     if (key != null && key == candidate) run++ else { candidate = key; run = if (key != null) 1 else 0 }
                     val h = _heardMidi.value
                     if (run >= DETECT_RUN && h != candidate && (h == null || since <= DETECT_SETTLED_HOPS || candidate!! < h)) _heardMidi.value = candidate
@@ -1469,14 +1456,14 @@ class TuningController(
                 val s = session
                 // sampling: the key of this strike, decided once — at the onset for the treble, past the thump for the rest
                 if (s != null && s.sampling && !decided && strikeHop > 0) {
-                    val bgEnd = { all: FloatArray -> (all.size - since * hopN).toInt() }
-                    if (since == earlyHop && ringFilled >= earlyN) {
+                    val bgEnd = { all: FloatArray -> (all.size - since * HOP).toInt() }
+                    if (since == earlyHop && ringFilled >= SAMPLE_EARLY_SAMPLES) {
                         val all = ringSnapshot()
-                        early = identifier.identify(all, _referenceA4Hz.value, all.size - earlyN, bgEnd(all))?.takeIf { it.f1 >= SAMPLE_EARLY_MIN_HZ }
+                        early = identifier.identify(all, _referenceA4Hz.value, all.size - SAMPLE_EARLY_SAMPLES, bgEnd(all))?.takeIf { it.f1 >= SAMPLE_EARLY_MIN_HZ }
                     }
-                    if (since == longHop && ringFilled >= longN) {
+                    if (since == longHop && ringFilled >= SAMPLE_LONG_SAMPLES) {
                         val all = ringSnapshot()
-                        val long = identifierLong.identify(all, _referenceA4Hz.value, all.size - longN, bgEnd(all))
+                        val long = identifierLong.identify(all, _referenceA4Hz.value, all.size - SAMPLE_LONG_SAMPLES, bgEnd(all))
                         val e = early
                         val pick = if (long == null) e else if (e != null && e.score > long.score) e else long
                         decided = true
@@ -1643,7 +1630,7 @@ class TuningController(
                 // tuned one gives its ratio to it; a new strike or a new note starts them afresh (Law 2)
                 if (t != null) {
                     if (strikeHop != placesStrike || t.midi != placesMidi) { places.clear(); placesStrike = strikeHop; placesMidi = t.midi }
-                    places.windowHops = (_settings.value.bandAveragingS * sr / hopN).toLong()
+                    places.windowHops = (_settings.value.bandAveragingS * sr / HOP).toLong()
                     val fresh = HashMap<Int, Double>()
                     for ((k, at) in shownAt) if (at == hop) shownHeld[k]?.let { fresh[k] = it.hz }
                     if (rd != null && rd.shown) fresh[w.k] = rd.hz
