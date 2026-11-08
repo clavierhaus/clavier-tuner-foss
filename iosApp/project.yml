@@ -23,8 +23,9 @@ targets:
       path: iosApp/Info.plist
       properties:
         CFBundleDisplayName: Clavier Tuner
-        CFBundleShortVersionString: "0.7.1"
-        CFBundleVersion: "12"
+        # the version as Android names it; the build number is raised by every upload to TestFlight (build.yml)
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSMicrophoneUsageDescription: "Clavier Tuner listens to the string you strike to measure it. Nothing is recorded or sent."
         UILaunchScreen: {}
         UIRequiresFullScreen: true
@@ -35,6 +36,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
+        MARKETING_VERSION: "0.7.3"
+        CURRENT_PROJECT_VERSION: "14"
+        # the icon: Android's launcher "C", white on black, at 1024 px (8 Nov 2026, the App Store asks for it)
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # the app's own Swift module must not share the framework's name, or `import ClavierTuner` is ignored
         PRODUCT_MODULE_NAME: ClavierTunerApp
         # the iPhone and the iPad, one app on every screen (CLAUDE.md, Peter, 2 Nov 2026: "For the customer
