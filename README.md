@@ -1,6 +1,6 @@
 # Clavier Tuner
 
-**A free, open-source piano tuning app, made by a piano tuner.**
+**A free, open-source piano tuning app.**
 
 Clavier Tuner measures the piano in front of you and tunes it from that
 measurement. It listens through the phone's microphone with every effect
@@ -9,8 +9,8 @@ piano's own inharmonicity, and keeps everything on the phone — no account, no
 server, nothing uploaded. As accurate as the devices you know, and open for
 anyone to check how.
 
-Made by [clavierhaus.at](https://clavierhaus.at), Vienna, by a piano tuner who
-wanted to see what his instruments actually do.
+Made by [clavierhaus.at](https://clavierhaus.at), a recording studio in Vienna whose main instrument is an
+1887 Steinway D, by someone who wanted to see what his instruments actually do.
 
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100%" alt="Tuning G3 on its sixth partial: the strobe">

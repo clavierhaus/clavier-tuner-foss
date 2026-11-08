@@ -1,4 +1,4 @@
-Clavier Tuner ist eine Stimm-App von einem Klavierstimmer — frei, quelloffen und auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
+Clavier Tuner ist eine Stimm-App — frei, quelloffen und auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
 
 A4 AUF DER SAITE IHRER WAHL
 Die erste Seite legt die Tonhöhe fest: − oder + tippen oder mit dem Finger über den Streifen darunter wischen. Jede Saite von A4 allein angeschlagen, stehen ihre Teiltöne als Stroboskope da: Bei einer sauberen Saite laufen sie gemeinsam und stehen gemeinsam still, ein falscher Teilton schwebt für sich. Nehmen Sie die sauberste als Referenz.
