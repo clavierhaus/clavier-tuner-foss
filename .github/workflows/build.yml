@@ -177,6 +177,10 @@ jobs:
         run: ./gradlew --no-daemon :ui:linkReleaseFrameworkIosArm64
       - name: The Xcode project from iosApp/project.yml
         run: brew install xcodegen && cd iosApp && xcodegen generate
+      # every property list Apple reads is checked before the upload: build 161 was refused for a privacy manifest
+      # that was not valid XML (ITMS-91056, 8 Nov 2026)
+      - name: The property lists are valid
+        run: plutil -lint iosApp/iosApp/PrivacyInfo.xcprivacy
       # automatic signing archives with the development identity (forcing 'Apple Distribution' conflicts with it, the
       # second run of 8 Nov 2026), which needs a registered device: Peter's iPhone 15 Plus, registered that night; the
       # export re-signs the archive for the App Store
