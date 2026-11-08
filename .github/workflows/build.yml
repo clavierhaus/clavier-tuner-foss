@@ -177,6 +177,8 @@ jobs:
         run: ./gradlew --no-daemon :ui:linkReleaseFrameworkIosArm64
       - name: The Xcode project from iosApp/project.yml
         run: brew install xcodegen && cd iosApp && xcodegen generate
+      # signed for distribution from the start: a development signature needs a registered device, and the team has
+      # none (8 Nov 2026, the first run: 'Your team has no devices from which to generate a provisioning profile')
       - name: The archive, signed by Apple's automatic signing
         run: |
           cd iosApp
@@ -188,7 +190,7 @@ jobs:
             -allowProvisioningUpdates -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
             CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Development" DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION="$BUILD" \
+            CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION="$BUILD" \
             archive
       - name: Signed for the App Store and uploaded to TestFlight
         run: |
