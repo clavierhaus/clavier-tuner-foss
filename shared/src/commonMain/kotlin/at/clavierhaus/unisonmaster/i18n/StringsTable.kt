@@ -149,6 +149,8 @@ object K {
     const val settings_beatless = "settings.beatless"
     const val settings_cWide = "settings.cWide"
     const val settings_cNarrow = "settings.cNarrow"
+    const val settings_sixPoints = "settings.sixPoints"
+    const val settings_note_sixPoints = "settings.note.sixPoints"
     const val settings_farEnd = "settings.farEnd"
     const val settings_atFar = "settings.atFar"
     const val settings_same = "settings.same"
@@ -343,6 +345,8 @@ internal object StringsTable : Catalog {
         "settings.beatless" to arrayOf("none (pure)", "keine (rein)"),
         "settings.cWide" to arrayOf("+{0} c", "+{0} c"),
         "settings.cNarrow" to arrayOf("−{0} c", "−{0} c"),
+        "settings.sixPoints" to arrayOf("Six-point stretch", "Spreizung mit sechs Punkten"),
+        "settings.note.sixPoints" to arrayOf("Three more places besides the ends: A2 on 6:3, F5 on 2:1, A6 on 4:1. Every octave moves key by key from one place to the next. On, it sets the octave types and extra stretch; off, they return to their defaults.", "Drei weitere Stellen neben den Enden: A2 auf 6:3, F5 auf 2:1, A6 auf 4:1. Jede Oktave geht Taste für Taste von einer Stelle zur nächsten über. Ein setzt es die Oktavtypen und die zusätzliche Spreizung, aus gehen sie auf ihre Vorgaben zurück."),
         "settings.farEnd" to arrayOf("Toward the end of the range", "Zum Ende des Bereichs"),
         "settings.atFar" to arrayOf("At {0}", "Bei {0}"),
         "settings.same" to arrayOf("unchanged", "unverändert"),

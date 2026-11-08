@@ -149,6 +149,8 @@ settings.octaveWidth	Extra stretch	Zusätzliche Spreizung
 settings.beatless	none (pure)	keine (rein)
 settings.cWide	+{0} c	+{0} c
 settings.cNarrow	−{0} c	−{0} c
+settings.sixPoints	Six-point stretch	Spreizung mit sechs Punkten
+settings.note.sixPoints	Three more places besides the ends: A2 on 6:3, F5 on 2:1, A6 on 4:1. Every octave moves key by key from one place to the next. On, it sets the octave types and extra stretch; off, they return to their defaults.	Drei weitere Stellen neben den Enden: A2 auf 6:3, F5 auf 2:1, A6 auf 4:1. Jede Oktave geht Taste für Taste von einer Stelle zur nächsten über. Ein setzt es die Oktavtypen und die zusätzliche Spreizung, aus gehen sie auf ihre Vorgaben zurück.
 settings.farEnd	Toward the end of the range	Zum Ende des Bereichs
 settings.atFar	At {0}	Bei {0}
 settings.same	unchanged	unverändert

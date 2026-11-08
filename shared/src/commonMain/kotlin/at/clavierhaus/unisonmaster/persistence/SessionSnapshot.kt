@@ -4,6 +4,7 @@ import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.measure.Partials
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.Stretch
+import at.clavierhaus.unisonmaster.settings.StretchPoint
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
@@ -52,6 +53,7 @@ data class SessionSnapshot(
  *     tuned <midi>                              (a note tuned, not only sampled, any number; since 25 Oct 2026)
  *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <longGrand 0|1>
  *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
+ *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
  *     f <k> <rateHz> <depthDb>                  (the string's false beats, any number; since 8 Oct 2026)
@@ -104,6 +106,7 @@ object SessionCodec {
         s.stretch?.takeIf { stretchInRange(it) }?.let { t ->
             append("stretch ${t.temperamentLowMidi} ${t.octaveBass.name} ${t.octaveMiddle.name} ${t.octaveTreble.name} ")
             append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} ${if (t.longGrand) 1 else 0}\n")
+            if (t.points.isNotEmpty()) append("points ${StretchPoint.encode(t.points)}\n")
         }
         for (m in s.measurements) {
             if (!noteInRange(m.midi, m.f1Hz, m.b, m.residualCents, m.timeMs)) continue
@@ -185,6 +188,7 @@ object SessionCodec {
                 val c = Stretch(low, types[0]!!, types[1]!!, types[2]!!, w(t[4]) ?: Double.NaN, w(t[5]) ?: Double.NaN, w(t[6]) ?: Double.NaN, w(t[7]), w(t[8]), long)
                 if (stretchInRange(c)) stretch = c
             }
+            if (i < lines.size && lines[i].startsWith("points ")) stretch = stretch?.copy(points = StretchPoint.decode(tokens("points", 1)[0]))
         }
 
         // Structure — header, version, line shapes, the end marker — must be

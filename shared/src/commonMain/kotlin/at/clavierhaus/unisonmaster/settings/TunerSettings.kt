@@ -3,6 +3,7 @@ package at.clavierhaus.unisonmaster.settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.abs
 
 /** Minimal persistent key-value storage; the app supplies the implementation. */
 interface KeyValueStore {
@@ -45,6 +46,36 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
     /** The twelfth: partial 3 of the lower note on partial 1 of the note a twelfth up (Peter, 23 Oct 2026). */
     O3_1("3:1", 3, 1, 19),
 }
+
+/**
+ * A place between the temperament octave and the end of the range where the octave has a type and a width of its
+ * own (8 Nov 2026): on key [midi] the octave of [type] stands [widthCents] from beatless, and the octaves between two
+ * places move key by key from one to the other, as they always moved between the temperament octave and the lowest
+ * key or C8. Worded and stored here; the targets it makes are [TuningSession.curveTargetF1]'s.
+ */
+data class StretchPoint(val midi: Int, val type: OctaveType, val widthCents: Double) {
+    companion object {
+        /** The points as a line of text, for the settings and the saved tuning. */
+        fun encode(points: List<StretchPoint>): String = points.joinToString(",") { "${it.midi}:${it.type.name}:${it.widthCents}" }
+
+        /** The points of a line of text; one that does not read, or stands out of range, is left out. */
+        fun decode(text: String): List<StretchPoint> = text.split(",").mapNotNull { one ->
+            val p = one.split(":")
+            val midi = p.getOrNull(0)?.toIntOrNull()
+            val type = OctaveType.entries.firstOrNull { it.name == p.getOrNull(1) }
+            val width = p.getOrNull(2)?.toDoubleOrNull()
+            if (p.size == 3 && midi != null && midi in TunerSettings.MIN_LOWEST_KEY..TunerSettings.MIDI_C8 && type != null &&
+                width != null && width.isFinite() && width in TunerSettings.MIN_WIDTH_CENTS..TunerSettings.MAX_WIDTH_CENTS
+            ) StretchPoint(midi, type, width) else null
+        }
+    }
+}
+
+/**
+ * How [TunerSettings.blend] makes a key's octave: [share] of the way, in cents, from where type [inner] is beatless to
+ * where [outer] is, at [width] from beatless.
+ */
+data class OctaveBlend(val inner: OctaveType, val outer: OctaveType, val share: Double, val width: Double)
 
 /**
  * Everything the tuner sets in Settings. Values that determine a target
@@ -109,6 +140,11 @@ data class TunerSettings(
      */
     val widthBassFar: Double? = null,
     val widthTrebleFar: Double? = null,
+    /**
+     * Further places between the temperament octave and the ends of the range ([StretchPoint]); none by default, and
+     * with none the octaves blend from the middle's type straight to the outer one ([outerShare]).
+     */
+    val stretchPoints: List<StretchPoint> = emptyList(),
     /** Interval weights 0..10 for the stretch calculation. */
     val weightOctave: Int = 10,
     val weightTwelfth: Int = 4,
@@ -353,7 +389,51 @@ data class TunerSettings(
      * (TuneLab's manual, p. 17: the curve looks discontinuous where the partial changes, the tuning is not); it is
      * the partial that speaks for the octave the note mostly stands on.
      */
-    fun octaveTypeFor(midi: Int): OctaveType = if (outerShare(midi) >= 0.5) outerTypeFor(midi) else octaveMiddle
+    fun octaveTypeFor(midi: Int): OctaveType = blend(midi).let { if (it.share >= 0.5) it.outer else it.inner }
+
+    /** How [midi]'s octave is made: between the two places either side of it where there are [stretchPoints], else as [outerShare] says. */
+    fun blend(midi: Int): OctaveBlend = onPoints(midi) ?: OctaveBlend(octaveMiddle, outerTypeFor(midi), outerShare(midi), widthFor(midi))
+
+    /**
+     * [midi]'s octave between the places either side of it, null where its side of the range has no point: the
+     * temperament octave's edge (the middle's type and width), the points outward, the end of the range (the outer
+     * type and its far width). A point counts only strictly between the edge and the end, of a type its side offers,
+     * which keeps the partners on the chain that ends in the temperament octave ([BASS_OCTAVES], [TREBLE_OCTAVES]).
+     */
+    private fun onPoints(midi: Int): OctaveBlend? {
+        val below = midi < temperamentLowMidi
+        if (!below && midi <= TEMPERAMENT_HIGH) return null
+        val edge = StretchPoint(if (below) temperamentLowMidi - 1 else TEMPERAMENT_HIGH + 1, octaveMiddle, widthMiddle)
+        val end = if (below) StretchPoint(lowestKeyMidi, octaveBass, widthBassFar ?: widthBass) else StretchPoint(MIDI_C8, octaveTreble, widthTrebleFar ?: widthTreble)
+        val inside = stretchPoints.filter { p ->
+            if (below) p.midi > end.midi && p.midi < edge.midi && p.type in BASS_OCTAVES else p.midi > edge.midi && p.midi < end.midi && p.type in TREBLE_OCTAVES
+        }.distinctBy { it.midi }.sortedBy { if (below) -it.midi else it.midi }
+        if (inside.isEmpty()) return null
+        val out = abs(midi - edge.midi)
+        for ((a, b) in (listOf(edge) + inside + end).zipWithNext()) {
+            if (out > abs(b.midi - edge.midi)) continue
+            val w = abs(midi - a.midi).toDouble() / abs(b.midi - a.midi)
+            return OctaveBlend(a.type, b.type, w, a.widthCents + (b.widthCents - a.widthCents) * w)
+        }
+        return OctaveBlend(end.type, end.type, 1.0, end.widthCents)   // past the end: a key below the lowest
+    }
+
+    /** True while the six-point stretch is on ([withSixPoints]). */
+    val sixPoints: Boolean get() = stretchPoints.isNotEmpty()
+
+    /**
+     * These settings with the six-point stretch on or off (8 Nov 2026): on, the ends and the temperament octave's
+     * widths and three further places, A2, F5 and A6, the octave leaving the middle's type by F5 instead of holding part
+     * of it up to C8; off, the types and widths of a new tuning. A preset of the values below; each stays the tuner's.
+     */
+    fun withSixPoints(on: Boolean): TunerSettings = if (on) copy(
+        octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
+        widthBass = 0.63, widthBassFar = 3.46, widthMiddle = 0.63, widthTreble = 0.63, widthTrebleFar = 0.0,
+        stretchPoints = listOf(StretchPoint(45, OctaveType.O6_3, 0.63), StretchPoint(77, OctaveType.O2_1, 0.74), StretchPoint(93, OctaveType.O4_1, 0.49)),
+    ) else copy(
+        octaveBass = recommendedBass(longGrand), octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
+        widthBass = 0.0, widthBassFar = null, widthMiddle = 0.0, widthTreble = 0.0, widthTrebleFar = null, stretchPoints = emptyList(),
+    )
 
     /**
      * The octave width for [midi], cents, blended as the octave type is ([outerShare]): the middle's width next
@@ -364,6 +444,7 @@ data class TunerSettings(
     fun withLongGrand(on: Boolean): TunerSettings = copy(longGrand = on, octaveBass = recommendedBass(on))
 
     fun widthFor(midi: Int): Double {
+        onPoints(midi)?.let { return it.width }
         val w = outerShare(midi)
         val (own, far) = when {
             midi < temperamentLowMidi -> widthBass to widthBassFar
@@ -377,14 +458,14 @@ data class TunerSettings(
     /** The stretch this tuning is tuned to ([Stretch]). */
     fun stretch(): Stretch = Stretch(
         temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
-        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, longGrand,
+        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, longGrand, stretchPoints,
     )
 
     /** These settings with [s] as the stretch. */
     fun withStretch(s: Stretch): TunerSettings = copy(
         temperamentLowMidi = s.temperamentLowMidi, octaveBass = s.octaveBass, octaveMiddle = s.octaveMiddle,
         octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
-        widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, longGrand = s.longGrand,
+        widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, longGrand = s.longGrand, stretchPoints = s.points,
     )
 }
 
@@ -407,6 +488,8 @@ data class Stretch(
     val widthTrebleFar: Double?,
     /** The piano's size the bass's octave type was recommended by ([TunerSettings.longGrand]): the window's switch. */
     val longGrand: Boolean,
+    /** The tuning's further places ([TunerSettings.stretchPoints]). */
+    val points: List<StretchPoint> = emptyList(),
 )
 
 /**
@@ -464,6 +547,7 @@ class SettingsModel(
             widthTreble = f("widthTreble", d.widthTreble).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
             widthBassFar = fOrNull("widthBassFar"),
             widthTrebleFar = fOrNull("widthTrebleFar"),
+            stretchPoints = store.get("stretchPoints")?.let { StretchPoint.decode(it) } ?: d.stretchPoints,
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -506,6 +590,7 @@ class SettingsModel(
         store.put("widthTreble", s.widthTreble.toString())
         store.put("widthBassFar", s.widthBassFar?.toString() ?: "")
         store.put("widthTrebleFar", s.widthTrebleFar?.toString() ?: "")
+        store.put("stretchPoints", StretchPoint.encode(s.stretchPoints))
         store.put("weightOctave", s.weightOctave.toString())
         store.put("weightTwelfth", s.weightTwelfth.toString())
         store.put("weightDoubleOctave", s.weightDoubleOctave.toString())

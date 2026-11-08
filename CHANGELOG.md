@@ -14,6 +14,10 @@ reconstructed from the commit history that day.
   At none (the default) no target moves.
 - **Extra stretch can go below zero**, in every region: an octave narrower
   than beatless, shown as −0.5 c. The range is −20 to +20 c.
+- **Six-point stretch**, a switch beside the octave types (off by default, and
+  off nothing moves). Three more places besides the ends: A2 on 6:3, F5 on 2:1,
+  A6 on 4:1, each with its own small width; the octaves blend from one place to
+  the next. A tuning keeps it with its other stretch settings.
 
 ## 0.7.3 -- 2026-11-04
 

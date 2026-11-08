@@ -354,17 +354,18 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * of the way, in cents, from where the middle's octave type is beatless to where the outer type is — the
      * middle's alone next to the temperament octave, the outer's alone at the lowest key and at C8. Until 29 Oct
      * each region's type held whole up to its border, and the 225's F3-G3, under 10:5 one key below G#3 under
-     * 4:2, stood 4-4.5 c flat of their neighbour's rule. The strings' inharmonicity is the curve's, or their own
-     * where measured.
+     * 4:2, stood 4-4.5 c flat of their neighbour's rule. With [TunerSettings.stretchPoints] the same blend runs between
+     * each two places in turn (8 Nov 2026). The strings' inharmonicity is the curve's, or their own where measured.
      */
     fun curveTargetF1(midi: Int, c: InharmonicityCurve = curve): Double {
         val key = Triple(a4Hz, settings, basis)
         if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
         curveCache[midi]?.let { return it }
         val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) temperamentF1(midi, c) else {
-            val w = settings.outerShare(midi)
-            val middle = if (w < 1.0) octaveTargetF1(midi, settings.octaveMiddle, c) else 0.0
-            val outer = if (w > 0.0) octaveTargetF1(midi, settings.outerTypeFor(midi), c) else 0.0
+            val b = settings.blend(midi)
+            val w = b.share
+            val middle = if (w < 1.0) octaveTargetF1(midi, b.inner, c) else 0.0
+            val outer = if (w > 0.0) octaveTargetF1(midi, b.outer, c) else 0.0
             when {
                 w <= 0.0 -> middle
                 w >= 1.0 -> outer

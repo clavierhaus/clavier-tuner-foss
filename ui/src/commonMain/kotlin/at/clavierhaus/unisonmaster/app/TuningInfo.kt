@@ -66,6 +66,7 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
             // the piano's size, which recommends the bass's octave type (Peter, 31 Oct 2026); the type below stays the
             // tuner's to change
             SwitchRow(t(K.tuning_longGrand), s.longGrand, info = t(K.tuning_note_longGrand)) { on -> onChange { it.withLongGrand(on) } }
+            SwitchRow(t(K.settings_sixPoints), s.sixPoints, info = t(K.settings_note_sixPoints)) { on -> onChange { it.withSixPoints(on) } }
             Spacer(Modifier.height(8.dp))
             // a table: the columns say "octave type" and "width" once, each region is a row of its name
             // and its two controls (24 Oct 2026: the name of the width, said three times, left the width
