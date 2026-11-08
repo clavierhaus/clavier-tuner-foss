@@ -24,6 +24,22 @@ wanted to see what his instruments actually do.
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="49%" alt="Settings">
 </p>
 
+## Quickstart
+
+Clavier Tuner is a free, open-source tuning app for piano tuners. A short sampling of 8–15 notes measures your
+piano's own strings, and from that measurement the app computes a stretched tuning for exactly this instrument.
+While you tune, it shows the partials of each string live, so you see where the string stands, not just one number.
+No account, no tracking: nothing is recorded or sent.
+
+**Getting started:** tap New Tuning, define your preferred A4. Then sample: strike single strings with the others
+muted, any keys up to G6, in any order. Let each string ring until it's measured, then tap Accept. 10 to 15 keys
+spread from the low bass to G6 give the best accuracy. Before your first tuning, check the octave types under
+Settings › Stretch. On a grand of 210 cm or longer, switch on "Grand 210 cm (6′11″) or longer" for the bass.
+
+**Tuning:** the screen follows the key you strike and shows its target. The temperament octave A3–A4 comes first;
+Done keeps a note, and moving on to another keeps it too. For each new piano, start a New Tuning. Continue is only
+for the piano you sampled.
+
 ## What it does
 
 - **Sets A4 on the string you choose.** The first page sets the pitch: tap
