@@ -21,7 +21,7 @@ class ContinuousStretchTest {
     private val settings = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 43, octaveBass = OctaveType.O10_5)
     private fun b(m: Int) = 0.9e-4 * 2.0.pow((m - 48) / 12.0) + 2.5e-4 * exp(-0.09 * (m - 21))
 
-    private fun sampled(): TuningSession {
+    private fun sampled(settings: TunerSettings = this.settings): TuningSession {
         val s = TuningSession(a4, settings)
         for (m in listOf(69, 21, 28, 36, 41, 45, 50, 57, 64, 76, 84)) s.record(measuredString(m, TuningSession.targetF1(m, a4), b(m)))
         s.finishSampling()
@@ -62,5 +62,35 @@ class ContinuousStretchTest {
         val octave = TuningSession.centsOff(s.curveTargetF1(69), s.curveTargetF1(57))
         for (m in 58..68)
             assertEquals(octave * (m - 57) / 12, TuningSession.centsOff(s.curveTargetF1(m), s.curveTargetF1(57)), 1e-9, "midi $m: an equal step of the stretched octave")
+    }
+
+    /**
+     * The middle's width on the temperament octave (8 Nov 2026), either way: A3 that far flat of the beatless 4:2 for
+     * a wide octave, sharp for a narrow one; every key between moved by its share of it, in equal steps; A4 and no key
+     * else out of line.
+     */
+    @Test
+    fun theMiddlesWidthStandsOnTheTemperamentOctaveAndTheDivisionCarriesIt() {
+        val beatless = sampled()
+        for (width in listOf(2.0, -1.0)) {
+            val s = sampled(settings.copy(widthMiddle = width))
+            assertEquals(443.0, s.curveTargetF1(69), 1e-12, "A4 is the reference")
+            assertEquals(-width, TuningSession.centsOff(partial(s, 57, 4), partial(s, 69, 2)), 1e-6, "A3 against A4 at width $width")
+            for (m in 57..68)
+                assertEquals(-width * (69 - m) / 12, TuningSession.centsOff(s.curveTargetF1(m), beatless.curveTargetF1(m)), 1e-6, "midi $m: its share of the width $width")
+            val octave = TuningSession.centsOff(s.curveTargetF1(69), s.curveTargetF1(57))
+            for (m in 58..68)
+                assertEquals(octave * (m - 57) / 12, TuningSession.centsOff(s.curveTargetF1(m), s.curveTargetF1(57)), 1e-9, "midi $m: still an equal step")
+        }
+    }
+
+    /** The width sits on A3-A4 even when the temperament reaches lower: the notes below A3 keep the same semitone. */
+    @Test
+    fun aTemperamentReachingLowerKeepsTheWidthOnA3A4() {
+        val low = settings.copy(temperamentLowMidi = 50, widthMiddle = 2.0)
+        val s = sampled(low)
+        assertEquals(-2.0, TuningSession.centsOff(partial(s, 57, 4), partial(s, 69, 2)), 1e-6)
+        val step = TuningSession.centsOff(s.curveTargetF1(58), s.curveTargetF1(57))
+        for (m in 50..56) assertEquals(step, TuningSession.centsOff(s.curveTargetF1(m + 1), s.curveTargetF1(m)), 1e-9, "midi $m")
     }
 }

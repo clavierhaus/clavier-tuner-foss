@@ -220,10 +220,10 @@ fun BasicHub(
             TuningSession.Source.REFERENCE -> t(K.origin_reference)
             TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
             TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, noteName(l.refMidi!!)) +
-                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else t(K.origin_beatless))
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else if (l.widthCents < 0.0) t(K.origin_narrow, fmt("%.1f", -l.widthCents)) else t(K.origin_beatless))
             TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, noteName(l.refMidi!!))
             TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, noteName(l.refMidi!!)) +
-                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else t(K.origin_beatless)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else if (l.widthCents < 0.0) t(K.origin_narrow, fmt("%.1f", -l.widthCents)) else t(K.origin_beatless)) +
                 (l.checkCents?.let { t(K.origin_check, noteName(l.refMidi!!), num(abs(it), 1), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
         }
         // Every number on this screen is derived from the A4 reference, and the

@@ -226,7 +226,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     enum class Source {
         /** A4: the reference set on the hub. */
         REFERENCE,
-        /** The temperament octave: equal temperament on A4, of the octave the middle's type makes beatless once the curve stands (29 Oct 2026). */
+        /** The temperament octave: equal temperament on A4, of the octave the middle's type makes beatless, widened by the middle's width, once the curve stands (29 Oct, 8 Nov 2026). */
         TEMPERAMENT,
         /** An octave blended from the middle's type to the outer one by key, widened by the width, computed on the curve from the samples. */
         CURVE,
@@ -381,13 +381,16 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      * dividing it equally — as TuneLab's middle interval "4:2 (A3-A4)" does. Equal temperament on plain 2:1 put
      * A3 about a cent sharp of that octave and G#3, a beatless octave below G#4, a cent flatter than A3 beside it:
      * a border at the temperament's edge (ContinuousStretchTest). A middle type that is not an octave (4:1, 3:1)
-     * leaves the temperament octave on 2:1. A4 is the reference and does not move.
+     * leaves the temperament octave on 2:1. A4 is the reference and does not move. The middle's width stands on this
+     * octave too (8 Nov 2026): on A3-A4, whatever [TunerSettings.temperamentLowMidi] is, A3 the lower note and so flatter
+     * by it, and the equal division carries it to every key between, in proportion, so that no key steps. Until then the
+     * width reached every octave of the middle but the one it is named for.
      */
     private fun temperamentF1(midi: Int, c: InharmonicityCurve): Double {
         val type = settings.octaveMiddle
         if (type.semitones != 12 || midi == MIDI_A4) return targetF1(midi, a4Hz)
         val below = MIDI_A4 - 12
-        val lowerF1 = type.high * a4Hz * Inharmonicity.ratio(type.high, bOf(MIDI_A4, c)) / (type.low * Inharmonicity.ratio(type.low, bOf(below, c)))
+        val lowerF1 = type.high * a4Hz * Inharmonicity.ratio(type.high, bOf(MIDI_A4, c)) / (type.low * Inharmonicity.ratio(type.low, bOf(below, c))) * 2.0.pow(-settings.widthFor(below) / 1200.0)
         val octaveCents = centsOff(a4Hz, lowerF1)        // the stretched octave, 1200 c and its stretch
         return a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0 * octaveCents / 1200.0)
     }

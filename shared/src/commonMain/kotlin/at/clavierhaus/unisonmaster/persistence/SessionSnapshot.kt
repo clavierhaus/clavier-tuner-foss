@@ -86,7 +86,7 @@ object SessionCodec {
             rateHz.isFinite() && rateHz > 0.0 && rateHz <= 50.0 &&
             depthDb.isFinite() && depthDb in 0.0..60.0
 
-    private fun widthInRange(w: Double?) = w == null || (w.isFinite() && w in 0.0..TunerSettings.MAX_WIDTH_CENTS)
+    private fun widthInRange(w: Double?) = w == null || (w.isFinite() && w in TunerSettings.MIN_WIDTH_CENTS..TunerSettings.MAX_WIDTH_CENTS)
 
     private fun stretchInRange(t: Stretch) =
         t.temperamentLowMidi in TunerSettings.MIN_TEMPERAMENT_LOW..TunerSettings.MAX_TEMPERAMENT_LOW &&

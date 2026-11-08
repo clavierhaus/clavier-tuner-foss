@@ -36,6 +36,7 @@ origin.reference	the reference, set when sampling	die Referenz, beim Vermessen g
 origin.temperament	equal temperament on A4 {0}	gleichstufig auf A4 {0}
 origin.curve	{0} octave to {1} on the curve	{0}-Oktave zu {1} nach der Kurve
 origin.wide	, {0} c wide	, {0} c weit
+origin.narrow	, {0} c narrow	, {0} c eng
 origin.beatless	, beatless	, schwebungsfrei
 origin.check	 · {0} stands {1} c {2}	 · {0} steht {1} c {2}
 origin.wideWord	wide	weit
@@ -147,6 +148,7 @@ settings.octaveType	Octave type	Oktavtyp
 settings.octaveWidth	Extra stretch	Zusätzliche Spreizung
 settings.beatless	none (pure)	keine (rein)
 settings.cWide	+{0} c	+{0} c
+settings.cNarrow	−{0} c	−{0} c
 settings.farEnd	Toward the end of the range	Zum Ende des Bereichs
 settings.atFar	At {0}	Bei {0}
 settings.same	unchanged	unverändert
@@ -154,7 +156,7 @@ settings.piano	The piano	Das Klavier
 settings.lowestKey	Lowest key	Tiefste Taste
 settings.lowestUnwound	Lowest unwound string	Tiefste Blanksaite
 settings.note.bass	Its octave type is beatless at the lowest key. From the temperament octave down, every octave moves key by key from the middle’s type to this one, and the extra stretch with it, in cents: the lower note flatter, the upper sharper. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.	Sein Oktavtyp ist an der tiefsten Taste schwebungsfrei. Von der Temperaturoktave abwärts geht jede Oktave Taste für Taste vom Typ der Mittellage zu diesem über, und die zusätzliche Spreizung mit ihr, in Cent: der untere Ton tiefer, der obere höher. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert.
-settings.note.middle	Beatless next to the temperament octave and within it: the octave below A4 is one of this type, divided equally. The bass and the treble start from here. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.	Schwebungsfrei neben der Temperaturoktave und in ihr: die Oktave unter A4 ist eine dieses Typs, gleich geteilt. Bass und Diskant gehen von hier aus. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert.
+settings.note.middle	Beatless next to the temperament octave and within it: the octave below A4 is one of this type, divided equally. The extra stretch stands on that octave too, and below zero makes it narrower than beatless. The bass and the treble start from here. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.	Schwebungsfrei neben der Temperaturoktave und in ihr: die Oktave unter A4 ist eine dieses Typs, gleich geteilt. Die zusätzliche Spreizung gilt auch für diese Oktave, und unter null macht sie sie enger als schwebungsfrei. Bass und Diskant gehen von hier aus. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert.
 settings.note.treble	Its octave type is beatless at C8. Above A4, every octave moves key by key from the middle’s type to this one. The extra stretch at C8 is where its slide ends. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.	Sein Oktavtyp ist bei C8 schwebungsfrei. Über A4 geht jede Oktave Taste für Taste vom Typ der Mittellage zu diesem über. Die zusätzliche Spreizung bei C8 ist das Ende ihres Gleitens. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert.
 settings.note.temperament	Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.	Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt.
 settings.note.reading	The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.	Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert.

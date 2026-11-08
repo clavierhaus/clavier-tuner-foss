@@ -36,6 +36,7 @@ object K {
     const val origin_temperament = "origin.temperament"
     const val origin_curve = "origin.curve"
     const val origin_wide = "origin.wide"
+    const val origin_narrow = "origin.narrow"
     const val origin_beatless = "origin.beatless"
     const val origin_check = "origin.check"
     const val origin_wideWord = "origin.wideWord"
@@ -147,6 +148,7 @@ object K {
     const val settings_octaveWidth = "settings.octaveWidth"
     const val settings_beatless = "settings.beatless"
     const val settings_cWide = "settings.cWide"
+    const val settings_cNarrow = "settings.cNarrow"
     const val settings_farEnd = "settings.farEnd"
     const val settings_atFar = "settings.atFar"
     const val settings_same = "settings.same"
@@ -228,6 +230,7 @@ internal object StringsTable : Catalog {
         "origin.temperament" to arrayOf("equal temperament on A4 {0}", "gleichstufig auf A4 {0}"),
         "origin.curve" to arrayOf("{0} octave to {1} on the curve", "{0}-Oktave zu {1} nach der Kurve"),
         "origin.wide" to arrayOf(", {0} c wide", ", {0} c weit"),
+        "origin.narrow" to arrayOf(", {0} c narrow", ", {0} c eng"),
         "origin.beatless" to arrayOf(", beatless", ", schwebungsfrei"),
         "origin.check" to arrayOf(" · {0} stands {1} c {2}", " · {0} steht {1} c {2}"),
         "origin.wideWord" to arrayOf("wide", "weit"),
@@ -339,6 +342,7 @@ internal object StringsTable : Catalog {
         "settings.octaveWidth" to arrayOf("Extra stretch", "Zusätzliche Spreizung"),
         "settings.beatless" to arrayOf("none (pure)", "keine (rein)"),
         "settings.cWide" to arrayOf("+{0} c", "+{0} c"),
+        "settings.cNarrow" to arrayOf("−{0} c", "−{0} c"),
         "settings.farEnd" to arrayOf("Toward the end of the range", "Zum Ende des Bereichs"),
         "settings.atFar" to arrayOf("At {0}", "Bei {0}"),
         "settings.same" to arrayOf("unchanged", "unverändert"),
@@ -346,7 +350,7 @@ internal object StringsTable : Catalog {
         "settings.lowestKey" to arrayOf("Lowest key", "Tiefste Taste"),
         "settings.lowestUnwound" to arrayOf("Lowest unwound string", "Tiefste Blanksaite"),
         "settings.note.bass" to arrayOf("Its octave type is beatless at the lowest key. From the temperament octave down, every octave moves key by key from the middle’s type to this one, and the extra stretch with it, in cents: the lower note flatter, the upper sharper. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.", "Sein Oktavtyp ist an der tiefsten Taste schwebungsfrei. Von der Temperaturoktave abwärts geht jede Oktave Taste für Taste vom Typ der Mittellage zu diesem über, und die zusätzliche Spreizung mit ihr, in Cent: der untere Ton tiefer, der obere höher. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert."),
-        "settings.note.middle" to arrayOf("Beatless next to the temperament octave and within it: the octave below A4 is one of this type, divided equally. The bass and the treble start from here. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.", "Schwebungsfrei neben der Temperaturoktave und in ihr: die Oktave unter A4 ist eine dieses Typs, gleich geteilt. Bass und Diskant gehen von hier aus. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert."),
+        "settings.note.middle" to arrayOf("Beatless next to the temperament octave and within it: the octave below A4 is one of this type, divided equally. The extra stretch stands on that octave too, and below zero makes it narrower than beatless. The bass and the treble start from here. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.", "Schwebungsfrei neben der Temperaturoktave und in ihr: die Oktave unter A4 ist eine dieses Typs, gleich geteilt. Die zusätzliche Spreizung gilt auch für diese Oktave, und unter null macht sie sie enger als schwebungsfrei. Bass und Diskant gehen von hier aus. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert."),
         "settings.note.treble" to arrayOf("Its octave type is beatless at C8. Above A4, every octave moves key by key from the middle’s type to this one. The extra stretch at C8 is where its slide ends. These are the defaults for new tunings: a tuning under way keeps its own, changed by tapping its line at the top of the tuning screen.", "Sein Oktavtyp ist bei C8 schwebungsfrei. Über A4 geht jede Oktave Taste für Taste vom Typ der Mittellage zu diesem über. Die zusätzliche Spreizung bei C8 ist das Ende ihres Gleitens. Das sind die Vorgaben für neue Stimmungen: eine laufende Stimmung behält ihre eigenen, die ein Tippen auf ihre Zeile oben beim Stimmen ändert."),
         "settings.note.temperament" to arrayOf("Tuned first, downward from A4, to equal temperament on it; every other note is tuned by octaves from here.", "Wird zuerst gestimmt, von A4 abwärts, gleichstufig darauf; jeder andere Ton wird von hier aus in Oktaven gestimmt."),
         "settings.note.reading" to arrayOf("The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.", "Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert."),

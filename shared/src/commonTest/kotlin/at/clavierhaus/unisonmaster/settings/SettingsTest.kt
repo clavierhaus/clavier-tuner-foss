@@ -113,6 +113,16 @@ class SettingsTest {
     }
 
     @Test
+    fun aWidthMayBeNarrowerThanBeatlessDownToTheLimit() {
+        val store = MemoryStore()
+        store.put("widthMiddle", "-1.5"); store.put("widthTreble", "-55"); store.put("widthTrebleFar", "-2.5")
+        val s = SettingsModel(store).settings.value
+        assertEquals(-1.5, s.widthMiddle)
+        assertEquals(TunerSettings.MIN_WIDTH_CENTS, s.widthTreble)
+        assertEquals(-2.5, s.widthTrebleFar)
+    }
+
+    @Test
     fun theOctaveTypeBlendsByKeyAndTheNoteIsReadOnTheOneWithTheLargerShare() {
         // no borders (29 Oct 2026): the middle's type next to the temperament octave, the outer one at the ends
         val s = TunerSettings(lowestKeyMidi = 21, lowestUnwoundMidi = 40, octaveBass = OctaveType.O8_4,

@@ -124,10 +124,10 @@ private fun region(
         }
         Spacer(Modifier.width(16.dp))
         Stepper(
-            if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
-            canDecrease = width > 0.0,
+            widthLabel(width),
+            canDecrease = width > TunerSettings.MIN_WIDTH_CENTS,
             canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
-            onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
+            onDecrease = { onWidth(tenths(maxOf(TunerSettings.MIN_WIDTH_CENTS, width - WIDTH_STEP))) },
             onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
         )
     }
@@ -136,6 +136,13 @@ private fun region(
 /** The region whose octave-type choices lay out widest; the info window's column is as wide as they are. */
 private val widestOctaves: List<OctaveType> = listOf(TunerSettings.BASS_OCTAVES, TunerSettings.MIDDLE_OCTAVES, TunerSettings.TREBLE_OCTAVES)
     .maxBy { o -> o.sumOf { it.label.length + 2 } }
+
+/** A width as the tuner reads it: none, so many cents wide, or so many narrow (signed since 8 Nov 2026). */
+fun widthLabel(width: Double): String = when {
+    width == 0.0 -> t(K.settings_beatless)
+    width > 0.0 -> t(K.settings_cWide, num(width, 1))
+    else -> t(K.settings_cNarrow, num(-width, 1))
+}
 
 private fun tenths(x: Double) = kotlin.math.round(x * 10) / 10
 private const val WIDTH_STEP = 0.5

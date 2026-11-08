@@ -7,6 +7,14 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-08
+- **The middle's extra stretch reaches the temperament octave.** It widened
+  every octave of the middle except A3–A4, the one it is named for. Now A3
+  stands that much lower and the equal steps carry it to every key between.
+  At none (the default) no target moves.
+- **Extra stretch can go below zero**, in every region: an octave narrower
+  than beatless, shown as −0.5 c. The range is −20 to +20 c.
+
 ## 0.7.3 -- 2026-11-04
 
 ### 2026-11-04

@@ -233,10 +233,10 @@ private fun RegionLeft(info: String, octaves: List<OctaveType>, type: OctaveType
     SettingsSection(t(K.settings_octave), info = info)
     ChoiceRow(t(K.settings_octaveType), octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
     StepperRow(
-        t(K.settings_octaveWidth), if (width == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(width, 1)),
-        canDecrease = width > 0.0,
+        t(K.settings_octaveWidth), widthLabel(width),
+        canDecrease = width > TunerSettings.MIN_WIDTH_CENTS,
         canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
-        onDecrease = { onWidth(tenths(maxOf(0.0, width - WIDTH_STEP))) },
+        onDecrease = { onWidth(tenths(maxOf(TunerSettings.MIN_WIDTH_CENTS, width - WIDTH_STEP))) },
         onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
     )
 }
@@ -248,10 +248,10 @@ private fun RegionRight(width: Double, far: Double?, farName: String, onFar: (Do
     val f = far ?: width
     StepperRow(
         t(K.settings_atFar, farName),
-        if (far == null) t(K.settings_same) else if (f == 0.0) t(K.settings_beatless) else t(K.settings_cWide, num(f, 1)),
-        canDecrease = f > 0.0 || far != null,
+        if (far == null) t(K.settings_same) else widthLabel(f),
+        canDecrease = f > TunerSettings.MIN_WIDTH_CENTS || far != null,
         canIncrease = f < TunerSettings.MAX_WIDTH_CENTS,
-        onDecrease = { val v = tenths(maxOf(0.0, f - WIDTH_STEP)); onFar(if (v == width) null else v) },
+        onDecrease = { val v = tenths(maxOf(TunerSettings.MIN_WIDTH_CENTS, f - WIDTH_STEP)); onFar(if (v == width) null else v) },
         onIncrease = { onFar(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, f + WIDTH_STEP))) },
     )
 }

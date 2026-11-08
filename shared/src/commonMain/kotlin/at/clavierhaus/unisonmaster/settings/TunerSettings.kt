@@ -91,8 +91,8 @@ data class TunerSettings(
     val octaveTreble: OctaveType = OctaveType.O4_1,
     /**
      * How wide the octave is tuned beyond the partials' coincidence, cents
-     * at the partial read (0 = beatless). Wide means the lower note flatter,
-     * the upper sharper. On the 225 as its tuner left it, the wound bass
+     * at the partial read (0 = beatless; below 0 narrower than beatless, since 8 Nov 2026: one signed
+     * width, the same in every region). Wide means the lower note flatter, the upper sharper. On the 225 as its tuner left it, the wound bass
      * stood some 8–12 cents wide of 6:3 and the plain bass near beatless;
      * that is his choice, not a default — and the far width below is how
      * one bass region says it.
@@ -287,6 +287,8 @@ data class TunerSettings(
         const val MIN_HIGHEST_PARTIAL = 84     // C6
         const val MAX_HIGHEST_PARTIAL = 108    // C8
         const val MAX_WIDTH_CENTS = 20.0
+        /** One signed width, the same in every region: as far narrower than beatless as it may go wider. */
+        const val MIN_WIDTH_CENTS = -MAX_WIDTH_CENTS
         /**
          * The one sampling law (docs/ENGINE.md §1): sampling, where the tuner
          * sees fit, may end once this many strings besides A4 are in. No note
@@ -448,7 +450,7 @@ class SettingsModel(
         val d = defaults
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
-        fun fOrNull(k: String) = store.get(k)?.toDoubleOrNull()?.coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS)
+        fun fOrNull(k: String) = store.get(k)?.toDoubleOrNull()?.coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS)
         fun b(k: String, v: Boolean) = store.get(k)?.toBooleanStrictOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
@@ -457,9 +459,9 @@ class SettingsModel(
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
             octaveTreble = o("octaveTreble", d.octaveTreble),
-            widthBass = f("widthBass", d.widthBass).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
-            widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
-            widthTreble = f("widthTreble", d.widthTreble).coerceIn(0.0, TunerSettings.MAX_WIDTH_CENTS),
+            widthBass = f("widthBass", d.widthBass).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
+            widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
+            widthTreble = f("widthTreble", d.widthTreble).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
             widthBassFar = fOrNull("widthBassFar"),
             widthTrebleFar = fOrNull("widthTrebleFar"),
             weightOctave = i("weightOctave", d.weightOctave),
