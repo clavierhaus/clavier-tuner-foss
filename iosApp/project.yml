@@ -38,7 +38,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
         MARKETING_VERSION: "0.7.3"
         CURRENT_PROJECT_VERSION: "14"
-        # the icon: Android's launcher "C", white on black, at 1024 px (8 Nov 2026, the App Store asks for it)
+        # the icon (Peter, 8 Nov 2026): "Clavier" over "Tuner" in DejaVu Serif, white on black, the vie in orange
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # the app's own Swift module must not share the framework's name, or `import ClavierTuner` is ignored
         PRODUCT_MODULE_NAME: ClavierTunerApp
