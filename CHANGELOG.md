@@ -7,6 +7,15 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-09
+- **One strobe is the default**, and under the three choices beside the strobe
+  a line now says what the one in force shows. A tap still changes it at once.
+- **Every step before tuning says what to do on the left**: the A4 screen now
+  has its orders, the sampling says why it measures, the window after it says
+  what it is for.
+- **The switch "Grand 210 cm or longer" is gone.** The sampling is the measure
+  of the piano; the bass stays 6:3, and any other type can be chosen as before.
+
 ### 2026-11-08
 - **The middle's extra stretch reaches the temperament octave.** It widened
   every octave of the middle except A3–A4, the one it is named for. Now A3

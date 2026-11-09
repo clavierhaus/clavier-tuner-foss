@@ -51,7 +51,7 @@ data class SessionSnapshot(
  *     basis <midi> <b>                          (the sampled inharmonicity, any number; since 11 Oct 2026)
  *     offset <midi> <cents>                     (an edition's offset of the target, any number; since 24 Oct 2026)
  *     tuned <midi>                              (a note tuned, not only sampled, any number; since 25 Oct 2026)
- *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <longGrand 0|1>
+ *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <0|1, the size switch of 31 Oct - 9 Nov 2026: written 0, read and ignored>
  *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
  *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
@@ -105,7 +105,7 @@ object SessionCodec {
         s.tuned?.sorted()?.forEach { midi -> if (midi in 12..108) append("tuned $midi\n") }
         s.stretch?.takeIf { stretchInRange(it) }?.let { t ->
             append("stretch ${t.temperamentLowMidi} ${t.octaveBass.name} ${t.octaveMiddle.name} ${t.octaveTreble.name} ")
-            append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} ${if (t.longGrand) 1 else 0}\n")
+            append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} 0\n")
             if (t.points.isNotEmpty()) append("points ${StretchPoint.encode(t.points)}\n")
         }
         for (m in s.measurements) {
@@ -183,9 +183,11 @@ object SessionCodec {
             fun w(n: String) = if (n == "-") null else n.toDoubleOrNull() ?: Double.NaN
             val low = t[0].toIntOrNull()
             val types = listOf(type(t[1]), type(t[2]), type(t[3]))
-            val long = when (t[9]) { "0" -> false; "1" -> true; else -> null }
-            if (low != null && types.all { it != null } && long != null) {
-                val c = Stretch(low, types[0]!!, types[1]!!, types[2]!!, w(t[4]) ?: Double.NaN, w(t[5]) ?: Double.NaN, w(t[6]) ?: Double.NaN, w(t[7]), w(t[8]), long)
+            // the tenth word stood for the switch "grand of 210 cm or longer" (31 Oct - 9 Nov 2026): still written as 0 and
+            // read as before, so a tuning saved with it opens with the octave types it has; it means nothing any more
+            val sizeWord = t[9] == "0" || t[9] == "1"
+            if (low != null && types.all { it != null } && sizeWord) {
+                val c = Stretch(low, types[0]!!, types[1]!!, types[2]!!, w(t[4]) ?: Double.NaN, w(t[5]) ?: Double.NaN, w(t[6]) ?: Double.NaN, w(t[7]), w(t[8]))
                 if (stretchInRange(c)) stretch = c
             }
             if (i < lines.size && lines[i].startsWith("points ")) stretch = stretch?.copy(points = StretchPoint.decode(tokens("points", 1)[0]))

@@ -104,15 +104,6 @@ data class TunerSettings(
     // middle's to the outer one ([outerShare]). Until then the bass's type held from the lowest key up to an octave
     // above the lowest plain string, and the switch to the middle's on one key broke the 225's thirds F3-A3 (29 Oct).
     val octaveBass: OctaveType = OctaveType.O6_3,
-    /**
-     * A grand of 210 cm (6 ft 11 in) or longer (Peter, 31 Oct 2026): the size the bass's octave type is recommended
-     * by -- 10:5 on such a grand, 6:3 on anything shorter ([withLongGrand]). His ear in the low bass, where it is the
-     * yardstick: "10:5 is better for grand pianos > 210cm, other than that 6:3 should be fine". The app cannot tell
-     * the size from the strings: on the eight pianos measured, a 211 cm Steinway B, a Yamaha grand and a Yamaha
-     * upright stand at the same B in the low bass (Pro STRETCH §11). A recommendation only: the type stays the
-     * tuner's to change.
-     */
-    val longGrand: Boolean = false,
     val octaveMiddle: OctaveType = OctaveType.O4_2,
     /**
      * 4:1 by default since 23 Oct 2026 (Peter, at the Steinway B: "4:2 should stay, but treble default
@@ -203,7 +194,7 @@ data class TunerSettings(
      * Partials reads that partial alone either way.
      */
     val cleanPartials: Boolean = true,
-    /** What the strobe shows: every partial, the lowest [strobeCount], or one band (StrobeMode, 31 Oct 2026). */
+    /** What the strobe shows: every partial, the lowest [strobeCount], or one band (StrobeMode, 31 Oct 2026). A tuner starts on one band: [SettingsModel]'s defaults. */
     val strobeMode: StrobeMode = StrobeMode.ALL,
     /**
      * How many bands [StrobeMode.LIMIT] shows: the lowest so many of the partials offered for the note, the band
@@ -312,8 +303,6 @@ data class TunerSettings(
         const val MIN_MEMORY_S = 0.15
         const val MAX_MEMORY_S = 1.2
         val MEMORY_STEPS = listOf(0.15, 0.3, 0.6, 1.2)
-        /** The bass's octave type recommended for a piano of the size given ([longGrand]). */
-        fun recommendedBass(longGrand: Boolean): OctaveType = if (longGrand) OctaveType.O10_5 else OctaveType.O6_3
         /** The equalizer's steps, seconds, shortest first; 0 is the whole strike. */
         val BAND_AVERAGING_STEPS = listOf(0.15, 0.3, 0.6, 1.2, 0.0)
         const val MIN_LOWEST_KEY = 12          // C0, the 97-key Imperial
@@ -431,7 +420,7 @@ data class TunerSettings(
         widthBass = 0.63, widthBassFar = 3.46, widthMiddle = 0.63, widthTreble = 0.63, widthTrebleFar = 0.0,
         stretchPoints = listOf(StretchPoint(45, OctaveType.O6_3, 0.63), StretchPoint(77, OctaveType.O2_1, 0.74), StretchPoint(93, OctaveType.O4_1, 0.49)),
     ) else copy(
-        octaveBass = recommendedBass(longGrand), octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
+        octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
         widthBass = 0.0, widthBassFar = null, widthMiddle = 0.0, widthTreble = 0.0, widthTrebleFar = null, stretchPoints = emptyList(),
     )
 
@@ -440,9 +429,6 @@ data class TunerSettings(
      * to the temperament octave, the outer region's at the far end — its far width where one is set
      * ([widthBassFar], [widthTrebleFar]), sliding there from the region's own — in equal steps by key.
      */
-    /** The size given, and the bass's octave type set to what it recommends; the tuner may change the type after. */
-    fun withLongGrand(on: Boolean): TunerSettings = copy(longGrand = on, octaveBass = recommendedBass(on))
-
     fun widthFor(midi: Int): Double {
         onPoints(midi)?.let { return it.width }
         val w = outerShare(midi)
@@ -458,14 +444,14 @@ data class TunerSettings(
     /** The stretch this tuning is tuned to ([Stretch]). */
     fun stretch(): Stretch = Stretch(
         temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
-        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, longGrand, stretchPoints,
+        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints,
     )
 
     /** These settings with [s] as the stretch. */
     fun withStretch(s: Stretch): TunerSettings = copy(
         temperamentLowMidi = s.temperamentLowMidi, octaveBass = s.octaveBass, octaveMiddle = s.octaveMiddle,
         octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
-        widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, longGrand = s.longGrand, stretchPoints = s.points,
+        widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, stretchPoints = s.points,
     )
 }
 
@@ -486,8 +472,6 @@ data class Stretch(
     val widthTreble: Double,
     val widthBassFar: Double?,
     val widthTrebleFar: Double?,
-    /** The piano's size the bass's octave type was recommended by ([TunerSettings.longGrand]): the window's switch. */
-    val longGrand: Boolean,
     /** The tuning's further places ([TunerSettings.stretchPoints]). */
     val points: List<StretchPoint> = emptyList(),
 )
@@ -505,7 +489,9 @@ data class Stretch(
  */
 class SettingsModel(
     private val store: KeyValueStore,
-    private val defaults: TunerSettings = TunerSettings(),
+    // a tuner's first run shows one strobe (Peter, 9 Nov 2026; two testers found several in the way): what a new phone
+    // starts from, and not the engine's own, which goes on reading every partial when it is told nothing
+    private val defaults: TunerSettings = TunerSettings(strobeMode = StrobeMode.ONE),
     /** The lowest key an edition fixes, or null where the tuner sets it (Pro). */
     val lowestKeyFixed: Int? = null,
 ) {
@@ -561,11 +547,11 @@ class SettingsModel(
             strobeMode = store.get("strobeMode")?.let { m -> StrobeMode.entries.firstOrNull { it.name == m } } ?: when {
                 b("strobeOne", false) -> StrobeMode.ONE
                 i("strobeCount", 0) > 0 -> StrobeMode.LIMIT
+                store.get("strobeOne") != null -> StrobeMode.ALL
                 else -> d.strobeMode
             },
             strobeCount = i("strobeCount", d.strobeCount).let { if (it <= 0) d.strobeCount else it }.coerceIn(1, TunerSettings.MAX_STROBE_COUNT),
             strobeTogether = b("strobeTogether", d.strobeTogether),
-            longGrand = b("longGrand", d.longGrand),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             bandAveragingS = f("bandAveragingS", d.bandAveragingS).takeIf { it in TunerSettings.BAND_AVERAGING_STEPS } ?: d.bandAveragingS,
             language = store.get("language") ?: d.language,
@@ -603,7 +589,6 @@ class SettingsModel(
         store.put("strobeMode", s.strobeMode.name)
         store.put("strobeCount", s.strobeCount.toString())
         store.put("strobeTogether", s.strobeTogether.toString())
-        store.put("longGrand", s.longGrand.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("bandAveragingS", s.bandAveragingS.toString())
         store.put("language", s.language)

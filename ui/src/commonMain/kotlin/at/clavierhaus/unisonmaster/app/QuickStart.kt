@@ -18,7 +18,7 @@ internal fun quickStartTopic(): HelpTopic = HelpTopic(
     t(K.settings_page_quickstart),
     listOf(
         t(K.help_qs_a4_title) to steps("a4", 5), t(K.help_qs_sampling_title) to steps("sampling", 4),
-        t(K.help_qs_octaves_title) to steps("octaves", 5), t(K.help_qs_tuning_title) to steps("tuning", 5),
+        t(K.help_qs_octaves_title) to steps("octaves", 5), t(K.help_qs_tuning_title) to steps("tuning", 6),
     ),
 )
 

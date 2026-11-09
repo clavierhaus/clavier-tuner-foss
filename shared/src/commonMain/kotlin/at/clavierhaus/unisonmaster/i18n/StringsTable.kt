@@ -15,6 +15,12 @@ object K {
     const val app_partials = "app.partials"
     const val app_onePartial = "app.onePartial"
     const val sampling_title = "sampling.title"
+    const val sampling_a4Title = "sampling.a4Title"
+    const val sampling_a4_mute = "sampling.a4.mute"
+    const val sampling_a4_pitch = "sampling.a4.pitch"
+    const val sampling_a4_tune = "sampling.a4.tune"
+    const val sampling_a4_done = "sampling.a4.done"
+    const val sampling_order_why = "sampling.order.why"
     const val sampling_line = "sampling.line"
     const val sampling_lineSet = "sampling.lineSet"
     const val sampling_strikeAny = "sampling.strikeAny"
@@ -96,8 +102,7 @@ object K {
     const val tuning_partialOne = "tuning.partialOne"
     const val tuning_info = "tuning.info"
     const val tuning_infoTitle = "tuning.infoTitle"
-    const val tuning_longGrand = "tuning.longGrand"
-    const val tuning_note_longGrand = "tuning.note.longGrand"
+    const val tuning_infoOrders = "tuning.infoOrders"
     const val tuning_partialsNot = "tuning.partialsNot"
     const val tuning_follows = "tuning.follows"
     const val tuning_leavingKeeps = "tuning.leavingKeeps"
@@ -128,6 +133,9 @@ object K {
     const val settings_followKey = "settings.followKey"
     const val settings_cleanTogether = "settings.cleanTogether"
     const val tuning_strobeAll = "tuning.strobeAll"
+    const val tuning_strobeAll_note = "tuning.strobeAll.note"
+    const val tuning_strobeLimit_note = "tuning.strobeLimit.note"
+    const val tuning_strobeOne_note = "tuning.strobeOne.note"
     const val tuning_strobeLimit = "tuning.strobeLimit"
     const val tuning_strobeOne = "tuning.strobeOne"
     const val settings_strobeTogether = "settings.strobeTogether"
@@ -190,6 +198,7 @@ object K {
     const val help_qs_tuning_s3 = "help.qs.tuning.s3"
     const val help_qs_tuning_s4 = "help.qs.tuning.s4"
     const val help_qs_tuning_s5 = "help.qs.tuning.s5"
+    const val help_qs_tuning_s6 = "help.qs.tuning.s6"
     const val table_target = "table.target"
     const val table_measured = "table.measured"
     const val table_cents = "table.cents"
@@ -211,6 +220,12 @@ internal object StringsTable : Catalog {
         "app.partials" to arrayOf("Partials", "Teiltöne"),
         "app.onePartial" to arrayOf("One partial", "Ein Teilton"),
         "sampling.title" to arrayOf("Sampling your piano", "Klavier vermessen"),
+        "sampling.a4Title" to arrayOf("Set A4", "A4 einstellen"),
+        "sampling.a4.mute" to arrayOf("Mute A4 to one string.", "A4 auf eine Saite abdämpfen."),
+        "sampling.a4.pitch" to arrayOf("Choose the pitch with − and +, or keep the one shown.", "Die Tonhöhe mit − und + wählen oder die angezeigte behalten."),
+        "sampling.a4.tune" to arrayOf("Strike the string and tune it until the strobe stands still.", "Die Saite anschlagen und stimmen, bis der Strobe stillsteht."),
+        "sampling.a4.done" to arrayOf("Then Done. The sampling comes next.", "Dann Fertig. Danach wird das Klavier vermessen."),
+        "sampling.order.why" to arrayOf("The app learns the piano from these strings.", "Aus diesen Saiten lernt die App das Klavier kennen."),
         "sampling.line" to arrayOf("Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.", "Einzelne Saiten, Tasten nach Ihrer Wahl, {0} davon: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt."),
         "sampling.lineSet" to arrayOf("Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.", "Einzelne Saiten, die {0} Tasten unten: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt."),
         "sampling.strikeAny" to arrayOf("strike a key: one string, one wedge", "Taste anschlagen: eine Saite, ein Keil"),
@@ -292,8 +307,7 @@ internal object StringsTable : Catalog {
         "tuning.partialOne" to arrayOf("partial {0}", "Teilton {0}"),
         "tuning.info" to arrayOf("A4 = {0} · equal temperament {1}–A4 · octaves {2}", "A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}"),
         "tuning.infoTitle" to arrayOf("This tuning", "Diese Stimmung"),
-        "tuning.longGrand" to arrayOf("Grand 210 cm (6′11″) or longer", "Flügel ab 210 cm"),
-        "tuning.note.longGrand" to arrayOf("Sets the bass's octave type: 10:5 on a grand of 210 cm or longer, 6:3 on anything shorter. A recommendation: any type can still be chosen below.", "Setzt den Oktavtyp des Basses: 10:5 auf einem Flügel ab 210 cm, 6:3 auf allem Kürzeren. Eine Empfehlung: jeder Typ bleibt unten wählbar."),
+        "tuning.infoOrders" to arrayOf("These settings hold for this tuning. Change what you want, then Done.", "Das gilt für diese Stimmung. Nach Wunsch ändern, dann Fertig."),
         "tuning.partialsNot" to arrayOf(" · not {0}", " · ohne {0}"),
         "tuning.follows" to arrayOf("follows the key · ", "folgt der Taste · "),
         "tuning.leavingKeeps" to arrayOf("leaving a note keeps it", "Weitergehen speichert den Ton"),
@@ -324,8 +338,11 @@ internal object StringsTable : Catalog {
         "settings.followKey" to arrayOf("Auto note switching", "Automatischer Tonwechsel"),
         "settings.cleanTogether" to arrayOf("Average the clean partials", "Saubere Teiltöne mitteln"),
         "tuning.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
-        "tuning.strobeLimit" to arrayOf("Limit to", "Begrenzt auf"),
-        "tuning.strobeOne" to arrayOf("One strobe, averaged", "Ein Strobe, gemittelt"),
+        "tuning.strobeAll.note" to arrayOf("A band for every partial.", "Ein Band für jeden Teilton."),
+        "tuning.strobeLimit.note" to arrayOf("lowest partials", "tiefste Teiltöne"),
+        "tuning.strobeOne.note" to arrayOf("One band, moved by the clean partials together.", "Ein Band, bewegt von allen sauberen Teiltönen."),
+        "tuning.strobeLimit" to arrayOf("Limit to", "Nur"),
+        "tuning.strobeOne" to arrayOf("One strobe", "Ein Strobe"),
         "settings.strobeTogether" to arrayOf("Strobes appear together", "Strobes erscheinen gemeinsam"),
         "settings.note.strobeTogether" to arrayOf("On: the row comes up at once, when every strobe has been read, at most 0.8 s after the first. Off: each strobe comes up as soon as its partial is read. Either way a strobe fades in over 0.3 s.", "Ein: die Reihe erscheint auf einmal, sobald jeder Strobe gelesen ist, höchstens 0,8 s nach dem ersten. Aus: jeder Strobe erscheint, sobald sein Teilton gelesen ist. In beiden Fällen blendet ein Strobe über 0,3 s ein."),
         "settings.strobeSmoothing" to arrayOf("Strobe smoothing", "Strobe-Glättung"),
@@ -386,6 +403,7 @@ internal object StringsTable : Catalog {
         "help.qs.tuning.s3" to arrayOf("Under the strobe, the string's partials: tap one to take it out of the reading, tap it again to bring it back.", "Unter dem Stroboskop die Teiltöne der Saite: ein Tippen nimmt einen aus der Messung, ein zweites holt ihn zurück."),
         "help.qs.tuning.s4" to arrayOf("Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.", "Fortschritt zeigt die Stimmung bis hierher. „Stimmung fortsetzen“ auf der Startseite führt Sie dorthin zurück, wo Sie aufgehört haben."),
         "help.qs.tuning.s5" to arrayOf("Unisons are tuned by ear.", "Chöre werden nach Gehör gestimmt."),
+        "help.qs.tuning.s6" to arrayOf("Beside the strobe, three ways of showing it. One strobe: one band for the note, moved by its clean partials together. Limit to N: the lowest N partials, a band each. All partials: a band for every partial. A tap changes it at once.", "Neben dem Strobe drei Darstellungen. Ein Strobe: ein Band für die Note, bewegt von ihren sauberen Teiltönen gemeinsam. Nur N: die tiefsten N Teiltöne, je ein Band. Alle Teiltöne: ein Band für jeden Teilton. Ein Tipp wechselt sofort."),
         "table.target" to arrayOf("target", "Ziel"),
         "table.measured" to arrayOf("measured", "gemessen"),
         "table.cents" to arrayOf("cents", "Cent"),

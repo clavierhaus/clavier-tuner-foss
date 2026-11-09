@@ -11,7 +11,7 @@ class SettingsTest {
     fun defaultsRoundTripThroughTheStore() {
         val store = MemoryStore()
         val a = SettingsModel(store)
-        assertEquals(TunerSettings(), a.settings.value)
+        assertEquals(TunerSettings(strobeMode = StrobeMode.ONE), a.settings.value)
         a.update { it.copy(matchCents = 0.3, octaveMiddle = OctaveType.O2_1, octaveBass = OctaveType.O10_5, lowestUnwoundMidi = 40, widthBass = 9.5, widthTreble = 2.0, recordPcm = true, lowestKeyMidi = 17, autoNote = false) }
         val b = SettingsModel(store)
         assertEquals(true, b.settings.value.recordPcm)
@@ -37,7 +37,7 @@ class SettingsTest {
     @Test
     fun theStrobesModeIsKeptAndTheOldSettingsAreReadAsWhatTheyMeant() {
         val store = MemoryStore()
-        assertEquals(StrobeMode.ALL, SettingsModel(store).settings.value.strobeMode)
+        assertEquals(StrobeMode.ONE, SettingsModel(store).settings.value.strobeMode)
         assertEquals(4, SettingsModel(store).settings.value.strobeCount, "the limit is 4 until changed")
         SettingsModel(store).update { it.copy(strobeMode = StrobeMode.LIMIT, strobeCount = 6) }
         assertEquals(StrobeMode.LIMIT, SettingsModel(store).settings.value.strobeMode)

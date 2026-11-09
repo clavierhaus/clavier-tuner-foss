@@ -83,12 +83,19 @@ class StretchPointsTest {
     }
 
     @Test
-    fun offBringsBackTheDefaultsAndALongGrandsBass() {
+    fun offBringsBackTheDefaults() {
         assertEquals(TunerSettings(), six.withSixPoints(false))
         assertFalse(TunerSettings().sixPoints); assertTrue(six.sixPoints)
-        val long = TunerSettings().withLongGrand(true)
-        assertEquals(OctaveType.O6_3, long.withSixPoints(true).octaveBass)
-        assertEquals(OctaveType.O10_5, long.withSixPoints(true).withSixPoints(false).octaveBass)
+    }
+
+    /** The word the size switch left in the saved tuning (31 Oct - 9 Nov 2026): such a tuning opens as it was saved. */
+    @Test
+    fun aTuningSavedWithTheSizeSwitchStillOpensWithItsBass() {
+        val saved = SessionCodec.encode(SessionSnapshot(0, a4, 60, emptyList(), sampling = false, stretch = TunerSettings(octaveBass = OctaveType.O10_5).stretch()))
+        val withSwitchOn = saved.replace(Regex("(?m)^(stretch .*) 0\$"), "\$1 1")
+        assertTrue(withSwitchOn != saved, "the saved line ends in the word it had")
+        assertEquals(OctaveType.O10_5, SessionCodec.decode(withSwitchOn).stretch?.octaveBass)
+        assertEquals(OctaveType.O10_5, SessionCodec.decode(saved).stretch?.octaveBass)
     }
 
     @Test

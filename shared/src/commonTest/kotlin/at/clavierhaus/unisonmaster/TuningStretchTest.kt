@@ -65,10 +65,6 @@ class TuningStretchTest {
         val c = tuning()
         val at31 = assertNotNull(c.computedTargetF1(c7))
         assertTrue(c.changeTuning { it.copy(octaveTreble = OctaveType.O4_1) })
-        // the window's switch, the piano's size, is the tuning's too: it stays as switched, with the bass it recommends
-        c.changeTuning { it.withLongGrand(true) }
-        assertTrue(c.settings.value.longGrand); assertEquals(OctaveType.O10_5, c.settings.value.octaveBass)
-        c.changeTuning { it.withLongGrand(false) }
         val at41 = assertNotNull(c.computedTargetF1(c7))
         assertTrue(abs(cents(at41, at31)) > 0.5, "4:1 puts C7 elsewhere than 3:1: ${cents(at41, at31)} c")
         // saved and continued under other defaults, the tuning keeps its 4:1
@@ -77,7 +73,6 @@ class TuningStretchTest {
         again.applySettings(defaults.copy(octaveTreble = OctaveType.O2_1))
         again.restore(SessionCodec.decode(text))
         assertEquals(OctaveType.O4_1, again.settings.value.octaveTreble)
-        assertFalse(again.settings.value.longGrand)
         assertEquals(at41, assertNotNull(again.computedTargetF1(c7)), 1e-9)
     }
 

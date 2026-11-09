@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import at.clavierhaus.unisonmaster.Brand
+import at.clavierhaus.unisonmaster.ui.TextBlock
 import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.i18n.t
@@ -63,9 +64,10 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                 Chip(t(K.app_done), selected = true, enabled = true, onClick = onClose)
             }
             Spacer(Modifier.height(8.dp))
-            // the piano's size, which recommends the bass's octave type (Peter, 31 Oct 2026); the type below stays the
-            // tuner's to change
-            SwitchRow(t(K.tuning_longGrand), s.longGrand, info = t(K.tuning_note_longGrand)) { on -> onChange { it.withLongGrand(on) } }
+            // what this window is for, said once (Peter, 9 Nov 2026: every step before tuning has its instruction). The
+            // switch for a grand of 210 cm or longer stood here until that day: the sampling is the piano's measure
+            TextBlock(listOf(t(K.tuning_infoOrders)), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.WHITE_MUTED))
+            Spacer(Modifier.height(4.dp))
             SwitchRow(t(K.settings_sixPoints), s.sixPoints, info = t(K.settings_note_sixPoints)) { on -> onChange { it.withSixPoints(on) } }
             Spacer(Modifier.height(8.dp))
             // a table: the columns say "octave type" and "width" once, each region is a row of its name

@@ -86,7 +86,7 @@ German pass; a word marked ? is a proposal.
 | the piano's fingerprint | — (prose only) | the partial ratios of all its strings, which only new wire changes |
 | measure while tuning | beim Stimmen messen | the minimal checklist: every note tuned is a note measured |
 | octave partial (Settings › Strobe › Bands: All partials / Octave partial) | Oktavteilton (Bänder: Alle Teiltöne / Oktavteilton) | the partial on which a note meets its octave by the octave type -- 4:2: the upper note's 2, the lower note's 4; in A3–A4 and on A4, partial 2 (Gregor and Peter, 28 Oct 2026) |
-| what the strobe shows, beside it on the tuning screen: All partials / Limit to N / One strobe, averaged | Alle Teiltöne / Begrenzt auf N / Ein Strobe, gemittelt | ours | three lines, one active (Peter, 31 Oct 2026); "One strobe, averaged" is the octave partial's band moved by the clean partials together, and replaces the choice "Octave partial" under Settings › Strobe, which leaves the screen |
+| what the strobe shows, beside it on the tuning screen: One strobe / Limit to N / All partials | Ein Strobe / Nur N / Alle Teiltöne | ours | three lines, one active (Peter, 31 Oct 2026); "One strobe, averaged" is the octave partial's band moved by the clean partials together, and replaces the choice "Octave partial" under Settings › Strobe, which leaves the screen |
 
 ## 4. Screen by screen, what changes
 

@@ -34,7 +34,7 @@ No account, no tracking: nothing is recorded or sent.
 **Getting started:** tap New Tuning, define your preferred A4. Then sample: strike single strings with the others
 muted, any keys up to G6, in any order. Let each string ring until it's measured, then tap Accept. 10 to 15 keys
 spread from the low bass to G6 give the best accuracy. Before your first tuning, check the octave types under
-Settings › Stretch. On a grand of 210 cm or longer, switch on "Grand 210 cm (6′11″) or longer" for the bass.
+Settings › Stretch.
 
 **Tuning:** the screen follows the key you strike and shows its target. The temperament octave A3–A4 comes first;
 Done keeps a note, and moving on to another keeps it too. For each new piano, start a New Tuning. Continue is only
@@ -103,9 +103,6 @@ first. Unisons are tuned by ear.
   strobe's target times the ratio between the two partials as read. No strobe
   is placed by a model and then moved. *Strobe smoothing* (Settings › Tuning ›
   Reading) sets how far back that ratio is averaged.
-- **The piano's size recommends the bass's octave type:** the window behind
-  the tuning line opens after sampling, with a switch for a grand of 210 cm
-  (6′11″) or longer — on, bass 10:5; off, 6:3. Every type stays yours.
 
 ## New in 0.7
 

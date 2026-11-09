@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
  * Two screens, one file (Peter, 7 Oct 2026, 09:23: "this initial screen
  * serves only one purpose"). Before the session the page is the A4 screen:
  * the pitch chooser, the temperament, the picture of the string against the
- * pitch chosen, Done -- and nothing else, no title, no orders, no keyboard.
+ * pitch chosen, Done, and since 9 Nov 2026 the orders on the left; no keyboard.
  * From Done on it is the sampling page described above.
  *
  * The right side is the only interactive area (Peter, 5 Oct 2026). The
@@ -142,31 +142,32 @@ internal fun SamplingPage(
         // tapped). The work of the page — what was caught, how many are in — sits at the foot of that
         // band, pushed there by the spacer, so it is on the screen whatever stands above it.
         // Two screens share this file and are told apart by the session (Peter, 7 Oct 2026, 09:23):
-        // before it, the page serves one purpose -- A4 set to the pitch the tuner wants -- and carries
-        // nothing else: no title, no orders, no keyboard; the picture has the width. From Done on it
-        // is the sampling page, with the orders on the left and the range along the bottom.
+        // before it, the page serves one purpose -- A4 set to the pitch the tuner wants -- with its orders on the left since
+        // 9 Nov 2026 (until then no title and no orders, and a first-time tuner had nothing to go by), and no keyboard. From
+        // Done on it is the sampling page, with its own orders on the left and the range along the bottom.
         val settingA4 = view == null
         Row(Modifier.fillMaxSize().padding(bottom = if (settingA4) 0.dp else keyboardH + 8.dp)) {
-            if (!settingA4) {
-                // ---- left: what this page is for, and the orders ----
+            run {
+                // ---- left: what this page is for, and the orders, on the A4 screen too (Peter, 9 Nov 2026: every step
+                // before tuning has clear instructions on the left; a tester could not tell what to do) ----
                 // a share of the width, never a number of dp (docs/UI.md, law 1): at 380 dp the right side
                 // was left too little on a small phone, and its buttons broke their words (24 Oct 2026)
-                Column(Modifier.weight(LEFT_SHARE).fillMaxHeight()) {
+                Column(Modifier.weight(if (settingA4) A4_LEFT_SHARE else LEFT_SHARE).fillMaxHeight()) {
                     CornerBand()
-                    Text(t(K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(t(if (settingA4) K.sampling_a4Title else K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     // the subtitle ("Retrieve the piano's inharmonicity") left on 24 Oct 2026: at the phone's largest
                     // text it took two lines, and the orders, which say what to do, no longer fitted under it
                     Spacer(Modifier.height(6.dp))
                     // the orders: one element, one size of type, wrapping between words (Peter, 24 Oct 2026,
                     // 15:10); until then each line shrank alone to its width and the last fell off the card
                     Box(Modifier.fillMaxWidth().weight(1f, fill = false).border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        TextBlock(orders(view?.samplesNeeded ?: 0), Modifier.fillMaxWidth(), size = 15.sp, color = white, gap = 4.dp)
+                        TextBlock(if (settingA4) a4Orders() else orders(view?.samplesNeeded ?: 0), Modifier.fillMaxWidth(), size = 15.sp, color = white, gap = 4.dp)
                     }
                 }
                 Spacer(Modifier.width(24.dp))
             }
             // ---- right: A4 and the temperament above, the work at the foot ----
-            Column(Modifier.weight(if (settingA4) 1f else 1f - LEFT_SHARE).fillMaxHeight()) {
+            Column(Modifier.weight(1f - (if (settingA4) A4_LEFT_SHARE else LEFT_SHARE)).fillMaxHeight()) {
                 CornerBand()
                 // The pitch A4 is to be tuned to is chosen here, and the string is brought to it.
                 // It starts at the engine's 440.0 Hz and the two steps move it by a tenth of a hertz;
@@ -373,11 +374,17 @@ private const val KEYBOARD_SHARE = 0.28f
  * an instruction to sample A0 (Gregor, Clavio, 24 Oct 2026).
  */
 private fun orders(needed: Int): List<String> = listOf(
-    t(K.sampling_order_strings), t(K.sampling_order_count, needed), t(K.sampling_order_accept),
+    t(K.sampling_order_why), t(K.sampling_order_strings), t(K.sampling_order_count, needed), t(K.sampling_order_accept),
 )
+
+/** What to do on the A4 screen, in the order it is done. */
+private fun a4Orders(): List<String> = listOf(t(K.sampling_a4_mute), t(K.sampling_a4_pitch), t(K.sampling_a4_tune), t(K.sampling_a4_done))
 
 /** The left side's share of the width; the right side, with the controls, has the rest. */
 private const val LEFT_SHARE = 0.42f
+
+/** The same on the A4 screen, whose right side holds the picture of the string and needs the width. */
+private const val A4_LEFT_SHARE = 0.30f
 
 /** The A4 hint's strip, as a share of the right side under − 440.0 +. */
 private const val SLIDER_SHARE = 0.75f
