@@ -168,6 +168,22 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     }
 
     /**
+     * True while the tuner can still step back from the tuning to the sampling (Peter, 9 Nov 2026, after a tester who
+     * could not get back to change anything): until a note besides A4 has been tuned no target has been worked to, so
+     * the basis may still change. From the first note on it may not (Rule 9), and only the stretch stays the tuner's.
+     */
+    val canStepBack: Boolean get() = sampling || tunedNotes.none { it != MIDI_A4 }
+
+    /** Back to the sampling with every sample kept; the basis is laid down again by the next [finishSampling]. False once [canStepBack] is. */
+    fun reopenSampling(): Boolean {
+        if (sampling || !canStepBack) return false
+        sampling = true
+        sampledB = null
+        current = MIDI_A4
+        return true
+    }
+
+    /**
      * The inharmonicity of the sampled strings when the sampling ended, by key: the basis of
      * every target from then on. The sampling measures the piano's inharmonicity once, and it
      * does not depend on pitch; a note tuned afterwards is recorded ([record]) for the tuning's

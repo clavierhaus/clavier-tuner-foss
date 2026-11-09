@@ -209,7 +209,8 @@ class LayoutCheckTest {
         look(where, dir, "01-hub")
         // the window behind the info line
         rule.mainClock.autoAdvance = true          // nothing moves behind a dialog, and its window draws only on a running clock
-        show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}) }
+        // with the way back, the fullest it gets
+        show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}) }
         look(where, dir, "10-info", dialog = true)
         problems.distinct().let { problems.clear(); problems.addAll(it) }
         if (problems.isNotEmpty()) fail("${problems.size} faults of the screen:\n" + problems.joinToString("\n"))

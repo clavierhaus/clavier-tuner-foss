@@ -1,0 +1,1 @@
+0.8.0: Jeder Schritt vor dem Stimmen sagt, was zu tun ist, und man kann zu einem früheren zurück, ohne Gemessenes zu verlieren. Standardmäßig ein Strobe, jede Wahl daneben beschrieben. Keine Klaviergröße mehr: Das Vermessen ist das Maß. Neu: Spreizung mit sechs Punkten und zusätzliche Spreizung auf A3-A4, weit oder eng.

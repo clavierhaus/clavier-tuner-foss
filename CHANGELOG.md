@@ -5,9 +5,15 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
-## Unreleased
+## 0.8.0 -- 2026-11-09
 
 ### 2026-11-09
+- **You can go back before tuning, and nothing measured is lost.** A line at
+  the top shows the steps, A4, Sampling, Tuning; tap an earlier one. A4 can be
+  set to another pitch and the samples stay. From the tuning you can go back
+  until the first note has been tuned; the window after the sampling has the
+  same line. Once a note is tuned the targets hold, and only the octave types
+  can still be changed.
 - **One strobe is the default**, and under the three choices beside the strobe
   a line now says what the one in force shows. A tap still changes it at once.
 - **Every step before tuning says what to do on the left**: the A4 screen now

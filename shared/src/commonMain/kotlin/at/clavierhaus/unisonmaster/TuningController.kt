@@ -504,6 +504,8 @@ class TuningController(
         val complete: Boolean,
         /** Sampling: single strings across the range, before tuning. */
         val sampling: Boolean = false,
+        /** Whether an earlier step can still be gone back to ([TuningSession.canStepBack]). */
+        val canStepBack: Boolean = false,
         /** Sampling: how many strings besides A4 are in, how many the sampling needs, and whether Done may end it. */
         val samplesIn: Int = 0,
         val samplesNeeded: Int = 0,
@@ -537,7 +539,7 @@ class TuningController(
 
     /** The session as it stands, or null on the hub before A4 is set. */
     fun snapshot(): SessionSnapshot? {
-        val s = session ?: return null
+        val s = session ?: parked ?: return null
         return SessionSnapshot(
             savedAtMs = clock(),
             a4Hz = _referenceA4Hz.value,
@@ -590,14 +592,20 @@ class TuningController(
 
     /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
     fun resetSession() {
-        caught = null
+        parked = null
         hubA4 = null
         a4Kept = null
         _a4Status.value = A4Status(null, false)
         shortSamples.clear()
-        session = null
         tuningStretch = null
         _settings.value = defaults
+        leaveSession()
+    }
+
+    /** The screen emptied of the session it was showing. */
+    private fun leaveSession() {
+        caught = null
+        session = null
         _tuning.value = null
         _reading.value = null
         _liveHz.value = null
@@ -614,9 +622,44 @@ class TuningController(
         generation++
     }
 
+    /**
+     * The session stepped back from, while the tuner is on the A4 step ([backToA4]): every sample and the tuning's
+     * stretch wait in it, and Done on that step takes it up again. Saved with the session in the meantime ([snapshot]).
+     */
+    @Volatile private var parked: TuningSession? = null
+
+    /**
+     * From the tuning back to the sampling, every sample kept (Peter, 9 Nov 2026), until a note has been tuned
+     * ([TuningSession.canStepBack]). False when it cannot.
+     */
+    fun backToSampling(): Boolean {
+        val s = session ?: return false
+        if (!s.reopenSampling()) return false
+        caught = null
+        publish(s)
+        return true
+    }
+
+    /**
+     * Back to the A4 step, from the sampling or, until a note has been tuned, from the tuning: nothing measured is lost
+     * and A4 may be set to another pitch (a sample's inharmonicity does not depend on it). Until 9 Nov 2026 setting A4
+     * again threw every sample away. A4's last measurement stays, so Done is open without a new strike. False when it cannot.
+     */
+    fun backToA4(): Boolean {
+        val s = session ?: return false
+        if (!s.sampling && !s.reopenSampling()) return false
+        a4Kept = s.measurements[TuningSession.MIDI_A4] ?: a4Kept
+        hubA4 = null
+        _a4Status.value = A4Status(null, a4Kept != null)
+        parked = s
+        leaveSession()
+        return true
+    }
+
     /** Continues a saved session: A4, every measured note, the note the tuner was on. */
     fun restore(snap: SessionSnapshot) {
         session = null
+        parked = null
         shortSamples.clear()
         setReference(snap.a4Hz)
         // the stretch saved with the tuning; a file from before 5 Nov 2026 has none and takes the defaults in force,
@@ -775,6 +818,7 @@ class TuningController(
             stepHighMidi = s.stepHighMidi,
             complete = s.nextUntuned() == null,
             sampling = s.sampling,
+            canStepBack = s.canStepBack,
             samplesIn = s.samplesIn,
             samplesNeeded = s.samplesNeeded,
             samplingReady = s.samplingReady,
@@ -872,6 +916,15 @@ class TuningController(
             // the A4 string as its last strike measured it in full, sounding now or not (HubA4); nothing
             // until one is measured
             val m = a4Kept ?: return null
+            // stepped back to this step: the session is taken up again, its samples and its stretch as they were
+            parked?.let { s ->
+                parked = null
+                s.a4Hz = _referenceA4Hz.value
+                s.record(m)
+                session = s
+                advance(s)
+                return _referenceA4Hz.value
+            }
             // the reference is the pitch the tuner chose on the sampling page and tuned the string to,
             // not the string as it happens to stand: until 5 Oct 2026 this overwrote his choice with
             // the reading, so there was never a pitch to aim at (Peter, 15:55)

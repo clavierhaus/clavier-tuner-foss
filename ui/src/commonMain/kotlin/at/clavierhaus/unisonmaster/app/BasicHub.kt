@@ -156,7 +156,10 @@ fun BasicHub(
     }
     Corners(onSettings = onSettings, onHome = onHome, info = tuningInfoLine(cfg, a4),
         onInfo = if (onChangeSettings != null) ({ infoOpen = true }) else null)
-    if (infoOpen && onChangeSettings != null) TuningInfoDialog(cfg, onChangeSettings) { infoOpen = false }
+    if (infoOpen && onChangeSettings != null) TuningInfoDialog(
+        cfg, onChangeSettings, onClose = { infoOpen = false },
+        onStep = if (t != null && !t.sampling && t.canStepBack) { n -> infoOpen = false; if (n == 1) controller.backToA4() else controller.backToSampling() } else null,
+    )
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
         // The one picture, built here once for every state of the screen -- one place puts the number

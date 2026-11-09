@@ -51,7 +51,7 @@ fun tuningInfoLine(s: TunerSettings, a4Hz: Double): String =
 
 /** The window behind the line. [onChange] changes the settings in force; [onClose] closes it. */
 @Composable
-fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings) -> Unit, onClose: () -> Unit) {
+fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings) -> Unit, onClose: () -> Unit, onStep: ((Int) -> Unit)? = null) {
     // the widest region's choices lay out the heading's column; each region offers its own (30 Oct 2026)
     val octaves = widestOctaves
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -63,6 +63,8 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                 Spacer(Modifier.weight(1f))
                 Chip(t(K.app_done), selected = true, enabled = true, onClick = onClose)
             }
+            // the way back, here where the sampling has just ended, until a note has been tuned (Peter, 9 Nov 2026)
+            if (onStep != null) { Spacer(Modifier.height(4.dp)); StepLine(3, onStep, Modifier.fillMaxWidth(0.6f)) }
             Spacer(Modifier.height(8.dp))
             // what this window is for, said once (Peter, 9 Nov 2026: every step before tuning has its instruction). The
             // switch for a grand of 210 cm or longer stood here until that day: the sampling is the piano's measure

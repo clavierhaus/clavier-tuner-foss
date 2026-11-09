@@ -117,8 +117,6 @@ internal fun SamplingPage(
     val audibleA4 by controller.liveAudible.collectAsState()
     val cfg by controller.settings.collectAsState()
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED); val orange = Color(Brand.ORANGE)
-    // the one thing this page asks before doing: A4 set again, which starts the sampling over
-    var resetA4 by remember { mutableStateOf(false) }
     val sampled = view?.sampled.orEmpty() + (view?.measured.orEmpty() - TuningSession.MIDI_A4)
     val low = cfg.temperamentLowMidi
     // A4 is what sounds: before the session there is nothing else for the hub's reader to be reading,
@@ -154,7 +152,7 @@ internal fun SamplingPage(
                 // was left too little on a small phone, and its buttons broke their words (24 Oct 2026)
                 Column(Modifier.weight(if (settingA4) A4_LEFT_SHARE else LEFT_SHARE).fillMaxHeight()) {
                     CornerBand()
-                    Text(t(if (settingA4) K.sampling_a4Title else K.sampling_title), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    StepLine(if (settingA4) 1 else 2, onStep = { controller.backToA4() }, modifier = Modifier.fillMaxWidth())
                     // the subtitle ("Retrieve the piano's inharmonicity") left on 24 Oct 2026: at the phone's largest
                     // text it took two lines, and the orders, which say what to do, no longer fitted under it
                     Spacer(Modifier.height(6.dp))
@@ -195,10 +193,7 @@ internal fun SamplingPage(
                             }
                         }
                         DoneButton(onClick = { controller.acceptLive() }, enabled = a4State.ready)
-                    } else {
-                        Spacer(Modifier.weight(1f))
-                        Text(t(K.sampling_setAgain), color = muted, fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false, modifier = Modifier.clickable { resetA4 = true }.padding(6.dp))
-                    }
+                    } else Spacer(Modifier.weight(1f))
                 }
                 // Under − 440.0 +, the line that says how the pitch is set is the slider itself: a finger
                 // drawn right along it raises A4 a tenth of a hertz every SLIDE_STEP_DP, drawn left lowers
@@ -347,20 +342,6 @@ internal fun SamplingPage(
         )
     }
 
-    }
-    // Setting A4 again throws every sample away, so it is asked before it is done. Nothing else on
-    // this page asks: Undo names the key it takes back, and the key can simply be struck again.
-    if (resetA4) {
-        Dialog(onDismissRequest = { resetA4 = false }) {
-            Column(Modifier.background(Color(Brand.NEAR_BLACK), RoundedCornerShape(10.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(noteName(TuningSession.MIDI_A4), color = white, fontFamily = DejaVuSerif, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(t(K.sampling_resetWarning), color = muted, fontSize = 14.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Chip(t(K.sampling_setA4Again), selected = true, enabled = true) { resetA4 = false; controller.resetSession() }
-                    Chip(t(K.app_cancel), selected = false, enabled = true) { resetA4 = false }
-                }
-            }
-        }
     }
 }
 

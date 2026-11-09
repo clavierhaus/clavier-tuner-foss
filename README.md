@@ -89,6 +89,20 @@ for the piano you sampled.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
+## New in 0.8
+
+- **Every step before tuning says what to do**, on the left, and a line at the
+  top shows the steps: A4, Sampling, Tuning. Tap an earlier one to go back and
+  change something; nothing measured is lost. Once a note has been tuned the
+  targets hold.
+- **One strobe by default.** The other choices stay beside it, each saying what
+  it shows, and a tap switches at once.
+- **No piano size to set.** The sampling is the measure of the piano.
+- **The octave's width on A3–A4 too**, and extra stretch can go narrower than
+  beatless.
+- **Six-point stretch**, a switch beside the octave types: three more places,
+  A2, F5 and A6.
+
 ## New in 0.7.2
 
 - **What the strobe shows is chosen beside it** on the tuning screen, three

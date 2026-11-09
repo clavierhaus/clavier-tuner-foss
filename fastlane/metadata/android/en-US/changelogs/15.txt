@@ -1,0 +1,1 @@
+0.8.0: every step before tuning says what to do, and you can go back to an earlier one without losing what you measured. One strobe by default, each choice described beside it. No piano size to set: the sampling is the measure. New curve options: a six-point stretch and extra stretch on A3-A4, wide or narrow.

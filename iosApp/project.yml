@@ -36,8 +36,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: at.clavierhaus.claviertuner
-        MARKETING_VERSION: "0.7.3"
-        CURRENT_PROJECT_VERSION: "14"
+        MARKETING_VERSION: "0.8.0"
+        CURRENT_PROJECT_VERSION: "15"
         # the icon (Peter, 8 Nov 2026): "Clavier" over "Tuner" in DejaVu Serif, white on black, the vie in orange
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # the app's own Swift module must not share the framework's name, or `import ClavierTuner` is ignored

@@ -14,12 +14,13 @@ app.progress	Progress	Fortschritt
 app.tuning	Tuning	Stimmen
 app.partials	Partials	Teiltöne
 app.onePartial	One partial	Ein Teilton
-sampling.title	Sampling your piano	Klavier vermessen
-sampling.a4Title	Set A4	A4 einstellen
 sampling.a4.mute	Mute A4 to one string.	A4 auf eine Saite abdämpfen.
 sampling.a4.pitch	Choose the pitch with − and +, or keep the one shown.	Die Tonhöhe mit − und + wählen oder die angezeigte behalten.
 sampling.a4.tune	Strike the string and tune it until the strobe stands still.	Die Saite anschlagen und stimmen, bis der Strobe stillsteht.
 sampling.a4.done	Then Done. The sampling comes next.	Dann Fertig. Danach wird das Klavier vermessen.
+step.a4	A4	A4
+step.sampling	Sampling	Vermessen
+step.tuning	Tuning	Stimmen
 sampling.order.why	The app learns the piano from these strings.	Aus diesen Saiten lernt die App das Klavier kennen.
 sampling.line	Single strings, the keys you choose, {0} of them: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, Tasten nach Ihrer Wahl, {0} davon: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt.
 sampling.lineSet	Single strings, the {0} keys below: Accept keeps a string; a key struck again replaces its sample.	Einzelne Saiten, die {0} Tasten unten: Übernehmen behält einen Messpunkt; eine erneut angeschlagene Taste ersetzt ihren Messpunkt.
@@ -86,14 +87,11 @@ hub.fundamentalA4	Fundamental A4	Grundton A4
 hub.fullSpectrum	Full Spectrum	Alle Teiltöne
 sampling.a4Hint	Tap − or + to adjust. You can also slide left and right here.	Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen.
 sampling.a4Strobe	Tune until the stripes stand still.	Stimmen, bis die Streifen stillstehen.
-sampling.setAgain	set again	neu setzen
 sampling.temperament	Temperament	Temperatur
 sampling.caughtLabel	Caught	Erkannt
 sampling.strikeKey	strike a key	Taste anschlagen
 sampling.sampledLabel	Sampled	Messpunkte
 sampling.atLeast	{0} · at least {1}	{0} · mindestens {1}
-sampling.resetWarning	Setting A4 again starts the sampling over: every sample goes.	A4 neu setzen beginnt das Vermessen von vorn: alle Messpunkte gehen verloren.
-sampling.setA4Again	Set A4 again	A4 neu setzen
 sampling.order.strings	Strike single strings, the others muted. Any keys up to G6, any order.	Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten bis G6, Reihenfolge beliebig.
 sampling.order.count	{0} notes are the minimum; 10–15 spread up to G6 give the best accuracy.	{0} Töne sind das Minimum; 10–15 bis G6 verteilt ergeben die beste Genauigkeit.
 sampling.order.accept	Let each string ring until measured, then Accept.	Klingen lassen bis „gemessen“, dann Übernehmen.
@@ -188,6 +186,7 @@ help.qs.sampling.s1	Strike single strings, the others muted. The app catches the
 help.qs.sampling.s2	Spread the samples over the whole keyboard, in any order.	Verteilen Sie die Messpunkte über die ganze Tastatur, in beliebiger Reihenfolge.
 help.qs.sampling.s3	Eight samples are the minimum; ten to fifteen give the better result.	Acht Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis.
 help.qs.sampling.s4	Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.	Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde.
+help.qs.sampling.s5	The line at the top shows the three steps: A4, Sampling, Tuning. Tap an earlier one to go back and change something; nothing measured is lost. Once a note has been tuned the way back is shut, and only the octave types can still be changed.	Die Zeile oben zeigt die drei Schritte: A4, Vermessen, Stimmen. Ein Tipp auf einen früheren Schritt führt zurück, nichts Gemessenes geht verloren. Sobald ein Ton gestimmt ist, ist der Weg zurück zu, nur die Oktavtypen lassen sich noch ändern.
 help.qs.octaves.s1	Settings › Stretch, for the bass, the midrange and the treble.	Einstellungen › Spreizung, für Bass, Mittellage und Diskant.
 help.qs.octaves.s2	An octave type names the partials made beatless: 4:2 puts the 4th partial of the lower note on the 2nd of the upper. The higher the numbers, the wider the octave. 4:1 is the double octave.	Ein Oktavtyp nennt die Teiltöne, die schwebungsfrei werden: 4:2 legt den 4. Teilton des unteren Tons auf den 2. des oberen. Je höher die Zahlen, desto weiter die Oktave. 4:1 ist die Doppeloktave.
 help.qs.octaves.s3	Set out: bass 6:3, midrange 4:2, treble 4:1. The bass’s type is beatless at the lowest key, the treble’s at C8; between them every octave moves key by key from the midrange’s type, so there is no break.	Voreingestellt: Bass 6:3, Mittellage 4:2, Diskant 4:1. Der Typ des Basses ist an der tiefsten Taste schwebungsfrei, der des Diskants bei C8; dazwischen geht jede Oktave Taste für Taste vom Typ der Mittellage über, ohne Bruch.
