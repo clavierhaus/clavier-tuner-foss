@@ -43,6 +43,37 @@ class BandPhaseTest {
         assertTrue(step < 0.02, "one frame at 0.801 Hz moves 0.0128 of a period; moved $step")
     }
 
+    /**
+     * A string 60 Hz off at 60 frames a second turned the band one whole period per frame, and on the screen it stood
+     * still: the 225's E7 on 9 Nov 2026 was tuned to where the band stopped, 60.6 Hz flat of its target. However far off
+     * the string, the band goes on moving, and the way the string lies.
+     */
+    @Test
+    fun aStringFarOffKeepsTheBandMovingTheWayTheStringLies() {
+        for (rate in listOf(60.0, -60.0, 120.0, -120.0, 45.0, -45.0, 30.0, -30.0, 24.0)) {
+            val p = BandPhase()
+            val start = clockAlreadyOldMs
+            var last = p.advance(start, mapOf(1 to rate))[1]!!
+            for (frame in 1..60) {
+                val now = p.advance(start + frame * 1000L / 60, mapOf(1 to rate))[1]!!
+                var step = now - last
+                if (step > 0.5) step -= 1.0
+                if (step < -0.5) step += 1.0
+                assertTrue(step * rate > 0 && abs(step) > 0.05, "at $rate Hz frame $frame moved $step of a period")
+                last = now
+            }
+        }
+    }
+
+    /** Below the limit the band's speed is the beat, untouched. */
+    @Test
+    fun aBeatTheEyeCanFollowIsDrawnAsItIs() {
+        val p = BandPhase()
+        val a = p.advance(clockAlreadyOldMs, mapOf(1 to 9.0))[1]!!
+        val b = p.advance(clockAlreadyOldMs + 20, mapOf(1 to 9.0))[1]!!
+        assertEquals(0.18, b - a, 1e-9)
+    }
+
     /** Where the window Mistral measured should have stood still: no target difference, no motion. */
     @Test
     fun zeroRateHoldsStill() {

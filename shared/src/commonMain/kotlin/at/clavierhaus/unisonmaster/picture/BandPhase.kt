@@ -20,8 +20,16 @@ package at.clavierhaus.unisonmaster.picture
  * all. The arrival is read by motion's absence, and motion's absence could not be
  * drawn.
  *
- * There is no guard here and no clamp. A long gap simply advances the phase by
- * whatever the rate asks and wraps; the phase has no meaning to protect.
+ * There is no guard on a gap. A long gap simply advances the phase by whatever
+ * the rate asks and wraps; the phase has no meaning to protect.
+ *
+ * The drawn speed has one limit, [MAX_DRAWN_RATE], since 9 November 2026. A band
+ * redrawn sixty times a second cannot show a beat near sixty hertz: one whole
+ * period per frame looks like no motion at all, and between thirty and sixty it
+ * looks backwards. At the top of the piano one cent is 1.5 to 2.5 Hz, so a string
+ * a few tens of cents off lies there. On the 225 (session_20261109-190529) E7 was
+ * tuned to where its band stopped, 60.6 Hz and 40 cents flat of its target. The
+ * limit is on the picture only; the reading it comes from is not touched.
  */
 class BandPhase {
     private var lastMs: Long? = null
@@ -39,9 +47,18 @@ class BandPhase {
         phase.keys.retainAll(rates.keys)
         for ((k, rate) in rates) {
             val was = phase[k] ?: 0.0
-            phase[k] = wrap(was + rate * dt)
+            phase[k] = wrap(was + rate.coerceIn(-MAX_DRAWN_RATE, MAX_DRAWN_RATE) * dt)
         }
         return rates.keys.associateWith { phase[it] ?: 0.0 }
+    }
+
+    companion object {
+        /**
+         * The fastest a band is drawn, in periods per second: a sixth of a period per frame at sixty frames a second,
+         * six frames to the period, where the way it moves can still be seen. A string further off runs at this speed
+         * the way it lies, and the band slows only as the string comes within it.
+         */
+        const val MAX_DRAWN_RATE = 10.0
     }
 
     private fun wrap(x: Double): Double {

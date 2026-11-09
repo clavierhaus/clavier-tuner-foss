@@ -8,6 +8,12 @@ reconstructed from the commit history that day.
 ## 0.8.0 -- 2026-11-09
 
 ### 2026-11-09
+- **The strobe no longer stands still when the string is far off.** A band
+  redrawn sixty times a second looks at rest when the string is 60 Hz from its
+  target, and runs backwards short of that; at the top of the piano that is a
+  few tens of cents. A band now runs at most ten periods a second, the way the
+  string lies, and slows only as the string comes close. The strobe's buttons
+  also work during a tuning again.
 - **The six-point stretch is a choice you can see.** Settings › Stretch opens
   with it: three points or six, said in words, for new tunings. With six on,
   its six places stand in that window and behind the line on the tuning screen,
