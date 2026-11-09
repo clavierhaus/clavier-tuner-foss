@@ -42,6 +42,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -280,13 +281,13 @@ internal fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
 
 /** − value +, without a name: the control of a StepperRow, and of a table whose column says the name once. */
 @Composable
-fun Stepper(value: String, canDecrease: Boolean, canIncrease: Boolean, onDecrease: () -> Unit, onIncrease: () -> Unit) {
+fun Stepper(value: String, canDecrease: Boolean, canIncrease: Boolean, onDecrease: () -> Unit, onIncrease: () -> Unit, valueMin: Dp = 88.dp) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         StepButton("−", canDecrease, onDecrease)
-        // as wide as its value needs, never less than 88 dp: at a fixed 88 dp "schwebungsfrei" was cut
+        // as wide as its value needs, never less than [valueMin]: at a fixed 88 dp "schwebungsfrei" was cut
         // in the info line's window and shrunk beside its name (24 Oct 2026)
         Text(
-            value, Modifier.widthIn(min = 88.dp).padding(horizontal = 6.dp), color = Color(Brand.WHITE),
+            value, Modifier.widthIn(min = valueMin).padding(horizontal = 6.dp), color = Color(Brand.WHITE),
             fontFamily = DejaVuSerif, fontSize = 15.sp, textAlign = TextAlign.Center, softWrap = false,
         )
         StepButton("+", canIncrease, onIncrease)

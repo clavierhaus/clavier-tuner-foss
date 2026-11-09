@@ -28,6 +28,7 @@ import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.settings.OctaveType
+import at.clavierhaus.unisonmaster.settings.StretchPoint
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.ui.Choices
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
@@ -47,7 +48,8 @@ import at.clavierhaus.unisonmaster.ui.num
 /** "A4 = 443,0 Hz · gleichstufig A3–A4 · Oktaven 6:3 | 4:2 | 4:2": bass, middle, treble, low to high. */
 fun tuningInfoLine(s: TunerSettings, a4Hz: Double): String =
     t(K.tuning_info, formatHz(a4Hz), noteName(s.temperamentLowMidi),
-        listOf(s.octaveBass, s.octaveMiddle, s.octaveTreble).joinToString(" | ") { it.label })
+        (listOf(s.octaveBass) + s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.map { it.type } + s.octaveMiddle +
+            s.stretchPoints.filter { it.midi > TunerSettings.TEMPERAMENT_HIGH }.sortedBy { it.midi }.map { it.type } + s.octaveTreble).joinToString(" | ") { it.label })
 
 /** The window behind the line. [onChange] changes the settings in force; [onClose] closes it. */
 @Composable
@@ -72,6 +74,9 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
             Spacer(Modifier.height(4.dp))
             SwitchRow(t(K.settings_sixPoints), s.sixPoints, info = t(K.settings_note_sixPoints)) { on -> onChange { it.withSixPoints(on) } }
             Spacer(Modifier.height(8.dp))
+            // with the six points on, the six places themselves stand here, where the three regions stood (Peter, 9 Nov
+            // 2026: "it must be obvious for a tuner"): a switch alone left the table looking as it had
+            if (s.sixPoints) StretchPlaces(s, onChange) else {
             // a table: the columns say "octave type" and "width" once, each region is a row of its name
             // and its two controls (24 Oct 2026: the name of the width, said three times, left the width
             // itself no room, and "schwebungsfrei" was cut)
@@ -96,6 +101,7 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
                     { o -> onChange { it.copy(octaveMiddle = o) } }, { w -> onChange { it.copy(widthMiddle = w) } })
                 region(t(K.settings_page_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble,
                     { o -> onChange { it.copy(octaveTreble = o) } }, { w -> onChange { it.copy(widthTreble = w) } })
+            }
             }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -135,6 +141,86 @@ private fun region(
             onDecrease = { onWidth(tenths(maxOf(TunerSettings.MIN_WIDTH_CENTS, width - WIDTH_STEP))) },
             onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
         )
+    }
+}
+
+/**
+ * The six places of the six-point stretch, low to high, each with its octave type and extra stretch: the bass side and
+ * the temperament octave on the left, the treble on the right. The same table in the window behind the info line and in
+ * Settings, so there is one picture of them; [onChange] says which settings it changes.
+ */
+@Composable
+fun StretchPlaces(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings) -> Unit) {
+    val bass = TunerSettings.BASS_OCTAVES
+    val treble = TunerSettings.TREBLE_OCTAVES
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            placesHeading(bass)
+            place(noteName(s.lowestKeyMidi), bass, bass, s.octaveBass, s.widthBassFar ?: s.widthBass,
+                { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBassFar = w) } })
+            s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.forEach { pointRow(it, bass, onChange) }
+            place(noteName(s.temperamentLowMidi) + "–A4", TunerSettings.MIDDLE_OCTAVES, bass, s.octaveMiddle, s.widthMiddle,
+                { o -> onChange { it.copy(octaveMiddle = o) } }, { w -> onChange { it.copy(widthMiddle = w) } })
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            placesHeading(treble)
+            s.stretchPoints.filter { it.midi > TunerSettings.TEMPERAMENT_HIGH }.sortedBy { it.midi }.forEach { pointRow(it, treble, onChange) }
+            place("C8", treble, treble, s.octaveTreble, s.widthTrebleFar ?: s.widthTreble,
+                { o -> onChange { it.copy(octaveTreble = o) } }, { w -> onChange { it.copy(widthTrebleFar = w) } })
+        }
+    }
+}
+
+@Composable
+private fun pointRow(p: StretchPoint, offered: List<OctaveType>, onChange: ((TunerSettings) -> TunerSettings) -> Unit) {
+    place(noteName(p.midi), offered, offered, p.type, p.widthCents,
+        { o -> onChange { it.withPoint(p.copy(type = o)) } }, { w -> onChange { it.withPoint(p.copy(widthCents = w)) } })
+}
+
+/** The narrow stepper's width in the six places: room for "+3.5 c" and "−10.5 c". */
+private val PLACE_VALUE = 58.dp
+
+@Composable
+private fun placesHeading(column: List<OctaveType>) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.weight(1f))
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Choices(column.map { it.label }, -1) {} }
+            Text(t(K.settings_octaveType), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+        }
+        Spacer(Modifier.width(8.dp))
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Stepper("+3.5 c", true, true, {}, {}, valueMin = PLACE_VALUE) }
+            Text(t(K.settings_octaveWidth), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+        }
+    }
+}
+
+/** One place: its key, its octave type, its extra stretch. Nought is written as nought here: "none (pure)" is too wide for half a window. */
+@Composable
+private fun place(
+    name: String, octaves: List<OctaveType>, column: List<OctaveType>, type: OctaveType, width: Double,
+    onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(name, Modifier.weight(1f), color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Choices(column.map { it.label }, -1) {} }
+            Choices(octaves.map { it.label }, octaves.indexOf(type)) { onType(octaves[it]) }
+        }
+        Spacer(Modifier.width(8.dp))
+        // as wide as the heading's, laid out unseen beneath it, so that "0 c" leaves the column of octave types straight
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Stepper("+3.5 c", true, true, {}, {}, valueMin = PLACE_VALUE) }
+            Stepper(
+                if (width == 0.0) "0 c" else widthLabel(width),
+                canDecrease = width > TunerSettings.MIN_WIDTH_CENTS,
+                canIncrease = width < TunerSettings.MAX_WIDTH_CENTS,
+                onDecrease = { onWidth(tenths(maxOf(TunerSettings.MIN_WIDTH_CENTS, width - WIDTH_STEP))) },
+                onIncrease = { onWidth(tenths(minOf(TunerSettings.MAX_WIDTH_CENTS, width + WIDTH_STEP))) },
+                valueMin = PLACE_VALUE,
+            )
+        }
     }
 }
 

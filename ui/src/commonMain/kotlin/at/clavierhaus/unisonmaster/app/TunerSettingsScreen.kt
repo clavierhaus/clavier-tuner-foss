@@ -3,7 +3,13 @@ package at.clavierhaus.unisonmaster.app
 import at.clavierhaus.unisonmaster.ui.microphoneDeclaresUnprocessed
 import at.clavierhaus.unisonmaster.i18n.noteName
 import at.clavierhaus.unisonmaster.ui.num
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import at.clavierhaus.unisonmaster.Brand
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -28,6 +34,7 @@ import at.clavierhaus.unisonmaster.ui.SettingsScreen
 import at.clavierhaus.unisonmaster.ui.SettingsSection
 import at.clavierhaus.unisonmaster.ui.SettingsTab
 import at.clavierhaus.unisonmaster.ui.StepperRow
+import at.clavierhaus.unisonmaster.ui.TextBlock
 import at.clavierhaus.unisonmaster.ui.SwitchRow
 import kotlin.math.round
 
@@ -202,32 +209,55 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
 /** The Stretch tab: one page per region, named as the engine names them. */
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
     // each region offers only the octave types its strings sound (TunerSettings.BASS_OCTAVES, 30 Oct 2026)
+    // the choice comes first, and the explanation beside it (Peter, 9 Nov 2026: "offer this as a default alternative in
+    // settings with an explanation"; the switch had stood at the end of the Midrange page, and he could not find it)
+    val choice = SettingsPage(t(K.settings_page_stretchDefault),
+        left = {
+            SettingsSection(t(K.settings_stretchDefault))
+            ChoiceRow(t(K.settings_stretchPoints), listOf(t(K.settings_stretchThree), t(K.settings_stretchSix)), if (s.sixPoints) 1 else 0) { i ->
+                model.update { it.withSixPoints(i == 1) }
+            }
+            TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
+        },
+        right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
+    val breaks = breaksPage(s)
+    if (s.sixPoints) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }), breaks)
     return listOf(
+        choice,
         SettingsPage(t(K.settings_page_bass),
             left = { RegionLeft(t(K.settings_note_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
             right = { RegionRight(s.widthBass, s.widthBassFar, t(K.settings_theLowestKey)) { w -> model.update { it.copy(widthBassFar = w) } } }),
         SettingsPage(t(K.settings_page_middle),
-            left = { RegionLeft(t(K.settings_note_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) },
-            right = { SwitchRow(t(K.settings_sixPoints), s.sixPoints, info = t(K.settings_note_sixPoints)) { on -> model.update { it.withSixPoints(on) } } }),
+            left = { RegionLeft(t(K.settings_note_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle, { t -> model.update { it.copy(octaveMiddle = t) } }, { w -> model.update { it.copy(widthMiddle = w) } }) }),
         SettingsPage(t(K.settings_page_treble),
             left = { RegionLeft(t(K.settings_note_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
-        SettingsPage(t(K.settings_page_breaks),
-            left = {
-                SettingsSection(t(K.settings_curveBreaks), info = BREAKS_NOTE)
-                val breaks = s.curveBreaks.sorted()
-                if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
-                for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
-            },
-            right = {
-                val rest = s.curveBreaks.sorted().drop(5)
-                if (rest.isNotEmpty()) {
-                    SettingsSection("…")
-                    for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
-                }
-            }),
+        breaks,
     )
 }
+
+/** The page of the scale breaks, the same with either stretch. */
+private fun breaksPage(s: TunerSettings) = SettingsPage(t(K.settings_page_breaks),
+    left = {
+        SettingsSection(t(K.settings_curveBreaks), info = BREAKS_NOTE)
+        val breaks = s.curveBreaks.sorted()
+        if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
+        for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
+    },
+    right = {
+        val rest = s.curveBreaks.sorted().drop(5)
+        if (rest.isNotEmpty()) {
+            SettingsSection("…")
+            for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
+        }
+    })
+
+/**
+ * The Stretch tab's page for a note's [region] (0 bass, 1 middle, 2 treble; TunerSettings.regionOf): the tuning screen
+ * reaches it in one tap. The choice is the first page, so a region's page is one further on; with six points the three
+ * regions are the one page of places.
+ */
+fun stretchPageOf(region: Int, s: TunerSettings): Int = if (s.sixPoints) 1 else region + 1
 
 @Composable
 private fun RegionLeft(info: String, octaves: List<OctaveType>, type: OctaveType, width: Double, onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit) {

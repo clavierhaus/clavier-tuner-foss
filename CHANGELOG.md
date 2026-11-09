@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## 0.8.0 -- 2026-11-09
 
 ### 2026-11-09
+- **The six-point stretch is a choice you can see.** Settings › Stretch opens
+  with it: three points or six, said in words, for new tunings. With six on,
+  its six places stand in that window and behind the line on the tuning screen,
+  each with its octave type and extra stretch, where bass, midrange and treble
+  stood.
 - **New Tuning asks first when a tuning can still be continued.** It replaced
   the saved tuning without a word. Now it says which one and waits for a yes;
   with nothing saved it starts at once.

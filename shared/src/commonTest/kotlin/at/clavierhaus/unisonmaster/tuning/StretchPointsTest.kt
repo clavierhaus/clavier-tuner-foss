@@ -82,6 +82,15 @@ class StretchPointsTest {
         for (m in 21..108) assertEquals(plain.curveTargetF1(m), t.curveTargetF1(m), 1e-12, "key $m")
     }
 
+    /** The six rows change one place at a time (9 Nov 2026). */
+    @Test
+    fun onePlaceChangesAloneAndAKeyWithoutOneAddsNone() {
+        val edited = six.withPoint(StretchPoint(77, OctaveType.O4_1, 1.5))
+        assertEquals(StretchPoint(77, OctaveType.O4_1, 1.5), edited.stretchPoints.first { it.midi == 77 })
+        assertEquals(six.stretchPoints.filter { it.midi != 77 }, edited.stretchPoints.filter { it.midi != 77 })
+        assertEquals(six.stretchPoints, six.withPoint(StretchPoint(80, OctaveType.O4_1, 1.5)).stretchPoints)
+    }
+
     @Test
     fun offBringsBackTheDefaults() {
         assertEquals(TunerSettings(), six.withSixPoints(false))

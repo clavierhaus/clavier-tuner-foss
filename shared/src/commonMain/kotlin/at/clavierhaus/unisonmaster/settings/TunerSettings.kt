@@ -424,6 +424,9 @@ data class TunerSettings(
         widthBass = 0.0, widthBassFar = null, widthMiddle = 0.0, widthTreble = 0.0, widthTrebleFar = null, stretchPoints = emptyList(),
     )
 
+    /** These settings with the place at [point]'s key set to [point]; a key with no place adds none. */
+    fun withPoint(point: StretchPoint): TunerSettings = copy(stretchPoints = stretchPoints.map { if (it.midi == point.midi) point else it })
+
     /**
      * The octave width for [midi], cents, blended as the octave type is ([outerShare]): the middle's width next
      * to the temperament octave, the outer region's at the far end — its far width where one is set

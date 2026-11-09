@@ -3,7 +3,10 @@ package at.clavierhaus.unisonmaster
 import at.clavierhaus.unisonmaster.audio.AudioSource
 import at.clavierhaus.unisonmaster.persistence.SessionCodec
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
+import at.clavierhaus.unisonmaster.settings.MemoryStore
 import at.clavierhaus.unisonmaster.settings.OctaveType
+import at.clavierhaus.unisonmaster.settings.SettingsModel
+import at.clavierhaus.unisonmaster.settings.StrobeMode
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.tuning.measuredString
@@ -58,6 +61,24 @@ class TuningStretchTest {
         // what is not the stretch still reaches the tuning at once
         c.applySettings(defaults.copy(octaveTreble = OctaveType.O4_1, matchCents = 0.7))
         assertEquals(0.7, c.settings.value.matchCents)
+    }
+
+    /** What the strobe shows is the app's, not the tuning's: chosen during a tuning it takes effect at once (9 Nov 2026). */
+    @Test
+    fun aStrobeChosenDuringATuningTakesEffectAndTheStretchStaysTheTunings() {
+        val c = tuning()
+        val model = SettingsModel(MemoryStore())
+        model.update { defaults }
+        c.applySettings(model.settings.value)
+        assertEquals(StrobeMode.ALL, c.settings.value.strobeMode)
+        c.changeInForce(model) { it.copy(strobeMode = StrobeMode.ONE) }
+        c.applySettings(model.settings.value)                  // as the apps do on every change of the settings
+        assertEquals(StrobeMode.ONE, c.settings.value.strobeMode, "the strobe's button took effect during the tuning")
+        c.changeInForce(model) { it.copy(octaveTreble = OctaveType.O4_1) }
+        c.applySettings(model.settings.value)
+        assertEquals(OctaveType.O4_1, c.settings.value.octaveTreble, "the tuning has its change")
+        assertEquals(OctaveType.O3_1, model.settings.value.octaveTreble, "the default for the tunings to come has not moved")
+        assertEquals(StrobeMode.ONE, c.settings.value.strobeMode, "and the strobe stayed as chosen")
     }
 
     @Test

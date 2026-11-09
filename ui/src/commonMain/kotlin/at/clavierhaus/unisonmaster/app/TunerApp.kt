@@ -125,9 +125,7 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
     val controller = app.controller
     val settingsModel = app.settingsModel
     /** A change of the stretch from the hub: the tuning's own while one is under way, else the defaults (5 Nov 2026). */
-    val tuneOrDefault: ((TunerSettings) -> TunerSettings) -> Unit = { change ->
-        if (!controller.changeTuning(change)) settingsModel.update(change)
-    }
+    val tuneOrDefault: ((TunerSettings) -> TunerSettings) -> Unit = { change -> controller.changeInForce(settingsModel, change) }
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(Brand.ORANGE),
@@ -192,7 +190,7 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                         onSettings = { openSettings() },
                         onHome = { backToHub() },
                         onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
-                        onStretch = { region -> openSettings(1 to region) },
+                        onStretch = { region -> openSettings(1 to stretchPageOf(region, settingsModel.settings.value)) },
                         // the tuning's own stretch, saved with it; without a tuning, the defaults (5 Nov 2026)
                         onTemperamentLow = { low -> tuneOrDefault { it.copy(temperamentLowMidi = low) } },
                         onChangeSettings = { change -> tuneOrDefault(change) },

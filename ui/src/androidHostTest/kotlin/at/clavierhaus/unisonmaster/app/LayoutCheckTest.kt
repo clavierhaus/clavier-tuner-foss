@@ -200,10 +200,17 @@ class LayoutCheckTest {
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
         c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
         // settings, every page but Help's (Help scrolls by law)
-        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
+        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 1 to 4, 2 to 0, 4 to 0, 4 to 1)) {
             show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }
             look(where, dir, "09-settings-$tab-$page")
         }
+        // the Stretch tab with six points on: the choice, the six places, the breaks
+        model.update { it.withSixPoints(true) }
+        for (page in 0..2) {
+            show("settings six $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to page) }
+            look(where, dir, "09-settings-six-$page")
+        }
+        model.update { it.withSixPoints(false) }
         // the hub, with a tuning to continue
         show("hub") { TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {}) }
         look(where, dir, "01-hub")
@@ -212,6 +219,9 @@ class LayoutCheckTest {
         // with the way back, the fullest it gets
         show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}) }
         look(where, dir, "10-info", dialog = true)
+        // the same window with the six places in it, its fullest
+        show("info six") { TuningInfoDialog(model.settings.value.withSixPoints(true), { ch -> model.update(ch) }, {}, onStep = {}) }
+        look(where, dir, "10-info-six", dialog = true)
         // the question before a new tuning replaces the one saved
         c.snapshot()?.let { saved ->
             show("start over") { StartOverDialog(saved, {}, {}) }

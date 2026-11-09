@@ -11,6 +11,7 @@ import at.clavierhaus.unisonmaster.measure.FalseBeatTally
 import at.clavierhaus.unisonmaster.measure.PhaseReader
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
+import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.Stretch
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
@@ -192,6 +193,17 @@ class TuningController(
         inForce()
         onSessionChanged?.let { save -> snapshot()?.let(save) }
         return true
+    }
+
+    /**
+     * A change made on the tuning screen. What is the tuning's own, its stretch, goes to the tuning under way; the rest,
+     * what the strobe shows, is the app's and goes to [model], and from there into force like every setting. Without a
+     * tuning the whole change is the app's. From 5 Nov 2026 the rest was dropped during a tuning, so the strobe's buttons
+     * did nothing (Peter at the piano, 9 Nov 2026).
+     */
+    fun changeInForce(model: SettingsModel, change: (TunerSettings) -> TunerSettings) {
+        val tuning = changeTuning(change)
+        model.update { if (tuning) change(it).withStretch(it.stretch()) else change(it) }
     }
 
     /** Puts the defaults with the tuning's stretch over them in force, and re-targets the tuning. */
