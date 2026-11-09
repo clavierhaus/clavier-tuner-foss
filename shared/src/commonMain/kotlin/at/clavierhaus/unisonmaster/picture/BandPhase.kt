@@ -27,9 +27,10 @@ package at.clavierhaus.unisonmaster.picture
  * redrawn sixty times a second cannot show a beat near sixty hertz: one whole
  * period per frame looks like no motion at all, and between thirty and sixty it
  * looks backwards. At the top of the piano one cent is 1.5 to 2.5 Hz, so a string
- * a few tens of cents off lies there. On the 225 (session_20261109-190529) E7 was
- * tuned to where its band stopped, 60.6 Hz and 40 cents flat of its target. The
- * limit is on the picture only; the reading it comes from is not touched.
+ * a few tens of cents off lies there: the 225's E7 stood 60.6 Hz below its target
+ * in the recording session_20261109-190529, where a band is at rest. How it came to
+ * stand there the recording cannot show. The limit is on the picture only; the
+ * reading it comes from is not touched.
  */
 class BandPhase {
     private var lastMs: Long? = null

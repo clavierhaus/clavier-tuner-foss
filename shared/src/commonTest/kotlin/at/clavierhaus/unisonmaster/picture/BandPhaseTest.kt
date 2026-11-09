@@ -45,8 +45,8 @@ class BandPhaseTest {
 
     /**
      * A string 60 Hz off at 60 frames a second turned the band one whole period per frame, and on the screen it stood
-     * still: the 225's E7 on 9 Nov 2026 was tuned to where the band stopped, 60.6 Hz flat of its target. However far off
-     * the string, the band goes on moving, and the way the string lies.
+     * still (the 225's E7 stood 60.6 Hz below its target on 9 Nov 2026). However far off the string, the band goes on
+     * moving, and the way the string lies.
      */
     @Test
     fun aStringFarOffKeepsTheBandMovingTheWayTheStringLies() {
