@@ -212,6 +212,11 @@ class LayoutCheckTest {
         // with the way back, the fullest it gets
         show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}) }
         look(where, dir, "10-info", dialog = true)
+        // the question before a new tuning replaces the one saved
+        c.snapshot()?.let { saved ->
+            show("start over") { StartOverDialog(saved, {}, {}) }
+            look(where, dir, "11-start-over", dialog = true)
+        }
         problems.distinct().let { problems.clear(); problems.addAll(it) }
         if (problems.isNotEmpty()) fail("${problems.size} faults of the screen:\n" + problems.joinToString("\n"))
     }

@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## 0.8.0 -- 2026-11-09
 
 ### 2026-11-09
+- **New Tuning asks first when a tuning can still be continued.** It replaced
+  the saved tuning without a word. Now it says which one and waits for a yes;
+  with nothing saved it starts at once.
 - **You can go back before tuning, and nothing measured is lost.** A line at
   the top shows the steps, A4, Sampling, Tuning; tap an earlier one. A4 can be
   set to another pitch and the samples stay. From the tuning you can go back

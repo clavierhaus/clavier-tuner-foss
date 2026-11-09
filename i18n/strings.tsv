@@ -79,6 +79,9 @@ hub.new.verb	New	Neue
 hub.new.rest	 Tuning	 Stimmung
 hub.new.note	starting from A4	beginnt mit A4
 hub.new.rejected	the saved tuning could not be verified	die gespeicherte Stimmung ließ sich nicht prüfen
+hub.new.ask	Start a new tuning?	Neue Stimmung beginnen?
+hub.new.askNote	The tuning from {0}, A4 {1}, can then no longer be continued.	Die Stimmung vom {0}, A4 {1}, lässt sich dann nicht mehr fortsetzen.
+hub.new.askYes	Start new	Neu beginnen
 hub.unisons.lead	The	Die
 hub.unisons.verb	Unisons	Chöre
 hub.unisons.note	the strings of a note read apart, partial by partial	die Saiten eines Tons getrennt gelesen, Teilton für Teilton

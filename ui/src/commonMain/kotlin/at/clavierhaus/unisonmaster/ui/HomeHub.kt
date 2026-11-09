@@ -45,12 +45,16 @@ import at.clavierhaus.unisonmaster.Brand
  * Each app assembles its own hub from this: the entries are its own.
  */
 
-/** One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("My Pianos") — with an optional short note after a dot on the same line. */
+/**
+ * One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("My Pianos") — with an optional short note after a dot on the same line.
+ * [startsOver]: this door replaces the tuning that could be continued, and the hub asks first.
+ */
 data class HomeHubItem(
     val verb: String,
     val rest: String,
     val note: String? = null,
     val lead: String = "",
+    val startsOver: Boolean = false,
     val onClick: () -> Unit,
 )
 
