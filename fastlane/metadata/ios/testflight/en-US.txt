@@ -1,0 +1,16 @@
+0.8.0
+
+New
+- Every step before tuning says on the left what to do. 1 A4, 2 Sampling, 3 Tuning stand at the top: tap an earlier step to go back. Nothing you measured is lost. On the tuning screen, tap the line at the top, until the first note is tuned.
+- One strobe is the default. One strobe, Limit to N and All partials switch at any time, also during a tuning. If yours starts on All partials, tap One strobe once.
+- New Tuning asks before it replaces a saved tuning.
+- No piano size to set: the sampling is the measure.
+- Settings > Stretch: three points or six. With six on, its six places are shown, each with its octave type and extra stretch.
+
+Fixed
+- During a tuning the strobe could not be switched away from All partials.
+- In the top octave the strobe could stand still or run backwards while a string was far off.
+
+Please try
+- Go back from Sampling to A4 and forward again: are your samples still there?
+- Tune the temperament on One strobe: are the thirds and sixths even?

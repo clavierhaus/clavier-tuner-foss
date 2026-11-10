@@ -1,0 +1,16 @@
+0.8.0
+
+Neu
+- Jeder Schritt vor dem Stimmen sagt links, was zu tun ist. Oben stehen 1 A4, 2 Vermessen, 3 Stimmen: Tippen Sie auf einen früheren Schritt, um zurückzugehen. Nichts Gemessenes geht verloren. Im Stimmbildschirm tippen Sie auf die Zeile ganz oben, bis die erste Note gestimmt ist.
+- Ein Strobe ist voreingestellt. Ein Strobe, Nur N und Alle Teiltöne lassen sich jederzeit umschalten, auch während einer Stimmung. Steht Ihres auf Alle Teiltöne, tippen Sie einmal auf Ein Strobe.
+- Neue Stimmung fragt, bevor sie eine gespeicherte ersetzt.
+- Keine Klaviergröße mehr: Das Vermessen ist das Maß.
+- Einstellungen > Spreizung: drei Punkte oder sechs. Mit sechs stehen dort die sechs Stellen, jede mit ihrem Oktavtyp und ihrer zusätzlichen Spreizung.
+
+Behoben
+- Während einer Stimmung ließ sich der Strobe nicht von Alle Teiltöne wegschalten.
+- In der obersten Oktave konnten die Bänder stillstehen oder rückwärts laufen, während eine Saite weit daneben lag.
+
+Bitte probieren
+- Vom Vermessen zurück zu A4 und wieder vor: Sind Ihre Messpunkte noch da?
+- Stimmen Sie die Temperatur mit Ein Strobe: Sind Terzen und Sexten gleichmäßig?

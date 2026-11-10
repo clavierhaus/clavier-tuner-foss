@@ -11,7 +11,9 @@
 #   testflight: by hand only, and only when chosen in Run workflow -- the same app signed by Apple's
 #            automatic signing with the App Store Connect key and uploaded to TestFlight (8 Nov 2026, Peter:
 #            "let's work on getting it deployed on testflight"). Needs the repository's secrets APPLE_TEAM_ID,
-#            ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's text).
+#            ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's text). After the upload scripts/testflight.py
+#            writes What to Test from fastlane/metadata/ios/testflight/ and gives the build to the tester groups
+#            (10 Nov 2026). Started by scripts/release-ios.sh, after the yes on Android.
 #
 # Why by hand (Peter, 2 Nov 2026): "only when I decide that a new version needs to be churned out and
 # that will only happen after I test android". The same rule as Pro's, whose free allowance the two
@@ -32,8 +34,10 @@ on:
         type: boolean
         default: false
 
+# a push cancels an earlier push's run, never a run started by hand: a TestFlight upload must not be cut off by a
+# session pushing a text in the middle of it (10 Nov 2026)
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -148,7 +152,8 @@ jobs:
   testflight:
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
     runs-on: macos-latest
-    timeout-minutes: 60
+    # the archive, the upload and up to 45 minutes of Apple's processing before What to Test can be written
+    timeout-minutes: 110
     env:
       TEAM: ${{ secrets.APPLE_TEAM_ID }}
       KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -190,6 +195,7 @@ jobs:
           # a build number above Android's versionCode and above every earlier upload: 100 + this run's number
           BUILD=$((100 + ${{ github.run_number }}))
           echo "build $BUILD"
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
           xcodebuild -project ClavierTuner.xcodeproj -scheme ClavierTuner -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/ClavierTuner.xcarchive \
             -allowProvisioningUpdates -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
@@ -215,6 +221,13 @@ jobs:
             -exportPath build/export -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"
+      # what the testers read, and the build to them (Peter, 10 Nov 2026: "Could you do this as a release-ios.sh in foss
+      # as soon as new things happen?"); the notes' first line must be this version, or nothing is sent
+      - name: What to Test, and the build to the testers
+        run: |
+          python3 scripts/testflight.py --key "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" --key-id "$KEY_ID" --issuer "$ISSUER" \
+            --bundle-id at.clavierhaus.claviertuner --build "$BUILD" --notes fastlane/metadata/ios/testflight \
+            --version "$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"/\1/p' iosApp/project.yml)"
       - name: The key removed
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
