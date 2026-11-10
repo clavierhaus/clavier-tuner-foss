@@ -5,6 +5,9 @@
 #
 #   ./scripts/release-ios.sh          the checks, then one question
 #   ./scripts/release-ios.sh --yes    without the question: Peter's yes on Android is already given
+#   ./scripts/release-ios.sh --notes-for 175
+#                                     only the notes and the testers, for build 175 already on TestFlight; nothing
+#                                     is built (10 Nov 2026: 175 was uploaded and its notes refused)
 #
 # The order does not change: the iPhone is built after Android, never before. Android is built on the X1, Peter tests
 # it and says yes, and only then does this run, on the X1 or in a session on his word. What it does:
@@ -22,8 +25,15 @@ B=$'\033[1m'; X=$'\033[0m'
 ok()  { printf '  %sok%s %s\n' "$B" "$X" "$*"; }
 die() { printf '  %sx%s  %s\n' "$B" "$X" "$*" >&2; exit 1; }
 
-YES=0
-for a in "$@"; do case "$a" in --yes) YES=1 ;; *) die "unknown argument $a (only --yes)" ;; esac; done
+YES=0; NOTES_FOR=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --yes) YES=1 ;;
+    --notes-for) shift; NOTES_FOR="${1:-}"; [[ "$NOTES_FOR" =~ ^[0-9]+$ ]] || die "--notes-for takes a build number" ;;
+    *) die "unknown argument $1 (--yes, --notes-for <build>)" ;;
+  esac
+  shift
+done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 cd "$ROOT"
@@ -51,6 +61,9 @@ gh api "repos/$REPO" --jq .full_name >/dev/null 2>&1 || die "gh cannot reach $RE
 HEAD="$(git rev-parse HEAD)"
 ok "$VERSION, $(git rev-parse --short HEAD), notes: $(cd "$NOTES" && ls *.txt | sed 's/\.txt$//' | paste -sd' ')"
 
+if [ -n "$NOTES_FOR" ]; then
+  YES=1    # the build is already on TestFlight: nothing new goes to Apple but its notes
+fi
 if [ "$YES" -ne 1 ]; then
   printf '  Send %s to TestFlight? Only after the yes on Android. [y/N] ' "$VERSION"
   read -r answer
@@ -59,7 +72,11 @@ fi
 
 # 2. the run
 SINCE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-gh workflow run build.yml -R "$REPO" --ref main -f testflight=true >/dev/null
+if [ -n "$NOTES_FOR" ]; then
+  gh workflow run build.yml -R "$REPO" --ref main -f notes_for_build="$NOTES_FOR" >/dev/null
+else
+  gh workflow run build.yml -R "$REPO" --ref main -f testflight=true >/dev/null
+fi
 RUN=""
 for _ in $(seq 1 30); do
   RUN="$(gh run list -R "$REPO" --workflow build.yml --event workflow_dispatch --limit 5 \
@@ -69,7 +86,13 @@ for _ in $(seq 1 30); do
 done
 [ -n "$RUN" ] || die "the run did not appear on GitHub within two minutes"
 NUMBER="$(gh run view "$RUN" -R "$REPO" --json number --jq .number)"
-ok "run $RUN started: build $((100 + NUMBER)), about 40 minutes with Apple's processing"
+if [ -n "$NOTES_FOR" ]; then
+  BUILD="$NOTES_FOR"; JOB=testflight-notes
+  ok "run $RUN started: the notes and the testers for build $BUILD, a few minutes"
+else
+  BUILD=$((100 + NUMBER)); JOB=testflight
+  ok "run $RUN started: build $BUILD, about 40 minutes with Apple's processing"
+fi
 
 # 4. followed to its end: a line when a job changes, and a line for each step of the TestFlight job, so the screen
 # moves every few minutes (Peter, 10 Nov 2026: "CLI is static", twenty minutes without a line)
@@ -77,13 +100,13 @@ seen=""; step=""
 while :; do
   state="$(gh run view "$RUN" -R "$REPO" --json status,conclusion,jobs \
     --jq '[.status, (.conclusion // ""), (.jobs | map(.name + ":" + (if .status == "completed" then .conclusion else .status end)) | join(" ")),
-           ((.jobs[] | select(.name == "testflight") | .steps | map(select(.status == "in_progress")) | .[0].name) // "")] | join("|")' 2>/dev/null || true)"
+           ((.jobs[] | select(.name == "'"$JOB"'") | .steps | map(select(.status == "in_progress")) | .[0].name) // "")] | join("|")' 2>/dev/null || true)"
   if [ -n "$state" ] && [ "$(echo "$state" | cut -d'|' -f1-3)" != "$(echo "$seen" | cut -d'|' -f1-3)" ]; then
     printf '  .. %s\n' "$(echo "$state" | cut -d'|' -f3)"
   fi
   now="$(echo "$state" | cut -d'|' -f4)"
   if [ -n "$now" ] && [ "$now" != "$step" ]; then
-    printf '  .. %s  testflight: %s\n' "$(date +%H:%M)" "$now"
+    printf '  .. %s  %s: %s\n' "$(date +%H:%M)" "$JOB" "$now"
     step="$now"
   fi
   [ -n "$state" ] && seen="$state"
@@ -91,7 +114,7 @@ while :; do
   sleep 30
 done
 if [ "$(echo "$seen" | cut -d'|' -f2)" = "success" ]; then
-  ok "$VERSION build $((100 + NUMBER)) on TestFlight, What to Test written, given to the testers"
+  ok "$VERSION build $BUILD on TestFlight, What to Test written, given to the testers"
 else
   die "run $RUN: $(echo "$seen" | cut -d'|' -f2); what failed: gh run view $RUN -R $REPO --log-failed"
 fi

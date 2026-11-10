@@ -33,6 +33,10 @@ on:
         description: "Also sign the iPhone app and upload it to TestFlight"
         type: boolean
         default: false
+      notes_for_build:
+        description: "Only the notes and the testers, for a build already on TestFlight (its number); nothing is built"
+        type: string
+        default: ""
 
 # a push cancels an earlier push's run, never a run started by hand: a TestFlight upload must not be cut off by a
 # session pushing a text in the middle of it (10 Nov 2026)
@@ -42,6 +46,7 @@ concurrency:
 
 jobs:
   android:
+    if: github.event_name != 'workflow_dispatch' || inputs.notes_for_build == ''
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -74,7 +79,7 @@ jobs:
             ui/build/reports/tests
 
   ios:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.notes_for_build == ''
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -106,7 +111,7 @@ jobs:
             ui/build/reports/tests
 
   ipa:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.notes_for_build == ''
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -150,7 +155,7 @@ jobs:
           retention-days: 14
 
   testflight:
-    if: github.event_name == 'workflow_dispatch' && inputs.testflight
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight && inputs.notes_for_build == ''
     runs-on: macos-latest
     # the archive, the upload and up to 45 minutes of Apple's processing before What to Test can be written
     timeout-minutes: 110
@@ -227,6 +232,32 @@ jobs:
         run: |
           python3 scripts/testflight.py --key "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" --key-id "$KEY_ID" --issuer "$ISSUER" \
             --bundle-id at.clavierhaus.claviertuner --build "$BUILD" --notes fastlane/metadata/ios/testflight \
+            --version "$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"/\1/p' iosApp/project.yml)"
+      - name: The key removed
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
+
+  # What to Test and the testers for a build already uploaded, without building it again (10 Nov 2026: build 175 was
+  # uploaded and processed, and its notes were refused for a wrong attribute name); on Linux, no Mac minutes
+  testflight-notes:
+    if: github.event_name == 'workflow_dispatch' && inputs.notes_for_build != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+      BUILD: ${{ inputs.notes_for_build }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The App Store Connect key, for this run only
+        run: |
+          test -n "$KEY_ID" && test -n "$ISSUER" && test -n "${{ secrets.ASC_KEY_P8 }}" || { echo "missing App Store Connect secret"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+      - name: What to Test, and the build to the testers
+        run: |
+          python3 scripts/testflight.py --key "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" --key-id "$KEY_ID" --issuer "$ISSUER" \
+            --bundle-id at.clavierhaus.claviertuner --build "$BUILD" --notes fastlane/metadata/ios/testflight --wait 10 \
             --version "$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"/\1/p' iosApp/project.yml)"
       - name: The key removed
         if: always()

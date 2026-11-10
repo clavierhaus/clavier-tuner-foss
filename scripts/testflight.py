@@ -8,7 +8,8 @@ tooling, as release.sh is. In order:
   1. waits until App Store Connect has processed the build just uploaded (its version and build number), up to
      --wait minutes; a build Apple refuses (FAILED, INVALID) stops here;
   2. writes What to Test from <notes>/<locale>.txt for every such file (en-US is required); the file's first line must be
-     the version, so notes left from an earlier version are refused rather than shown;
+     the version, so notes left from an earlier version are refused rather than shown. The API names the field
+     whatsNew, though TestFlight shows it as What to Test: "whatToTest" was refused with 409 on build 175, 10 Nov 2026;
   3. gives the build to every beta group that does not take every build by itself, and submits it to Beta App Review
      when an external group is among them and it has not been submitted yet.
 
@@ -28,6 +29,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+# lines in the order they happen, also when the log is a pipe (10 Nov 2026: the refusal stood above "processed")
+sys.stdout.reconfigure(line_buffering=True)
 
 API = os.environ.get("ASC_API", "https://api.appstoreconnect.apple.com")
 WHAT_TO_TEST_MAX = 4000
@@ -159,10 +163,10 @@ def main():
     for locale, text in texts.items():
         if locale in have:
             asc.ok("PATCH", f"/v1/betaBuildLocalizations/{have[locale]}",
-                   data={"data": {"type": "betaBuildLocalizations", "id": have[locale], "attributes": {"whatToTest": text}}})
+                   data={"data": {"type": "betaBuildLocalizations", "id": have[locale], "attributes": {"whatsNew": text}}})
         else:
             asc.ok("POST", "/v1/betaBuildLocalizations",
-                   data={"data": {"type": "betaBuildLocalizations", "attributes": {"locale": locale, "whatToTest": text},
+                   data={"data": {"type": "betaBuildLocalizations", "attributes": {"locale": locale, "whatsNew": text},
                                   "relationships": {"build": {"data": {"type": "builds", "id": build}}}}})
         print(f"  ok What to Test, {locale}")
 
