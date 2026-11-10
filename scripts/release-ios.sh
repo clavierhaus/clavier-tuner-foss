@@ -71,15 +71,22 @@ done
 NUMBER="$(gh run view "$RUN" -R "$REPO" --json number --jq .number)"
 ok "run $RUN started: build $((100 + NUMBER)), about 40 minutes with Apple's processing"
 
-# 4. followed to its end, one line per job when it changes
-seen=""
+# 4. followed to its end: a line when a job changes, and a line for each step of the TestFlight job, so the screen
+# moves every few minutes (Peter, 10 Nov 2026: "CLI is static", twenty minutes without a line)
+seen=""; step=""
 while :; do
   state="$(gh run view "$RUN" -R "$REPO" --json status,conclusion,jobs \
-    --jq '[.status, (.conclusion // ""), (.jobs | map(.name + ":" + (if .status == "completed" then .conclusion else .status end)) | join(" "))] | join("|")' 2>/dev/null || true)"
-  if [ -n "$state" ] && [ "$state" != "$seen" ]; then
+    --jq '[.status, (.conclusion // ""), (.jobs | map(.name + ":" + (if .status == "completed" then .conclusion else .status end)) | join(" ")),
+           ((.jobs[] | select(.name == "testflight") | .steps | map(select(.status == "in_progress")) | .[0].name) // "")] | join("|")' 2>/dev/null || true)"
+  if [ -n "$state" ] && [ "$(echo "$state" | cut -d'|' -f1-3)" != "$(echo "$seen" | cut -d'|' -f1-3)" ]; then
     printf '  .. %s\n' "$(echo "$state" | cut -d'|' -f3)"
-    seen="$state"
   fi
+  now="$(echo "$state" | cut -d'|' -f4)"
+  if [ -n "$now" ] && [ "$now" != "$step" ]; then
+    printf '  .. %s  testflight: %s\n' "$(date +%H:%M)" "$now"
+    step="$now"
+  fi
+  [ -n "$state" ] && seen="$state"
   [ "$(echo "$state" | cut -d'|' -f1)" = "completed" ] && break
   sleep 30
 done
