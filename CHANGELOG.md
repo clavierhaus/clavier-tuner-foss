@@ -5,6 +5,31 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
+## 0.9.0 -- 2026-11-10
+
+### 2026-11-10
+- **False Beats: single strings checked one at a time** (Peter: "a separate
+  tuning mode that is not sampling, but doing nothing else but measuring a
+  single string and identify false beats"). A door on the home screen, and
+  Check string on the tuning screen for the key in hand. One string alone, the
+  others muted, struck once and left to ring. The engine's own one-strike check
+  (`StringCheck`): the key named by the key identifier, the string measured as
+  sampling measures it, every partial read by `CleanReading`, and a false beat
+  claimed by `FalseBeatTally` over separate two-second stretches of the strike.
+  A partial is judged only when a beat was measured on it in three of them,
+  which takes a strike read past about six seconds; a strike that judged none
+  is "too short to judge", never "clean". The strike that ends one check opens
+  the next, so a tuner can go string by string without waiting for silence.
+- **The tuner takes a beating partial out of the reading.** Tapped in the
+  check: grey on the tuning screen for that key, no band, not read, and the
+  reading moves to the lowest partial left when it was the listened one. The
+  targets do not move. Discard takes the key's checks and exclusions back. Both
+  are kept with the saved tuning.
+- **No false-beat claim while sampling or tuning.** The colour and the claim
+  made from the tuning's own strikes are gone (`FALSE_MARKS_ON_TUNING`); the
+  check of the single string replaces them. The reference string tuned alone is
+  still claimed by the tally, as before.
+
 ## 0.8.0 -- 2026-11-09
 
 ### 2026-11-09

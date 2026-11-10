@@ -85,6 +85,9 @@ hub.new.askYes	Start new	Neu beginnen
 hub.unisons.lead	The	Die
 hub.unisons.verb	Unisons	Chöre
 hub.unisons.note	the strings of a note read apart, partial by partial	die Saiten eines Tons getrennt gelesen, Teilton für Teilton
+hub.falseBeats.verb	False	Unreine
+hub.falseBeats.rest	 Beats	 Saiten
+hub.falseBeats.note	single strings, one at a time	Einzelsaiten, eine nach der anderen
 hub.dateFormat	d MMM	d. MMM
 hub.fundamentalA4	Fundamental A4	Grundton A4
 hub.fullSpectrum	Full Spectrum	Alle Teiltöne
@@ -99,6 +102,31 @@ sampling.order.strings	Strike single strings, the others muted. Any keys up to G
 sampling.order.count	{0} notes are the minimum; 10–15 spread up to G6 give the best accuracy.	{0} Töne sind das Minimum; 10–15 bis G6 verteilt ergeben die beste Genauigkeit.
 sampling.order.accept	Let each string ring until measured, then Accept.	Klingen lassen bis „gemessen“, dann Übernehmen.
 app.cancel	Cancel	Abbrechen
+check.title	False beats · single strings	Unreine Saiten · Einzelsaiten
+check.orders	One string alone: mute the other strings of the key. Strike once and let it ring out.	Eine Saite allein: die anderen Saiten der Taste abdämpfen. Einmal anschlagen und ausklingen lassen.
+check.what	A false beat is a string beating by itself.	Eine unreine Saite schwebt in sich.
+check.place	String, if you like:	Saite, nach Wunsch:
+check.left	L	L
+check.centre	C	M
+check.right	R	R
+check.waiting	Strike the string.	Die Saite anschlagen.
+check.ringing	{0} s · let it ring	{0} s · ausklingen lassen
+check.ringingKey	{0} · {1} s · let it ring	{0} · {1} s · ausklingen lassen
+check.unnamed	The key was not recognised. Strike again.	Taste nicht erkannt. Nochmals anschlagen.
+check.clean	{0}: no false beat found	{0}: keine Schwebung in sich gefunden
+check.false	{0}: false beat	{0}: unrein
+check.short	{0}: too short to judge, let it ring	{0}: zu kurz für ein Urteil, ausklingen lassen
+check.judged	judged: partials {0}	beurteilt: Teiltöne {0}
+check.brief	heard too briefly to judge: {0}	zu kurz gehört für ein Urteil: {0}
+check.earlier	{0}: checked before	{0}: schon geprüft
+check.takeOut	Tap a partial to take it out of the reading:	Antippen nimmt den Teilton aus der Anzeige:
+check.partialRate	{0} · {1} Hz	{0} · {1} Hz
+check.discard	Discard {0}	{0} verwerfen
+check.summary	Checked: {0} · false beats: {1}	Geprüft: {0} · unrein: {1}
+check.summaryClean	Checked: {0} · no false beat	Geprüft: {0} · alle rein
+check.forTuning	For the tuning from {0}, A4 {1}	Für die Stimmung vom {0}, A4 {1}
+check.forNext	For the next tuning	Für die nächste Stimmung
+tuning.check	Check string	Saite prüfen
 tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
 tuning.info	A4 = {0} · equal temperament {1}–A4 · octaves {2}	A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}

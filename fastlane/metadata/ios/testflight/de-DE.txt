@@ -1,16 +1,13 @@
-0.8.0
+0.9.0
 
 Neu
-- Jeder Schritt vor dem Stimmen sagt links, was zu tun ist. Oben stehen 1 A4, 2 Vermessen, 3 Stimmen: Tippen Sie auf einen früheren Schritt, um zurückzugehen. Nichts Gemessenes geht verloren. Im Stimmbildschirm tippen Sie auf die Zeile ganz oben, bis die erste Note gestimmt ist.
-- Ein Strobe ist voreingestellt. Ein Strobe, Nur N und Alle Teiltöne lassen sich jederzeit umschalten, auch während einer Stimmung. Steht Ihres auf Alle Teiltöne, tippen Sie einmal auf Ein Strobe.
-- Neue Stimmung fragt, bevor sie eine gespeicherte ersetzt.
-- Keine Klaviergröße mehr: Das Vermessen ist das Maß.
-- Einstellungen > Spreizung: drei Punkte oder sechs. Mit sechs stehen dort die sechs Stellen, jede mit ihrem Oktavtyp und ihrer zusätzlichen Spreizung.
+- Unreine Saiten, auf dem Startbildschirm: Einzelsaiten, eine nach der anderen. Die anderen Saiten der Taste abdämpfen, einmal anschlagen und ausklingen lassen. Die App nennt die Taste, die Teiltöne, die sie lang genug gehört hat, um sie zu beurteilen, und die, die in sich schweben, mit ihrer Schwebung. L, M oder R nach Wunsch. Lassen Sie jede Saite etwa acht Sekunden klingen: Ein kürzerer Anschlag ist zu kurz für ein Urteil.
+- Tippen Sie auf einen schwebenden Teilton, um ihn aus der Anzeige zu nehmen: Im Stimmbildschirm ist er für diese Taste grau, hat kein Band und wird nicht gelesen. Verwerfen holt ihn zurück.
+- Saite prüfen, im Stimmbildschirm: dieselbe Prüfung für die Taste, die Sie gerade stimmen.
 
-Behoben
-- Während einer Stimmung ließ sich der Strobe nicht von Alle Teiltöne wegschalten.
-- In der obersten Oktave konnten die Bänder stillstehen oder rückwärts laufen, während eine Saite weit daneben lag.
+Geändert
+- Keine violetten Teiltöne mehr beim Stimmen.
 
 Bitte probieren
-- Vom Vermessen zurück zu A4 und wieder vor: Sind Ihre Messpunkte noch da?
-- Stimmen Sie die Temperatur mit Ein Strobe: Sind Terzen und Sexten gleichmäßig?
+- Prüfen Sie einige Saiten, die Sie als unrein kennen, und einige reine. Stimmt die App zu?
+- Nehmen Sie einen schwebenden Teilton heraus und stimmen Sie dann diese Taste: Steht der Strobe ruhiger?

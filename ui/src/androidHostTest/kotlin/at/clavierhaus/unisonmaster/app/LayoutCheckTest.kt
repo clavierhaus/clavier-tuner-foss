@@ -1,5 +1,11 @@
 package at.clavierhaus.unisonmaster.app
 
+import at.clavierhaus.unisonmaster.measure.FalseBeat
+import at.clavierhaus.unisonmaster.ui.HomeHubItem
+import at.clavierhaus.unisonmaster.measure.StringCheck
+import at.clavierhaus.unisonmaster.tuning.CheckedString
+import at.clavierhaus.unisonmaster.tuning.FalseStrings
+import at.clavierhaus.unisonmaster.tuning.StringPlace
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -212,8 +218,16 @@ class LayoutCheckTest {
         }
         model.update { it.withSixPoints(false) }
         // the hub, with a tuning to continue
-        show("hub") { TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {}) }
+        show("hub") { TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {}, onFalseBeats = {}) }
         look(where, dir, "01-hub")
+        // the hub with seven doors, as an edition may have: an edition's doors are its own words, so these stand in at
+        // the length of the longest (10 Nov 2026, False Beats made the seventh)
+        val door = { lead: String, verb: String -> HomeHubItem(verb, "", "a note thirty-seven letters long, here", lead = lead) {} }
+        show("hub seven") {
+            TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {},
+                onFalseBeats = {}, extra = listOf(door("", "Fourth door"), door("", "The fifth door"), door("Meine", "Klaviere"), door("", "Seventh")))
+        }
+        look(where, dir, "01-hub-seven")
         // the window behind the info line
         rule.mainClock.autoAdvance = true          // nothing moves behind a dialog, and its window draws only on a running clock
         // with the way back, the fullest it gets
@@ -227,6 +241,31 @@ class LayoutCheckTest {
             show("start over") { StartOverDialog(saved, {}, {}) }
             look(where, dir, "11-start-over", dialog = true)
         }
+        // the false-beat check of single strings (10 Nov 2026): A3 centre string struck, then D5 centre, as the page and the
+        // tuning screen's window show it; then both at their fullest, a strike cut short with five partials claimed, four heard too briefly,
+        // and forty keys on the list
+        val forWhat = checksFor(c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None)
+        c.startCheck()
+        c.hear(src, strike(recordings, "A3-C-s1", -0.5, 4.0) + strike(recordings, "D5-C-s1", -0.5, 1.0))
+        show("check") { Box(Modifier.fillMaxSize()) { StringCheckPage(c, forWhat, {}, {}) } }
+        look(where, dir, "12-check")
+        show("check window") { StringCheckDialog(c, 57) {} }
+        look(where, dir, "12-check-window", dialog = true)
+        c.stopCheck()
+        val fullest = StringCheck.State(StringCheck.Phase.DONE, 61, 277.2, 3.1e-4,
+            (1..12).map { k -> StringCheck.Verdict(k, true, if (k <= 8) 4 else 1, -60.0 - 3 * k, k in 2..6, if (k in 2..6) 0.5 + 0.17 * k else null, if (k in 2..6) 6.0 else null) },
+            seconds = 14.0, cut = true)
+        val many = (40..79).fold(FalseStrings()) { f, m -> f.with(CheckedString(m, StringPlace.C, 1L, listOf(FalseBeat(3, 0.7, 5.0)))) }
+            .with(CheckedString(61, StringPlace.C, 2L, fullest.falseBeats)).exclude(61, 3, true).exclude(61, 5, true)
+        val last = TuningController.CheckResult(fullest, 2L, StringPlace.C)
+        val ringing = StringCheck.State(StringCheck.Phase.LISTENING, 61, seconds = 12.0)
+        val fullPanel: @Composable (Modifier, (@Composable () -> Unit)?) -> Unit = { m, top ->
+            StringCheckPanel(ringing, last, many, 61, StringPlace.C, { }, { _, _, _ -> }, { }, forWhat, m, top)
+        }
+        show("check fullest") { Box(Modifier.fillMaxSize()) { StringCheckFrame({}, {}) { m -> fullPanel(m, null) } } }
+        look(where, dir, "12-check-fullest")
+        show("check window fullest") { StringCheckDialogFrame({}) { m, top -> fullPanel(m, top) } }
+        look(where, dir, "12-check-window-fullest", dialog = true)
         problems.distinct().let { problems.clear(); problems.addAll(it) }
         if (problems.isNotEmpty()) fail("${problems.size} faults of the screen:\n" + problems.joinToString("\n"))
     }

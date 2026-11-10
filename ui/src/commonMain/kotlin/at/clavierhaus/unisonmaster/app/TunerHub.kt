@@ -32,7 +32,8 @@ import at.clavierhaus.unisonmaster.ui.formatHz
  * The hub both editions open on (one tuner, two editions, 4 Oct 2026). What
  * it puts on the screen is the saved tuning's own two numbers — the day it
  * was last used and its A4, read back from the sealed session — and the
- * doors: *Continue Tuning* while one is saved, *New Tuning*, an edition's own
+ * doors: *Continue Tuning* while one is saved, *New Tuning*, *False Beats*
+ * ([onFalseBeats]: single strings checked one at a time, 10 Nov 2026), an edition's own
  * doors ([extra] — Pro's *My Pianos* / *My Customers*), and where the
  * edition has them *The Unisons* ([onUnisons]; Pro's — Peter, 4 Oct 2026,
  * "a USP for Pro only"). The recorder's door went with the recorder to Pro on
@@ -47,6 +48,8 @@ fun TunerHub(
     onNew: () -> Unit,
     onUnisons: (() -> Unit)? = null,
     onSettings: () -> Unit,
+    /** The false-beat check of single strings; null where an app has no door to it. */
+    onFalseBeats: (() -> Unit)? = null,
     extra: List<HomeHubItem> = emptyList(),
 ) {
     val saved = (last as? SessionStore.Load.Ok)?.snapshot
@@ -65,6 +68,7 @@ fun TunerHub(
                 onClick = afterAsking(onNew),
             ),
         )
+        if (onFalseBeats != null) add(HomeHubItem(t(K.hub_falseBeats_verb), t(K.hub_falseBeats_rest), t(K.hub_falseBeats_note), onClick = onFalseBeats))
         addAll(extra.map { if (it.startsOver) it.copy(onClick = afterAsking(it.onClick)) else it })
         if (onUnisons != null) add(HomeHubItem(t(K.hub_unisons_verb), "", t(K.hub_unisons_note), lead = t(K.hub_unisons_lead), onClick = onUnisons))
     }
@@ -92,5 +96,9 @@ fun StartOverDialog(saved: SessionSnapshot, onStart: () -> Unit, onKeep: () -> U
 }
 
 /** "15 Sep", "15. Sep." — the day the saved tuning was last used, in the language in force. */
-private fun lastUsed(ms: Long): String =
+internal fun lastUsed(ms: Long): String =
     at.clavierhaus.unisonmaster.ui.formatDate(ms, t(K.hub_dateFormat), at.clavierhaus.unisonmaster.i18n.Strings.language.value)
+
+/** Which tuning the single strings checked go with: the one saved, or the next one begun (StringCheckPage). */
+fun checksFor(last: SessionStore.Load): String =
+    (last as? SessionStore.Load.Ok)?.snapshot?.let { t(K.check_forTuning, lastUsed(it.savedAtMs), formatHz(it.a4Hz)) } ?: t(K.check_forNext)

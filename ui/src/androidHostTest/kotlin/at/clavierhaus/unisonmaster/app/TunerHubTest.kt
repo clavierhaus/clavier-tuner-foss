@@ -62,6 +62,18 @@ class TunerHubTest {
         assertEquals(1, started)
     }
 
+    /** False Beats (10 Nov 2026) checks strings for the tuning saved and replaces nothing: it opens without a question. */
+    @Test fun theFalseBeatsDoorOpensWithoutAsking() {
+        var checks = 0
+        Strings.use("en")
+        rule.setContent { TunerHub(last = saved, onContinue = {}, onNew = { started++ }, onSettings = {}, onFalseBeats = { checks++ }) }
+        rule.waitForIdle()
+        tap("False Beats")
+        assertFalse(asked())
+        assertEquals(1, checks)
+        assertEquals(0, started)
+    }
+
     @Test fun anEditionsOwnDoorAsksOnlyIfItStartsOver() {
         var own = 0
         var other = 0

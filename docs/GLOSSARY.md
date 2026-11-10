@@ -51,7 +51,7 @@ German pass; a word marked ? is a proposal.
 | coincident partials | koinzidierende Teiltöne ? | R | the pair an interval is tuned by |
 | inharmonicity; inharmonicity constant (B) | Inharmonizität; Inharmonizitätskonstante | R, TL | |
 | beats, beats per second; beatless | Schwebungen; schwebungsfrei | R | |
-| false beat, false-beating string | unsaubere Saite (the string); Schwebung der Saite in sich | R "false beats", PTG "false string" | a string that beats alone |
+| false beat, false-beating string | unreine Saite (the string; Peter, 10 Nov 2026: "Unreine Saiten is the correct term", where *unsaubere* stood); Schwebung der Saite in sich | R "false beats", PTG "false string" | a string that beats alone; said of one string, never of a note's strings together |
 | wild string | — | PTG usage | a string whose false beat is bad enough to be a defect |
 | unison; monochord / bichord / trichord unison | Chor; einchörig / zweichörig / dreichörig | R | "three-string unison" in prose is fine; the field says trichord |
 | temperament; temperament octave; equal temperament (ET) | Temperatur; Temperaturoktave; gleichstufige Stimmung | R | |
@@ -134,3 +134,17 @@ column wherever an earlier row carries a "?" for the same thing.
 | Accept / Cancel | *Übernehmen* / *Abbrechen* | §6 |
 | Progress | *Fortschritt* | §5 |
 
+## 8. 10 November 2026 — the check of single strings
+
+Peter: "We should make it clear in wording that this is strictly about single strings only. False beat and unreine
+Saite." Every word of the check names one string, alone, the others muted.
+
+| Word | German | Where |
+|---|---|---|
+| False Beats (the home screen's door) | *Unreine Saiten* | the check of single strings, one at a time |
+| False beats · single strings | *Unreine Saiten · Einzelsaiten* | the check's heading |
+| Check string | *Saite prüfen* | the tuning screen's button: one string of the key on screen |
+| take out of the reading (a partial) | *aus der Anzeige nehmen* | the tuner's choice; the partial is grey on the tuning screen and not read |
+| judged (a partial) | *beurteilt* | heard long enough that a false beat on it would have been claimed |
+| no false beat found / too short to judge | *keine Schwebung in sich gefunden* / *zu kurz für ein Urteil* | never "clean": one strike says only what it judged |
+| L, C, R (which string, if the tuner says) | *L, M, R* | never required |

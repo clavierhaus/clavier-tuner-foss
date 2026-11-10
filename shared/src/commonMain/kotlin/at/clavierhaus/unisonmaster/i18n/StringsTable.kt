@@ -85,6 +85,9 @@ object K {
     const val hub_unisons_lead = "hub.unisons.lead"
     const val hub_unisons_verb = "hub.unisons.verb"
     const val hub_unisons_note = "hub.unisons.note"
+    const val hub_falseBeats_verb = "hub.falseBeats.verb"
+    const val hub_falseBeats_rest = "hub.falseBeats.rest"
+    const val hub_falseBeats_note = "hub.falseBeats.note"
     const val hub_dateFormat = "hub.dateFormat"
     const val hub_fundamentalA4 = "hub.fundamentalA4"
     const val hub_fullSpectrum = "hub.fullSpectrum"
@@ -99,6 +102,31 @@ object K {
     const val sampling_order_count = "sampling.order.count"
     const val sampling_order_accept = "sampling.order.accept"
     const val app_cancel = "app.cancel"
+    const val check_title = "check.title"
+    const val check_orders = "check.orders"
+    const val check_what = "check.what"
+    const val check_place = "check.place"
+    const val check_left = "check.left"
+    const val check_centre = "check.centre"
+    const val check_right = "check.right"
+    const val check_waiting = "check.waiting"
+    const val check_ringing = "check.ringing"
+    const val check_ringingKey = "check.ringingKey"
+    const val check_unnamed = "check.unnamed"
+    const val check_clean = "check.clean"
+    const val check_false = "check.false"
+    const val check_short = "check.short"
+    const val check_judged = "check.judged"
+    const val check_brief = "check.brief"
+    const val check_earlier = "check.earlier"
+    const val check_takeOut = "check.takeOut"
+    const val check_partialRate = "check.partialRate"
+    const val check_discard = "check.discard"
+    const val check_summary = "check.summary"
+    const val check_summaryClean = "check.summaryClean"
+    const val check_forTuning = "check.forTuning"
+    const val check_forNext = "check.forNext"
+    const val tuning_check = "tuning.check"
     const val tuning_partialsUsed = "tuning.partialsUsed"
     const val tuning_partialOne = "tuning.partialOne"
     const val tuning_info = "tuning.info"
@@ -301,6 +329,9 @@ internal object StringsTable : Catalog {
         "hub.unisons.lead" to arrayOf("The", "Die"),
         "hub.unisons.verb" to arrayOf("Unisons", "Chöre"),
         "hub.unisons.note" to arrayOf("the strings of a note read apart, partial by partial", "die Saiten eines Tons getrennt gelesen, Teilton für Teilton"),
+        "hub.falseBeats.verb" to arrayOf("False", "Unreine"),
+        "hub.falseBeats.rest" to arrayOf(" Beats", " Saiten"),
+        "hub.falseBeats.note" to arrayOf("single strings, one at a time", "Einzelsaiten, eine nach der anderen"),
         "hub.dateFormat" to arrayOf("d MMM", "d. MMM"),
         "hub.fundamentalA4" to arrayOf("Fundamental A4", "Grundton A4"),
         "hub.fullSpectrum" to arrayOf("Full Spectrum", "Alle Teiltöne"),
@@ -315,6 +346,31 @@ internal object StringsTable : Catalog {
         "sampling.order.count" to arrayOf("{0} notes are the minimum; 10–15 spread up to G6 give the best accuracy.", "{0} Töne sind das Minimum; 10–15 bis G6 verteilt ergeben die beste Genauigkeit."),
         "sampling.order.accept" to arrayOf("Let each string ring until measured, then Accept.", "Klingen lassen bis „gemessen“, dann Übernehmen."),
         "app.cancel" to arrayOf("Cancel", "Abbrechen"),
+        "check.title" to arrayOf("False beats · single strings", "Unreine Saiten · Einzelsaiten"),
+        "check.orders" to arrayOf("One string alone: mute the other strings of the key. Strike once and let it ring out.", "Eine Saite allein: die anderen Saiten der Taste abdämpfen. Einmal anschlagen und ausklingen lassen."),
+        "check.what" to arrayOf("A false beat is a string beating by itself.", "Eine unreine Saite schwebt in sich."),
+        "check.place" to arrayOf("String, if you like:", "Saite, nach Wunsch:"),
+        "check.left" to arrayOf("L", "L"),
+        "check.centre" to arrayOf("C", "M"),
+        "check.right" to arrayOf("R", "R"),
+        "check.waiting" to arrayOf("Strike the string.", "Die Saite anschlagen."),
+        "check.ringing" to arrayOf("{0} s · let it ring", "{0} s · ausklingen lassen"),
+        "check.ringingKey" to arrayOf("{0} · {1} s · let it ring", "{0} · {1} s · ausklingen lassen"),
+        "check.unnamed" to arrayOf("The key was not recognised. Strike again.", "Taste nicht erkannt. Nochmals anschlagen."),
+        "check.clean" to arrayOf("{0}: no false beat found", "{0}: keine Schwebung in sich gefunden"),
+        "check.false" to arrayOf("{0}: false beat", "{0}: unrein"),
+        "check.short" to arrayOf("{0}: too short to judge, let it ring", "{0}: zu kurz für ein Urteil, ausklingen lassen"),
+        "check.judged" to arrayOf("judged: partials {0}", "beurteilt: Teiltöne {0}"),
+        "check.brief" to arrayOf("heard too briefly to judge: {0}", "zu kurz gehört für ein Urteil: {0}"),
+        "check.earlier" to arrayOf("{0}: checked before", "{0}: schon geprüft"),
+        "check.takeOut" to arrayOf("Tap a partial to take it out of the reading:", "Antippen nimmt den Teilton aus der Anzeige:"),
+        "check.partialRate" to arrayOf("{0} · {1} Hz", "{0} · {1} Hz"),
+        "check.discard" to arrayOf("Discard {0}", "{0} verwerfen"),
+        "check.summary" to arrayOf("Checked: {0} · false beats: {1}", "Geprüft: {0} · unrein: {1}"),
+        "check.summaryClean" to arrayOf("Checked: {0} · no false beat", "Geprüft: {0} · alle rein"),
+        "check.forTuning" to arrayOf("For the tuning from {0}, A4 {1}", "Für die Stimmung vom {0}, A4 {1}"),
+        "check.forNext" to arrayOf("For the next tuning", "Für die nächste Stimmung"),
+        "tuning.check" to arrayOf("Check string", "Saite prüfen"),
         "tuning.partialsUsed" to arrayOf("partials {0}", "Teiltöne {0}"),
         "tuning.partialOne" to arrayOf("partial {0}", "Teilton {0}"),
         "tuning.info" to arrayOf("A4 = {0} · equal temperament {1}–A4 · octaves {2}", "A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}"),

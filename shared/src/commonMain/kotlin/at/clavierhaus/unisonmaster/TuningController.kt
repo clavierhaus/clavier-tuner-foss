@@ -9,17 +9,21 @@ import at.clavierhaus.unisonmaster.measure.CleanReading
 import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.measure.FalseBeatTally
 import at.clavierhaus.unisonmaster.measure.PhaseReader
+import at.clavierhaus.unisonmaster.measure.StringCheck
 import at.clavierhaus.unisonmaster.measure.StringMeasure
 import at.clavierhaus.unisonmaster.persistence.SessionSnapshot
 import at.clavierhaus.unisonmaster.settings.SettingsModel
 import at.clavierhaus.unisonmaster.settings.Stretch
 import at.clavierhaus.unisonmaster.settings.TunerSettings
+import at.clavierhaus.unisonmaster.tuning.CheckedString
 import at.clavierhaus.unisonmaster.tuning.EqualTemperament
+import at.clavierhaus.unisonmaster.tuning.FalseStrings
 import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.KeyIdentifier
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
 import at.clavierhaus.unisonmaster.tuning.Notes
+import at.clavierhaus.unisonmaster.tuning.StringPlace
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.Temperament
 import at.clavierhaus.unisonmaster.tuning.TuningSession
@@ -294,7 +298,117 @@ class TuningController(
     /** The tuning screen's hidden partials set, and kept for the note on screen. */
     private fun hideOnNote(hidden: Set<Int>) {
         _hiddenPartials.value = hidden
-        _tuning.value?.let { if (hidden.isEmpty()) hiddenByNote.remove(it.midi) else hiddenByNote[it.midi] = hidden }
+        // what a tap took off, without the partials the string check took out: those are kept with the checks, and
+        // come back when the tuner discards them there
+        _tuning.value?.let { t -> val taps = hidden - excludedAt(t.midi); if (taps.isEmpty()) hiddenByNote.remove(t.midi) else hiddenByNote[t.midi] = taps }
+    }
+
+    // ---- single strings checked for false beats (Peter, 10 Nov 2026) ----
+
+    private val _falseStrings = MutableStateFlow(FalseStrings())
+    /**
+     * The single strings checked for false beats, and the partials the tuner took out of a key's reading because of
+     * them: his choice, kept with the tuning. An excluded partial is not read and has no band on the tuning screen.
+     */
+    val falseStrings: StateFlow<FalseStrings> = _falseStrings.asStateFlow()
+
+    private fun excludedAt(midi: Int): Set<Int> = _falseStrings.value.excludedAt(midi)
+
+    /** A finished check: what the one strike found, and when; the screen shows it until the next strike's is in. */
+    data class CheckResult(val state: StringCheck.State, val atMs: Long, val place: StringPlace?)
+
+    @Volatile private var check: StringCheck? = null
+    private val _checkedPlace = MutableStateFlow<StringPlace?>(null)
+    /** Which string of the key the tuner says he checks, if he says: the next check is filed as that string. */
+    val checkedPlace: StateFlow<StringPlace?> = _checkedPlace.asStateFlow()
+    private val _checking = MutableStateFlow<StringCheck.State?>(null)
+    /** The check under way, from the strike on; null when no string is being checked. */
+    val checking: StateFlow<StringCheck.State?> = _checking.asStateFlow()
+    private val _lastCheck = MutableStateFlow<CheckResult?>(null)
+    /** The last string checked since [startCheck]. */
+    val lastCheck: StateFlow<CheckResult?> = _lastCheck.asStateFlow()
+
+    /**
+     * The microphone given to the string check, from the next buffer on: while it checks, nothing else of the engine
+     * hears the strikes (a check is no sample, and no note is recorded as tuned by it). [place]: which string of the
+     * key the tuner names, or none.
+     */
+    fun startCheck(place: StringPlace? = null) {
+        // the key named from the instrument's range, as the tuning names it: below A0 only where the range goes there
+        val c = StringCheck(audioSource.sampleRateHz, { _referenceA4Hz.value }, lowMidi = (session ?: parked)?.lowMidi ?: _settings.value.lowestKeyMidi)
+        c.begin()
+        _checkedPlace.value = place
+        _lastCheck.value = null
+        _checking.value = c.state.value
+        check = c
+    }
+
+    /** The microphone back to the engine; what was checked stays. */
+    fun stopCheck() {
+        check = null
+        _checking.value = null
+        _lastCheck.value = null
+    }
+
+    /** Which string the next check is of, and the last one checked with it. */
+    fun nameCheckedString(place: StringPlace?) {
+        _checkedPlace.value = place
+        val last = _lastCheck.value ?: return
+        val midi = last.state.midi ?: return
+        _falseStrings.value = _falseStrings.value.named(midi, last.atMs, place)
+        _lastCheck.value = last.copy(place = place)
+        saveSession()
+    }
+
+    /** Partial [k] of [midi] out of its reading, or back in: the tuner's choice. */
+    fun excludePartial(midi: Int, k: Int, out: Boolean) {
+        _falseStrings.value = _falseStrings.value.exclude(midi, k, out)
+        applyExclusions()
+        saveSession()
+    }
+
+    /** Every check of [midi] and its exclusions discarded. */
+    fun discardChecks(midi: Int) {
+        _falseStrings.value = _falseStrings.value.discard(midi)
+        if (_lastCheck.value?.state?.midi == midi) _lastCheck.value = null
+        applyExclusions()
+        saveSession()
+    }
+
+    private fun saveSession() { onSessionChanged?.let { save -> snapshot()?.let(save) } }
+
+    /** One buffer to the check; a strike that has died is kept, and the check armed for the next. */
+    private fun pushCheck(c: StringCheck, chunk: FloatArray) {
+        c.push(chunk)
+        val st = c.state.value
+        _checking.value = st
+        val midi = st.midi
+        if (st.phase == StringCheck.Phase.DONE && midi != null) {
+            val at = clock()
+            val place = _checkedPlace.value
+            _falseStrings.value = _falseStrings.value.with(CheckedString(midi, place, at, st.falseBeats, st.judged.toSet()))
+            _lastCheck.value = CheckResult(st, at, place)
+            c.next()
+            saveSession()
+        }
+    }
+
+    /** The partial a note is read on: its listened one, unless the tuner took that out, then the lowest left in. */
+    private fun readOn(midi: Int, listened: Int): Int {
+        val out = excludedAt(midi)
+        if (listened !in out) return listened
+        return _targets.value.map { it.k }.filter { it !in out }.minOrNull() ?: listened
+    }
+
+    /** The note on screen with its partials taken out as the checks say, at once. */
+    private fun applyExclusions() {
+        val t = _tuning.value ?: return
+        val lk = readOn(t.midi, t.listening.k)
+        _hiddenPartials.value = hiddenByNote[t.midi].orEmpty() + excludedAt(t.midi)
+        _shownPartials.value = if (_settings.value.strobeOne) setOf(lk)
+            else (_targets.value.map { it.k } + lk).toSet() - (_hiddenPartials.value - lk)
+        setActive(if (_activePartial.value in excludedAt(t.midi)) lk else _activePartial.value)
+        wantShown()
     }
 
     private val _shownPartials = MutableStateFlow(setOf(1))
@@ -562,6 +676,7 @@ class TuningController(
             offsets = s.targetOffsetCents,
             tuned = s.tuned,
             stretch = tuningStretch,
+            strings = _falseStrings.value,
         )
     }
 
@@ -602,8 +717,12 @@ class TuningController(
     /** The offsets in force over the targets, cents by key; empty without a session or an edition's offsets. */
     fun targetOffsets(): Map<Int, Double> = session?.targetOffsetCents ?: emptyMap()
 
-    /** "New Tuning": no session; the next Done on the hub defines A4 afresh. */
-    fun resetSession() {
+    /**
+     * "New Tuning": no session; the next Done on the hub defines A4 afresh. [keepChecks]: the strings checked before
+     * this tuning began go with it (checked from the hub with nothing to continue); a tuning replaced takes its own.
+     */
+    fun resetSession(keepChecks: Boolean = false) {
+        if (!keepChecks) _falseStrings.value = FalseStrings()
         parked = null
         hubA4 = null
         a4Kept = null
@@ -672,6 +791,7 @@ class TuningController(
     fun restore(snap: SessionSnapshot) {
         session = null
         parked = null
+        _falseStrings.value = snap.strings
         shortSamples.clear()
         setReference(snap.a4Hz)
         // the stretch saved with the tuning; a file from before 5 Nov 2026 has none and takes the defaults in force,
@@ -863,24 +983,27 @@ class TuningController(
         // note on screen with every strobe until the next note
         val modeChanged = _settings.value.strobeMode != shownMode
         shownMode = _settings.value.strobeMode
+        // the partial read: the listened one, unless the tuner took it out after a check of the string (10 Nov 2026)
+        val lk = readOn(midi, listening.k)
         if (modeChanged && !noteChanged) {
-            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k)
-                else (_targets.value.map { it.k } + listening.k).toSet() - _hiddenPartials.value
+            _shownPartials.value = if (_settings.value.strobeOne) setOf(lk)
+                else (_targets.value.map { it.k } + lk).toSet() - _hiddenPartials.value
         }
         if (noteChanged) {
             _liveHz.value = null
             _fullSpectrum.value = false
-            // the note's own partials taken off, if the tuner took any off it before (1 Nov 2026)
-            _hiddenPartials.value = hiddenByNote[midi].orEmpty()
+            // the note's own partials taken off, if the tuner took any off it before (1 Nov 2026), and the partials a
+            // check of its strings took out (10 Nov 2026)
+            _hiddenPartials.value = hiddenByNote[midi].orEmpty() + excludedAt(midi)
             // every partial the note can carry is read, on every note: the tuning screen is
             // one picture of them all (docs/UI.md), not a mode that shows one and a mode that
             // shows six. Until 3 Oct 2026 only the listened partial was read outside Full
             // Spectrum, and the picture of a sounding string stood empty.
             // one band (TunerSettings.strobeOne): the octave's partial alone; a tap still adds another
-            _shownPartials.value = if (_settings.value.strobeOne) setOf(listening.k) else (_targets.value.map { it.k } + listening.k).toSet() - (_hiddenPartials.value - listening.k)
-            _activePartial.value = listening.k
-        } else if (_activePartial.value !in _targets.value.map { it.k } && _activePartial.value != listening.k) {
-            _activePartial.value = listening.k
+            _shownPartials.value = if (_settings.value.strobeOne) setOf(lk) else (_targets.value.map { it.k } + lk).toSet() - (_hiddenPartials.value - lk)
+            _activePartial.value = lk
+        } else if (_activePartial.value !in _targets.value.map { it.k } && _activePartial.value != lk) {
+            _activePartial.value = lk
         }
         val k = _activePartial.value
         if (noteChanged) { heardHz = emptyMap(); falseBeats.clear(); keptClaims = emptyList() }
@@ -1390,6 +1513,8 @@ class TuningController(
             audioSource.start(HOP) { chunk -> try {
                 if (!_live.value) return@start
                 tap?.invoke(chunk)
+                // a string being checked has the microphone to itself (10 Nov 2026)
+                check?.let { c -> pushCheck(c, chunk); return@start }
                 toRing(chunk)
                 val hop = ++hops
 
@@ -1612,16 +1737,17 @@ class TuningController(
                         cleanMidi = t.midi; cleanK = w.k
                         if (!sameString) cleanStrike = strikeHop
                     } else if (cleanStrike != strikeHop) { clean.strike(); cleanStrike = strikeHop }
-                    // The string's facts: what sampling measured of its false beats, kept with the
-                    // note (NoteMeasurement.falseBeats). While sampling they are being made; while
-                    // tuning they are what the screen marks.
-                    val facts = s.measurements[t.midi]?.falseBeats ?: emptyList()
+                    // What the tuner took out after checking the string alone (10 Nov 2026) stays out of the reading.
+                    // Until then the false beats sampling had claimed did, and stood violet on the tuning screen: on a
+                    // key struck three times while sampling and on no other, which the tuner could make no sense of
+                    // (Peter, 10 Nov 2026). Sampling measures the string; the false beats are the string check's.
+                    val out = excludedAt(t.midi)
                     val alone = s.sampling || referenceAlone
-                    val cr = clean.push(chunk, w.k, combine = s.isMeasured(), alone = alone, known = facts.map { it.k }.toSet())
+                    val cr = clean.push(chunk, w.k, combine = s.isMeasured(), alone = alone, known = out)
                     used = cr.used
-                    if (alone) {
-                        // The string sounds alone (the mutes are in, by the orders of the sampling
-                        // page), so a beat heard is the string's own. A false beat is claimed only
+                    if (referenceAlone && !s.sampling) {
+                        // An edition that tunes the string alone says so (referenceAlone), so a beat
+                        // heard is the string's own. A false beat is claimed only
                         // when it repeats across strikes at one rate, never from one (FalseBeatTally,
                         // and the recordings rule of three strikes): what this strike hears is evidence
                         // towards the claim; the claim is what the screen is told and, the moment it
@@ -1634,12 +1760,10 @@ class TuningController(
                         falseOnes = claims.map { it.k }
                         if (claims != keptClaims) { keptClaims = claims; keepFacts(s, t.midi, claims) }
                     } else {
-                        // With the unison sounding, a beat at one partial is the unison's or the
-                        // string's and the microphone cannot say which (FALSE-BEATS §15): nothing is
-                        // tallied here, and the violet is the string's facts from sampling. Until
-                        // 8 Oct 2026 the tuning strikes fed the tally too, and the Samick's A4 was
-                        // called false at a partial beating against its partner.
-                        falseOnes = facts.map { it.k }
+                        // Nothing is tallied while sampling or tuning: a beat heard with more than one string
+                        // sounding cannot be told for the string's own (FALSE-BEATS §15), and the string check
+                        // measures a string alone. What is out of the reading is what the tuner took out.
+                        falseOnes = out.sorted()
                     }
                     // one band (StrobeMode.ONE) shows the clean partials together, as every mode does with them on: Peter,
                     // 31 Oct 2026, "one strobe only with an average display". From 28 Oct until then it was the octave's

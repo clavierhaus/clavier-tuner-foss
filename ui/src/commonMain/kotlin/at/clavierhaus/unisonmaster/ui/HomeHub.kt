@@ -96,27 +96,30 @@ fun HomeHub(
         // (Pro's hub since 4 Oct 2026: Continue, New, Pianos, Unisons, Recordings) steps the
         // type down one size so the last note stays on the reference screen — the hub's
         // measured layout under the laws (Pane, FitText) is the revamp's C′, still open.
+        // A seventh (Pro's hub with False Beats, 10 Nov 2026) steps down once more and starts higher: at 30 sp the
+        // seventh line stood on the colophon (LayoutCheckTest, the hub with seven doors).
         val crowded = entries.size > 3
         val tight = entries.size > 4
+        val full = entries.size > 6
         Column(
             Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 112.dp, top = if (crowded) 40.dp else 72.dp),
+                .padding(start = 112.dp, top = if (full) 0.dp else if (crowded) 40.dp else 72.dp),
         ) {
             entries.forEachIndexed { i, e ->
                 if (i > 0) Spacer(Modifier.height(if (crowded) 2.dp else 18.dp))
-                HubEntry(e, tight)
+                HubEntry(e, if (full) 26.sp else if (tight) 30.sp else EntryStyle.fontSize)
             }
         }
     }
 }
 
 @Composable
-private fun HubEntry(e: HomeHubItem, tight: Boolean) {
+private fun HubEntry(e: HomeHubItem, size: androidx.compose.ui.unit.TextUnit) {
     // the entry as it was, and its note on the same line after a dot, in the same serif and smaller
     // (Peter, 24 Oct 2026: the script beneath the entries was a nice touch in GNU Backgammon, not right
     // for a professional piece of software)
-    val entry = if (tight) EntryStyle.copy(fontSize = 30.sp) else EntryStyle
+    val entry = EntryStyle.copy(fontSize = size)
     BasicText(
         text = buildAnnotatedString {
             if (e.lead.isNotEmpty()) append(e.lead + " ")

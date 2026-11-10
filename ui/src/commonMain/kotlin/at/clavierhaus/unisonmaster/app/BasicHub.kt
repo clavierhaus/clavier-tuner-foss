@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,9 +71,12 @@ import kotlin.math.abs
  * two disagree in both directions on the recordings (SAMICK-2026-09-30-FINDINGS §20, §21). On again
  * since 8 Oct 2026: the claim is the rate, measured from the band power (BeatMeasure) with the
  * string alone while sampling and kept as the string's facts, and in tuning the colour is those
- * facts -- never a beat heard with the unison sounding, which could be the unison's.
+ * facts -- never a beat heard with the unison sounding, which could be the unison's. Off again since 10 Nov 2026
+ * (Peter: "It does not make sense to have it this way"): the facts came from keys struck three times while sampling and
+ * from no other, and stood violet where the tuner could see no pattern. A false beat is now the string check's, of
+ * one string alone, and what it leads to is the tuner's choice: a partial he takes out is grey and has no band.
  */
-private const val FALSE_MARKS_ON_TUNING = true
+private const val FALSE_MARKS_ON_TUNING = false
 
 /** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
 private val SAMPLING_SEATS: List<Int> = (1..5).toList()
@@ -275,6 +279,11 @@ fun BasicHub(
             }
         }
 
+        // Check string: the microphone is the check's while its window is open, the engine's again when it closes
+        var checkingString by remember { mutableStateOf(false) }
+        DisposableEffect(checkingString) { val open = checkingString; onDispose { if (open) controller.stopCheck() } }
+        if (checkingString) StringCheckDialog(controller, t.midi) { checkingString = false }
+
         // the note name is the picture's one control: following the key struck is the default; a tap
         // opens the picker and the key chosen there holds until the name is tapped again
         var pickingNote by remember { mutableStateOf(false) }
@@ -351,6 +360,10 @@ fun BasicHub(
                     onTap = { k -> controller.tapPartial(k) },
                     modifier = Modifier.weight(1f),
                 )
+                // one string of the key on screen checked for false beats, when the strobe will not settle (Peter,
+                // 10 Nov 2026: "in regular tuning mode there should be an extra button like 'check for false beats'")
+                Spacer(Modifier.width(10.dp))
+                Chip(t(K.tuning_check), selected = false, enabled = true) { controller.startCheck(); checkingString = true }
             } else {
                 Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 Spacer(Modifier.weight(1f))

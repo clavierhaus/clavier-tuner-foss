@@ -14,8 +14,9 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 /**
- * While sampling, with A4 measured, the engine's false-beat claims reach the
- * reading and every partial's target stands on the measured B.
+ * While sampling, with A4 measured, every partial's target stands on the measured B, and since 10 Nov 2026
+ * nothing is claimed false there: the false beats are the string check's, one strike of one string alone.
+ * The history below is of the claims sampling made until then.
  *
  * The sound first (Amendment 8). `research/false_beats.py` on the three left
  * strikes of `2026-09-30/strikes-161258`, in `SAMICK-2026-09-30-FINDINGS.md`
@@ -67,7 +68,7 @@ class SamplingFalseBeatRecordingsTest {
     }
 
     @Test
-    fun whileSamplingTheEnginesFalseClaimsReachTheReadingAndTheTargetsStandOnTheMeasuredB() {
+    fun whileSamplingNothingIsClaimedFalseAndTheTargetsStandOnTheMeasuredB() {
         val dir = recordings() ?: run { println("SamplingFalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val left = (1..3).map { File(dir, "Samick_A4-L-s${it}_unproc_20260930-161258.wav") }
         left.forEach { assertTrue(it.isFile, "missing ${it.name}") }
@@ -121,26 +122,10 @@ class SamplingFalseBeatRecordingsTest {
             .format(m.f1Hz, m.b, hopsInSampling, readings, liveHops, usedHops, t0.listening, c.targets.value.map { "%d:%.1f".format(it.k, it.hz) }, claimedOver.sorted()))
         println(trace.joinToString("\n"))
         assertTrue(hopsInSampling > 0, "the controller never ran in sampling")
-        assertTrue(claimedOver.isNotEmpty(), "nothing was ever claimed false while sampling: the detector is not running there, or its window does not survive the sampling republishes")
-        assertTrue(2 in claimedOver, "the left string's A5 (partial 2, 0.55 Hz by the recordings) was not claimed false while sampling; claimed: $claimedOver")
-        assertTrue(3 in claimedOver, "the left string's E6 (partial 3, 0.67 Hz, planes 3.5 dB apart by the recordings -- the audible one) was not claimed false; claimed: $claimedOver")
-        assertTrue(1 !in claimedOver, "partial 1 beats at 0.25 Hz by the recordings, too slow to hear, and was claimed false")
-        for (k in 4..6) assertTrue(k !in claimedOver, "partial $k is clean by the recordings (second plane does not sustain) but was claimed false")
-
-        // The claims are the string's facts and are kept with its measurement (since 8 Oct 2026):
-        // A4 is the reference and the strikes do not re-measure it, so the facts must reach the
-        // measurement the session already holds. The rates against §8's ESPRIT figures, within the
-        // tally's own agreement factor (a two-second window reads 0.635 for both where ESPRIT reads
-        // 0.549 and 0.685); the depths within the ear's line, which is what the claim says of them
-        // -- as a figure they stand 2.8 and 6.4 dB where ESPRIT puts 9.2 and 3.5, and the findings
-        // of 8 Oct 2026 say so rather than this check pretending to a precision the window has not.
+        // Since 10 Nov 2026 sampling claims nothing: the string check does, of one string alone (StringCheckRecordingsTest
+        // reads these three takes). Until then sampling claimed 2 and 3 here and kept them with A4.
+        assertTrue(claimedOver.isEmpty(), "sampling claimed $claimedOver false; the string check claims, sampling measures")
         val facts = c.snapshot()?.measurements?.firstOrNull { it.midi == TuningSession.MIDI_A4 }?.falseBeats ?: emptyList()
-        println("A4's false beats as kept: " + facts.joinToString { "k%d %.3f Hz %.1f dB".format(it.k, it.rateHz, it.depthDb) })
-        val k2 = facts.firstOrNull { it.k == 2 } ?: fail("partial 2's false beat was claimed but not kept with A4's measurement: $facts")
-        val k3 = facts.firstOrNull { it.k == 3 } ?: fail("partial 3's false beat was claimed but not kept with A4's measurement: $facts")
-        assertTrue(k2.rateHz in 0.549 / FalseBeatTally.RATE_AGREE..0.549 * FalseBeatTally.RATE_AGREE, "partial 2 kept at %.3f Hz; §8 says 0.533-0.551".format(k2.rateHz))
-        assertTrue(k3.rateHz in 0.685 / FalseBeatTally.RATE_AGREE..0.685 * FalseBeatTally.RATE_AGREE, "partial 3 kept at %.3f Hz; §8 says 0.659-0.690".format(k3.rateHz))
-        assertTrue(k2.depthDb <= 10.0 && k3.depthDb <= 10.0, "a claimed partial's planes stand within the ear's 10 dB: k2 %.1f, k3 %.1f".format(k2.depthDb, k3.depthDb))
-        assertTrue(facts.none { it.k == 1 || it.k in 4..6 }, "a partial not claimed was kept as a fact: $facts")
+        assertTrue(facts.isEmpty(), "sampling kept false beats with A4: $facts")
     }
 }

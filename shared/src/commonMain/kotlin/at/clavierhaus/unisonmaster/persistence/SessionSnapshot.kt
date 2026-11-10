@@ -6,8 +6,11 @@ import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.Stretch
 import at.clavierhaus.unisonmaster.settings.StretchPoint
 import at.clavierhaus.unisonmaster.settings.TunerSettings
+import at.clavierhaus.unisonmaster.tuning.CheckedString
+import at.clavierhaus.unisonmaster.tuning.FalseStrings
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
+import at.clavierhaus.unisonmaster.tuning.StringPlace
 
 /** Everything needed to continue a tuning where it was left. */
 data class SessionSnapshot(
@@ -37,6 +40,8 @@ data class SessionSnapshot(
      * 5 Nov 2026). Null in a file saved before then.
      */
     val stretch: Stretch? = null,
+    /** The single strings checked for false beats, and the partials taken out because of them (FalseStrings, since 10 Nov 2026). */
+    val strings: FalseStrings = FalseStrings(),
 )
 
 /**
@@ -54,6 +59,9 @@ data class SessionSnapshot(
  *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <0|1, the size switch of 31 Oct - 9 Nov 2026: written 0, read and ignored>
  *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
  *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
+ *     string <midi> <L|C|R|-> <atMs> <judged k,k,...|-> <beatCount> (a single string checked for false beats, any number; since 10 Nov 2026)
+ *     b <k> <rateHz> <depthDb>                  (beatCount times)
+ *     exclude <midi> <k,k,...>                  (the partials taken out of a key's reading, any number; since 10 Nov 2026)
  *     note <midi> <f1Hz> <b> <residualCents> <timeMs> <partialCount>
  *     p <k> <cents> <levelDb> <sustainS>        (partialCount times)
  *     f <k> <rateHz> <depthDb>                  (the string's false beats, any number; since 8 Oct 2026)
@@ -107,6 +115,17 @@ object SessionCodec {
             append("stretch ${t.temperamentLowMidi} ${t.octaveBass.name} ${t.octaveMiddle.name} ${t.octaveTreble.name} ")
             append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} 0\n")
             if (t.points.isNotEmpty()) append("points ${StretchPoint.encode(t.points)}\n")
+        }
+        for (c in s.strings.strings) {
+            if (c.midi !in 12..108) continue
+            val beats = c.beats.filter { falseBeatInRange(it.k, it.rateHz, it.depthDb) }
+            val judged = c.judged.filter { it in 1..Partials.MAX }.sorted().joinToString(",").ifEmpty { "-" }
+            append("string ${c.midi} ${c.place?.name ?: "-"} ${c.atMs} $judged ${beats.size}\n")
+            for (f in beats) append("b ${f.k} ${f.rateHz} ${f.depthDb}\n")
+        }
+        s.strings.excluded.toList().sortedBy { it.first }.forEach { (midi, ks) ->
+            val ok = ks.filter { it in 1..Partials.MAX }.sorted()
+            if (midi in 12..108 && ok.isNotEmpty()) append("exclude $midi ${ok.joinToString(",")}\n")
         }
         for (m in s.measurements) {
             if (!noteInRange(m.midi, m.f1Hz, m.b, m.residualCents, m.timeMs)) continue
@@ -192,6 +211,33 @@ object SessionCodec {
             }
             if (i < lines.size && lines[i].startsWith("points ")) stretch = stretch?.copy(points = StretchPoint.decode(tokens("points", 1)[0]))
         }
+        // the single strings checked and the partials taken out: a file from before 10 Nov 2026 has none; a value out
+        // of range drops that check or that partial, as a note's does
+        val checked = ArrayList<CheckedString>()
+        while (i < lines.size && lines[i].startsWith("string ")) {
+            val t = tokens("string", 5)
+            val n = int(t[4], 0, Partials.MAX)
+            val beats = ArrayList<FalseBeat>()
+            repeat(n) {
+                val f = tokens("b", 3)
+                val k = f[0].toIntOrNull() ?: return@repeat
+                val rateHz = f[1].toDoubleOrNull() ?: return@repeat
+                val depthDb = f[2].toDoubleOrNull() ?: return@repeat
+                if (falseBeatInRange(k, rateHz, depthDb) && beats.none { it.k == k }) beats.add(FalseBeat(k, rateHz, depthDb))
+            }
+            val midi = t[0].toIntOrNull()?.takeIf { it in 12..108 } ?: continue
+            val place = if (t[1] == "-") null else StringPlace.entries.firstOrNull { it.name == t[1] } ?: continue
+            val at = t[2].toLongOrNull()?.takeIf { it >= 0 } ?: continue
+            val judged = if (t[3] == "-") emptySet() else t[3].split(',').mapNotNull { it.toIntOrNull() }.filter { it in 1..Partials.MAX }.toSet()
+            checked.add(CheckedString(midi, place, at, beats, judged))
+        }
+        val excluded = LinkedHashMap<Int, Set<Int>>()
+        while (i < lines.size && lines[i].startsWith("exclude ")) {
+            val t = tokens("exclude", 2)
+            val midi = t[0].toIntOrNull()?.takeIf { it in 12..108 } ?: continue
+            val ks = t[1].split(',').mapNotNull { it.toIntOrNull() }.filter { it in 1..Partials.MAX }.toSet()
+            if (ks.isNotEmpty()) excluded[midi] = ks
+        }
 
         // Structure — header, version, line shapes, the end marker — must be
         // right, or the file is not a session and is refused. Values are
@@ -238,7 +284,7 @@ object SessionCodec {
             notes.add(NoteMeasurement(midi, f1Hz, b, residual, partials, timeMs, falseBeats))
         }
         if (i != lines.size) fail("data after end")
-        return SessionSnapshot(saved, a4, current, notes, sampling, basis, offsets, tuned, stretch)
+        return SessionSnapshot(saved, a4, current, notes, sampling, basis, offsets, tuned, stretch, FalseStrings(checked, excluded))
     }
 }
 

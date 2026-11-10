@@ -20,7 +20,8 @@ import kotlin.test.fail
  * and 0.86-0.92 Hz (8 Oct 2026, research in the session); here the whole engine is driven in
  * sampling with A3 measured and the three strikes played, and the tally must claim 3 and 4
  * and not 1. Partial 2 at 0.43 Hz sits under the floor by less than a two-second window can
- * resolve and is reported, not asserted.
+ * resolve and is reported, not asserted. Since 10 Nov 2026 sampling claims nothing (the first case says so) and the
+ * one-strike check of the string does (StringCheckRecordingsTest).
  *
  * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct).
  */
@@ -43,8 +44,14 @@ class A3FalseBeatRecordingsTest {
         override fun stop() = Unit
     }
 
+    /**
+     * Sampling claims no false beat since 10 Nov 2026 (Peter: "It does not make sense to have it this way"): the same three
+     * strikes, played into the sampling, are claimed false nowhere. Until then they were claimed at 3 and 4 and stood
+     * violet on the tuning screen, on a key struck three times while sampling and on no other. The string's false beats
+     * are the string check's now, one strike of the string alone (StringCheckRecordingsTest, on these recordings).
+     */
     @Test
-    fun theA3CentreStringIsClaimedFalseAtPartials3And4AndNotAt1() {
+    fun whileSamplingTheA3CentreStringIsClaimedFalseNowhere() {
         val dir = recordings() ?: run { println("A3FalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val strikes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
         strikes.forEach { assertTrue(it.isFile, "missing ${it.name}") }
@@ -63,22 +70,14 @@ class A3FalseBeatRecordingsTest {
         c.applySettings(TunerSettings())
         c.restore(SessionSnapshot(0, a4, midi, listOf(m), sampling = true))
         c.startLive()
-        println("A3 centre, three strikes: claimed false ${claimed.sorted()} (FALSE-BEATS §6: 0.23 / 0.43 / 0.60 / 0.93 Hz at k = 1..4)")
+        println("A3 centre, three strikes while sampling: claimed false ${claimed.sorted()}")
+        assertTrue(claimed.isEmpty(), "sampling claimed $claimed false; the string check claims, sampling measures")
         val facts = c.snapshot()?.measurements?.firstOrNull { it.midi == midi }?.falseBeats ?: emptyList()
-        println("A3's false beats as kept: " + facts.joinToString { "k%d %.3f Hz %.1f dB".format(it.k, it.rateHz, it.depthDb) })
-        assertTrue(3 in claimed, "partial 3 (0.595 Hz by ESPRIT) was not claimed; claimed $claimed")
-        assertTrue(4 in claimed, "partial 4 (0.932 Hz by ESPRIT) was not claimed; claimed $claimed")
-        assertTrue(1 !in claimed, "partial 1 (0.226 Hz, a wow, not a beat) was claimed")
+        assertTrue(facts.isEmpty(), "sampling kept false beats with the note: $facts")
     }
 
-    /**
-     * The same three strikes while tuning, the string alone (Peter, 23 Oct 2026: the reference string is
-     * tuned alone, and its false beats are what the unison sets aside): with referenceAlone the tuning
-     * screen claims 3 and 4 and not 1, as sampling does, and keeps them with the note; without it nothing
-     * is tallied while tuning (FALSE-BEATS §15).
-     */
     @Test
-    fun theReferenceStringTunedAloneIsClaimedFalseAsSamplingClaimsIt() {
+    fun theReferenceStringTunedAloneIsClaimedFalseByTheTally() {
         val dir = recordings() ?: run { println("A3FalseBeatRecordingsTest: no recordings (CLAVIER_DATA or data/recordings); nothing checked"); return }
         val strikes = listOf("Boesendorfer_A3-C-s1_unproc_20260916-165836.wav", "Boesendorfer_A3-C-s2_unproc_20260916-165849.wav", "Boesendorfer_A3-C-s3_unproc_20260916-165901.wav").map { File(dir, it) }
         val pcm = strikes.map { WavPcm.read(it.readBytes()) }
