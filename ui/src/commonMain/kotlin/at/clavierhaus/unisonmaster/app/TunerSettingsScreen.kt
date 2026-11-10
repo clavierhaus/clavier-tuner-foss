@@ -94,6 +94,12 @@ fun TunerSettingsScreen(
      * 2026 (Peter: "isn't relevant anymore"): since 29 Oct it changes no target.
      */
     lowestPlainRow: Boolean = false,
+    /**
+     * The Stretch tab's pages before the breaks, as an edition lays them out from the three regions' pages and the settings
+     * in force (Pro: the six-point stretch). The free app shows the regions alone since 10 Nov 2026 (Peter: "The 6 point
+     * fine grained preset is a Pro feature").
+     */
+    stretchPages: ((TunerSettings, List<SettingsPage>) -> List<SettingsPage>)? = null,
 ) {
     val s by model.settings.collectAsState()
     Strings.language.collectAsState().value                    // recompose on a language change
@@ -106,7 +112,7 @@ fun TunerSettingsScreen(
         open = open,
         tabs = listOf(
             SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
-            SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
+            SettingsTab(t(K.settings_tab_stretch), stretchTab(s, model, stretchPages)),
             SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow, lowestPlainRow) })) + extraPianoPages),
         ) + extraTabs + listOf(
             SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
@@ -206,24 +212,15 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
         }),
 )
 
-/** The Stretch tab: one page per region, named as the engine names them. */
-private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
+/**
+ * The Stretch tab: one page per region, named as the engine names them, then the breaks. [arrange] is how an edition lays
+ * out the pages before the breaks from the three regions' (Pro: the six-point stretch's choice first, and with places the
+ * one page of places in the regions' stead). The free app has the regions alone since 10 Nov 2026 (Peter: "The 6 point
+ * fine grained preset is a Pro feature"); its choice stood first here from 8 to 10 Nov.
+ */
+private fun stretchTab(s: TunerSettings, model: SettingsModel, arrange: ((TunerSettings, List<SettingsPage>) -> List<SettingsPage>)?): List<SettingsPage> {
     // each region offers only the octave types its strings sound (TunerSettings.BASS_OCTAVES, 30 Oct 2026)
-    // the choice comes first, and the explanation beside it (Peter, 9 Nov 2026: "offer this as a default alternative in
-    // settings with an explanation"; the switch had stood at the end of the Midrange page, and he could not find it)
-    val choice = SettingsPage(t(K.settings_page_stretchDefault),
-        left = {
-            SettingsSection(t(K.settings_stretchDefault))
-            ChoiceRow(t(K.settings_stretchPoints), listOf(t(K.settings_stretchThree), t(K.settings_stretchSix)), if (s.sixPoints) 1 else 0) { i ->
-                model.update { it.withSixPoints(i == 1) }
-            }
-            TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
-        },
-        right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
-    val breaks = breaksPage(s)
-    if (s.sixPoints) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }), breaks)
-    return listOf(
-        choice,
+    val regions = listOf(
         SettingsPage(t(K.settings_page_bass),
             left = { RegionLeft(t(K.settings_note_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass, { t -> model.update { it.copy(octaveBass = t) } }, { w -> model.update { it.copy(widthBass = w) } }) },
             right = { RegionRight(s.widthBass, s.widthBassFar, t(K.settings_theLowestKey)) { w -> model.update { it.copy(widthBassFar = w) } } }),
@@ -232,8 +229,8 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
         SettingsPage(t(K.settings_page_treble),
             left = { RegionLeft(t(K.settings_note_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
-        breaks,
     )
+    return (arrange?.invoke(s, regions) ?: regions) + breaksPage(s)
 }
 
 /** The page of the scale breaks, the same with either stretch. */
@@ -254,10 +251,10 @@ private fun breaksPage(s: TunerSettings) = SettingsPage(t(K.settings_page_breaks
 
 /**
  * The Stretch tab's page for a note's [region] (0 bass, 1 middle, 2 treble; TunerSettings.regionOf): the tuning screen
- * reaches it in one tap. The choice is the first page, so a region's page is one further on; with six points the three
- * regions are the one page of places.
+ * reaches it in one tap. Where an edition puts a page first ([preset], Pro's six-point choice), a region's page is one
+ * further on; with places (Pro) the three regions are the one page of places.
  */
-fun stretchPageOf(region: Int, s: TunerSettings): Int = if (s.sixPoints) 1 else region + 1
+fun stretchPageOf(region: Int, s: TunerSettings, preset: Boolean = false): Int = (if (preset) 1 else 0) + (if (s.hasPlaces) 0 else region)
 
 @Composable
 private fun RegionLeft(info: String, octaves: List<OctaveType>, type: OctaveType, width: Double, onType: (OctaveType) -> Unit, onWidth: (Double) -> Unit) {

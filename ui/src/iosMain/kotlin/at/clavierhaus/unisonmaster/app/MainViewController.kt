@@ -62,8 +62,9 @@ private object IosPhone : Phone {
 private val app: TunerApp by lazy {
     TunerApp(
         controller = TuningController(createAudioSource()) { nowMs() },
-        // the free app's range is A0–C8 and cannot be changed, on the iPhone as on Android (Peter, 19 Oct 2026)
-        settingsModel = SettingsModel(UserDefaultsStore(), lowestKeyFixed = TunerSettings.MIDI_A0),
+        // the free app's range is A0–C8 and cannot be changed, on the iPhone as on Android (Peter, 19 Oct 2026); its stretch
+        // has no places besides the ends (the six-point stretch is Pro's, Peter, 10 Nov 2026)
+        settingsModel = SettingsModel(UserDefaultsStore(), lowestKeyFixed = TunerSettings.MIDI_A0, placesOffered = false),
         sessionStore = SessionStore(IosSaveFile(), KeychainSealer()),
         phone = IosPhone,
     )

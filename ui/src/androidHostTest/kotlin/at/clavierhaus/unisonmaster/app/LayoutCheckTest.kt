@@ -2,6 +2,8 @@ package at.clavierhaus.unisonmaster.app
 
 import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.ui.HomeHubItem
+import at.clavierhaus.unisonmaster.ui.SettingsPage
+import at.clavierhaus.unisonmaster.ui.SwitchRow
 import at.clavierhaus.unisonmaster.measure.StringCheck
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.tuning.CheckedString
@@ -208,17 +210,22 @@ class LayoutCheckTest {
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
         c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
         // settings, every page but Help's (Help scrolls by law)
-        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 1 to 4, 2 to 0, 4 to 0, 4 to 1)) {
+        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
             show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }
             look(where, dir, "09-settings-$tab-$page")
         }
-        // the Stretch tab with six points on: the choice, the six places, the breaks
-        model.update { it.withSixPoints(true) }
-        for (page in 0..2) {
-            show("settings six $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to page) }
-            look(where, dir, "09-settings-six-$page")
+        // the Stretch tab with places, as an edition with a preset lays it out (Pro's six points since 10 Nov 2026): the page
+        // of places in the regions' stead, then the breaks; the preset's own page is that edition's
+        val before = model.settings.value
+        model.update { withSixPlaces(it) }
+        val placesTab = { s: TunerSettings, regions: List<SettingsPage> ->
+            if (s.hasPlaces) listOf(SettingsPage("Places", left = { StretchPlaces(s) { ch -> model.update(ch) } })) else regions
         }
-        model.update { it.withSixPoints(false) }
+        for (page in 0..1) {
+            show("settings places $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to page, stretchPages = placesTab) }
+            look(where, dir, "09-settings-places-$page")
+        }
+        model.update { before }
         // the hub, with a tuning to continue
         show("hub") { TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {}, onFalseBeats = {}) }
         look(where, dir, "01-hub")
@@ -237,8 +244,12 @@ class LayoutCheckTest {
         val suggested = OctaveSuggestion.Suggestion(OctaveType.O10_5, mapOf(OctaveType.O4_2 to 11.65, OctaveType.O6_3 to 9.66, OctaveType.O10_5 to 3.30), 5, 33)
         show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}, suggestion = suggested, sampled = true) }
         look(where, dir, "10-info", dialog = true)
-        // the same window with the six places in it, its fullest
-        show("info six") { TuningInfoDialog(model.settings.value.withSixPoints(true), { ch -> model.update(ch) }, {}, onStep = {}, suggestion = suggested, sampled = true) }
+        // the same window with six places in it and an edition's row above them, its fullest: the row stands in for Pro's
+        // six-point switch at the length of its German name
+        show("info six") {
+            TuningInfoDialog(withSixPlaces(model.settings.value), { ch -> model.update(ch) }, {}, onStep = {}, suggestion = suggested, sampled = true,
+                presetRow = { SwitchRow("Spreizung mit sechs Punkten", true, info = "i") {} })
+        }
         look(where, dir, "10-info-six", dialog = true)
         // the question before a new tuning replaces the one saved
         c.snapshot()?.let { saved ->

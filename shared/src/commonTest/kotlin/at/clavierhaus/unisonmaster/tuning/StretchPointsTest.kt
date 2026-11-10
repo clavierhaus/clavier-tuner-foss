@@ -21,7 +21,14 @@ import kotlin.test.assertTrue
  */
 class StretchPointsTest {
     private val a4 = 440.0
-    private val six = TunerSettings().withSixPoints(true)
+    /**
+     * A stretch with six places, as Pro's six-point preset sets it (Pro pro/.../stretch/SixPoints.kt; the preset left the
+     * free app on 10 Nov 2026). The engine computes from places wherever they come from, so its tests hold them here.
+     */
+    private val six = TunerSettings().copy(
+        widthBass = 0.63, widthBassFar = 3.46, widthMiddle = 0.63, widthTreble = 0.63, widthTrebleFar = 0.0,
+        stretchPoints = listOf(StretchPoint(45, OctaveType.O6_3, 0.63), StretchPoint(77, OctaveType.O2_1, 0.74), StretchPoint(93, OctaveType.O4_1, 0.49)),
+    )
     private fun b(m: Int) = 0.9e-4 * 2.0.pow((m - 48) / 12.0) + 2.5e-4 * 2.0.pow(-(m - 21) / 8.0)
 
     private fun session(s: TunerSettings): TuningSession {
@@ -91,10 +98,18 @@ class StretchPointsTest {
         assertEquals(six.stretchPoints, six.withPoint(StretchPoint(80, OctaveType.O4_1, 1.5)).stretchPoints)
     }
 
+    /** The free app offers no places (Peter, 10 Nov 2026: "The 6 point fine grained preset is a Pro feature"). */
     @Test
-    fun offBringsBackTheDefaults() {
-        assertEquals(TunerSettings(), six.withSixPoints(false))
-        assertFalse(TunerSettings().sixPoints); assertTrue(six.sixPoints)
+    fun anEditionThatOffersNoPlacesHoldsNone() {
+        assertFalse(TunerSettings().hasPlaces); assertTrue(six.hasPlaces)
+        val store = MemoryStore()
+        val pro = SettingsModel(store).apply { update { six } }
+        assertEquals(six.stretchPoints, pro.settings.value.stretchPoints, "where places are offered they are kept")
+        val free = SettingsModel(store, placesOffered = false)
+        assertFalse(free.settings.value.hasPlaces, "places stored by an earlier version are not taken up")
+        free.update { it.copy(stretchPoints = six.stretchPoints) }
+        assertFalse(free.settings.value.hasPlaces, "nor set by a change")
+        assertEquals(3.46, free.settings.value.widthBassFar, "the rest of the stretch stays the tuner's")
     }
 
     /** The word the size switch left in the saved tuning (31 Oct - 9 Nov 2026): such a tuning opens as it was saved. */

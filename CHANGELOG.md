@@ -37,6 +37,14 @@ reconstructed from the commit history that day.
   sampled, the window says to sample them. On a recording of a Yamaha b2 tuned
   to 6:3 and heard as too high in the bass, it suggests 10:5
   (`OctaveSuggestionRecordingsTest`).
+- **The six-point stretch has left the free app; it is Pro's** (Peter: "The 6
+  point fine grained preset is a Pro feature"). Suggestions from what the
+  sampling measures stay here. Settings › Stretch is the bass, midrange and
+  treble again, then the breaks, and the window behind the tuning line has no
+  six-point switch. Settings stored with places by 0.8.0 open without them (the
+  widths stay); a tuning under way keeps its own stretch until it is done. The
+  engine still computes targets from places wherever an edition sets them
+  (`SettingsModel.placesOffered`).
 - **No false-beat claim while sampling or tuning.** The colour and the claim
   made from the tuning's own strikes are gone (`FALSE_MARKS_ON_TUNING`); the
   check of the single string replaces them. The reference string tuned alone is

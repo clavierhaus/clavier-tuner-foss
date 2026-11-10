@@ -191,17 +191,6 @@ object K {
     const val settings_beatless = "settings.beatless"
     const val settings_cWide = "settings.cWide"
     const val settings_cNarrow = "settings.cNarrow"
-    const val settings_sixPoints = "settings.sixPoints"
-    const val settings_page_stretchDefault = "settings.page.stretchDefault"
-    const val settings_page_sixPoints = "settings.page.sixPoints"
-    const val settings_stretchDefault = "settings.stretchDefault"
-    const val settings_stretchPoints = "settings.stretchPoints"
-    const val settings_stretchThree = "settings.stretchThree"
-    const val settings_stretchSix = "settings.stretchSix"
-    const val settings_stretchBoth = "settings.stretchBoth"
-    const val settings_stretchThreeNote = "settings.stretchThreeNote"
-    const val settings_stretchSixNote = "settings.stretchSixNote"
-    const val settings_note_sixPoints = "settings.note.sixPoints"
     const val settings_farEnd = "settings.farEnd"
     const val settings_atFar = "settings.atFar"
     const val settings_same = "settings.same"
@@ -440,17 +429,6 @@ internal object StringsTable : Catalog {
         "settings.beatless" to arrayOf("none (pure)", "keine (rein)"),
         "settings.cWide" to arrayOf("+{0} c", "+{0} c"),
         "settings.cNarrow" to arrayOf("−{0} c", "−{0} c"),
-        "settings.sixPoints" to arrayOf("Six-point stretch", "Spreizung mit sechs Punkten"),
-        "settings.page.stretchDefault" to arrayOf("Default", "Voreinstellung"),
-        "settings.page.sixPoints" to arrayOf("Six points", "Sechs Punkte"),
-        "settings.stretchDefault" to arrayOf("Stretch for new tunings", "Spreizung neuer Stimmungen"),
-        "settings.stretchPoints" to arrayOf("Set at", "Festgelegt an"),
-        "settings.stretchThree" to arrayOf("Three points", "Drei Punkten"),
-        "settings.stretchSix" to arrayOf("Six points", "Sechs Punkten"),
-        "settings.stretchBoth" to arrayOf("Either way the curve is worked out from what you measure. A tuning under way keeps its own: tap its line at the top of the tuning screen.", "In beiden Fällen wird die Kurve aus dem Gemessenen berechnet. Eine laufende Stimmung behält ihre eigene: Tippen Sie auf ihre Zeile oben im Stimmbildschirm."),
-        "settings.stretchThreeNote" to arrayOf("Three points: an octave type at the lowest key, in the temperament octave and at C8. Every octave between moves key by key from one to the next.", "Drei Punkte: je ein Oktavtyp an der tiefsten Taste, in der Temperaturoktave und bei C8. Jede Oktave dazwischen geht Taste für Taste vom einen zum nächsten über."),
-        "settings.stretchSixNote" to arrayOf("Six points: three more places, A2, F5 and A6, each with its own octave type and extra stretch. Upward the octaves go from 4:2 to 2:1 at F5 and 4:1 at A6. A little extra stretch throughout, the most at the lowest key, none at C8.", "Sechs Punkte: drei weitere Stellen, A2, F5 und A6, jede mit eigenem Oktavtyp und eigener zusätzlicher Spreizung. Nach oben gehen die Oktaven von 4:2 zu 2:1 bei F5 und 4:1 bei A6. Überall etwas zusätzliche Spreizung, am meisten an der tiefsten Taste, bei C8 keine."),
-        "settings.note.sixPoints" to arrayOf("Three more places besides the ends: A2 on 6:3, F5 on 2:1, A6 on 4:1. Every octave moves key by key from one place to the next. On, it sets the octave types and extra stretch; off, they return to their defaults.", "Drei weitere Stellen neben den Enden: A2 auf 6:3, F5 auf 2:1, A6 auf 4:1. Jede Oktave geht Taste für Taste von einer Stelle zur nächsten über. Ein setzt es die Oktavtypen und die zusätzliche Spreizung, aus gehen sie auf ihre Vorgaben zurück."),
         "settings.farEnd" to arrayOf("Toward the end of the range", "Zum Ende des Bereichs"),
         "settings.atFar" to arrayOf("At {0}", "Bei {0}"),
         "settings.same" to arrayOf("unchanged", "unverändert"),

@@ -407,22 +407,14 @@ data class TunerSettings(
         return OctaveBlend(end.type, end.type, 1.0, end.widthCents)   // past the end: a key below the lowest
     }
 
-    /** True while the six-point stretch is on ([withSixPoints]). */
-    val sixPoints: Boolean get() = stretchPoints.isNotEmpty()
-
     /**
-     * These settings with the six-point stretch on or off (8 Nov 2026): on, the ends and the temperament octave's
-     * widths and three further places, A2, F5 and A6, the octave leaving the middle's type by F5 instead of holding part
-     * of it up to C8; off, the types and widths of a new tuning. A preset of the values below; each stays the tuner's.
+     * True while the stretch has places besides the ends and the temperament octave ([stretchPoints]): the screens then
+     * show the places where the three regions stood. The engine computes targets from places wherever they come from; an
+     * edition that offers none fixes them away ([SettingsModel.placesOffered]). The preset that set them here from 8 to
+     * 10 Nov 2026, the six-point stretch, is not the free app's (Peter, 10 Nov 2026: "The 6 point fine grained preset is
+     * a Pro feature").
      */
-    fun withSixPoints(on: Boolean): TunerSettings = if (on) copy(
-        octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
-        widthBass = 0.63, widthBassFar = 3.46, widthMiddle = 0.63, widthTreble = 0.63, widthTrebleFar = 0.0,
-        stretchPoints = listOf(StretchPoint(45, OctaveType.O6_3, 0.63), StretchPoint(77, OctaveType.O2_1, 0.74), StretchPoint(93, OctaveType.O4_1, 0.49)),
-    ) else copy(
-        octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
-        widthBass = 0.0, widthBassFar = null, widthMiddle = 0.0, widthTreble = 0.0, widthTrebleFar = null, stretchPoints = emptyList(),
-    )
+    val hasPlaces: Boolean get() = stretchPoints.isNotEmpty()
 
     /**
      * These settings with the bass on [type] (10 Nov 2026, the sampling's suggestion taken, OctaveSuggestion): the bass's
@@ -506,6 +498,12 @@ class SettingsModel(
     private val defaults: TunerSettings = TunerSettings(strobeMode = StrobeMode.ONE),
     /** The lowest key an edition fixes, or null where the tuner sets it (Pro). */
     val lowestKeyFixed: Int? = null,
+    /**
+     * Whether the stretch may have places besides the ends ([TunerSettings.stretchPoints]); false where an edition offers
+     * none (the free app since 10 Nov 2026), and then whatever is stored, the settings hold none. A tuning under way
+     * keeps its own stretch and is not touched here (Rule 9).
+     */
+    val placesOffered: Boolean = true,
 ) {
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
@@ -518,7 +516,8 @@ class SettingsModel(
 
     private fun load(): TunerSettings = fixed(loadStored())
 
-    private fun fixed(s: TunerSettings): TunerSettings = offered(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s)
+    private fun fixed(s: TunerSettings): TunerSettings = offered((lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s)
+        .let { if (placesOffered) it else it.copy(stretchPoints = emptyList()) })
 
     /** A region's octave type no longer offered (30 Oct 2026), as an earlier version may have stored it: the region's default. */
     private fun offered(s: TunerSettings): TunerSettings = s.copy(
