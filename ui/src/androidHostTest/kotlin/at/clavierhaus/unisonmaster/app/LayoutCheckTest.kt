@@ -3,7 +3,9 @@ package at.clavierhaus.unisonmaster.app
 import at.clavierhaus.unisonmaster.measure.FalseBeat
 import at.clavierhaus.unisonmaster.ui.HomeHubItem
 import at.clavierhaus.unisonmaster.measure.StringCheck
+import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.tuning.CheckedString
+import at.clavierhaus.unisonmaster.tuning.OctaveSuggestion
 import at.clavierhaus.unisonmaster.tuning.FalseStrings
 import at.clavierhaus.unisonmaster.tuning.StringPlace
 import android.graphics.Bitmap
@@ -231,10 +233,12 @@ class LayoutCheckTest {
         // the window behind the info line
         rule.mainClock.autoAdvance = true          // nothing moves behind a dialog, and its window draws only on a running clock
         // with the way back, the fullest it gets
-        show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}) }
+        // with the sampling's suggestion at its longest: the reason, both others' figures, and Use (10 Nov 2026)
+        val suggested = OctaveSuggestion.Suggestion(OctaveType.O10_5, mapOf(OctaveType.O4_2 to 11.65, OctaveType.O6_3 to 9.66, OctaveType.O10_5 to 3.30), 5, 33)
+        show("info") { TuningInfoDialog(model.settings.value, { ch -> model.update(ch) }, {}, onStep = {}, suggestion = suggested, sampled = true) }
         look(where, dir, "10-info", dialog = true)
         // the same window with the six places in it, its fullest
-        show("info six") { TuningInfoDialog(model.settings.value.withSixPoints(true), { ch -> model.update(ch) }, {}, onStep = {}) }
+        show("info six") { TuningInfoDialog(model.settings.value.withSixPoints(true), { ch -> model.update(ch) }, {}, onStep = {}, suggestion = suggested, sampled = true) }
         look(where, dir, "10-info-six", dialog = true)
         // the question before a new tuning replaces the one saved
         c.snapshot()?.let { saved ->

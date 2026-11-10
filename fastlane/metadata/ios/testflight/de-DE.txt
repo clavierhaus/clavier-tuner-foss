@@ -4,6 +4,7 @@ Neu
 - Unreine Saiten, auf dem Startbildschirm: Einzelsaiten, eine nach der anderen. Die anderen Saiten der Taste abdämpfen, einmal anschlagen und ausklingen lassen. Die App nennt die Taste, die Teiltöne, die sie lang genug gehört hat, um sie zu beurteilen, und die, die in sich schweben, mit ihrer Schwebung. L, M oder R nach Wunsch. Lassen Sie jede Saite etwa acht Sekunden klingen: Ein kürzerer Anschlag ist zu kurz für ein Urteil.
 - Tippen Sie auf einen schwebenden Teilton, um ihn aus der Anzeige zu nehmen: Im Stimmbildschirm ist er für diese Taste grau, hat kein Band und wird nicht gelesen. Verwerfen holt ihn zurück.
 - Saite prüfen, im Stimmbildschirm: dieselbe Prüfung für die Taste, die Sie gerade stimmen.
+- Nach dem Vermessen schlägt die App den Oktavtyp für den Bass aus Ihren gemessenen Saiten vor, die Begründung hinter dem (i). Ein Tippen übernimmt ihn; die Wahl bleibt Ihre. Dafür zwei Basstasten im Oktavabstand messen, etwa A1 und A2.
 
 Geändert
 - Keine violetten Teiltöne mehr beim Stimmen.

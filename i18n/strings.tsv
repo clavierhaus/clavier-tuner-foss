@@ -132,6 +132,11 @@ tuning.partialOne	partial {0}	Teilton {0}
 tuning.info	A4 = {0} · equal temperament {1}–A4 · octaves {2}	A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}
 tuning.infoTitle	This tuning	Diese Stimmung
 tuning.infoOrders	These settings hold for this tuning. Change what you want, then Done.	Das gilt für diese Stimmung. Nach Wunsch ändern, dann Fertig.
+tuning.suggestShort	Suggested for the bass: {0}	Vorschlag für den Bass: {0}
+tuning.suggest	Measured on your sampled strings: with {0} in the bass, no beat between two of them an octave apart is faster than {1} Hz ({2}). Every partial within {3} dB of its own string's loudest counts. This is a suggestion, not a setting: the octave type stays your choice, and an ear that prefers another is right to choose it.	Gemessen an Ihren Saiten: Mit {0} im Bass schwebt zwischen zwei gemessenen Saiten im Oktavabstand nichts schneller als {1} Hz ({2}). Es zählt jeder Teilton bis {3} dB unter dem lautesten seiner Saite. Das ist ein Vorschlag, keine Einstellung: Der Oktavtyp bleibt Ihre Wahl, und ein Ohr, das einen anderen vorzieht, wählt zu Recht diesen.
+tuning.suggestUse	Use {0}	{0} verwenden
+tuning.suggestNoneShort	No suggestion for the bass yet	Noch kein Vorschlag für den Bass
+tuning.suggestNone	Sample two bass keys an octave apart, A1 and A2 say, and the app suggests the bass's octave type from them.	Messen Sie zwei Basstasten im Oktavabstand, etwa A1 und A2, dann schlägt die App daraus den Oktavtyp für den Bass vor.
 tuning.partialsNot	 · not {0}	 · ohne {0}
 tuning.follows	follows the key · 	folgt der Taste · 
 tuning.leavingKeeps	leaving a note keeps it	Weitergehen speichert den Ton

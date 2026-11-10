@@ -148,3 +148,11 @@ Saite." Every word of the check names one string, alone, the others muted.
 | judged (a partial) | *beurteilt* | heard long enough that a false beat on it would have been claimed |
 | no false beat found / too short to judge | *keine Schwebung in sich gefunden* / *zu kurz für ein Urteil* | never "clean": one strike says only what it judged |
 | L, C, R (which string, if the tuner says) | *L, M, R* | never required |
+
+## 9. 10 November 2026 — the bass's octave type suggested by the sampling
+
+| Word | German | Where |
+|---|---|---|
+| Suggested for the bass: 10:5 | *Vorschlag für den Bass: 10:5* | the window behind the tuning line, after the sampling |
+| Use 10:5 | *10:5 verwenden* | takes the suggestion; the type stays the tuner's |
+| No suggestion for the bass yet | *Noch kein Vorschlag für den Bass* | no two bass keys an octave apart sampled |

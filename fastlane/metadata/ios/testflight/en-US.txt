@@ -4,6 +4,7 @@ New
 - False Beats, on the home screen: single strings, one at a time. Mute the other strings of the key, strike once and let it ring out. The app names the key, the partials it heard long enough to judge, and the ones that beat by themselves, with the rate. L, C or R if you like. Let each string ring about eight seconds: a shorter strike is too short to judge.
 - Tap a partial that beats to take it out of the reading: on the tuning screen it is grey for that key, has no band and is not read. Discard brings it back.
 - Check string, on the tuning screen: the same check for the key in hand.
+- After sampling, the app suggests the bass's octave type from your sampled strings, with the reason behind the (i). One tap uses it; the choice stays yours. Sample two bass keys an octave apart (A1 and A2, say) to get one.
 
 Changed
 - No violet partials while tuning.

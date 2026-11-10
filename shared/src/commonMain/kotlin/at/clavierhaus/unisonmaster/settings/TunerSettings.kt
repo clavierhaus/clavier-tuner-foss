@@ -424,6 +424,15 @@ data class TunerSettings(
         widthBass = 0.0, widthBassFar = null, widthMiddle = 0.0, widthTreble = 0.0, widthTrebleFar = null, stretchPoints = emptyList(),
     )
 
+    /**
+     * These settings with the bass on [type] (10 Nov 2026, the sampling's suggestion taken, OctaveSuggestion): the bass's
+     * end and every place below the temperament octave; the widths and the treble stay as they are.
+     */
+    fun withBassOctave(type: OctaveType): TunerSettings = copy(
+        octaveBass = type,
+        stretchPoints = stretchPoints.map { if (it.midi < temperamentLowMidi && type in BASS_OCTAVES) it.copy(type = type) else it },
+    )
+
     /** These settings with the place at [point]'s key set to [point]; a key with no place adds none. */
     fun withPoint(point: StretchPoint): TunerSettings = copy(stretchPoints = stretchPoints.map { if (it.midi == point.midi) point else it })
 

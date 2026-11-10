@@ -105,6 +105,11 @@ first. Unisons are tuned by ear.
   heard too briefly, is said to be so, never called clean. Let each string ring
   about eight seconds: a partial is judged only after six. One strike can miss a
   false beat that three strikes would show.
+- **The bass's octave type, suggested by your sampling.** After sampling, the
+  window behind the tuning line says which octave type your sampled strings
+  suggest for the bass, and why: the hardest beat each type would leave between
+  two of them an octave apart. One tap uses it; the choice stays yours. Sample
+  two bass keys an octave apart, A1 and A2 say, to get one.
 - **No violet on the tuning screen.** The colour for a partial claimed false
   from the tuning's own strikes is gone; the check of the single string takes
   its place.

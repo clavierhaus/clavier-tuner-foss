@@ -132,6 +132,11 @@ object K {
     const val tuning_info = "tuning.info"
     const val tuning_infoTitle = "tuning.infoTitle"
     const val tuning_infoOrders = "tuning.infoOrders"
+    const val tuning_suggestShort = "tuning.suggestShort"
+    const val tuning_suggest = "tuning.suggest"
+    const val tuning_suggestUse = "tuning.suggestUse"
+    const val tuning_suggestNoneShort = "tuning.suggestNoneShort"
+    const val tuning_suggestNone = "tuning.suggestNone"
     const val tuning_partialsNot = "tuning.partialsNot"
     const val tuning_follows = "tuning.follows"
     const val tuning_leavingKeeps = "tuning.leavingKeeps"
@@ -376,6 +381,11 @@ internal object StringsTable : Catalog {
         "tuning.info" to arrayOf("A4 = {0} · equal temperament {1}–A4 · octaves {2}", "A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}"),
         "tuning.infoTitle" to arrayOf("This tuning", "Diese Stimmung"),
         "tuning.infoOrders" to arrayOf("These settings hold for this tuning. Change what you want, then Done.", "Das gilt für diese Stimmung. Nach Wunsch ändern, dann Fertig."),
+        "tuning.suggestShort" to arrayOf("Suggested for the bass: {0}", "Vorschlag für den Bass: {0}"),
+        "tuning.suggest" to arrayOf("Measured on your sampled strings: with {0} in the bass, no beat between two of them an octave apart is faster than {1} Hz ({2}). Every partial within {3} dB of its own string's loudest counts. This is a suggestion, not a setting: the octave type stays your choice, and an ear that prefers another is right to choose it.", "Gemessen an Ihren Saiten: Mit {0} im Bass schwebt zwischen zwei gemessenen Saiten im Oktavabstand nichts schneller als {1} Hz ({2}). Es zählt jeder Teilton bis {3} dB unter dem lautesten seiner Saite. Das ist ein Vorschlag, keine Einstellung: Der Oktavtyp bleibt Ihre Wahl, und ein Ohr, das einen anderen vorzieht, wählt zu Recht diesen."),
+        "tuning.suggestUse" to arrayOf("Use {0}", "{0} verwenden"),
+        "tuning.suggestNoneShort" to arrayOf("No suggestion for the bass yet", "Noch kein Vorschlag für den Bass"),
+        "tuning.suggestNone" to arrayOf("Sample two bass keys an octave apart, A1 and A2 say, and the app suggests the bass's octave type from them.", "Messen Sie zwei Basstasten im Oktavabstand, etwa A1 und A2, dann schlägt die App daraus den Oktavtyp für den Bass vor."),
         "tuning.partialsNot" to arrayOf(" · not {0}", " · ohne {0}"),
         "tuning.follows" to arrayOf("follows the key · ", "folgt der Taste · "),
         "tuning.leavingKeeps" to arrayOf("leaving a note keeps it", "Weitergehen speichert den Ton"),

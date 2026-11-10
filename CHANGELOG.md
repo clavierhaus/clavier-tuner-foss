@@ -25,6 +25,18 @@ reconstructed from the commit history that day.
   reading moves to the lowest partial left when it was the listened one. The
   targets do not move. Discard takes the key's checks and exclusions back. Both
   are kept with the saved tuning.
+- **The bass's octave type suggested by the sampling** (Peter: "Aus der Messung
+  der Inharmonizität sollte es doch möglich sein, einen Oktavtyp vorzuschlagen,
+  der dem Klavier angemessen ist"). After the sampling, the window behind the
+  tuning line says which type the sampled strings suggest for the bass, with
+  one tap to use it; behind its (i), why: for every two sampled bass keys an
+  octave apart and every type the bass offers, the hardest beat that type would
+  leave between them, every partial within 20 dB of its own string's loudest
+  counting (`OctaveSuggestion`). The suggestion never sets a type by itself; the
+  bass stays 6:3 until the tuner chooses. With no two bass keys an octave apart
+  sampled, the window says to sample them. On a recording of a Yamaha b2 tuned
+  to 6:3 and heard as too high in the bass, it suggests 10:5
+  (`OctaveSuggestionRecordingsTest`).
 - **No false-beat claim while sampling or tuning.** The colour and the claim
   made from the tuning's own strikes are gone (`FALSE_MARKS_ON_TUNING`); the
   check of the single string replaces them. The reference string tuned alone is

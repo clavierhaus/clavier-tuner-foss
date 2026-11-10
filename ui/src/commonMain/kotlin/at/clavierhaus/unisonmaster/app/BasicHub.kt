@@ -34,6 +34,7 @@ import at.clavierhaus.unisonmaster.i18n.K
 import at.clavierhaus.unisonmaster.i18n.Strings
 import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.TuningController
+import at.clavierhaus.unisonmaster.tuning.OctaveSuggestion
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.TuningSession
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
@@ -160,10 +161,22 @@ fun BasicHub(
     }
     Corners(onSettings = onSettings, onHome = onHome, info = tuningInfoLine(cfg, a4),
         onInfo = if (onChangeSettings != null) ({ infoOpen = true }) else null)
-    if (infoOpen && onChangeSettings != null) TuningInfoDialog(
-        cfg, onChangeSettings, onClose = { infoOpen = false },
-        onStep = if (t != null && !t.sampling && t.canStepBack) { n -> infoOpen = false; if (n == 1) controller.backToA4() else controller.backToSampling() } else null,
-    )
+    if (infoOpen && onChangeSettings != null) {
+        // what the sampling suggests for the bass (10 Nov 2026): from the sampled strings only, worked out when the window
+        // opens; a string tuned afterwards is not a sample (Rule 9)
+        val sampledDone = t != null && !t.sampling
+        val suggestion = remember(infoOpen, sampledDone, cfg.temperamentLowMidi) {
+            if (!sampledDone) null else controller.snapshot()?.let { snap ->
+                val keys = snap.basis?.keys
+                OctaveSuggestion.bass(snap.measurements.filter { keys == null || it.midi in keys }, cfg.temperamentLowMidi)
+            }
+        }
+        TuningInfoDialog(
+            cfg, onChangeSettings, onClose = { infoOpen = false },
+            onStep = if (t != null && !t.sampling && t.canStepBack) { n -> infoOpen = false; if (n == 1) controller.backToA4() else controller.backToSampling() } else null,
+            suggestion = suggestion, sampled = sampledDone,
+        )
+    }
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
         // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
         // The one picture, built here once for every state of the screen -- one place puts the number

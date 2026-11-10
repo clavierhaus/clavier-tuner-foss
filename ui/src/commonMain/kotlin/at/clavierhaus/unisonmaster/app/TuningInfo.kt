@@ -30,7 +30,9 @@ import at.clavierhaus.unisonmaster.i18n.t
 import at.clavierhaus.unisonmaster.settings.OctaveType
 import at.clavierhaus.unisonmaster.settings.StretchPoint
 import at.clavierhaus.unisonmaster.settings.TunerSettings
+import at.clavierhaus.unisonmaster.tuning.OctaveSuggestion
 import at.clavierhaus.unisonmaster.ui.Choices
+import at.clavierhaus.unisonmaster.ui.InfoButton
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.Stepper
 import at.clavierhaus.unisonmaster.ui.SwitchRow
@@ -51,9 +53,20 @@ fun tuningInfoLine(s: TunerSettings, a4Hz: Double): String =
         (listOf(s.octaveBass) + s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.map { it.type } + s.octaveMiddle +
             s.stretchPoints.filter { it.midi > TunerSettings.TEMPERAMENT_HIGH }.sortedBy { it.midi }.map { it.type } + s.octaveTreble).joinToString(" | ") { it.label })
 
-/** The window behind the line. [onChange] changes the settings in force; [onClose] closes it. */
+/**
+ * The window behind the line. [onChange] changes the settings in force; [onClose] closes it. [suggestion] is what the
+ * sampling suggests for the bass (OctaveSuggestion, 10 Nov 2026); [sampled] the sampling is done, so that with no
+ * suggestion the window says what to sample for one.
+ */
 @Composable
-fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings) -> Unit, onClose: () -> Unit, onStep: ((Int) -> Unit)? = null) {
+fun TuningInfoDialog(
+    s: TunerSettings,
+    onChange: ((TunerSettings) -> TunerSettings) -> Unit,
+    onClose: () -> Unit,
+    onStep: ((Int) -> Unit)? = null,
+    suggestion: OctaveSuggestion.Suggestion? = null,
+    sampled: Boolean = false,
+) {
     // the widest region's choices lay out the heading's column; each region offers its own (30 Oct 2026)
     val octaves = widestOctaves
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -62,7 +75,26 @@ fun TuningInfoDialog(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettin
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(t(K.tuning_infoTitle), color = Color(Brand.WHITE), fontSize = 18.sp)
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(16.dp))
+                // the sampling's suggestion for the bass, beside the tuner's choice and never set by itself (Peter,
+                // 10 Nov 2026: "ein erfahrener Stimmer wird sich gegen unseren Vorschlag entscheiden"); its reason, in
+                // hertz between the sampled strings, behind the (i). In the title's row: the window had no row to spare
+                if (suggestion != null) {
+                    val inUse = s.octaveBass == suggestion.type && s.stretchPoints.none { it.midi < s.temperamentLowMidi && it.type != suggestion.type }
+                    val others = suggestion.hardestHz.filterKeys { it != suggestion.type }.entries.sortedBy { it.value }
+                        .joinToString(", ") { "${it.key.label}: ${num(it.value, 1)} Hz" }
+                    val short = t(K.tuning_suggestShort, suggestion.type.label)
+                    TextBlock(listOf(short), Modifier.weight(1f), size = 14.sp, minSize = 11.sp, color = Color(Brand.WHITE))
+                    InfoButton(short, t(K.tuning_suggest, suggestion.type.label, num(suggestion.hardestHz.getValue(suggestion.type), 1), others,
+                        num(OctaveSuggestion.LEVEL_DB, 0)))
+                    if (!inUse) Chip(t(K.tuning_suggestUse, suggestion.type.label), selected = false, enabled = true) { onChange { it.withBassOctave(suggestion.type) } }
+                    Spacer(Modifier.width(12.dp))
+                } else if (sampled) {
+                    val short = t(K.tuning_suggestNoneShort)
+                    TextBlock(listOf(short), Modifier.weight(1f), size = 14.sp, minSize = 11.sp, color = Color(Brand.WHITE_MUTED))
+                    InfoButton(short, t(K.tuning_suggestNone))
+                    Spacer(Modifier.width(12.dp))
+                } else Spacer(Modifier.weight(1f))
                 Chip(t(K.app_done), selected = true, enabled = true, onClick = onClose)
             }
             // the way back, here where the sampling has just ended, until a note has been tuned (Peter, 9 Nov 2026)
