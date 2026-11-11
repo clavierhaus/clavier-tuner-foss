@@ -7,6 +7,15 @@ reconstructed from the commit history that day.
 
 ## 0.9.0 -- 2026-11-10
 
+### 2026-11-11
+- **A click before a strike no longer costs the string.** A strike that comes
+  while a check is still taking in its first seconds now starts the check
+  again on itself. Before, a click of a key or a damper (one hop, about
+  -69 dBFS) could open a check that then looked for the key in the silence
+  after the click, and the string struck 2 s later went unnamed. On a
+  Steinway B, F2 to B4, each string alone: keys with a string lost or
+  miscounted fell from 8 to 3 (`StringCheckTest`).
+
 ### 2026-11-10
 - **False Beats: single strings checked one at a time** (Peter: "a separate
   tuning mode that is not sampling, but doing nothing else but measuring a

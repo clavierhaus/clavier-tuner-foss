@@ -167,6 +167,10 @@ class StringCheck(
         when (phase) {
             Phase.WAITING, Phase.UNNAMED -> if (struck) { phase = Phase.MEASURING; since = 0; keep(chunk) }
             Phase.MEASURING -> {
+                // a strike after the one that opened the check is the one sounding, and the check starts again on it
+                // (11 Nov 2026: on the Steinway B 1886 a click of one hop, -68.7 dBFS, opened a check, the key was
+                // looked for in the silence after it, and G4's strike 2.25 s later went unnamed with the kept seconds)
+                if (struck && since > REPEAT_S * sampleRate) { buffered = 0; since = 0 }
                 keep(chunk)
                 if (buffered >= MEASURE_S * sampleRate) measureAndRead()
             }
