@@ -98,6 +98,29 @@ class StretchPointsTest {
         assertEquals(six.stretchPoints, six.withPoint(StretchPoint(80, OctaveType.O4_1, 1.5)).stretchPoints)
     }
 
+    /**
+     * What an edition starts a new phone with is taken whole, its places and the widths at the ends with it (Pro starts
+     * on the six points, 11 Nov 2026); what the tuner then sets is kept, a width at an end taken out included; and a
+     * phone that kept settings before the places existed does not get the start's places laid over its own stretch.
+     */
+    @Test
+    fun anEditionsStartIsTakenWholeOnANewPhoneAndOnlyThere() {
+        val store = MemoryStore()
+        val fresh = SettingsModel(store, defaults = six)
+        assertEquals(six.stretchPoints, fresh.settings.value.stretchPoints)
+        assertEquals(3.46, fresh.settings.value.widthBassFar, "the width at the lowest key is the start's")
+        assertEquals(0.0, fresh.settings.value.widthTrebleFar)
+        fresh.update { it.copy(widthBassFar = null, stretchPoints = emptyList()) }
+        val again = SettingsModel(store, defaults = six).settings.value
+        assertEquals(null, again.widthBassFar, "taken out by the tuner, it stays out")
+        assertFalse(again.hasPlaces, "and so do the places")
+        // a phone that kept its settings before places and far widths were kept: its own stretch, nothing of the start's
+        val old = MemoryStore().apply { put("octaveBass", "O10_5"); put("widthBass", "1.5") }
+        val kept = SettingsModel(old, defaults = six).settings.value
+        assertFalse(kept.hasPlaces); assertEquals(null, kept.widthBassFar); assertEquals(1.5, kept.widthBass); assertEquals(OctaveType.O10_5, kept.octaveBass)
+        assertEquals(SettingsModel.FIRST_RUN, SettingsModel(MemoryStore()).settings.value, "where an edition says nothing, the one strobe and no places")
+    }
+
     /** The free app offers no places (Peter, 10 Nov 2026: "The 6 point fine grained preset is a Pro feature"). */
     @Test
     fun anEditionThatOffersNoPlacesHoldsNone() {

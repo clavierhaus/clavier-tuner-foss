@@ -494,8 +494,9 @@ data class Stretch(
 class SettingsModel(
     private val store: KeyValueStore,
     // a tuner's first run shows one strobe (Peter, 9 Nov 2026; two testers found several in the way): what a new phone
-    // starts from, and not the engine's own, which goes on reading every partial when it is told nothing
-    private val defaults: TunerSettings = TunerSettings(strobeMode = StrobeMode.ONE),
+    // starts from, and not the engine's own, which goes on reading every partial when it is told nothing. An edition
+    // may start a new phone elsewhere (Pro, 11 Nov 2026) and builds on [FIRST_RUN]
+    private val defaults: TunerSettings = FIRST_RUN,
     /** The lowest key an edition fixes, or null where the tuner sets it (Pro). */
     val lowestKeyFixed: Int? = null,
     /**
@@ -528,9 +529,16 @@ class SettingsModel(
 
     private fun loadStored(): TunerSettings {
         val d = defaults
+        // A phone that has kept settings before is not a new one (the octave types were kept from the first version on).
+        // What an edition starts a new phone with is taken whole, its places and the widths at the ends with it; on a
+        // phone with settings kept, a key a later version added and it lacks is none, never the edition's start laid
+        // over the tuner's own stretch (11 Nov 2026).
+        val kept = store.get("octaveBass") != null
         fun i(k: String, v: Int) = store.get(k)?.toIntOrNull() ?: v
         fun f(k: String, v: Double) = store.get(k)?.toDoubleOrNull() ?: v
-        fun fOrNull(k: String) = store.get(k)?.toDoubleOrNull()?.coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS)
+        // a width at an end: kept as a number, kept empty (none), or never kept (the start's on a new phone)
+        fun far(k: String, start: Double?) = store.get(k).let { text -> if (text == null) start else text.toDoubleOrNull() }
+            ?.coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS)
         fun b(k: String, v: Boolean) = store.get(k)?.toBooleanStrictOrNull() ?: v
         fun o(k: String, v: OctaveType) = store.get(k)?.let { n -> OctaveType.entries.firstOrNull { it.name == n } } ?: v
         return TunerSettings(
@@ -542,9 +550,9 @@ class SettingsModel(
             widthBass = f("widthBass", d.widthBass).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
             widthMiddle = f("widthMiddle", d.widthMiddle).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
             widthTreble = f("widthTreble", d.widthTreble).coerceIn(TunerSettings.MIN_WIDTH_CENTS, TunerSettings.MAX_WIDTH_CENTS),
-            widthBassFar = fOrNull("widthBassFar"),
-            widthTrebleFar = fOrNull("widthTrebleFar"),
-            stretchPoints = store.get("stretchPoints")?.let { StretchPoint.decode(it) } ?: d.stretchPoints,
+            widthBassFar = far("widthBassFar", if (kept) null else d.widthBassFar),
+            widthTrebleFar = far("widthTrebleFar", if (kept) null else d.widthTrebleFar),
+            stretchPoints = store.get("stretchPoints")?.let { StretchPoint.decode(it) } ?: if (kept) emptyList() else d.stretchPoints,
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -611,5 +619,10 @@ class SettingsModel(
         store.put("probe", s.probe.toString())
         store.put("showNavigationBar", s.showNavigationBar.toString())
         store.put("showStatusBar", s.showStatusBar.toString())
+    }
+
+    companion object {
+        /** What a new phone starts from where an edition says nothing else: the engine's own settings with one strobe. */
+        val FIRST_RUN = TunerSettings(strobeMode = StrobeMode.ONE)
     }
 }
