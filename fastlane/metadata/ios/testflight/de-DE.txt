@@ -8,6 +8,7 @@ Neu
 
 Geändert
 - Keine violetten Teiltöne mehr beim Stimmen.
+- Ein neues Telefon beginnt mit der Spreizung mit sechs Punkten. Drei Punkte bleiben einen Tipp entfernt, unter Einstellungen › Spreizung, und jeder Oktavtyp und jede Breite bleibt Ihre Wahl.
 
 Bitte probieren
 - Prüfen Sie einige Saiten, die Sie als unrein kennen, und einige reine. Stimmt die App zu?

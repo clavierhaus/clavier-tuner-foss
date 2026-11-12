@@ -8,6 +8,7 @@ New
 
 Changed
 - No violet partials while tuning.
+- A new phone starts on the six-point stretch. Three points stay one tap away in Settings › Stretch, and every octave type and width stays yours.
 
 Please try
 - Check a few strings you know are false, and a few you know are clean. Does the app agree?

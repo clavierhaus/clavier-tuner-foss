@@ -7,6 +7,17 @@ reconstructed from the commit history that day.
 
 ## 0.9.0 -- 2026-11-10
 
+### 2026-11-12
+- **The six-point stretch is back, and it is where a new phone starts**
+  (Peter: "Our 6 point mode will go into foss and be set as default there,
+  with all the other options left to choose and change"). The entry of 10 Nov
+  below is withdrawn: Settings › Stretch opens on the choice again, three
+  points or six, and the window behind the tuning line has its switch. A phone
+  that has never kept settings starts on six points, with their places and
+  widths; a phone that has keeps its own stretch, and a tuning under way keeps
+  what it began with. Every octave type and width stays the tuner's, and what
+  the sampling suggests for the bass is unchanged (`SettingsModel.NEW_PHONE`).
+
 ### 2026-11-11
 - **A click before a strike no longer costs the string.** A strike that comes
   while a check is still taking in its first seconds now starts the check

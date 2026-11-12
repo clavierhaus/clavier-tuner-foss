@@ -129,11 +129,6 @@ fun BasicHub(
     dimBands: Set<Int> = emptySet(),
     /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
-    /**
-     * A row an edition adds to that window above the stretch, given the settings in force and how to change them (Pro: the
-     * six-point stretch's switch, Peter, 10 Nov 2026: "The 6 point fine grained preset is a Pro feature"); none in the free app.
-     */
-    stretchPresetRow: (@Composable (TunerSettings, ((TunerSettings) -> TunerSettings) -> Unit) -> Unit)? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -180,7 +175,6 @@ fun BasicHub(
             cfg, onChangeSettings, onClose = { infoOpen = false },
             onStep = if (t != null && !t.sampling && t.canStepBack) { n -> infoOpen = false; if (n == 1) controller.backToA4() else controller.backToSampling() } else null,
             suggestion = suggestion, sampled = sampledDone,
-            presetRow = stretchPresetRow?.let { row -> { row(cfg, onChangeSettings) } },
         )
     }
     Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {

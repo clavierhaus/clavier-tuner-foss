@@ -56,11 +56,7 @@ class OctaveSuggestionTest {
 
     @Test
     fun takingTheSuggestionSetsTheBassAndItsPlacesAndNothingElse() {
-        // a stretch with places, as Pro's six-point preset sets it
-        val six = at.clavierhaus.unisonmaster.settings.TunerSettings(widthBass = 0.63, widthBassFar = 3.46, stretchPoints = listOf(
-            at.clavierhaus.unisonmaster.settings.StretchPoint(45, OctaveType.O6_3, 0.63),
-            at.clavierhaus.unisonmaster.settings.StretchPoint(77, OctaveType.O2_1, 0.74),
-            at.clavierhaus.unisonmaster.settings.StretchPoint(93, OctaveType.O4_1, 0.49)))
+        val six = at.clavierhaus.unisonmaster.settings.TunerSettings().withSixPoints(true)
         val taken = six.withBassOctave(OctaveType.O10_5)
         assertEquals(OctaveType.O10_5, taken.octaveBass)
         assertEquals(listOf(OctaveType.O10_5, OctaveType.O2_1, OctaveType.O4_1), taken.stretchPoints.sortedBy { it.midi }.map { it.type })

@@ -35,6 +35,7 @@ import at.clavierhaus.unisonmaster.ui.Choices
 import at.clavierhaus.unisonmaster.ui.InfoButton
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.Stepper
+import at.clavierhaus.unisonmaster.ui.SwitchRow
 import at.clavierhaus.unisonmaster.ui.formatHz
 import at.clavierhaus.unisonmaster.ui.num
 
@@ -65,8 +66,6 @@ fun TuningInfoDialog(
     onStep: ((Int) -> Unit)? = null,
     suggestion: OctaveSuggestion.Suggestion? = null,
     sampled: Boolean = false,
-    /** A row an edition adds above the stretch (Pro: the six-point stretch's switch); none in the free app. */
-    presetRow: (@Composable () -> Unit)? = null,
 ) {
     // the widest region's choices lay out the heading's column; each region offers its own (30 Oct 2026)
     val octaves = widestOctaves
@@ -105,12 +104,10 @@ fun TuningInfoDialog(
             // switch for a grand of 210 cm or longer stood here until that day: the sampling is the piano's measure
             TextBlock(listOf(t(K.tuning_infoOrders)), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.WHITE_MUTED))
             Spacer(Modifier.height(4.dp))
-            // an edition's preset of the stretch (Pro: the six-point stretch, Peter, 10 Nov 2026: "The 6 point fine grained
-            // preset is a Pro feature"; its switch stood here in the free app from 8 to 10 Nov)
-            if (presetRow != null) presetRow()
+            SwitchRow(t(K.settings_sixPoints), s.hasPlaces, info = t(K.settings_note_sixPoints)) { on -> onChange { it.withSixPoints(on) } }
             Spacer(Modifier.height(8.dp))
-            // with places, the places themselves stand here, where the three regions stood (Peter, 9 Nov 2026: "it must
-            // be obvious for a tuner"): a switch alone left the table looking as it had
+            // with the six points on, the six places themselves stand here, where the three regions stood (Peter, 9 Nov
+            // 2026: "it must be obvious for a tuner"): a switch alone left the table looking as it had
             if (s.hasPlaces) StretchPlaces(s, onChange) else {
             // a table: the columns say "octave type" and "width" once, each region is a row of its name
             // and its two controls (24 Oct 2026: the name of the width, said three times, left the width
@@ -180,8 +177,8 @@ private fun region(
 }
 
 /**
- * The places of the stretch ([TunerSettings.stretchPoints]), low to high, each with its octave type and extra stretch: the
- * bass side and the temperament octave on the left, the treble on the right; six with Pro's six-point stretch. The same table in the window behind the info line and in
+ * The six places of the six-point stretch, low to high, each with its octave type and extra stretch: the bass side and
+ * the temperament octave on the left, the treble on the right. The same table in the window behind the info line and in
  * Settings, so there is one picture of them; [onChange] says which settings it changes.
  */
 @Composable

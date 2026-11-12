@@ -110,9 +110,10 @@ first. Unisons are tuned by ear.
   suggest for the bass, and why: the hardest beat each type would leave between
   two of them an octave apart. One tap uses it; the choice stays yours. Sample
   two bass keys an octave apart, A1 and A2 say, to get one.
-- **The six-point stretch of 0.8 is no longer in this app.** Settings › Stretch
-  is the bass, midrange and treble again; what the app suggests comes from what
-  your sampling measures.
+- **The six-point stretch is where a new phone starts.** Settings › Stretch
+  opens on the choice, three points or six; every octave type and width stays
+  yours, and what the app suggests for the bass comes from what your sampling
+  measures.
 - **No violet on the tuning screen.** The colour for a partial claimed false
   from the tuning's own strikes is gone; the check of the single string takes
   its place.
