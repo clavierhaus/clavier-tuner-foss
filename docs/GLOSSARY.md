@@ -137,7 +137,8 @@ column wherever an earlier row carries a "?" for the same thing.
 ## 8. 10 November 2026 — the check of single strings
 
 Peter: "We should make it clear in wording that this is strictly about single strings only. False beat and unreine
-Saite." Every word of the check names one string, alone, the others muted.
+Saite." Every word of the check names one string, alone, the others muted. *Since 12 Nov 2026 the check is Pro's and
+its words are in Pro's table; they stand here as the words it was given.*
 
 | Word | German | Where |
 |---|---|---|

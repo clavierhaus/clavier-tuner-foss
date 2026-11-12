@@ -96,11 +96,9 @@ class TunerApp(
         controller.stopLive()
     }
 
-    /** The microphone on for the tuning screen and the check, off for every other: nothing is measured unseen. */
+    /** The microphone on for the tuning screen, off for every other: nothing is measured unseen. */
     internal fun screenShown(screen: String) {
-        micWanted = screen == "tune" || screen == "strings"
-        // the check page has the microphone to itself from its first buffer, so nothing it hears reaches the tuning
-        if (screen == "strings") controller.startCheck() else controller.stopCheck()
+        micWanted = screen == "tune"
         if (micWanted && phone.hasMic()) controller.startLive() else controller.stopLive()
         // the hub offers the tuning under way however it is reached -- from the settings' Home too (Gregor,
         // 4 Nov 2026: Continue was not offered there, the hub showed what was saved when the app started)
@@ -113,18 +111,9 @@ class TunerApp(
     }
 
     internal fun newTuning() {
-        // single strings checked before any tuning was begun go with the one begun now; a tuning replaced takes its
-        // own with it (10 Nov 2026)
-        val unclaimed = lastTuning.value !is SessionStore.Load.Ok && controller.snapshot() == null
         sessionStore.clear()
         lastTuning.value = SessionStore.Load.None
-        controller.resetSession(keepChecks = unclaimed)
-    }
-
-    /** The hub's False Beats: the checks go with the tuning saved, so it is taken up first; with none, with the next. */
-    internal fun checkStrings() {
-        val saved = (lastTuning.value as? SessionStore.Load.Ok)?.snapshot
-        if (saved != null && controller.snapshot() == null) controller.restore(saved)
+        controller.resetSession()
     }
 }
 
@@ -208,12 +197,6 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                         onChangeSettings = { change -> tuneOrDefault(change) },
                     )
                 }
-                "strings" -> {
-                    backHandler { backToHub() }
-                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
-                        StringCheckPage(controller, checksFor(app.lastTuning.value), onSettings = { openSettings() }, onHome = { backToHub() })
-                    }
-                }
                 else -> {
                     // the hub is the library's (TunerHub); this app only says what is behind each door
                     TunerHub(
@@ -224,7 +207,6 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                             screen = "tune"
                         },
                         onSettings = { openSettings() },
-                        onFalseBeats = { app.checkStrings(); screen = "strings" },
                     )
                 }
             }

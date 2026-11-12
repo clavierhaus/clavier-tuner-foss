@@ -91,20 +91,7 @@ first. Unisons are tuned by ear.
 
 ## New in 0.9
 
-- **False Beats: single strings, one at a time.** A door on the home screen.
-  One string alone, the other strings of the key muted, struck once and left to
-  ring out. The app names the key, says which partials it heard long enough to
-  judge, and which of them beat by themselves, with the rate. Name the string
-  L, C or R if you like; it is never required.
-- **A partial that beats can be taken out of the reading.** Tap it in the
-  check: on the tuning screen it is grey for that key, has no band and is not
-  read, until you discard the check. The checks are kept with the tuning.
-- **Check string** on the tuning screen does the same for the key in hand, when
-  the strobe will not settle.
-- **One strike says only what it judged.** A strike too short, or a partial
-  heard too briefly, is said to be so, never called clean. Let each string ring
-  about eight seconds: a partial is judged only after six. One strike can miss a
-  false beat that three strikes would show.
+- **The false-beat check has moved to Clavier Tuner Pro.**
 - **The bass's octave type, suggested by your sampling.** After sampling, the
   window behind the tuning line says which octave type your sampled strings
   suggest for the bass, and why: the hardest beat each type would leave between
@@ -115,8 +102,7 @@ first. Unisons are tuned by ear.
   yours, and what the app suggests for the bass comes from what your sampling
   measures.
 - **No violet on the tuning screen.** The colour for a partial claimed false
-  from the tuning's own strikes is gone; the check of the single string takes
-  its place.
+  from the tuning's own strikes is gone.
 
 ## New in 0.8
 

@@ -129,6 +129,8 @@ fun BasicHub(
     dimBands: Set<Int> = emptySet(),
     /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
+    /** A control an edition sets beside the strobe's line, given the key on screen; none in the free app. */
+    besideStrobe: (@Composable (Int) -> Unit)? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -292,11 +294,6 @@ fun BasicHub(
             }
         }
 
-        // Check string: the microphone is the check's while its window is open, the engine's again when it closes
-        var checkingString by remember { mutableStateOf(false) }
-        DisposableEffect(checkingString) { val open = checkingString; onDispose { if (open) controller.stopCheck() } }
-        if (checkingString) StringCheckDialog(controller, t.midi) { checkingString = false }
-
         // the note name is the picture's one control: following the key struck is the default; a tap
         // opens the picker and the key chosen there holds until the name is tapped again
         var pickingNote by remember { mutableStateOf(false) }
@@ -373,10 +370,10 @@ fun BasicHub(
                     onTap = { k -> controller.tapPartial(k) },
                     modifier = Modifier.weight(1f),
                 )
-                // one string of the key on screen checked for false beats, when the strobe will not settle (Peter,
-                // 10 Nov 2026: "in regular tuning mode there should be an extra button like 'check for false beats'")
-                Spacer(Modifier.width(10.dp))
-                Chip(t(K.tuning_check), selected = false, enabled = true) { controller.startCheck(); checkingString = true }
+                if (besideStrobe != null) {
+                    Spacer(Modifier.width(10.dp))
+                    besideStrobe(t.midi)
+                }
             } else {
                 Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 Spacer(Modifier.weight(1f))

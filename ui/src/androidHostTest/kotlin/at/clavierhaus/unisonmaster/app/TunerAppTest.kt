@@ -117,44 +117,6 @@ class TunerAppTest {
      * buffer, and the checks go with the tuning saved, which is taken up for them; leaving the page gives the
      * microphone back and ends the check.
      */
-    @Test fun theCheckPageHasTheMicrophoneAndItsChecksGoWithTheTuningSaved() {
-        val file = MemoryFile()
-        val first = app(file, TestPhone(mic = true))
-        first.start(recreated = false)
-        first.newTuning()
-        first.controller.restore(SessionSnapshot(savedAtMs = 1L, a4Hz = 443.0, currentMidi = 69, measurements = emptyList(), sampling = true))
-        first.pause()
-
-        val app = app(file, TestPhone(mic = true))
-        app.start(recreated = false)
-        assertEquals(null, app.controller.snapshot())
-        app.checkStrings()
-        assertEquals("the tuning saved is the one the checks go with", 443.0, app.controller.snapshot()!!.a4Hz, 1e-9)
-        app.screenShown("strings")
-        assertTrue(app.controller.live.value)
-        assertNotNull("the check has the microphone", app.controller.checking.value)
-        app.controller.excludePartial(72, 3, out = true)
-        app.screenShown("hub")
-        assertFalse(app.controller.live.value)
-        assertEquals(null, app.controller.checking.value)
-        assertEquals(setOf(3), (app.lastTuning.value as SessionStore.Load.Ok).snapshot.strings.excludedAt(72))
-        // a new tuning in its place takes them with it
-        app.newTuning()
-        assertTrue(app.controller.falseStrings.value.isEmpty)
-    }
-
-    @Test fun checksMadeBeforeAnyTuningGoWithTheOneBegunNext() {
-        val app = app(MemoryFile(), TestPhone(mic = true))
-        app.start(recreated = false)
-        app.checkStrings()
-        assertEquals("nothing saved, nothing taken up", null, app.controller.snapshot())
-        app.screenShown("strings")
-        app.controller.excludePartial(72, 3, out = true)
-        app.screenShown("hub")
-        app.newTuning()
-        assertEquals(setOf(3), app.controller.falseStrings.value.excludedAt(72))
-    }
-
     @Test fun theBarsShowAtTheStart() {
         val phone = TestPhone(mic = true)
         app(MemoryFile(), phone).start(recreated = false)

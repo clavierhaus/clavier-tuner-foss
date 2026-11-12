@@ -1,16 +1,14 @@
 0.9.0
 
 New
-- False Beats, on the home screen: single strings, one at a time. Mute the other strings of the key, strike once and let it ring out. The app names the key, the partials it heard long enough to judge, and the ones that beat by themselves, with the rate. L, C or R if you like. Let each string ring about eight seconds: a shorter strike is too short to judge.
-- Tap a partial that beats to take it out of the reading: on the tuning screen it is grey for that key, has no band and is not read. Discard brings it back.
-- Check string, on the tuning screen: the same check for the key in hand.
 - After sampling, the app suggests the bass's octave type from your sampled strings, with the reason behind the (i). One tap uses it; the choice stays yours. Sample two bass keys an octave apart (A1 and A2, say) to get one.
 
 Changed
+- The false-beat check has moved to Clavier Tuner Pro.
 - No violet partials while tuning.
 - A string a little off its target, struck after one further off, is read: the strobe no longer stays dark or comes and goes.
 - A new phone starts on the six-point stretch. Three points stay one tap away in Settings › Stretch, and every octave type and width stays yours.
 
 Please try
-- Check a few strings you know are false, and a few you know are clean. Does the app agree?
-- Take a beating partial out, then tune that key: does the strobe settle better?
+- Strike a string well off its target, then one nearer to it: does the strobe stay lit?
+- Sample two bass keys an octave apart: does the suggested octave type match what you would choose?

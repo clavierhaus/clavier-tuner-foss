@@ -8,6 +8,7 @@ reconstructed from the commit history that day.
 ## 0.9.0 -- 2026-11-10
 
 ### 2026-11-12
+- **The false-beat check has moved to Clavier Tuner Pro.**
 - **A string a little off no longer leaves the screen dark.** After a string
   that stood more than 25 cents off its target, the reading stayed where that
   string had been; the next string, nearer its target but more than 25 cents
