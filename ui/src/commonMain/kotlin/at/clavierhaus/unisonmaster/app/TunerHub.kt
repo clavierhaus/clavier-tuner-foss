@@ -34,9 +34,7 @@ import at.clavierhaus.unisonmaster.ui.formatHz
  * was last used and its A4, read back from the sealed session — and the
  * doors: *Continue Tuning* while one is saved, *New Tuning*, *False Beats*
  * ([onFalseBeats]: single strings checked one at a time, 10 Nov 2026), an edition's own
- * doors ([extra] — Pro's *My Pianos* / *My Customers*), and where the
- * edition has them *The Unisons* ([onUnisons]; Pro's — Peter, 4 Oct 2026,
- * "a USP for Pro only"). The recorder's door went with the recorder to Pro on
+ * doors ([extra] — Pro's *My Pianos* / *My Customers*). The recorder's door went with the recorder to Pro on
  * 5 Oct 2026 and arrives through [extra] like the book's. The words of the
  * doors kept here are written here once; an app only says what happens behind
  * each door.
@@ -46,7 +44,6 @@ fun TunerHub(
     last: SessionStore.Load,
     onContinue: (SessionSnapshot) -> Unit,
     onNew: () -> Unit,
-    onUnisons: (() -> Unit)? = null,
     onSettings: () -> Unit,
     /** The false-beat check of single strings; null where an app has no door to it. */
     onFalseBeats: (() -> Unit)? = null,
@@ -70,7 +67,6 @@ fun TunerHub(
         )
         if (onFalseBeats != null) add(HomeHubItem(t(K.hub_falseBeats_verb), t(K.hub_falseBeats_rest), t(K.hub_falseBeats_note), onClick = onFalseBeats))
         addAll(extra.map { if (it.startsOver) it.copy(onClick = afterAsking(it.onClick)) else it })
-        if (onUnisons != null) add(HomeHubItem(t(K.hub_unisons_verb), "", t(K.hub_unisons_note), lead = t(K.hub_unisons_lead), onClick = onUnisons))
     }
     HomeHub(entries = entries, onSettings = onSettings)
     val go = asking

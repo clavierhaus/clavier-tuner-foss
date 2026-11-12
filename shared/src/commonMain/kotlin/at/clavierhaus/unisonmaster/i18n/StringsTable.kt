@@ -82,9 +82,6 @@ object K {
     const val hub_new_ask = "hub.new.ask"
     const val hub_new_askNote = "hub.new.askNote"
     const val hub_new_askYes = "hub.new.askYes"
-    const val hub_unisons_lead = "hub.unisons.lead"
-    const val hub_unisons_verb = "hub.unisons.verb"
-    const val hub_unisons_note = "hub.unisons.note"
     const val hub_falseBeats_verb = "hub.falseBeats.verb"
     const val hub_falseBeats_rest = "hub.falseBeats.rest"
     const val hub_falseBeats_note = "hub.falseBeats.note"
@@ -331,9 +328,6 @@ internal object StringsTable : Catalog {
         "hub.new.ask" to arrayOf("Start a new tuning?", "Neue Stimmung beginnen?"),
         "hub.new.askNote" to arrayOf("The tuning from {0}, A4 {1}, can then no longer be continued.", "Die Stimmung vom {0}, A4 {1}, lässt sich dann nicht mehr fortsetzen."),
         "hub.new.askYes" to arrayOf("Start new", "Neu beginnen"),
-        "hub.unisons.lead" to arrayOf("The", "Die"),
-        "hub.unisons.verb" to arrayOf("Unisons", "Chöre"),
-        "hub.unisons.note" to arrayOf("the strings of a note read apart, partial by partial", "die Saiten eines Tons getrennt gelesen, Teilton für Teilton"),
         "hub.falseBeats.verb" to arrayOf("False", "Unreine"),
         "hub.falseBeats.rest" to arrayOf(" Beats", " Saiten"),
         "hub.falseBeats.note" to arrayOf("single strings, one at a time", "Einzelsaiten, eine nach der anderen"),
