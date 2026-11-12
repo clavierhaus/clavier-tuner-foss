@@ -496,6 +496,30 @@ class TuningControllerTest {
         assertEquals(-60.0, assertNotNull(r2.coarseCents, "the finder still places it"), 3.0)
     }
 
+    /**
+     * A string 23 cents sharp, struck after one 29 cents flat, is read (Peter, 12 Nov 2026, at the 225's A3: "A string 23 c
+     * out showing nothing at all ... should be fixed"). The flat string moved the reader to where it stood; the sharp one
+     * stood 52 cents from that place but within the band of the target, so no coarse figure was taken and the reader was
+     * never sent back: the screen stayed dark for the whole ring (research/ProbeA3Unison225.kt, 26.0 and 32.1 s). The reader
+     * reads a partial as far as 25 cents from where it listens (measured 12 Nov: shown 98 % at 25 c, 0 % at 28 c).
+     */
+    @Test
+    fun aStringWithinTheBandOfItsTargetIsReadAfterOneThatMovedTheReaderAway() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 57, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val b = 2.7e-4
+        // the flat string still ringing when the sharp one is struck, as at the piano: the screen never went silent between
+        val flat = SyntheticString.strike(et(57) * 2.0.pow(-29.0 / 1200), b, 9.0)
+        val sharp = SyntheticString.strike(et(57) * 2.0.pow(23.0 / 1200), b, 4.0, seed = 2)
+        val at = 5 * 48_000
+        for (i in sharp.indices) flat[at + i] += sharp[i]
+        c.hear(src, flat)
+        val r = assertNotNull(c.reading.value)
+        assertEquals(57, c.tuning.value?.midi)
+        assertTrue(r.live, "the string 23 cents sharp is read, not left dark: $r")
+        assertEquals(23.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
+    }
+
     @Test
     fun leavingANoteKeepsItOnlyWhenItWasHeardNearItsTarget() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))

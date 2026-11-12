@@ -8,6 +8,15 @@ reconstructed from the commit history that day.
 ## 0.9.0 -- 2026-11-10
 
 ### 2026-11-12
+- **A string a little off no longer leaves the screen dark.** After a string
+  that stood more than 25 cents off its target, the reading stayed where that
+  string had been; the next string, nearer its target but more than 25 cents
+  from that place, was never read, and the strobe showed nothing for its whole
+  ring (on a 225's A3: a string 29 cents flat, then one 23 cents sharp). The
+  reading now goes to the string whenever it stands out of the reach of where
+  it listens. On that recording the strobe is now live for 90-98 % of each
+  strike, where it was dark on the sharp string and dark three to six times a
+  strike while two strings were brought together.
 - **The six-point stretch is back, and it is where a new phone starts**
   (Peter: "Our 6 point mode will go into foss and be set as default there,
   with all the other options left to choose and change"). The entry of 10 Nov

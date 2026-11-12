@@ -8,6 +8,7 @@ New
 
 Changed
 - No violet partials while tuning.
+- A string a little off its target, struck after one further off, is read: the strobe no longer stays dark or comes and goes.
 - A new phone starts on the six-point stretch. Three points stay one tap away in Settings › Stretch, and every octave type and width stays yours.
 
 Please try

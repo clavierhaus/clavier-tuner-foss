@@ -1620,9 +1620,14 @@ class TuningController(
                     lastShown = Shown(rd.hz, w.hz, w.k, hop, w.generation)
                     coarse = null
                 } else if (finder != null && _liveLevel.value > 0.0) {
-                    coarse = finder.near(w.hz, COARSE_CENTS)?.let { TuningSession.centsOff(it.hz, w.hz) }
-                        ?.takeIf { abs(it) > PhaseReader.DEFAULT_BAND_CENTS }
-                    coarse?.let { followCoarse(w, it) }
+                    val off = finder.near(w.hz, COARSE_CENTS)?.let { TuningSession.centsOff(it.hz, w.hz) }
+                    coarse = off?.takeIf { abs(it) > PhaseReader.DEFAULT_BAND_CENTS }
+                    // the reader is sent to the string also when the string stands within the band of its target but out
+                    // of the band where the reader listens (12 Nov 2026, the 225's A3: a string 29 c flat moved the reader
+                    // there, the next one, 23 c sharp, stood 52 c from it and the screen stayed dark for its whole ring;
+                    // the reader reads a partial to 25 c from where it listens, measured that day: 98 % at 25 c, 0 at 28)
+                    val away = off != null && abs(TuningSession.centsOff(w.hz * 2.0.pow(off / 1200.0), w.listenHz)) > PhaseReader.DEFAULT_BAND_CENTS
+                    if (coarse != null || away) followCoarse(w, off!!)
                 } else if (_liveLevel.value == 0.0) coarse = null
                 // which key was struck: named within the first moments of a strike,
                 // and followed when the note on screen is not what sounds

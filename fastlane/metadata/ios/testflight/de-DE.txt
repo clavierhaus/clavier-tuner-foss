@@ -8,6 +8,7 @@ Neu
 
 Geändert
 - Keine violetten Teiltöne mehr beim Stimmen.
+- Eine Saite, die etwas neben ihrem Ziel steht und nach einer weiter entfernten angeschlagen wird, wird gelesen: Der Strobe bleibt nicht mehr dunkel und kommt und geht nicht mehr.
 - Ein neues Telefon beginnt mit der Spreizung mit sechs Punkten. Drei Punkte bleiben einen Tipp entfernt, unter Einstellungen › Spreizung, und jeder Oktavtyp und jede Breite bleibt Ihre Wahl.
 
 Bitte probieren
