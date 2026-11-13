@@ -26,7 +26,7 @@ object InharmonicityFit {
     /**
      * Fits only f0, holding B at [b].
      *
-     * Once any string of a unison has been measured, B is known: the strings
+     * Once any string of a key has been measured, B is known: the strings
      * share speaking length and wire, and their B values agree within a few
      * per cent. Re-fitting it per string is then not merely redundant but
      * harmful — f0 and B are strongly correlated, so a string offering only

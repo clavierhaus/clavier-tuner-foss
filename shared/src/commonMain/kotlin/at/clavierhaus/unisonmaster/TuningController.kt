@@ -488,9 +488,8 @@ class TuningController(
     /**
      * The string being tuned sounds alone, its partners muted: a beat it makes is its own, and the
      * tuning screen tallies its false beats as sampling does and keeps them with the note. Set by
-     * an edition that knows (Pro, 23 Oct 2026: the reference string is tuned alone, and its false
-     * beats are what the unison then sets aside); off, a beat while tuning may be the unison's and
-     * nothing is tallied (FALSE-BEATS §15).
+     * an edition that knows (23 Oct 2026); off, a beat while tuning may be another string's of the
+     * key and nothing is tallied (FALSE-BEATS §15).
      */
     @Volatile var referenceAlone: Boolean = false
 
@@ -1170,7 +1169,7 @@ class TuningController(
         }
         val level = m.partials.firstOrNull { it.k == k }?.levelDb ?: 0.0
         // the reference string tuned alone: what the tally has claimed of it goes with it (referenceAlone)
-        // and a note recorded again with its unison sounding keeps what its string alone was found to do
+        // and a note recorded again with the key's other strings sounding keeps what its string alone was found to do
         val facts = if (referenceAlone && keptClaimsMidi == t.midi) keptClaims else session?.measurements?.get(t.midi)?.falseBeats ?: m.falseBeats
         return m.copy(partials = (m.partials.filter { it.k != k } + own.copy(levelDb = level)).sortedBy { it.k }, falseBeats = facts)
     }

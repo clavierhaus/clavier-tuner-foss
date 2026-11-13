@@ -24,7 +24,7 @@ private fun key(midi: Int, a4: Double = 442.0, seconds: Double = 1.0, seed: Int 
     val f1 = a4 * 2.0.pow((midi - 69) / 12.0)
     val b = 1.0e-4 * 2.0.pow((midi - 40) / 10.0)
     val rnd = Random(seed)
-    val strings = listOf(-0.0015, 0.0, 0.0012)               // a unison two and a half cents wide
+    val strings = listOf(-0.0015, 0.0, 0.0012)               // three strings two and a half cents apart
     val count = when { midi < 40 -> 30; midi < 60 -> 16; midi < 84 -> 8; else -> 3 }
     val amps = DoubleArray(count + 1) { k ->
         if (k == 0) 0.0 else when {

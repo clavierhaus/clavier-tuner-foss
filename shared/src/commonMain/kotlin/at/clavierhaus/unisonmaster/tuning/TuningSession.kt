@@ -41,7 +41,7 @@ data class NoteMeasurement(
      * partials beat against themselves, how fast, how deep. Kept with f1 and B because, like
      * them, they are the string's and not the strike's -- a false beat repeats within 0.1 Hz
      * across recordings (strings-225, 26 Sept 2026) -- and because tuning cannot measure them: with
-     * the unison sounding, a beat at one partial is the unison's or the string's and the
+     * the key's other strings sounding, a beat at one partial is theirs or the string's and the
      * microphone cannot say which (FALSE-BEATS §15). Empty until sampling has claimed one.
      */
     val falseBeats: List<FalseBeat> = emptyList(),

@@ -59,7 +59,7 @@ class PhaseReaderTest {
 
     @Test
     fun twoStringsABeatApartReadAsTheBeatNotAsAWanderingNumber() {
-        // a unison 0.3 Hz apart: the phase against the reference of the sum swings at the beat
+        // two strings 0.3 Hz apart: the phase against the reference of the sum swings at the beat
         // rate; the reading follows it — that is the beat, shown — and its mean over a full beat
         // is the stronger string
         val sig = FloatArray(SR * 8) { i ->

@@ -120,7 +120,7 @@ fun TuningPictureView(
         // the partial line belongs to the bells; without them (the A4 page) it stood under the strobe and
         // was cut to "parti" (Peter, 23 Oct 2026)
         // No "partial N" beside the note since 26 Oct 2026 (Peter, after Gregor in the forum: irritating, no
-        // added value; which partial the reading is on matters only to someone tuning unisons with the app).
+        // added value).
         // Its tap into the stretch went with it; the info line at the top still opens the tuning's settings.
         // Two regions, two panels (Peter, 7 Oct 2026, 15:29): the strobe says when the string has
         // arrived -- it stops -- and the bells say where it stands and whether its partials agree,
@@ -130,7 +130,7 @@ fun TuningPictureView(
         // unordered.
         if (twoPanels) {
             // The bells panel stands empty since 23 Oct 2026 (Peter, at the Steinway B, D2: the bells danced
-            // over the panel on a single string and on the unison alike, while the strobe of the same
+            // over the panel on a single string and on all of a key's strings alike, while the strobe of the same
             // partials came to a complete standstill on new Heller strings; "even if it worked, what help
             // would it give to a tuner?"). The strobe stays where it is; the left side is left blank, and
             // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where

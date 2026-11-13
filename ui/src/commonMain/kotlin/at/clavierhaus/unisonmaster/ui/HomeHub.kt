@@ -93,7 +93,7 @@ fun HomeHub(
 
         // The menu. padding, not offset: the slot itself moves, so every line stays tappable.
         // Drawn for three entries; a fourth closes the gaps and lifts the column, a fifth
-        // (Pro's hub since 4 Oct 2026: Continue, New, Pianos, Unisons, Recordings) steps the
+        // (an edition's own doors beside Continue and New) steps the
         // type down one size so the last note stays on the reference screen — the hub's
         // measured layout under the laws (Pane, FitText) is the revamp's C′, still open.
         // A seventh (Pro's hub with False Beats, 10 Nov 2026) steps down once more and starts higher: at 30 sp the

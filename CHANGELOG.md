@@ -469,17 +469,13 @@ reconstructed from the commit history that day.
   sampled key orange; a tap on one offers its undo — remove it, or strike it
   anew. Short orders on the left. The spectrum and the partials to tap are
   gone from this page.
-- **The unison screen is Pro's.** Peter: the unison display is Pro's own
-  (this morning it had come here with "one tuner"); the free app's hub has
-  no Unisons door, and the screen and its analyser live in Pro again. The
-  engine's per-partial unison reading stays here.
 - **One bass.** The stretch has three regions — bass, middle, treble; the
   wound strings are the bass's, not a region of their own (Peter: two
   sections there made no sense). The bass width still slides from an octave
   above the lowest plain string down to the lowest key, so a wide low bass
   over a near-beatless plain bass is one setting, not two. The treble's
   octave is 4:2 by default; the double octave 4:1 stays a choice.
-- **The hub's words.** *The* Unisons; in Pro *My* Pianos or *My* Customers,
+- **The hub's words.** In Pro *My* Pianos or *My* Customers,
   as the book is kept — the lead word white, the door orange.
 - **The settings' tabs are words.** The tabs stand as a line of serif words,
   the open one orange, as the hub writes its doors; under a tab with more
@@ -501,15 +497,11 @@ reconstructed from the commit history that day.
   the engine. "Temperament first" remains the walk's preference only — the
   octave first, each note asking Done — and stays (Peter's word, 14:34).
 - **One hub.** The hub is the library's too (`TunerHub`): Continue Tuning
-  while one is saved, New Tuning, Unisons, Recordings — the same words in both
+  while one is saved, New Tuning — the same words in both
   editions; Pro adds its door, *Pianos*, after New Tuning.
 - **The screens are a library.** The tuning screens moved from the app into
   the `ui` module, so that the free app and Pro mount the same screens
   instead of carrying copies; the app is a shell around them.
-- **Unisons.** The unison screen — a note's strings read apart, partial by
-  partial, the congruence display and the sync row — is here now, from the hub,
-  as in Pro; and so is the recorder of the studies (Recordings). The hub has
-  the same entries in both editions.
 - **One tuner, two editions.** Peter's decision: the free app and Pro are
   identical in everything that is tuning; Pro adds the book — a tuning saved
   to a piano and the ledger around it. The pins the free app carried since
@@ -590,7 +582,7 @@ reconstructed from the commit history that day.
   partial, the linear scale at half its former width with its gate. Right,
   nothing but the bells on their centre line, ±6 c so a bell's movement is seen
   undistorted, the partial numbers in a row above. The frequency table is gone
-  (its place is the unisons, when they come). The partials are one row of chips
+  The partials are one row of chips
   that always fits, each an equal share of the width; a partial measured false
   is red-violet, and a tap on it takes it out of the bells. No cap on how many
   partials may be shown.
@@ -786,7 +778,7 @@ reconstructed from the commit history that day.
   a bass tuned wider the lower it goes is one setting, not a step. Unset,
   nothing changes. Settings → Stretch, "… at the lowest key".
 - Recordings: the studies Stage 1 (one string per key) and Stage 2 (the
-  other strings of the plain trichords) for a piano investigated in stages.
+  other strings of the plain keys) for a piano investigated in stages.
 
 ### 2026-09-28
 - The reading on the string's clean partials (`measure/CleanReading`): a
@@ -814,10 +806,8 @@ reconstructed from the commit history that day.
 - The microphone is a pump: `audio/AudioTap` opens the source and fans every
   buffer out to its taps. The pre-September analysis chain (`PartialMonitor`,
   `PartialAnalyzer`, Yin, PreciseF0, Goertzel, BeatRate, Scope, PartialLevel,
-  LiveIdentification, UnisonState) and its 54 tests are deleted; nothing the
-  app reads came from it. Core tests 132 → 81.
-- `UnisonSync.State.f1Hz`: the note's fundamental as placed on the strike that
-  named it.
+  and its 54 tests are deleted; nothing the app reads came from it. Core
+  tests 132 → 81.
 
 ### 2026-09-25
 - The key struck is identified by fitting a string (fundamental and B) to
@@ -842,8 +832,6 @@ reconstructed from the commit history that day.
   target, never the source.
 - Full Spectrum: every shown partial read by its own phase reader on a cents
   axis against the string's model.
-- Unison sync in core: partials 1–8 of a unison each read by phase, steady
-  or beating, best strike, string-alone check.
 - Follow the key on the new engine; the sampling screen; languages: every
   word the app shows in `i18n/strings.tsv` (English, German).
 - Licence file: Apache License 2.0.

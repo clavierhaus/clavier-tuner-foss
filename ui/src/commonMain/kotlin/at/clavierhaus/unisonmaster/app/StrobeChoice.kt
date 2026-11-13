@@ -29,7 +29,7 @@ import at.clavierhaus.unisonmaster.ui.TextBlock
 
 /**
  * The three lines: One strobe; Limit to N with − and +; All partials. [onChange] changes the settings in force.
- * [beside] is what an edition puts at the end of the third line (Pro's unison switch), where the panel has width to spare
+ * [beside] is what an edition puts at the end of the third line, where the panel has width to spare
  * and, on the smallest phone, no height below.
  */
 @Composable

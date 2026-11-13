@@ -76,7 +76,7 @@ fun TunerSettingsScreen(
     /** Home: the hub, from the corner every screen shares. */
     onHome: () -> Unit,
     open: Pair<Int, Int>? = null,
-    /** Pages an edition adds to the Piano tab after Range (Pro: the unison floors and the regimen a new piano starts from). */
+    /** Pages an edition adds to the Piano tab after Range. */
     extraPianoPages: List<SettingsPage> = emptyList(),
     /** Tabs an edition adds after Piano, before Help (Pro: the customers book). */
     extraTabs: List<SettingsTab> = emptyList(),

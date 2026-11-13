@@ -46,8 +46,8 @@ import kotlin.math.sqrt
  *
  * Whose beat it is depends on who is sounding, and the caller says (push's
  * `alone`). With the string alone -- sampling, the mutes in -- a beat is the
- * string's and takes the partial out. With the unison sounding it may be the
- * partner's, and the partial is read all the same; what sampling found of
+ * string's and takes the partial out. With the key's other strings sounding it may be
+ * theirs, and the partial is read all the same; what sampling found of
  * the string (its `NoteMeasurement.falseBeats`) comes in as the partials
  * `known` false and those stay out. The beat is measured and reported on
  * every partial either way.
@@ -161,11 +161,11 @@ class CleanReading(
      *
      * [alone] says whether the string sounds by itself. While it does (sampling, the mutes in),
      * a beat a partial carries is the string's own and takes the partial out of the combination.
-     * With the unison sounding it is not known whose the beat is -- two strings a fraction of a
-     * hertz apart beat at one partial exactly as two planes of one string do (FALSE-BEATS §15) --
-     * and a partial beating is then still read: taking it out read the C7 unison of 22 Sept to
-     * silence at 13.8 s, its one listened partial excluded for beating against its partner, and
-     * the tuner tuning a unison would be shown nothing at the moment it matters most. What is
+     * With the key's other strings sounding it is not known whose the beat is -- two strings a
+     * fraction of a hertz apart beat at one partial exactly as two planes of one string do
+     * (FALSE-BEATS §15) -- and a partial beating is then still read: taking it out read the C7 of
+     * 22 Sept to silence at 13.8 s, its one listened partial excluded for beating against another
+     * string. What is
      * known of the string from sampling comes in as [known], the partials its facts say are
      * false, and those stay out either way. The beat is measured and reported on every partial
      * in both cases (Rule 0): only what is done with it depends on who is sounding.

@@ -72,7 +72,7 @@ import kotlin.math.abs
  * two disagree in both directions on the recordings (SAMICK-2026-09-30-FINDINGS §20, §21). On again
  * since 8 Oct 2026: the claim is the rate, measured from the band power (BeatMeasure) with the
  * string alone while sampling and kept as the string's facts, and in tuning the colour is those
- * facts -- never a beat heard with the unison sounding, which could be the unison's. Off again since 10 Nov 2026
+ * facts -- never a beat heard with other strings sounding, which could be theirs. Off again since 10 Nov 2026
  * (Peter: "It does not make sense to have it this way"): the facts came from keys struck three times while sampling and
  * from no other, and stood violet where the tuner could see no pattern. A false beat is now the string check's, of
  * one string alone, and what it leads to is the tuner's choice: a partial he takes out is grey and has no band.
@@ -122,7 +122,7 @@ fun BasicHub(
      * "partial N" line it hung on left (26 Oct 2026); kept so both editions' calls stand until a place for it is chosen.
      */
     onStretch: ((Int) -> Unit)? = null,
-    /** The tuning screen's left panel, drawn by an edition (Pro: the unison toggle and its 2 x 2 grid); null leaves it blank. */
+    /** The tuning screen's left panel, drawn by an edition; null leaves it blank. */
     leftPanel: (@Composable () -> Unit)? = null,
     /** The tuning screen's strobe bands an edition colours: green, and dimmed (TuningPictureView). */
     greenBands: Set<Int> = emptySet(),
@@ -307,7 +307,7 @@ fun BasicHub(
                     modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
                     follows = follows,
                     // the left panel: what the strobe shows, chosen beside it (StrobeChoice, 31 Oct 2026), and at the end of
-                    // its third line whatever an edition draws there (Pro's unison switch)
+                    // its third line whatever an edition draws there
                     left = {
                         if (onChangeSettings != null) StrobeChoice(cfg, onChangeSettings, Modifier.padding(8.dp), beside = leftPanel)
                         else leftPanel?.invoke()

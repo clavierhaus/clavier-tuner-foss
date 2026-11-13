@@ -46,9 +46,6 @@ after *New Tuning*; its own screens hang off that door. The hub's words are
 written once, in `TunerHub`; an app only says what happens behind each door.
 A tuning feature is built here, once.
 
-The unison screen is Pro's (Peter, 4 Oct 2026, 15:26: "a USP for Pro
-only") and lives in Pro, not here. The free app has no *The Unisons* door.
-
 ## The strobe's row: fixed seats, a fade, a number (30 Oct 2026)
 
 On the tuning screen the bands stand in seats fixed for the note: the
@@ -78,7 +75,7 @@ microphone's permission. Nothing the tuner sees or does changed.
 its own until it is moved the same way.
 
 The recorder is Pro's (blueprint §18.5, 4 Oct 2026): the red button on the
-tuning and unison screens, the play button, the *Recordings* door and the
+tuning screen, the play button, the *Recordings* door and the
 `RecordStrikesScreen` behind it — the reference recording belongs to the
 piano's record, which only Pro keeps. The screen and `SessionRecorder` stay
 in this library (built once) and the free app does not mount them:
@@ -115,8 +112,7 @@ before any padding of its own:
 
 A screen's own header keeps to the band between the corners
 (`CORNER_LEFT_WIDTH` … `CORNER_RIGHT_WIDTH`, `CORNER_BAND` high): the tuning
-screen's state word and Pro's two buttons, the unison screen's note and
-Listen, the record screen's title, the settings' title. The hub's name and
+screen's state word and Pro's two buttons, the record screen's title, the settings' title. The hub's name and
 gear of before, `ClavierhausTitle`, `SettingsGear` and `BackArrow`, are
 gone with the arrows.
 
@@ -207,8 +203,7 @@ name then gives the choice back to the strike. The arrows that stepped the
 note a semitone at a time are gone with the stepper: they were clutter beside
 a screen that already knows which key was struck.
 
-Later pictures follow the same shape: `ProgressPicture`, `UnisonPicture`,
-`SettingsPage`.
+Later pictures follow the same shape: `ProgressPicture`, `SettingsPage`.
 
 ## The three primitives of `ui/`
 
@@ -428,8 +423,7 @@ called for it: the About page, with the microphone row added under Version, was
 cut by one row on 780 × 360 and on nothing else.
 
 The same day the "partial N" line beside the note left the tuning screen (Peter,
-after Gregor in the forum: irritating, no added value; which partial the reading
-is on matters only to someone tuning unisons with the app), and with it the tap
+after Gregor in the forum: irritating, no added value), and with it the tap
 on it that opened the stretch's page; the info line at the top still opens the
 tuning's settings. The About page says which microphone the app hears through:
 unprocessed; unprocessed but not guaranteed by the phone (the phone does not
@@ -486,6 +480,6 @@ fails without it). One band's motion is the clean partials read together,
 whatever *Average the clean partials* says; from 28 Oct until today it was the
 octave partial's own reader alone.
 
-An edition's own left panel (Pro's unison switch) stands at the end of the
+An edition's own left panel stands at the end of the
 third line, where the panel has width to spare; on the Pixel 4 it has no
 height below the three lines.

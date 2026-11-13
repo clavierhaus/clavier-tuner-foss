@@ -25,20 +25,10 @@ object Brand {
 
     /**
      * Functional alert colour, deliberately OUTSIDE the CI palette. Reserved
-     * for the reference-capture control: unison comparison is meaningless
-     * without a captured reference, and a control that blends into the
+     * for a control that must not be missed: a control that blends into the
      * orange UI is one an operator forgets. It is not a brand colour and
      * must not be used decoratively.
      */
-    /**
-     * The three strings of a unison, as hues. Hue carries identity (which
-     * string), never magnitude — magnitude and reliability are separate
-     * channels. Centre is the CI orange; left and right are chosen for
-     * separability against it and against each other on a dark ground.
-     */
-    const val STRING_LEFT: Long = 0xFF32D74B   // green
-    const val STRING_CENTRE: Long = 0xFFFF9630 // CI orange
-    const val STRING_RIGHT: Long = 0xFF3B9EFF  // blue
 
     /** Confirmation (the "Done" action). Functional, not decorative. */
     const val GO_GREEN: Long = 0xFF32D74B

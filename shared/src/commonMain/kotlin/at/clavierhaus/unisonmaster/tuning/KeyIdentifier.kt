@@ -13,7 +13,7 @@ import kotlin.math.round
 import kotlin.math.sqrt
 
 /**
- * Which key was struck — the whole range, unmuted unisons or one string,
+ * Which key was struck — the whole range, all of a key's strings or one,
  * from one spectrum (docs/DETECTION.md).
  *
  * Not a comb held against the peaks, but a string *fitted* to them: from
@@ -276,7 +276,7 @@ class KeyIdentifier(
         for (k in matched.keys) g = gcd(g, k)
         if (g > 1) return failed(MUST_HAVE)
         // what the model explains against what stands in its range unexplained: every peak within
-        // tolerance of a matched partial is explained (a unison's spread, a split peak)
+        // tolerance of a matched partial is explained (strings a little apart, a split peak)
         val reach = minOf(predicted(kMax) * (1 + FIT_TOLERANCE), nyquist)
         val below = BELOW * f1
         val claimed = HashSet<Int>()

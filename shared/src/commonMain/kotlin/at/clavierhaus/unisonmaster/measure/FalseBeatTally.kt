@@ -4,9 +4,9 @@ package at.clavierhaus.unisonmaster.measure
  * A false beat of a string, as sampling measured it with the string alone: partial [k]
  * beats against itself at [rateHz], its second plane [depthDb] below the first. The
  * string's own fact, kept with its f1 and B (a note's `NoteMeasurement.falseBeats`):
- * what the string does on every strike, whichever unison it stands in, and so what the
+ * what the string does on every strike, whichever strings sound beside it, and so what the
  * tuning screen marks without having to hear it again -- where it could not tell the
- * string's beat from the unison's (FALSE-BEATS §15).
+ * string's beat from another string's (FALSE-BEATS §15).
  */
 data class FalseBeat(val k: Int, val rateHz: Double, val depthDb: Double)
 

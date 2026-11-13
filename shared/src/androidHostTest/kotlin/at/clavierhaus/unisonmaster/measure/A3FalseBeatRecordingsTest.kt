@@ -102,7 +102,7 @@ class A3FalseBeatRecordingsTest {
                 assertTrue(3 in claimed && 4 in claimed, "tuned alone, partials 3 and 4 are claimed: $claimed")
                 assertTrue(1 !in claimed, "and not partial 1: $claimed")
                 assertTrue(3 in kept && 4 in kept, "and kept with the note: $kept")
-            } else assertTrue(claimed.isEmpty(), "with the unison possibly sounding nothing is tallied: $claimed")
+            } else assertTrue(claimed.isEmpty(), "with other strings possibly sounding nothing is tallied: $claimed")
         }
     }
 }

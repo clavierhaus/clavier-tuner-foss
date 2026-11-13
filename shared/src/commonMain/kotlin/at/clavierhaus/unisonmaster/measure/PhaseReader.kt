@@ -353,7 +353,7 @@ class PhaseReader(
          * After a strike, rates are skipped for this many time constants of each filter stage,
          * times the stages: twenty in all, 3.2 / bandHz seconds -- 1.33 s at A0's sixth partial
          * (165 Hz, band 2.4 Hz), 0.5 s at 220 Hz, 0.2 s at 525 Hz. This is the strike-to-strobe
-         * latency the tuner sees, measured on the Samick's unisons of 9 Oct 2026 as exactly this
+         * latency the tuner sees, measured on the Samick's strings of 9 Oct 2026 as exactly this
          * number plus the memory (SAMICK findings §24: 1.37 s at A0, 0.60 at C2, 0.36 from G#2 up).
          * Halving it was tried that day: the first readings after the skip were then the
          * transient and not the string -- +27 c decaying to +2 over half a second on B1, −13 to

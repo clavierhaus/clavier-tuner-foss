@@ -500,7 +500,7 @@ class TuningControllerTest {
      * A string 23 cents sharp, struck after one 29 cents flat, is read (Peter, 12 Nov 2026, at the 225's A3: "A string 23 c
      * out showing nothing at all ... should be fixed"). The flat string moved the reader to where it stood; the sharp one
      * stood 52 cents from that place but within the band of the target, so no coarse figure was taken and the reader was
-     * never sent back: the screen stayed dark for the whole ring (research/ProbeA3Unison225.kt, 26.0 and 32.1 s). The reader
+     * never sent back: the screen stayed dark for the whole ring (the 225's A3 of 12 Nov 2026 fed to the engine, 26.0 and 32.1 s). The reader
      * reads a partial as far as 25 cents from where it listens (measured 12 Nov: shown 98 % at 25 c, 0 % at 28 c).
      */
     @Test
@@ -664,7 +664,7 @@ class TuningControllerTest {
     }
 
     @Test
-    fun fullSpectrumBellsStandStillOnASteadyUnison() {
+    fun fullSpectrumBellsStandStillOnThreeSteadyStrings() {
         // three strings a few hundredths of a cent apart, sounding together: every
         // shown partial is read by phase and stays within hundredths of a hertz
         val c = TuningController(TappedSource) { 0L }

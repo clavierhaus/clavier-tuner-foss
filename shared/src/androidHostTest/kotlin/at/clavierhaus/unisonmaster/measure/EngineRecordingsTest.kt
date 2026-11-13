@@ -214,10 +214,10 @@ class EngineRecordingsTest {
                 .format(f.name, Notes.name(midi), l.k, l.targetHz, l.source, seconds, 100 * shown.size / (seconds * sr / 1024).toInt(), coarse,
                     endCents?.let { "%+.2f".format(it) } ?: "—", before?.let { "%+.2f".format(it) } ?: "—"))
             println("   " + timeline.chunked(10).joinToString("\n   ") { it.joinToString("  ") })
-            assertTrue(endCents != null, "${f.name}: the ending unison is read")
+            assertTrue(endCents != null, "${f.name}: the ending is read")
             // the note was pulled flat and tuned back by the tuner's ear: it ends
             // near where the same string stood before the session (a few cents: the
-            // wire is old, the other strings of the unison are in the reading, and
+            // wire is old, the key's other strings are in the reading, and
             // the tuner tuned it again, not the app)
             if (before != null) assertTrue(abs(endCents!! - before) < 5.0, "${f.name}: ends at $endCents, stood at $before")
         }

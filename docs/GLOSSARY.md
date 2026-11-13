@@ -27,7 +27,6 @@ German pass; a word marked ? is a proposal.
 | sample (a string) | measure (a string); a measured string | eine gemessene Saite | TL, PM | |
 | listening partial | the partial being tuned | der gestimmte Teilton | TL "partial number for each note" | |
 | Full Spectrum | Partials | Teiltöne | TL's "spectrum display" is a different picture (energy over frequency); ours shows partials read by phase | the button shows partials, so it says so |
-| Tune Unison | Unisons | Chöre | R "unison"; German "Chor" is the set of strings of one note | |
 | strings alone / as it stands | muted / unmuted | mit Keil / ohne Keil ? | R "mute"; TL "muting" | what the technician did |
 | wedge | mute, wedge mute; the felt strip is the temperament strip | Stimmkeil; Dämpfstreifen (Filzstreifen) | R "wedge mute", "temperament strip", "tuning mute" | |
 | Customer care | Customers | Kunden | — | |
@@ -91,11 +90,10 @@ German pass; a word marked ? is a proposal.
 
 ## 4. Screen by screen, what changes
 
-Home: *Continue tuning · Pianos · Unisons*. Pianos: *Customers … · Piano ·
+Home: *Continue tuning · Pianos*. Pianos: *Customers … · Piano ·
 Scale · Checklist · History*; Settings tabs: *Temperament · Piano · About ·
 Customers · License*; the measuring screen: *Measuring your piano — play any
-key; Keep; Done*; the tuning screen's button: *Partials*; the unison screen:
-*Unisons — muted string / unmuted*; Recordings (was Record Strikes): the
+key; Keep; Done*; the tuning screen's button: *Partials*; Recordings (was Record Strikes): the
 studies *Every string · Drift · Range · Reference · Wobble*.
 
 ## 5. Not decided yet

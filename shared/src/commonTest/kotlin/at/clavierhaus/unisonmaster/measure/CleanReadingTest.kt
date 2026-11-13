@@ -160,22 +160,22 @@ class CleanReadingTest {
     }
 
     /**
-     * The unison sounding (tuning, the mutes out): a beat at the partial being tuned may be the
-     * partner's and not the string's, and the partial is read all the same -- the beat measured
+     * The key's other strings sounding (tuning, the mutes out): a beat at the partial being tuned
+     * may be theirs and not the string's, and the partial is read all the same -- the beat measured
      * and reported, nothing done with it. Only the partials the string's own facts name false
      * (measured in sampling, with the string alone) stay out. The split here is a slow, shallow
-     * one, 0.6 Hz with the second plane 9.6 dB down, as a unison a hair apart beats: the
+     * one, 0.6 Hz with the second plane 9.6 dB down, as two strings a hair apart beat: the
      * partial reads within 0.5 c and the beat measure alone calls it.
      */
     @Test
-    fun withTheUnisonSoundingABeatingPartialIsReadUnlessTheStringsFactsNameIt() {
+    fun withOtherStringsSoundingABeatingPartialIsReadUnlessTheStringsFactsNameIt() {
         val f1 = 440.0; val b = 4e-4
         val x = string(f1, b, detuneCents = 1.0, falseK = 2, splitHz = 0.6, seconds = 4.0, secondPlane = 0.33)
         val r = CleanReading(sr)
         r.target(targets(f1, b), reset = true)
         val res = readAll(x, r, anchorK = 2, combine = false, alone = false)
         assertTrue(2 in res.falseBeating, "the beat is measured whoever's it is: ${res.partials}")
-        assertEquals(listOf(2), res.used, "with the unison sounding the partial being tuned is read: ${res.partials}")
+        assertEquals(listOf(2), res.used, "with other strings sounding the partial being tuned is read: ${res.partials}")
         // the reading is the beating partial's own and wobbles with the beat, about ±0.6 c here
         assertEquals(1.0, res.cents!!, 0.8)
         // the same strike, with the string's facts naming partial 2 false: it stays out
