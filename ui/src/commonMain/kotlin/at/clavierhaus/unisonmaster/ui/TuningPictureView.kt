@@ -31,7 +31,6 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import kotlin.math.abs
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,15 +82,10 @@ fun TuningPictureView(
     hint: String? = null,
     /** What an edition draws in the left panel, blank since 23 Oct 2026. */
     left: (@Composable () -> Unit)? = null,
-    /** Bands an edition draws green, and bands it dims (24 Oct 2026): the picture's colours, its own reasons. */
-    greenBands: Set<Int> = emptySet(),
-    dimBands: Set<Int> = emptySet(),
     /** The bands come up together, or each as it is read (TunerSettings.strobeTogether, 30 Oct 2026). */
     together: Boolean = false,
     /** What an edition draws after the note's name, up to the strobe's panel (14 Nov 2026); none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
-    /** A frame an edition draws around the strobe's panel, in this colour; none in the free app (14 Nov 2026). */
-    strobeFrame: Long? = null,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -143,26 +137,25 @@ fun TuningPictureView(
             // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where
             // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
-            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together) } }
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, together) } }
         } else if (hint != null) Place(0.00f, HINT_BAND + 0.02f, 1.00f, 0.98f - HINT_BAND) {
-            Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together) }
-        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together) } }   // the full width, column over the button below it
+            Panel { Bands(p, marks, together) }
+        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, together) } }   // the full width, column over the button below it
     }
 }
 
-/** A region of the picture: a rounded box on a ground one step off the page's, framed in [frame] when given. */
+/** A region of the picture: a rounded box on a ground one step off the page's. */
 @Composable
-private fun Panel(frame: Long? = null, content: @Composable () -> Unit) {
+private fun Panel(content: @Composable () -> Unit) {
     Box(
         Modifier.fillMaxSize()
             .background(Color(Brand.PANEL), RoundedCornerShape(PANEL_RADIUS_DP.dp))
-            .then(if (frame != null) Modifier.border(3.dp, Color(frame), RoundedCornerShape(PANEL_RADIUS_DP.dp)) else Modifier)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) { content() }
 }
 
 @Composable
-private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet(), together: Boolean = false) {
+private fun Bands(p: TuningPicture, marks: Boolean, together: Boolean = false) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
@@ -214,8 +207,6 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
             // the bells' to say, as a bell's width, in the other panel. A partial the tuner took out
             // is not here at all: the picture gives it no seat (8 Oct 2026).
             val c = when {
-                k in dims -> Color(Brand.WHITE_MUTED).copy(alpha = 0.25f)
-                k in greens -> Color(Brand.GO_GREEN)
                 marks && k in p.falseMarked -> Color(Brand.FALSE_VIOLET)
                 else -> Color(Brand.ORANGE)
             }.let { it.copy(alpha = it.alpha * a) }

@@ -124,17 +124,12 @@ fun BasicHub(
     onStretch: ((Int) -> Unit)? = null,
     /** The tuning screen's left panel, drawn by an edition; null leaves it blank. */
     leftPanel: (@Composable () -> Unit)? = null,
-    /** The tuning screen's strobe bands an edition colours: green, and dimmed (TuningPictureView). */
-    greenBands: Set<Int> = emptySet(),
-    dimBands: Set<Int> = emptySet(),
     /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
     /** A control an edition sets beside the strobe's line, given the key on screen; none in the free app. */
     besideStrobe: (@Composable (Int) -> Unit)? = null,
     /** What an edition draws after the note's name on the tuning screen; none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
-    /** A frame around the strobe in this colour (TuningPictureView); none in the free app. */
-    strobeFrame: Long? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -315,9 +310,8 @@ fun BasicHub(
                         if (onChangeSettings != null) StrobeChoice(cfg, onChangeSettings, Modifier.padding(8.dp), beside = leftPanel, pinPace = t.pace < 1.0)
                         else leftPanel?.invoke()
                     },
-                    greenBands = greenBands, dimBands = dimBands,
                     together = cfg.strobeTogether,
-                    afterNote = afterNote, strobeFrame = strobeFrame,
+                    afterNote = afterNote,
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,
