@@ -87,6 +87,8 @@ fun TuningPictureView(
     dimBands: Set<Int> = emptySet(),
     /** The bands come up together, or each as it is read (TunerSettings.strobeTogether, 30 Oct 2026). */
     together: Boolean = false,
+    /** What an edition draws after the note's name, up to the strobe's panel (14 Nov 2026); none in the free app. */
+    afterNote: (@Composable () -> Unit)? = null,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -114,6 +116,10 @@ fun TuningPictureView(
             ) {
                 FitText(p.note, 40.sp, Modifier.fillMaxSize(), color = Color(Brand.WHITE), fontWeight = FontWeight.Bold)
             }
+        }
+        // after the note's name, in the room the left panel leaves above it, up to the strobe's panel
+        if (afterNote != null && hint == null && twoPanels) Place(0.17f, 0.00f, 0.31f, 0.22f) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) { afterNote() }
         }
         // the partial line belongs to the bells; without them (the A4 page) it stood under the strobe and
         // was cut to "parti" (Peter, 23 Oct 2026)
