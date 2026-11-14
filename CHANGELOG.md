@@ -14,6 +14,9 @@ reconstructed from the commit history that day.
   not from a table. The left panel says so. Below C6 nothing changes.
 - **The A4 page is plainer.** The line of steps left it (the orders say the
   same), and the strobe gave three tenths of its width to the orders.
+- **One strobe is one band.** A partial tapped in, or one left from the
+  strike before, no longer stands as a second band; the partial buttons under
+  it light up the partials the band is the average of.
 
 ### 2026-11-12
 - **The false-beat check has moved to Clavier Tuner Pro.**

@@ -87,10 +87,14 @@ private val SAMPLING_SEATS: List<Int> = (1..5).toList()
  * stands at once and never grows band by band (Peter, 30 Oct 2026: "make all partials you can catch visible at
  * the same time"). The seats are the partials offered under the strobe (1 to [offered], the chips' row) less the
  * ones the tuner took out, the lowest [count] of them with the band being tuned always among them, or all for 0.
- * A seat whose partial is not read stands empty. With one band (strobeOne) the seats are what the engine reads.
+ * A seat whose partial is not read stands empty. One strobe (strobeOne) is one band, the partial tuned, moved by the
+ * clean partials' average; which partials make it up the buttons under it say (Peter, 14 Nov 2026: "one strobe actually
+ * shows two strobes and lights up A5. It must be one strobe and the notes on the bottom should show which partials are
+ * the result of averaging"). Until then its seats were the partials the engine read, and a partial tapped in, or one
+ * still shown from the strike before, stood as a second band.
  */
 internal fun strobeSeats(offered: Int, tuned: Int, hidden: Set<Int>, count: Int, oneBand: Boolean, shown: Set<Int>): List<Int> {
-    if (oneBand) return (shown + tuned).sorted()
+    if (oneBand) return listOf(tuned)
     val all = ((1..offered).toSet() - hidden + tuned).sorted()
     if (count <= 0 || all.size <= count) return all
     val lowest = all.take(count)
@@ -366,7 +370,9 @@ fun BasicHub(
                     a4Hz = a4,
                     baseHz = liveTarget,
                     count = controller.highestPartial(liveTarget),
-                    shown = shownTuning,
+                    // one strobe: lit, the partials its band is the average of (the reading's own), or the partial tuned
+                    // while nothing is averaged; otherwise the partials shown (14 Nov 2026)
+                    shown = if (cfg.strobeOne) reading?.usedPartials?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf(t.listening.k) else shownTuning,
                     falseMarked = if (FALSE_MARKS_ON_TUNING) picture.falseMarked else emptySet(),
                     tappable = (targets.map { it.k }.toSet() + audible) - t.listening.k,
                     onTap = { k -> controller.tapPartial(k) },

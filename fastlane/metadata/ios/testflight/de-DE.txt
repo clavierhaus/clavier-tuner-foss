@@ -6,6 +6,7 @@ Neu
 Geändert
 - Ab C6 bewegt sich der Strobe im Tempo des Stimmwirbels: Je kürzer die Saite, desto langsamer die Bänder, damit eine Drehung am Wirbel auf jeder Taste gleich aussieht. Das linke Feld sagt es an.
 - Die A4-Seite ist schlichter: keine Schrittleiste mehr, ein schmalerer Strobe, mehr Platz für die Anleitung.
+- Ein Strobe ist ein Band, und die Teiltontasten darunter zeigen, aus welchen Teiltönen es gemittelt ist.
 - Die Prüfung unreiner Saiten ist zu Clavier Tuner Pro gewandert.
 - Keine violetten Teiltöne mehr beim Stimmen.
 - Eine Saite, die etwas neben ihrem Ziel steht und nach einer weiter entfernten angeschlagen wird, wird gelesen: Der Strobe bleibt nicht mehr dunkel und kommt und geht nicht mehr.
