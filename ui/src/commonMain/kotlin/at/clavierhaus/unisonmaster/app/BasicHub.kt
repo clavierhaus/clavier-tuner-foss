@@ -133,9 +133,8 @@ fun BasicHub(
     besideStrobe: (@Composable (Int) -> Unit)? = null,
     /** What an edition draws after the note's name on the tuning screen; none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
-    /** A frame around the strobe in this colour, and how much of its seat each band fills (TuningPictureView); none in the free app. */
+    /** A frame around the strobe in this colour (TuningPictureView); none in the free app. */
     strobeFrame: Long? = null,
-    bandWidth: ((Int) -> Float)? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -317,7 +316,7 @@ fun BasicHub(
                     },
                     greenBands = greenBands, dimBands = dimBands,
                     together = cfg.strobeTogether,
-                    afterNote = afterNote, strobeFrame = strobeFrame, bandWidth = bandWidth,
+                    afterNote = afterNote, strobeFrame = strobeFrame,
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,
