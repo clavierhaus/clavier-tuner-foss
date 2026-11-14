@@ -31,6 +31,7 @@ import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import kotlin.math.abs
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -89,6 +90,13 @@ fun TuningPictureView(
     together: Boolean = false,
     /** What an edition draws after the note's name, up to the strobe's panel (14 Nov 2026); none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
+    /** A frame an edition draws around the strobe's panel, in this colour; none in the free app (14 Nov 2026). */
+    strobeFrame: Long? = null,
+    /**
+     * How much of its seat each band fills, 0..1, given its partial; null fills every seat (14 Nov 2026). The band stands
+     * centred in its seat, whose outline stays, so a narrow band reads as a line in its place.
+     */
+    bandWidth: ((Int) -> Float)? = null,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -140,25 +148,26 @@ fun TuningPictureView(
             // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where
             // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
-            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, greenBands, dimBands, together) } }
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together, bandWidth) } }
         } else if (hint != null) Place(0.00f, HINT_BAND + 0.02f, 1.00f, 0.98f - HINT_BAND) {
-            Panel { Bands(p, marks, greenBands, dimBands, together) }
-        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, greenBands, dimBands, together) } }   // the full width, column over the button below it
+            Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together, bandWidth) }
+        } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel(strobeFrame) { Bands(p, marks, greenBands, dimBands, together, bandWidth) } }   // the full width, column over the button below it
     }
 }
 
-/** A region of the picture: a rounded box on a ground one step off the page's. */
+/** A region of the picture: a rounded box on a ground one step off the page's, framed in [frame] when given. */
 @Composable
-private fun Panel(content: @Composable () -> Unit) {
+private fun Panel(frame: Long? = null, content: @Composable () -> Unit) {
     Box(
         Modifier.fillMaxSize()
             .background(Color(Brand.PANEL), RoundedCornerShape(PANEL_RADIUS_DP.dp))
+            .then(if (frame != null) Modifier.border(3.dp, Color(frame), RoundedCornerShape(PANEL_RADIUS_DP.dp)) else Modifier)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) { content() }
 }
 
 @Composable
-private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet(), together: Boolean = false) {
+private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(), dims: Set<Int> = emptySet(), together: Boolean = false, width: ((Int) -> Float)? = null) {
     // The clock the bands drift on is wall time, not the rate at which the engine publishes: a band's
     // speed must be the string's own beat and nothing else.
     val millis by produceState(0L) { while (true) withFrameMillis { value = it } }
@@ -213,11 +222,14 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
                 marks && k in p.falseMarked -> Color(Brand.FALSE_VIOLET)
                 else -> Color(Brand.ORANGE)
             }.let { it.copy(alpha = it.alpha * a) }
-            clipRect(bx, top, bx + bw, base) {
+            // the band within its seat: all of it, or the share an edition gives, centred
+            val fw = bw * (width?.invoke(k)?.coerceIn(0f, 1f) ?: 1f)
+            val fx = bx + (bw - fw) / 2f
+            clipRect(fx, top, fx + fw, base) {
                 val solid = sh * 0.46f
                 for (seg in 0..k) {
                     val y = top + seg * sh + shift - sh
-                    drawRect(c, Offset(bx, y), Size(bw, solid))
+                    drawRect(c, Offset(fx, y), Size(fw, solid))
                 }
             }
             drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.30f), Offset(bx, top), Size(bw, bh), style = Stroke(1f))
