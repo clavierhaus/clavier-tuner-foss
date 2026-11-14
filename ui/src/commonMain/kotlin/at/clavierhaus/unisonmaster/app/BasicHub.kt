@@ -130,8 +130,6 @@ fun BasicHub(
     leftPanel: (@Composable () -> Unit)? = null,
     /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
-    /** A control an edition sets beside the strobe's line, given the key on screen; none in the free app. */
-    besideStrobe: (@Composable (Int) -> Unit)? = null,
     /** What an edition asks on the A4 page, under the orders (SamplingPage); none in the free app. */
     a4Left: (@Composable () -> Unit)? = null,
     /** What an edition draws after the note's name on the tuning screen; none in the free app. */
@@ -378,10 +376,6 @@ fun BasicHub(
                     onTap = { k -> controller.tapPartial(k) },
                     modifier = Modifier.weight(1f),
                 )
-                if (besideStrobe != null) {
-                    Spacer(Modifier.width(10.dp))
-                    besideStrobe(t.midi)
-                }
             } else {
                 Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
                 Spacer(Modifier.weight(1f))
