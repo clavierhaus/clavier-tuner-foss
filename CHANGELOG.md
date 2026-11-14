@@ -12,6 +12,8 @@ reconstructed from the commit history that day.
   slow down as the strings get shorter, so that a turn of the pin looks alike
   on every key; how much comes from the piano's own inharmonicity as sampled,
   not from a table. The left panel says so. Below C6 nothing changes.
+- **The A4 page is plainer.** The line of steps left it (the orders say the
+  same), and the strobe gave three tenths of its width to the orders.
 
 ### 2026-11-12
 - **The false-beat check has moved to Clavier Tuner Pro.**

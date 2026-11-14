@@ -111,6 +111,8 @@ internal fun SamplingPage(
     onPickRecording: (() -> Unit)? = null,
     /** Back to the microphone. */
     onUseMicrophone: () -> Unit = {},
+    /** What an edition asks on the A4 page, under the orders on the left; nothing in the free app (14 Nov 2026). */
+    a4Left: (@Composable () -> Unit)? = null,
 ) {
     val a4 by controller.referenceA4Hz.collectAsState()
     val hiddenA4 by controller.hiddenPartials.collectAsState()
@@ -152,7 +154,10 @@ internal fun SamplingPage(
                 // was left too little on a small phone, and its buttons broke their words (24 Oct 2026)
                 Column(Modifier.weight(if (settingA4) A4_LEFT_SHARE else LEFT_SHARE).fillMaxHeight()) {
                     CornerBand()
-                    StepLine(if (settingA4) 1 else 2, onStep = { controller.backToA4() }, modifier = Modifier.fillMaxWidth())
+                    // the steps' line on the sampling page, where it leads back to A4; on the A4 page it said only what the
+                    // orders under it say, and its room is the orders' (Peter, 14 Nov 2026: "The three info buttons are
+                    // redundant, because the process is explained in the left box")
+                    if (!settingA4) StepLine(2, onStep = { controller.backToA4() }, modifier = Modifier.fillMaxWidth())
                     // the subtitle ("Retrieve the piano's inharmonicity") left on 24 Oct 2026: at the phone's largest
                     // text it took two lines, and the orders, which say what to do, no longer fitted under it
                     Spacer(Modifier.height(6.dp))
@@ -161,6 +166,7 @@ internal fun SamplingPage(
                     Box(Modifier.fillMaxWidth().weight(1f, fill = false).border(1.dp, Color(Brand.RULE), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp)) {
                         TextBlock(if (settingA4) a4Orders() else orders(view?.samplesNeeded ?: 0), Modifier.fillMaxWidth(), size = 15.sp, color = white, gap = 4.dp)
                     }
+                    if (settingA4 && a4Left != null) { Spacer(Modifier.height(8.dp)); a4Left() }
                 }
                 Spacer(Modifier.width(24.dp))
             }
@@ -364,8 +370,12 @@ private fun a4Orders(): List<String> = listOf(t(K.sampling_a4_mute), t(K.samplin
 /** The left side's share of the width; the right side, with the controls, has the rest. */
 private const val LEFT_SHARE = 0.42f
 
-/** The same on the A4 screen, whose right side holds the picture of the string and needs the width. */
-private const val A4_LEFT_SHARE = 0.30f
+/**
+ * The same on the A4 screen, whose right side holds the picture of the string. 0.30 until 14 Nov 2026, when the strobe gave
+ * up three tenths of its width to the left (Peter: "for screen estate purposes you could basically cut the strobe window by
+ * 30 % or more"): 0.70 of the width to 0.49.
+ */
+private const val A4_LEFT_SHARE = 0.51f
 
 /** The A4 hint's strip, as a share of the right side under − 440.0 +. */
 private const val SLIDER_SHARE = 0.75f

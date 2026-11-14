@@ -5,6 +5,7 @@ New
 
 Changed
 - From C6 up the strobe moves at the pin's pace: the shorter the string, the slower the bands, so a turn of the pin looks alike on every key. The left panel says so.
+- The A4 page is plainer: no line of steps, a narrower strobe, more room for the orders.
 - The false-beat check has moved to Clavier Tuner Pro.
 - No violet partials while tuning.
 - A string a little off its target, struck after one further off, is read: the strobe no longer stays dark or comes and goes.

@@ -128,6 +128,8 @@ fun BasicHub(
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
     /** A control an edition sets beside the strobe's line, given the key on screen; none in the free app. */
     besideStrobe: (@Composable (Int) -> Unit)? = null,
+    /** What an edition asks on the A4 page, under the orders (SamplingPage); none in the free app. */
+    a4Left: (@Composable () -> Unit)? = null,
     /** What an edition draws after the note's name on the tuning screen; none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
 ) {
@@ -225,7 +227,7 @@ fun BasicHub(
         }
         val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
         if (t == null || t.sampling) {
-            SamplingPage(controller, t, picture, onTemperamentLow, feeding, onPickRecording, onUseMicrophone)
+            SamplingPage(controller, t, picture, onTemperamentLow, feeding, onPickRecording, onUseMicrophone, a4Left)
             return@Box
         }
 
