@@ -63,6 +63,8 @@ class CleanReading(
     var memoryS: Double = PhaseReader.DEFAULT_MEMORY_S,
     /** Hops after which a partial's last reading, and any verdict on it, expire (TuningController.holdHops). */
     private val holdHops: Long = 23L,
+    /** How far over the noise beside it a partial must stand for its readings to go into the beat's window ([BEAT_OVER_NOISE_DB]). */
+    private val beatOverNoiseDb: Double = BEAT_OVER_NOISE_DB,
 ) {
     /** One partial as read over the strike. */
     data class Partial(
@@ -184,7 +186,7 @@ class CleanReading(
                 val at = filled[k] % WINDOW_HOPS
                 window[k][at] = rd.cents; judged[k][at] = rd.levelDbfs - rd.noiseDbfs >= JUDGE_OVER_NOISE_DB
                 filled[k]++; lastAt[k] = hops
-                if (sustained && rd.levelDbfs - rd.noiseDbfs >= BEAT_OVER_NOISE_DB) {
+                if (sustained && rd.levelDbfs - rd.noiseDbfs >= beatOverNoiseDb) {
                     val pa = powerFilled[k] % WINDOW_HOPS
                     powerT[k][pa] = hops * hopS; power[k][pa] = rd.rawPower; powerFilled[k]++
                 }
