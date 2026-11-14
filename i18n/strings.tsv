@@ -137,6 +137,7 @@ settings.followKey	Auto note switching	Automatischer Tonwechsel
 settings.cleanTogether	Average the clean partials	Saubere Teiltöne mitteln
 tuning.strobeAll	All partials	Alle Teiltöne
 tuning.strobeAll.note	A band for every partial.	Ein Band für jeden Teilton.
+tuning.pinPace	Strobe at the pin's pace	Strobe im Tempo des Stimmwirbels
 tuning.strobeLimit.note	lowest partials	tiefste Teiltöne
 tuning.strobeOne.note	One band, moved by the clean partials together.	Ein Band, bewegt von allen sauberen Teiltönen.
 tuning.strobeLimit	Limit to	Nur

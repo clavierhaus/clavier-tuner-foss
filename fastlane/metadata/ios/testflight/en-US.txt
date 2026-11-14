@@ -4,6 +4,7 @@ New
 - After sampling, the app suggests the bass's octave type from your sampled strings, with the reason behind the (i). One tap uses it; the choice stays yours. Sample two bass keys an octave apart (A1 and A2, say) to get one.
 
 Changed
+- From C6 up the strobe moves at the pin's pace: the shorter the string, the slower the bands, so a turn of the pin looks alike on every key. The left panel says so.
 - The false-beat check has moved to Clavier Tuner Pro.
 - No violet partials while tuning.
 - A string a little off its target, struck after one further off, is read: the strobe no longer stays dark or comes and goes.

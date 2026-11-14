@@ -65,6 +65,8 @@ class TuningPicture(
      * (Amendment 3: two places that can put a number on one screen means one of them is wrong).
      */
     val bands: List<Int> = emptyList(),
+    /** The bands' speed against the beat in hertz: 1, or under it in the treble (PinPace, 14 Nov 2026). */
+    val pace: Double = 1.0,
 ) {
     /**
      * One partial of the sounding string. [offsetCents] is its distance from
@@ -178,6 +180,8 @@ class TuningPicture(
          * never closes up.
          */
         val seats: List<Int>? = null,
+        /** The strobe's pace at the key (PinPace); 1 everywhere it is not slowed. */
+        val pace: Double = 1.0,
     ) {
         /** One live partial: as read, its level 0..1 of the loudest, its width and its depth over the noise when known. */
         class Partial(val hz: Double, val level: Double, val widthCents: Double? = null, val overNoiseDb: Double? = null)
@@ -273,7 +277,7 @@ class TuningPicture(
             val kept = bells.filter { it.k !in f.dropped }
             bands = (f.seats ?: (bands + autoFour(kept, bands.toSet())).distinct().sorted()).filter { it !in f.dropped }
             return TuningPicture(f.note, f.listened, anchorNow, bells, pointer, state,
-                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands)
+                f.falsePartials.intersect(errors.keys), f.dropped.intersect(errors.keys), wide, bands, f.pace)
         }
 
         companion object {

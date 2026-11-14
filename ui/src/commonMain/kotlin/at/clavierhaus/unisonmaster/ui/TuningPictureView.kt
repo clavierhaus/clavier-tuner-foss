@@ -185,8 +185,10 @@ private fun Bands(p: TuningPicture, marks: Boolean, greens: Set<Int> = emptySet(
         // string uniformly off, which makes a clean string one moving object and a false partial
         // the only thing out of step. Law 1 drawn rather than asserted (blueprint, 6 Oct 2026).
         // Negated once, here: down is flat, so a string under its target carries the segments down.
+        // In the treble the drift is slowed to the pin's pace (picture/PinPace.kt, 14 Nov 2026): every band by the same
+        // factor, so a clean string is still one moving object and a false partial still the only one out of step.
         val rates = ks.mapNotNull { k ->
-            p.bells.firstOrNull { it.k == k }?.let { k to -(it.hz - it.targetHz) / k }
+            p.bells.firstOrNull { it.k == k }?.let { k to -(it.hz - it.targetHz) / k * p.pace }
         }.toMap()
         val phases = carried.advance(millis, rates)
         val strength = fade.alphas(millis, ks.filter { k -> p.bells.any { it.k == k } }.toSet(), ks.toSet(), together)

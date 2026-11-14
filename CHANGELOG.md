@@ -7,6 +7,12 @@ reconstructed from the commit history that day.
 
 ## 0.9.0 -- 2026-11-10
 
+### 2026-11-14
+- **The strobe moves at the pin's pace in the treble.** From C6 up the bands
+  slow down as the strings get shorter, so that a turn of the pin looks alike
+  on every key; how much comes from the piano's own inharmonicity as sampled,
+  not from a table. The left panel says so. Below C6 nothing changes.
+
 ### 2026-11-12
 - **The false-beat check has moved to Clavier Tuner Pro.**
 - **A string a little off no longer leaves the screen dark.** After a string

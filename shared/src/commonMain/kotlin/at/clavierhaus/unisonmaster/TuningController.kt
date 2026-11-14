@@ -600,6 +600,8 @@ class TuningController(
         val sampled: Set<Int> = emptySet(),
         /** True when a curve break is marked at this note (Pro). */
         val breakHere: Boolean = false,
+        /** The strobe's pace at this key: 1, or under it in the treble, where the bands move at the pin's pace (PinPace). */
+        val pace: Double = 1.0,
     )
 
     private var session: TuningSession? = null
@@ -915,6 +917,7 @@ class TuningController(
             curveReady = s.curve.ready,
             sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),
             breakHere = midi in s.settings.curveBreaks,
+            pace = at.clavierhaus.unisonmaster.picture.PinPace.of(midi) { m -> s.predictedB(m) },
         )
         _targetHz.value = f1
         // Every partial of the note is placed from the one being tuned, not from the

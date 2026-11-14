@@ -4,6 +4,7 @@ Neu
 - Nach dem Vermessen schlägt die App den Oktavtyp für den Bass aus Ihren gemessenen Saiten vor, die Begründung hinter dem (i). Ein Tippen übernimmt ihn; die Wahl bleibt Ihre. Dafür zwei Basstasten im Oktavabstand messen, etwa A1 und A2.
 
 Geändert
+- Ab C6 bewegt sich der Strobe im Tempo des Stimmwirbels: Je kürzer die Saite, desto langsamer die Bänder, damit eine Drehung am Wirbel auf jeder Taste gleich aussieht. Das linke Feld sagt es an.
 - Die Prüfung unreiner Saiten ist zu Clavier Tuner Pro gewandert.
 - Keine violetten Teiltöne mehr beim Stimmen.
 - Eine Saite, die etwas neben ihrem Ziel steht und nach einer weiter entfernten angeschlagen wird, wird gelesen: Der Strobe bleibt nicht mehr dunkel und kommt und geht nicht mehr.

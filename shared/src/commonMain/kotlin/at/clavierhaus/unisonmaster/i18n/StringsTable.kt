@@ -137,6 +137,7 @@ object K {
     const val settings_cleanTogether = "settings.cleanTogether"
     const val tuning_strobeAll = "tuning.strobeAll"
     const val tuning_strobeAll_note = "tuning.strobeAll.note"
+    const val tuning_pinPace = "tuning.pinPace"
     const val tuning_strobeLimit_note = "tuning.strobeLimit.note"
     const val tuning_strobeOne_note = "tuning.strobeOne.note"
     const val tuning_strobeLimit = "tuning.strobeLimit"
@@ -355,6 +356,7 @@ internal object StringsTable : Catalog {
         "settings.cleanTogether" to arrayOf("Average the clean partials", "Saubere Teiltöne mitteln"),
         "tuning.strobeAll" to arrayOf("All partials", "Alle Teiltöne"),
         "tuning.strobeAll.note" to arrayOf("A band for every partial.", "Ein Band für jeden Teilton."),
+        "tuning.pinPace" to arrayOf("Strobe at the pin's pace", "Strobe im Tempo des Stimmwirbels"),
         "tuning.strobeLimit.note" to arrayOf("lowest partials", "tiefste Teiltöne"),
         "tuning.strobeOne.note" to arrayOf("One band, moved by the clean partials together.", "Ein Band, bewegt von allen sauberen Teiltönen."),
         "tuning.strobeLimit" to arrayOf("Limit to", "Nur"),

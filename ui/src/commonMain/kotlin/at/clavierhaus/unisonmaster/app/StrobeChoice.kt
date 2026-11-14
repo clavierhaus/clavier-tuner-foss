@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,12 +39,15 @@ fun StrobeChoice(
     onChange: ((TunerSettings) -> TunerSettings) -> Unit,
     modifier: Modifier = Modifier,
     beside: (@Composable () -> Unit)? = null,
+    /** The strobe moves at the pin's pace on this key (PinPace): said above the choices, where the mode is looked for. */
+    pinPace: Boolean = false,
 ) {
     // each line says what it shows, beside its button (Peter, 9 Nov 2026: a clean description of the options, and a tap
     // changes the strobe at once): three lines as ever, the panel has the width and on the smallest phone no height
     @Composable
     fun Says(key: String, m: Modifier) = TextBlock(listOf(t(key)), m.height(40.dp), size = 13.sp, color = Color(Brand.WHITE_MUTED))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (pinPace) TextBlock(listOf(t(K.tuning_pinPace)), Modifier.fillMaxWidth(), size = 14.sp, minSize = 10.sp, color = Color(Brand.ORANGE))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip(t(K.tuning_strobeOne), selected = s.strobeMode == StrobeMode.ONE, enabled = true) {
                 onChange { it.copy(strobeMode = StrobeMode.ONE) }
