@@ -131,8 +131,6 @@ fun BasicHub(
     onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
     /** A control an edition sets beside the strobe's line, given the key on screen; none in the free app. */
     besideStrobe: (@Composable (Int) -> Unit)? = null,
-    /** What an edition draws in the strobe's place on the tuning screen; the strobe when null; none in the free app. */
-    inStrobesPlace: (@Composable () -> Unit)? = null,
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -325,7 +323,6 @@ fun BasicHub(
                     // for a verdict that is a measurement.
                     marks = FALSE_MARKS_ON_TUNING,
                     onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
-                    right = inStrobesPlace,
                 )
                 if (pickingNote) NotePicker(
                     lowMidi = t.stepLowMidi,
