@@ -48,6 +48,7 @@ import at.clavierhaus.unisonmaster.ui.TuningPictureView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.ui.DejaVuSerif
 import at.clavierhaus.unisonmaster.ui.DoneButton
+import at.clavierhaus.unisonmaster.ui.FitText
 import at.clavierhaus.unisonmaster.ui.TextBlock
 import at.clavierhaus.unisonmaster.ui.LINE
 import androidx.compose.runtime.CompositionLocalProvider
@@ -178,7 +179,17 @@ internal fun SamplingPage(
                 // until 5 Oct 2026 this page read the string and took it as the reference, which gave
                 // the tuner nothing to aim at (Peter, 15:55: "we define the initial pitch for A4").
                 val a4Now by rememberUpdatedState(a4)
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
+                // On the A4 page the row is − pitch + and Done, the pitch taking what the buttons leave (14 Nov 2026: with the
+                // strobe's side three tenths narrower, "A4", the pitch at its full size, the measuring word and Done no
+                // longer fitted the Pixel 4's 375 dp, and the layout check failed on every phone); how far A4's strike is
+                // measured stands on its own line under the slider. The page says what it is for; the label "A4" left it.
+                if (view == null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp).fillMaxWidth()) {
+                    StepBox("−") { controller.setReference(tenths(a4Now - 0.1)) }
+                    FitText(formatHz(a4), 30.sp, Modifier.weight(1f).padding(horizontal = 8.dp), color = white, align = TextAlign.Center)
+                    StepBox("+") { controller.setReference(tenths(a4Now + 0.1)) }
+                    Spacer(Modifier.width(12.dp))
+                    DoneButton(onClick = { controller.acceptLive() }, enabled = a4State.ready)
+                } else Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
                     Text("A4", color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false, modifier = Modifier.width(60.dp))
                     StepBox("−") { controller.setReference(tenths(a4Now - 0.1)) }
                     Text(
@@ -189,24 +200,14 @@ internal fun SamplingPage(
                     StepBox("+") { controller.setReference(tenths(a4Now + 0.1)) }
                     // "as it stands", the string's reading taken as the pitch by one tap (7 Oct 2026), left on
                     // 23 Oct 2026 (Peter): the tuner who keeps the pitch shown taps Done
-                    if (view == null) {
-                        // how far A4's strike is measured, in the sampling page's words
-                        Box(Modifier.weight(1f).padding(horizontal = 12.dp), contentAlignment = Alignment.CenterEnd) {
-                            when (a4State.measured) {
-                                TuningController.Measured.MEASURING -> TextBlock(listOf(t(K.sampling_measuring)), size = 14.sp, color = muted)
-                                TuningController.Measured.MEASURED -> TextBlock(listOf(t(K.sampling_measured)), size = 14.sp, color = Color(Brand.GO_GREEN))
-                                else -> Unit
-                            }
-                        }
-                        DoneButton(onClick = { controller.acceptLive() }, enabled = a4State.ready)
-                    } else Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
                 }
                 // Under − 440.0 +, the line that says how the pitch is set is the slider itself: a finger
                 // drawn right along it raises A4 a tenth of a hertz every SLIDE_STEP_DP, drawn left lowers
                 // it (Peter, 23 Oct 2026: on the number alone the slide was too small to find, and the
                 // boxes took the touch). A strip of its own, so it reads as something to touch.
                 if (view == null) Box(
-                    Modifier.padding(start = 60.dp, top = 4.dp).fillMaxWidth(SLIDER_SHARE).heightIn(min = 30.dp)
+                    Modifier.padding(top = 4.dp).fillMaxWidth(SLIDER_SHARE).heightIn(min = 30.dp)
                         .background(Color(Brand.CONTROL), RoundedCornerShape(6.dp))
                         .pointerInput(Unit) {
                             val stepPx = SLIDE_STEP_DP.dp.toPx()
@@ -225,6 +226,14 @@ internal fun SamplingPage(
                         Text("‹", color = muted, fontSize = 13.sp)
                         TextBlock(listOf(t(K.sampling_a4Hint)), Modifier.weight(1f).padding(horizontal = 8.dp), size = 13.sp, color = muted, align = TextAlign.Center)
                         Text("›", color = muted, fontSize = 13.sp)
+                    }
+                }
+                // how far A4's strike is measured, in the sampling page's words, on its own line (14 Nov 2026)
+                if (view == null) Box(Modifier.fillMaxWidth().heightIn(min = 22.dp).padding(top = 4.dp), contentAlignment = Alignment.CenterStart) {
+                    when (a4State.measured) {
+                        TuningController.Measured.MEASURING -> TextBlock(listOf(t(K.sampling_measuring)), Modifier.fillMaxWidth(), size = 14.sp, color = muted)
+                        TuningController.Measured.MEASURED -> TextBlock(listOf(t(K.sampling_measured)), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.GO_GREEN))
+                        else -> Unit
                     }
                 }
                 Spacer(Modifier.height(8.dp))
