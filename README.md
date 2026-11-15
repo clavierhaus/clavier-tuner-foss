@@ -28,60 +28,72 @@ Made by [clavierhaus.at](https://clavierhaus.at), a recording studio in Vienna w
 
 Clavier Tuner is a free, open-source tuning app for piano tuners. A short sampling of 8–15 notes measures your
 piano's own strings, and from that measurement the app computes a stretched tuning for exactly this instrument.
-While you tune, it shows the partials of each string live, so you see where the string stands, not just one number.
 No account, no tracking: nothing is recorded or sent.
 
-**Getting started:** tap New Tuning, define your preferred A4. Then sample: strike single strings with the others
-muted, any keys up to G6, in any order. Let each string ring until it's measured, then tap Accept. 10 to 15 keys
-spread from the low bass to G6 give the best accuracy. Before your first tuning, check the octave types under
-Settings › Stretch.
+**Getting started:** tap New Tuning. Mute A4 to one string, choose its pitch, tune the string until the strobe
+stands still, then Done. Then sample: strike single strings with the others muted, any keys up to G6, in any order.
+Let each string ring until it says measured, then tap Accept. Eight keys are the minimum; 10 to 15 spread from the
+low bass to G6 give the best accuracy. Before your first tuning, look at the octave types under Settings › Stretch.
 
-**Tuning:** the screen follows the key you strike and shows its target. The temperament octave A3–A4 comes first;
-Done keeps a note, and moving on to another keeps it too. For each new piano, start a New Tuning. Continue is only
-for the piano you sampled.
+**Tuning:** the screen follows the key you strike and shows its target. The temperament comes first. When the
+strobe stands still within your tolerance the note is kept; there is nothing to tap. For each new piano, start a
+New Tuning; Continue is only for the piano you sampled. Settings › Help has the quick start.
 
 ## What it does
 
 - **Sets A4 on the string you choose.** The first page sets the pitch: tap
-  − or +, or slide a finger along the strip under them. Strike each string of
-  A4 alone and its partials stand as strobes over their buttons: a clean
-  string's strobes move together and stand still together, a false partial
-  beats on its own. Take the cleanest string as the reference; a tap on a
-  partial's button takes it out of the strobe and another brings it back.
+  − or + (hold to run on), or slide a finger along the strip under them.
+  Strike the one string of A4 left unmuted and tune it until the strobe
+  stands still, then Done. The same page sets the temperament: where it
+  starts (C3 to A3, A3 by default) and where it ends (A4 to C5, A4 by
+  default).
 - **Measures first.** Strike single strings, mutes in, any keys up to G6 in
   any order: eight are the minimum, 10 to 15 spread up to G6 give the best result.
   From those strings the app measures the inharmonicity of the piano and
   computes where every note belongs before you tune the first one. The
   stretch comes from this instrument, not from a table. Each key says
   "measuring …" until more sound no longer changes the measurement, then
-  "measured"; Accept turns grey once a key is kept.
+  "measured"; the key kept stands green on the keyboard. Above G6 a string's
+  inharmonicity does not repeat from strike to strike, so the sampling stops
+  there; the tuning does not.
+- **Suggests the bass's octave type from your sampling.** Sample two bass
+  keys an octave apart, A1 and A2 say, and the window behind the tuning line
+  says which octave type they suggest, and why. One tap uses it; the choice
+  stays yours.
 - **Follows the key.** Strike a note and the screen is on it — the key is
   identified by fitting a string to what the microphone hears, not guessed
-  from the loudest peak. Measured on recordings of six pianos (Bösendorfer
-  225 and 290, Steinway B and D, Kawai, Samick): 49 of 49 keys of a walk
-  across the range, 169 of 173 on the largest set of recordings.
+  from the loudest peak. Tap the note's name to choose a key by hand.
 - **Tunes by the strobe.** For every note the app picks the partial a tuner
   would listen to in that register, synthesises its target, and shows the
-  string against it as a strobe, to a tenth of a cent, 47 readings a second.
-  The string's other partials stand beside it, each in its own band: a clean
-  string is one moving pattern that comes to a standstill, a false partial
-  is the one out of step. A partial you take out stays out for the note.
+  string against it as a strobe, to a tenth of a cent, about 47 readings a
+  second. Beside the strobe, three ways of showing it: *One strobe* (the
+  default), one band moved by the string's clean partials together; *Limit
+  to*, the lowest few partials, a band each; *All partials*. With bands for
+  several partials a clean string is one pattern that comes to a standstill,
+  and a false partial is the one out of step. Under the strobe the string's
+  partials: a tap takes one out of the reading for that note, another brings
+  it back. From C6 up the strobe moves at the pin's pace: it slows as the
+  strings get shorter, by an amount taken from the piano's own inharmonicity,
+  so a turn of the pin looks alike on every key.
 - **Shows the tuning at a glance.** A line at the top says what this tuning
-  is tuned to — A4, the temperament octave, the octave type of bass, middle
-  and treble. A tap on it opens exactly those settings.
+  is tuned to — A4, the temperament, the octave types. A tap on it opens
+  those settings.
 - **Knows when the note is in.** When the strobe stands still inside the
-  tolerance you set, the app records the note and the keyboard shows the
-  tuning as it stands. No Done to tap.
+  tolerance you set, the app keeps the note, and Progress shows the tuning
+  as it stands on the keyboard.
 - **Keeps the session.** One sealed file on the phone, under a key that never
   leaves it. Continue tomorrow where you stopped.
-- **Carries your choices as settings.** Octave type and width per register,
-  each register offering the types its strings sound — bass 4:2, 6:3, 10:5;
-  middle 2:1, 4:2; treble 2:1, 4:2, the double octave 4:1 and the twelfth 3:1; set
-  out as bass 6:3, middle 4:2, treble 4:1. The bass's type is beatless at the
-  lowest key, the treble's at C8, the middle's next to the temperament octave;
-  every octave between moves from one to the other key by key, so the tuning
-  curve has no break anywhere. Also the temperament's reach and the match window. The range is the 88 keys, A0 to
-  C8. The measurement decides the rest.
+- **Carries your choices as settings.** A new phone starts on the six-point
+  stretch: octave types and widths at the lowest key, A2, next to the
+  temperament, F5, A6 and C8, every octave between moving key by key from one
+  place to the next, so the tuning curve has no break anywhere. The
+  three-point stretch is one tap away, and every type and width stays yours.
+  Each register offers the types its strings sound — bass 4:2, 6:3, 10:5;
+  middle 2:1, 4:2; treble 2:1, 4:2, the double octave 4:1 and the twelfth
+  3:1. Also the tolerance. The range is the 88 keys, A0 to C8. The
+  measurement decides the rest.
+- **Explains itself in one place.** Settings › Help: a quick start through a
+  tuning, in English and German.
 - **Out of the way when you want it.** The phone's Back and Home buttons show
   everywhere but on the tuning screen, which has the whole screen; Settings ›
   App › Display switches them off for a full screen everywhere.
@@ -89,131 +101,22 @@ for the piano you sampled.
 **Out of scope by design:** pitch raises — a piano far from pitch needs one
 first. Unisons are tuned by ear.
 
-## New in 0.9
+## What's new
 
+Since 0.9.0, in the next release:
+
+- **Setting A4 shows one band**, A4's first partial against the pitch chosen.
+- **The temperament's start and end** are set on the A4 page: the start from
+  C3 to A3, the end from A4 to C5.
+
+In 0.9.0:
+
+- **The bass's octave type, suggested by your sampling** (above).
+- **The six-point stretch is where a new phone starts.**
+- **The strobe moves at the pin's pace in the treble** (above).
 - **The false-beat check has moved to Clavier Tuner Pro.**
-- **The bass's octave type, suggested by your sampling.** After sampling, the
-  window behind the tuning line says which octave type your sampled strings
-  suggest for the bass, and why: the hardest beat each type would leave between
-  two of them an octave apart. One tap uses it; the choice stays yours. Sample
-  two bass keys an octave apart, A1 and A2 say, to get one.
-- **The six-point stretch is where a new phone starts.** Settings › Stretch
-  opens on the choice, three points or six; every octave type and width stays
-  yours, and what the app suggests for the bass comes from what your sampling
-  measures.
-- **No violet on the tuning screen.** The colour for a partial claimed false
-  from the tuning's own strikes is gone.
 
-## New in 0.8
-
-- **Every step before tuning says what to do**, on the left, and a line at the
-  top shows the steps: A4, Sampling, Tuning. Tap an earlier one to go back and
-  change something; nothing measured is lost. Once a note has been tuned the
-  targets hold.
-- **One strobe by default.** The other choices stay beside it, each saying what
-  it shows, and a tap switches at once.
-- **No piano size to set.** The sampling is the measure of the piano.
-- **The octave's width on A3–A4 too**, and extra stretch can go narrower than
-  beatless.
-- **Six-point stretch**, a switch beside the octave types: three more places,
-  A2, F5 and A6.
-
-## New in 0.7.2
-
-- **What the strobe shows is chosen beside it** on the tuning screen, three
-  lines, one active: *All partials*, *Limit to* 4 (more or fewer with − and
-  +), or *One strobe, averaged*. This replaces *Number of strobes* and *Octave
-  partial* in Settings, and the note on screen takes the choice at once.
-
-## New in 0.7.1
-
-- **Every strobe stands where the note as played puts it,** from its first
-  reading: a strobe other than the one being tuned stands at the tuned
-  strobe's target times the ratio between the two partials as read. No strobe
-  is placed by a model and then moved. *Strobe smoothing* (Settings › Tuning ›
-  Reading) sets how far back that ratio is averaged.
-
-## New in 0.7
-
-- **A new tuning curve, with no borders.** The bass's octave type is beatless
-  at the lowest key, the treble's at C8, the midrange's next to the
-  temperament octave; every octave between moves key by key from one to the
-  other, and the extra stretch with it. Until 0.6 each region's type held
-  whole up to its edge, which could leave a few keys of the low tenor several
-  cents flat of their neighbours.
-- **The temperament octave is stretched too:** the octave below A4 is a
-  beatless octave of the midrange's type, divided equally. It was 2:1 by the
-  fundamentals, which is narrower on a piano with much inharmonicity.
-- **One smooth inharmonicity line** through the measured strings, with no cut
-  at the lowest plain string. On the recordings we have, strings not measured
-  are predicted about twice as closely as before.
-- The targets have changed: a tuning saved with 0.6 is best begun again.
-- **The key struck is caught sooner,** about 0.17 s after the strike instead of
-  0.26 s, and **the strobe's row stands at once:** every band the note offers
-  is there from the start and fades in over 0.3 s as its partial is read.
-  Settings › Strobe › *Number of strobes* shows all of them or the lowest few,
-  the one being tuned always among them; *Strobes appear together* holds the
-  row until every band is read.
-- **Each register offers only the octave types its strings sound:** bass 4:2,
-  6:3, 10:5; middle 2:1, 4:2; treble 2:1, 4:2, 4:1, 3:1.
-- **Sampling needs eight strings besides A4,** six until now: enough on a
-  concert grand, not on a spinet.
-
-## New in 0.6
-
-- **One band, if you want it.** Settings › Strobe › Bands: *All partials*, as
-  before and still the default, or *Octave partial*: one band in every
-  register, the partial on which the note meets its octave by the octave type
-  you set (4:2 on the upper note: partial 2; 6:3: partial 3; 2:1, 4:1, 3:1:
-  partial 1; in A3–A4, partial 2). The note is read and kept on that band
-  alone. A tap on a partial below still adds it beside the band.
-
-## New in 0.5
-
-- **Progress counted the sampling as tuning.** Keys only sampled stood green
-  and in the line "as tuned". Now only what you tuned counts.
-- **Settings in piano words**, in English and German.
-- **"Too short" in the top octave while sampling.** Sampling now stops at G6;
-  above it a string cannot be measured reliably. Tuning up there is as before.
-- **"Partial 1" beside the note** is gone.
-- **Which microphone?** Settings › App › About says whether the phone gives
-  the app its unprocessed microphone, or processes the sound itself.
-
-## New in 0.4
-
-What testers found in 0.3, and what changed:
-
-- **Words broken or cut on smaller phones.** On a Motorola edge 50 neo the
-  word beside the caught key stood letter by letter, and the last line of
-  the sampling instructions was missing. Every screen is now drawn and
-  checked on five phone sizes, in English and German and at the largest
-  system text size: a button's word never breaks, and no text is cut.
-- **Sampling instructions that named keys.** They now say only what to do:
-  single strings, any keys, any order; eight at least, 10 to 15 for the best
-  result; let each ring until it says measured, then Accept.
-- **A strobe on the sampling page nobody needed.** A sample is measured, not
-  tuned; the sampling page has no strobe any more. A4 keeps its strobe, now
-  with each partial's number under its name.
-- **The bells are gone for good,** and with them the "anchor" line beside
-  the partial.
-
-## New in 0.3
-
-What testers found irritating in 0.1 and 0.2, and what changed:
-
-- **The treble stood sharp.** Against another tuning system the treble came
-  out just under 4 cents high, C7 about 11. The treble's octave was set out
-  as 4:2; it is now the double octave 4:1, which met a concert grand as its
-  tuner left it within half a cent. 4:2 and the new 3:1 remain choices.
-- **No way out of the app.** Back, Home and the app switcher were hidden on
-  every screen. They now show outside the tuning screen; Back on the start
-  page closes the app.
-- **"Done" while sampling was unclear.** Each key now says whether it is
-  still being measured, and Accept greys once it has taken.
-- **The bells.** The bells beside the strobe moved where the strobe of the
-  same partials stood still. They are gone; the strobe shows every partial.
-- **Small things.** The screen stays on while tuning; the strobe comes up
-  with the strike; the word "listening" is gone.
+Every change of every version, dated: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## How it measures
 
@@ -238,8 +141,9 @@ The chain every proven tuning device uses, written down and testable:
 Raw 48 kHz PCM, the microphone unprocessed; no third-party DSP; the same code
 on every platform. The engine is judged against recordings: the core tests
 run on synthetic strings, the recording tests on recordings of real pianos. The
-engine (`shared/`) and the screens (`ui/`) are a Kotlin Multiplatform library
-with an iOS stub; only the Android app exists today.
+engine (`shared/`) and the screens (`ui/`) are one Kotlin Multiplatform
+library, the same code on Android and on the iPhone. The Android app is
+released; the iPhone app is in testing.
 
 ## Install
 
