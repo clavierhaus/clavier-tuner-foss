@@ -194,6 +194,7 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                         onStretch = { region -> openSettings(1 to stretchPageOf(region, settingsModel.settings.value)) },
                         // the tuning's own stretch, saved with it; without a tuning, the defaults (5 Nov 2026)
                         onTemperamentLow = { low -> tuneOrDefault { it.copy(temperamentLowMidi = low) } },
+                        onTemperamentHigh = { high -> tuneOrDefault { it.copy(temperamentHighMidi = high) } },
                         onChangeSettings = { change -> tuneOrDefault(change) },
                     )
                 }

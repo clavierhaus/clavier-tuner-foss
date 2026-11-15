@@ -121,6 +121,8 @@ fun BasicHub(
     onAutoNote: ((Boolean) -> Unit)? = null,
     /** Moves the temperament octave's low note (C3…A3) from the sampling page; null when the app does not offer it. */
     onTemperamentLow: ((Int) -> Unit)? = null,
+    /** The temperament's end set on the A4 page, A4 to C5 (15 Nov 2026). */
+    onTemperamentHigh: ((Int) -> Unit)? = null,
     /**
      * Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf). Nothing on the screen calls it since the
      * "partial N" line it hung on left (26 Oct 2026); kept so both editions' calls stand until a place for it is chosen.
@@ -227,7 +229,7 @@ fun BasicHub(
         }
         val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
         if (t == null || t.sampling) {
-            SamplingPage(controller, t, picture, onTemperamentLow, feeding, onPickRecording, onUseMicrophone, a4Left)
+            SamplingPage(controller, t, picture, onTemperamentLow, onTemperamentHigh, feeding, onPickRecording, onUseMicrophone, a4Left)
             return@Box
         }
 

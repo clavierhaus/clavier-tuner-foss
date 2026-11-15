@@ -49,9 +49,9 @@ import at.clavierhaus.unisonmaster.ui.num
 
 /** "A4 = 443,0 Hz · gleichstufig A3–A4 · Oktaven 6:3 | 4:2 | 4:2": bass, middle, treble, low to high. */
 fun tuningInfoLine(s: TunerSettings, a4Hz: Double): String =
-    t(K.tuning_info, formatHz(a4Hz), noteName(s.temperamentLowMidi),
+    t(K.tuning_info, formatHz(a4Hz), noteName(s.temperamentLowMidi) + "–" + noteName(s.temperamentHighMidi),
         (listOf(s.octaveBass) + s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.map { it.type } + s.octaveMiddle +
-            s.stretchPoints.filter { it.midi > TunerSettings.TEMPERAMENT_HIGH }.sortedBy { it.midi }.map { it.type } + s.octaveTreble).joinToString(" | ") { it.label })
+            s.stretchPoints.filter { it.midi > s.temperamentHighMidi }.sortedBy { it.midi }.map { it.type } + s.octaveTreble).joinToString(" | ") { it.label })
 
 /**
  * The window behind the line. [onChange] changes the settings in force; [onClose] closes it. [suggestion] is what the
@@ -140,7 +140,7 @@ fun TuningInfoDialog(
                 Text(t(K.settings_temperamentOctave), color = Color(Brand.WHITE), fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
                 Spacer(Modifier.width(16.dp))
                 Stepper(
-                    noteName(s.temperamentLowMidi) + "–A4",
+                    noteName(s.temperamentLowMidi) + "–" + noteName(s.temperamentHighMidi),
                     canDecrease = s.temperamentLowMidi > TunerSettings.MIN_TEMPERAMENT_LOW,
                     canIncrease = s.temperamentLowMidi < TunerSettings.MAX_TEMPERAMENT_LOW,
                     onDecrease = { onChange { it.copy(temperamentLowMidi = it.temperamentLowMidi - 1) } },
@@ -191,12 +191,12 @@ fun StretchPlaces(s: TunerSettings, onChange: ((TunerSettings) -> TunerSettings)
             place(noteName(s.lowestKeyMidi), bass, bass, s.octaveBass, s.widthBassFar ?: s.widthBass,
                 { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBassFar = w) } })
             s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.forEach { pointRow(it, bass, onChange) }
-            place(noteName(s.temperamentLowMidi) + "–A4", TunerSettings.MIDDLE_OCTAVES, bass, s.octaveMiddle, s.widthMiddle,
+            place(noteName(s.temperamentLowMidi) + "–" + noteName(s.temperamentHighMidi), TunerSettings.MIDDLE_OCTAVES, bass, s.octaveMiddle, s.widthMiddle,
                 { o -> onChange { it.copy(octaveMiddle = o) } }, { w -> onChange { it.copy(widthMiddle = w) } })
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             placesHeading(treble)
-            s.stretchPoints.filter { it.midi > TunerSettings.TEMPERAMENT_HIGH }.sortedBy { it.midi }.forEach { pointRow(it, treble, onChange) }
+            s.stretchPoints.filter { it.midi > s.temperamentHighMidi }.sortedBy { it.midi }.forEach { pointRow(it, treble, onChange) }
             place("C8", treble, treble, s.octaveTreble, s.widthTrebleFar ?: s.widthTreble,
                 { o -> onChange { it.copy(octaveTreble = o) } }, { w -> onChange { it.copy(widthTrebleFar = w) } })
         }

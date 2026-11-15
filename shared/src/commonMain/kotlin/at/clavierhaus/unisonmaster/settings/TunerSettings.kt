@@ -89,6 +89,12 @@ data class TunerSettings(
     /** Lowest note of the temperament octave; the session runs from A4 down to here. */
     val temperamentLowMidi: Int = 57,          // A3
     /**
+     * Highest note of the temperament octave, A4 to C5 (Peter, 15 Nov 2026: "Start ... End: A4 also with + and -. Default
+     * is A3-A4"; A4 stays inside, being set first and the note the tuning is built from). Above A4 the temperament's
+     * stretched semitone runs on (TuningSession.temperamentF1); the treble begins one key higher.
+     */
+    val temperamentHighMidi: Int = 69,         // A4
+    /**
      * The order of working: on, the temperament octave is walked first and
      * each of its notes asks for Done (leaving one does not register it);
      * off, leaving any note registers it. A preference of the route only —
@@ -296,8 +302,10 @@ data class TunerSettings(
         val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2, OctaveType.O4_1, OctaveType.O3_1)
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
-        /** Top of the temperament octave: A4, the note the session is defined on. */
+        /** Top of the temperament octave at its lowest: A4, the note the session is defined on. */
         const val TEMPERAMENT_HIGH = 69        // A4
+        /** … and at its highest, its end with + (15 Nov 2026). */
+        const val MAX_TEMPERAMENT_HIGH = 72    // C5
         const val MIDI_C8 = 108
         const val MIDI_A0 = 21
         const val MIN_MEMORY_S = 0.15
@@ -341,7 +349,7 @@ data class TunerSettings(
     /** The stretch page [midi] lies on, 0..2: bass, middle, treble — the order of the Stretch pages in Settings. */
     fun regionOf(midi: Int): Int = when {
         midi < temperamentLowMidi -> 0
-        midi > TEMPERAMENT_HIGH -> 2
+        midi > temperamentHighMidi -> 2
         else -> 1
     }
 
@@ -359,7 +367,7 @@ data class TunerSettings(
      */
     fun outerShare(midi: Int): Double = when {
         midi < temperamentLowMidi -> share(temperamentLowMidi - 1 - midi, temperamentLowMidi - 1 - lowestKeyMidi)
-        midi > TEMPERAMENT_HIGH -> share(midi - TEMPERAMENT_HIGH - 1, MIDI_C8 - TEMPERAMENT_HIGH - 1)
+        midi > temperamentHighMidi -> share(midi - temperamentHighMidi - 1, MIDI_C8 - temperamentHighMidi - 1)
         else -> 0.0
     }
 
@@ -368,7 +376,7 @@ data class TunerSettings(
     /** The outer octave type on [midi]'s side of the temperament octave: the bass's below it, the treble's above, the middle's inside. */
     fun outerTypeFor(midi: Int): OctaveType = when {
         midi < temperamentLowMidi -> octaveBass
-        midi > TEMPERAMENT_HIGH -> octaveTreble
+        midi > temperamentHighMidi -> octaveTreble
         else -> octaveMiddle
     }
 
@@ -391,8 +399,8 @@ data class TunerSettings(
      */
     private fun onPoints(midi: Int): OctaveBlend? {
         val below = midi < temperamentLowMidi
-        if (!below && midi <= TEMPERAMENT_HIGH) return null
-        val edge = StretchPoint(if (below) temperamentLowMidi - 1 else TEMPERAMENT_HIGH + 1, octaveMiddle, widthMiddle)
+        if (!below && midi <= temperamentHighMidi) return null
+        val edge = StretchPoint(if (below) temperamentLowMidi - 1 else temperamentHighMidi + 1, octaveMiddle, widthMiddle)
         val end = if (below) StretchPoint(lowestKeyMidi, octaveBass, widthBassFar ?: widthBass) else StretchPoint(MIDI_C8, octaveTreble, widthTrebleFar ?: widthTreble)
         val inside = stretchPoints.filter { p ->
             if (below) p.midi > end.midi && p.midi < edge.midi && p.type in BASS_OCTAVES else p.midi > edge.midi && p.midi < end.midi && p.type in TREBLE_OCTAVES
@@ -451,7 +459,7 @@ data class TunerSettings(
         val w = outerShare(midi)
         val (own, far) = when {
             midi < temperamentLowMidi -> widthBass to widthBassFar
-            midi > TEMPERAMENT_HIGH -> widthTreble to widthTrebleFar
+            midi > temperamentHighMidi -> widthTreble to widthTrebleFar
             else -> return widthMiddle
         }
         val outer = own + ((far ?: own) - own) * w
@@ -461,7 +469,7 @@ data class TunerSettings(
     /** The stretch this tuning is tuned to ([Stretch]). */
     fun stretch(): Stretch = Stretch(
         temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
-        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints,
+        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints, temperamentHighMidi,
     )
 
     /** These settings with [s] as the stretch. */
@@ -469,6 +477,7 @@ data class TunerSettings(
         temperamentLowMidi = s.temperamentLowMidi, octaveBass = s.octaveBass, octaveMiddle = s.octaveMiddle,
         octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
         widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, stretchPoints = s.points,
+        temperamentHighMidi = s.temperamentHighMidi,
     )
 }
 
@@ -491,6 +500,8 @@ data class Stretch(
     val widthTrebleFar: Double?,
     /** The tuning's further places ([TunerSettings.stretchPoints]). */
     val points: List<StretchPoint> = emptyList(),
+    /** The temperament's end ([TunerSettings.temperamentHighMidi]); A4 for a tuning saved before 15 Nov 2026. */
+    val temperamentHighMidi: Int = TunerSettings.TEMPERAMENT_HIGH,
 )
 
 /**
@@ -550,6 +561,8 @@ class SettingsModel(
         return TunerSettings(
             temperamentFirst = b("temperamentFirst", d.temperamentFirst),
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
+            temperamentHighMidi = i("temperamentHighMidi", d.temperamentHighMidi)
+                .coerceIn(TunerSettings.TEMPERAMENT_HIGH, TunerSettings.MAX_TEMPERAMENT_HIGH),
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
             octaveTreble = o("octaveTreble", d.octaveTreble),
@@ -593,6 +606,7 @@ class SettingsModel(
 
     private fun save(s: TunerSettings) {
         store.put("temperamentLowMidi", s.temperamentLowMidi.toString())
+        store.put("temperamentHighMidi", s.temperamentHighMidi.toString())
         store.put("octaveBass", s.octaveBass.name)
         store.put("octaveMiddle", s.octaveMiddle.name)
         store.put("octaveTreble", s.octaveTreble.name)

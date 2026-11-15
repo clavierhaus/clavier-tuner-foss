@@ -106,6 +106,7 @@ internal fun SamplingPage(
     picture: TuningPicture,
     /** Moves the temperament octave's low note (C3…A3); null when the app does not offer it. */
     onTemperamentLow: ((Int) -> Unit)?,
+    onTemperamentHigh: ((Int) -> Unit)?,
     /** The recording being fed to the engine in place of the microphone, or null; see docs/PROBE.md. */
     feeding: String? = null,
     /** Opens the probe's file picker; null when the app does not offer the probe. */
@@ -133,7 +134,31 @@ internal fun SamplingPage(
     // a line as tall as its type, not the theme's 24 sp at every size (24 Oct 2026: at the phone's largest
     // text the two lines of a label and its value stood taller than their row)
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.merge(TextStyle(lineHeight = LINE.em))) {
-    // the temperament's octave, − and +: one row, drawn where the page puts it
+    val high = cfg.temperamentHighMidi
+    // one note with − and +, as the temperament's start and end are set
+    val stepRow: @Composable (String, Int, Boolean, Boolean, (Int) -> Unit) -> Unit = { label, note, canDown, canUp, set ->
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
+            Text(label, color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false, modifier = Modifier.width(56.dp))
+            Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { set(note - 1) }.padding(horizontal = 10.dp))
+            Text(noteName(note), color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
+            Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { set(note + 1) }.padding(horizontal = 10.dp))
+        }
+    }
+    // The temperament on the A4 page, heading its left side (Peter, 15 Nov 2026: "First line: Temperament, next line:
+    // Start, below A3 with + and -, below that: End: A4 also with + and -. Default is A3-A4, but some tuners want to start
+    // with F3"); the end from A4 to C5, A4 staying inside as the note the tuning is built from.
+    val temperamentBlock: @Composable () -> Unit = {
+        Column {
+            Text(t(K.sampling_temperament), color = white, fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false)
+            stepRow(t(K.sampling_temperamentStart), low,
+                onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW,
+                onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW) { onTemperamentLow?.invoke(it) }
+            stepRow(t(K.sampling_temperamentEnd), high,
+                onTemperamentHigh != null && high > TunerSettings.TEMPERAMENT_HIGH,
+                onTemperamentHigh != null && high < TunerSettings.MAX_TEMPERAMENT_HIGH) { onTemperamentHigh?.invoke(it) }
+        }
+    }
+    // the sampling page's one row: the temperament as set, its start with − and +, and the probe
     val temperamentRow: @Composable (Boolean) -> Unit = { withProbe ->
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
             Text(t(K.sampling_temperament), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false)
@@ -141,14 +166,9 @@ internal fun SamplingPage(
             val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
             val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
             Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
-            Text("${noteName(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
+            Text("${noteName(low)}–${noteName(high)}", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
             Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
-            // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording
-            // is the only way to see what the display makes of a string when the piano is out
-            // of reach. It stood in the corner band first and was drawn over the wordmark
-            // (his screenshot, 20:55), because that band is the brand's and not a place for a
-            // control; it sits at the end of this row instead, which is the right side — the
-            // only interactive area of this page — and has the width for the file's name.
+            // the probe at the row's end, the right side's one interactive area (Peter, 6 Oct 2026)
             if (withProbe && onPickRecording != null) {
                 Spacer(Modifier.weight(1f))
                 ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
@@ -179,7 +199,7 @@ internal fun SamplingPage(
                     CornerBand()
                     // on the A4 page the temperament comes first on the left, in the room the strobe gave (Peter, 15 Nov 2026:
                     // "Use the new screen estate to move the temperament setting to the left: First line: Temperament")
-                    if (settingA4) temperamentRow(false)
+                    if (settingA4) temperamentBlock()
                     // the steps' line on the sampling page, where it leads back to A4; on the A4 page it said only what the
                     // orders under it say, and its room is the orders' (Peter, 14 Nov 2026: "The three info buttons are
                     // redundant, because the process is explained in the left box")

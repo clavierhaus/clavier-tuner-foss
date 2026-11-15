@@ -106,6 +106,7 @@ object SessionCodec {
 
     private fun stretchInRange(t: Stretch) =
         t.temperamentLowMidi in TunerSettings.MIN_TEMPERAMENT_LOW..TunerSettings.MAX_TEMPERAMENT_LOW &&
+            t.temperamentHighMidi in TunerSettings.TEMPERAMENT_HIGH..TunerSettings.MAX_TEMPERAMENT_HIGH &&
             listOf(t.widthBass, t.widthMiddle, t.widthTreble, t.widthBassFar, t.widthTrebleFar).all { widthInRange(it) }
 
     fun encode(s: SessionSnapshot): String = buildString {
@@ -121,6 +122,8 @@ object SessionCodec {
             append("stretch ${t.temperamentLowMidi} ${t.octaveBass.name} ${t.octaveMiddle.name} ${t.octaveTreble.name} ")
             append("${t.widthBass} ${t.widthMiddle} ${t.widthTreble} ${t.widthBassFar ?: "-"} ${t.widthTrebleFar ?: "-"} 0\n")
             if (t.points.isNotEmpty()) append("points ${StretchPoint.encode(t.points)}\n")
+            // the temperament's end, only where it is not A4: a file of before 15 Nov 2026 has none and reads A4
+            if (t.temperamentHighMidi != TunerSettings.TEMPERAMENT_HIGH) append("temperamentHigh ${t.temperamentHighMidi}\n")
         }
         for (l in s.editionLines) if (editionLineOk(l)) append("x $l\n")
         s.leftOut.toList().sortedBy { it.first }.forEach { (midi, ks) ->
@@ -210,6 +213,10 @@ object SessionCodec {
                 if (stretchInRange(c)) stretch = c
             }
             if (i < lines.size && lines[i].startsWith("points ")) stretch = stretch?.copy(points = StretchPoint.decode(tokens("points", 1)[0]))
+            if (i < lines.size && lines[i].startsWith("temperamentHigh ")) {
+                val h = tokens("temperamentHigh", 1)[0].toIntOrNull()
+                if (h != null && h in TunerSettings.TEMPERAMENT_HIGH..TunerSettings.MAX_TEMPERAMENT_HIGH) stretch = stretch?.copy(temperamentHighMidi = h)
+            }
         }
         // an edition's own lines, kept as they are; a file of 10-12 Nov 2026 has its single strings checked here as
         // "string" lines, each with the count of "b" lines after it, and they are kept as the edition's lines too

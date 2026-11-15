@@ -10,8 +10,9 @@ reconstructed from the commit history that day.
 ### 2026-11-15
 - **Setting A4 shows one band**, A4's first partial against the pitch chosen,
   and no partial buttons under it; the four or five bands were confusing.
-- **The temperament heads the left side of the A4 page**, in the room the
-  strobe gave; on the sampling page it stays where it was.
+- **The temperament heads the left side of the A4 page**: Temperament, then
+  Start with − and + (C3 to A3) and End with − and + (A4 to C5). A3–A4 stays
+  the default; the strobe gains the height the row took.
 
 ## 0.9.0 -- 2026-11-10
 

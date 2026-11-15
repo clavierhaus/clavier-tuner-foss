@@ -123,9 +123,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      */
     val notes: List<Int> get() = (MIDI_A4 downTo lowMidi) + ((MIDI_A4 + 1)..highMidi)
 
-    /** The notes of the temperament octave, A4 down to its low note. */
+    /** The notes of the temperament octave, A4 down to its low note, then up from A4 to its end (15 Nov 2026). */
     val temperamentNotes: List<Int>
-        get() = (TunerSettings.TEMPERAMENT_HIGH downTo settings.temperamentLowMidi).toList()
+        get() = (TunerSettings.TEMPERAMENT_HIGH downTo settings.temperamentLowMidi).toList() +
+            ((TunerSettings.TEMPERAMENT_HIGH + 1)..settings.temperamentHighMidi)
 
     /** True once every note of the temperament octave has been tuned ([tuned]); sampled is not tuned. */
     val temperamentComplete: Boolean get() = temperamentNotes.all { it in tuned }
@@ -287,7 +288,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** The partner of [midi] by octave type [type]: above it in the bass, below it in the treble; null inside the temperament octave. */
     private fun partnerBy(midi: Int, type: OctaveType): Triple<Int, Int, Int>? = when {
         midi < settings.temperamentLowMidi -> Triple(midi + type.semitones, type.low, type.high)
-        midi > TunerSettings.TEMPERAMENT_HIGH -> Triple(midi - type.semitones, type.high, type.low)
+        midi > settings.temperamentHighMidi -> Triple(midi - type.semitones, type.high, type.low)
         else -> null
     }
 
@@ -377,7 +378,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val key = Triple(a4Hz, settings, basis)
         if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
         curveCache[midi]?.let { return it }
-        val v = if (midi >= settings.temperamentLowMidi && midi <= TunerSettings.TEMPERAMENT_HIGH) temperamentF1(midi, c) else {
+        val v = if (midi >= settings.temperamentLowMidi && midi <= settings.temperamentHighMidi) temperamentF1(midi, c) else {
             val b = settings.blend(midi)
             val w = b.share
             val middle = if (w < 1.0) octaveTargetF1(midi, b.inner, c) else 0.0

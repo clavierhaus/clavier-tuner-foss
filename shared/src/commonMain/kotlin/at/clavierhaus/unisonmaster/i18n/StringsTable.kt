@@ -88,6 +88,8 @@ object K {
     const val sampling_a4Hint = "sampling.a4Hint"
     const val sampling_a4Strobe = "sampling.a4Strobe"
     const val sampling_temperament = "sampling.temperament"
+    const val sampling_temperamentStart = "sampling.temperamentStart"
+    const val sampling_temperamentEnd = "sampling.temperamentEnd"
     const val sampling_caughtLabel = "sampling.caughtLabel"
     const val sampling_strikeKey = "sampling.strikeKey"
     const val sampling_sampledLabel = "sampling.sampledLabel"
@@ -307,6 +309,8 @@ internal object StringsTable : Catalog {
         "sampling.a4Hint" to arrayOf("Tap − or + to adjust. You can also slide left and right here.", "Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen."),
         "sampling.a4Strobe" to arrayOf("Tune until the stripes stand still.", "Stimmen, bis die Streifen stillstehen."),
         "sampling.temperament" to arrayOf("Temperament", "Temperatur"),
+        "sampling.temperamentStart" to arrayOf("Start", "Beginn"),
+        "sampling.temperamentEnd" to arrayOf("End", "Ende"),
         "sampling.caughtLabel" to arrayOf("Caught", "Erkannt"),
         "sampling.strikeKey" to arrayOf("strike a key", "Taste anschlagen"),
         "sampling.sampledLabel" to arrayOf("Sampled", "Messpunkte"),
@@ -317,7 +321,7 @@ internal object StringsTable : Catalog {
         "app.cancel" to arrayOf("Cancel", "Abbrechen"),
         "tuning.partialsUsed" to arrayOf("partials {0}", "Teiltöne {0}"),
         "tuning.partialOne" to arrayOf("partial {0}", "Teilton {0}"),
-        "tuning.info" to arrayOf("A4 = {0} · equal temperament {1}–A4 · octaves {2}", "A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}"),
+        "tuning.info" to arrayOf("A4 = {0} · equal temperament {1} · octaves {2}", "A4 = {0} · gleichstufig {1} · Oktaven {2}"),
         "tuning.infoTitle" to arrayOf("This tuning", "Diese Stimmung"),
         "tuning.infoOrders" to arrayOf("These settings hold for this tuning. Change what you want, then Done.", "Das gilt für diese Stimmung. Nach Wunsch ändern, dann Fertig."),
         "tuning.suggestShort" to arrayOf("Suggested for the bass: {0}", "Vorschlag für den Bass: {0}"),

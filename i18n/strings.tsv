@@ -88,6 +88,8 @@ hub.fullSpectrum	Full Spectrum	Alle Teiltöne
 sampling.a4Hint	Tap − or + to adjust. You can also slide left and right here.	Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen.
 sampling.a4Strobe	Tune until the stripes stand still.	Stimmen, bis die Streifen stillstehen.
 sampling.temperament	Temperament	Temperatur
+sampling.temperamentStart	Start	Beginn
+sampling.temperamentEnd	End	Ende
 sampling.caughtLabel	Caught	Erkannt
 sampling.strikeKey	strike a key	Taste anschlagen
 sampling.sampledLabel	Sampled	Messpunkte
@@ -98,7 +100,7 @@ sampling.order.accept	Let each string ring until measured, then Accept.	Klingen 
 app.cancel	Cancel	Abbrechen
 tuning.partialsUsed	partials {0}	Teiltöne {0}
 tuning.partialOne	partial {0}	Teilton {0}
-tuning.info	A4 = {0} · equal temperament {1}–A4 · octaves {2}	A4 = {0} · gleichstufig {1}–A4 · Oktaven {2}
+tuning.info	A4 = {0} · equal temperament {1} · octaves {2}	A4 = {0} · gleichstufig {1} · Oktaven {2}
 tuning.infoTitle	This tuning	Diese Stimmung
 tuning.infoOrders	These settings hold for this tuning. Change what you want, then Done.	Das gilt für diese Stimmung. Nach Wunsch ändern, dann Fertig.
 tuning.suggestShort	Suggested for the bass: {0}	Vorschlag für den Bass: {0}
