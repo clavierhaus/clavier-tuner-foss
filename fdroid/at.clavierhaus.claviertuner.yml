@@ -28,8 +28,8 @@ Repo: https://github.com/clavierhaus/clavier-tuner-foss.git
 Binaries: https://github.com/clavierhaus/clavier-tuner-foss/releases/download/v%v/clavier-tuner-%v.apk
 
 Builds:
-  - versionName: 0.7.3
-    versionCode: 14
+  - versionName: 0.9.0
+    versionCode: 16
     commit: 55afc75f2ed21d9326c728d8d2621048e29e453d
     subdir: androidApp
     gradle:
@@ -39,5 +39,5 @@ AllowedAPKSigningKeys: 367c17e5719674d6c50511b6e41de8026cf762a63d065ed0037752853
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-CurrentVersion: 0.7.3
-CurrentVersionCode: 14
+CurrentVersion: 0.9.0
+CurrentVersionCode: 16
