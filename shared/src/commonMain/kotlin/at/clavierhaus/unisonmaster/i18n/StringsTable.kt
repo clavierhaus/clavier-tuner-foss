@@ -309,7 +309,7 @@ internal object StringsTable : Catalog {
         "sampling.a4Hint" to arrayOf("Tap − or + to adjust. You can also slide left and right here.", "Tippen Sie − oder + zum Anpassen. Sie können hier auch nach links und rechts wischen."),
         "sampling.a4Strobe" to arrayOf("Tune until the stripes stand still.", "Stimmen, bis die Streifen stillstehen."),
         "sampling.temperament" to arrayOf("Temperament", "Temperatur"),
-        "sampling.temperamentStart" to arrayOf("Start", "Beginn"),
+        "sampling.temperamentStart" to arrayOf("Start", "Anfang"),
         "sampling.temperamentEnd" to arrayOf("End", "Ende"),
         "sampling.caughtLabel" to arrayOf("Caught", "Erkannt"),
         "sampling.strikeKey" to arrayOf("strike a key", "Taste anschlagen"),
