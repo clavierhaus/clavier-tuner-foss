@@ -133,6 +133,28 @@ internal fun SamplingPage(
     // a line as tall as its type, not the theme's 24 sp at every size (24 Oct 2026: at the phone's largest
     // text the two lines of a label and its value stood taller than their row)
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.merge(TextStyle(lineHeight = LINE.em))) {
+    // the temperament's octave, − and +: one row, drawn where the page puts it
+    val temperamentRow: @Composable (Boolean) -> Unit = { withProbe ->
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
+            Text(t(K.sampling_temperament), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false)
+            Spacer(Modifier.width(12.dp))
+            val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
+            val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
+            Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
+            Text("${noteName(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
+            Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
+            // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording
+            // is the only way to see what the display makes of a string when the piano is out
+            // of reach. It stood in the corner band first and was drawn over the wordmark
+            // (his screenshot, 20:55), because that band is the brand's and not a place for a
+            // control; it sits at the end of this row instead, which is the right side — the
+            // only interactive area of this page — and has the width for the file's name.
+            if (withProbe && onPickRecording != null) {
+                Spacer(Modifier.weight(1f))
+                ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
+            }
+        }
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // the keyboard's height, a share of the page's (docs/UI.md, law 1): at a fixed 116 dp a small
         // phone's work rows stood below its top edge (24 Oct 2026)
@@ -155,6 +177,9 @@ internal fun SamplingPage(
                 // was left too little on a small phone, and its buttons broke their words (24 Oct 2026)
                 Column(Modifier.weight(if (settingA4) A4_LEFT_SHARE else LEFT_SHARE).fillMaxHeight()) {
                     CornerBand()
+                    // on the A4 page the temperament comes first on the left, in the room the strobe gave (Peter, 15 Nov 2026:
+                    // "Use the new screen estate to move the temperament setting to the left: First line: Temperament")
+                    if (settingA4) temperamentRow(false)
                     // the steps' line on the sampling page, where it leads back to A4; on the A4 page it said only what the
                     // orders under it say, and its room is the orders' (Peter, 14 Nov 2026: "The three info buttons are
                     // redundant, because the process is explained in the left box")
@@ -236,25 +261,10 @@ internal fun SamplingPage(
                         else -> Unit
                     }
                 }
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
-                    Text(t(K.sampling_temperament), color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false)
-                    Spacer(Modifier.width(12.dp))
-                    val canDown = onTemperamentLow != null && low > TunerSettings.MIN_TEMPERAMENT_LOW
-                    val canUp = onTemperamentLow != null && low < TunerSettings.MAX_TEMPERAMENT_LOW
-                    Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { onTemperamentLow?.invoke(low - 1) }.padding(horizontal = 10.dp))
-                    Text("${noteName(low)}–A4", color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
-                    Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { onTemperamentLow?.invoke(low + 1) }.padding(horizontal = 10.dp))
-                    // The probe on this page too (Peter, 6 Oct 2026): A4 is set here, and a recording
-                    // is the only way to see what the display makes of a string when the piano is out
-                    // of reach. It stood in the corner band first and was drawn over the wordmark
-                    // (his screenshot, 20:55), because that band is the brand's and not a place for a
-                    // control; it sits at the end of this row instead, which is the right side — the
-                    // only interactive area of this page — and has the width for the file's name.
-                    if (onPickRecording != null) {
-                        Spacer(Modifier.weight(1f))
-                        ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
-                    }
+                // the temperament: on the sampling page here; on the A4 page it heads the left side (15 Nov 2026)
+                if (!settingA4) { Spacer(Modifier.height(8.dp)); temperamentRow(true) }
+                else if (onPickRecording != null) Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    Spacer(Modifier.weight(1f)); ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
                 }
                 // The tuning session's own display, so that hitting the pitch here looks exactly as it
                 // looks on every other note and green means the same thing (Peter, 15:56). It is given
@@ -275,20 +285,7 @@ internal fun SamplingPage(
                     // what to do, over the strobe (Peter, 24 Oct 2026)
                     hint = t(K.sampling_a4Strobe),
                 ) else Spacer(Modifier.weight(1f))
-                if (view == null) {
-                    // A4's partials under the strobe: a tap takes one out of it, another brings it back,
-                    // so the strings can be compared on the partials that matter (Peter, 22 Oct 2026)
-                    PartialChips(
-                        a4Hz = a4, baseHz = a4,
-                        count = controller.highestPartial(a4),
-                        shown = audibleA4 - hiddenA4,
-                        falseMarked = emptySet(),
-                        tappable = audibleA4 - 1,
-                        onTap = { k -> controller.tapPartial(k) },
-                        // the chip and its number under it: 36 dp cut the numbers (24 Oct 2026)
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                    )
-                }
+                // A4's partial buttons left with its other bands (15 Nov 2026): one band, partial 1, needs no choice
                 if (view != null) {
                     // what the last strike caught, under its label, and the two answers to it; below, the count,
                     // how far the caught string's measurement has got, and Done. The status is an element of its

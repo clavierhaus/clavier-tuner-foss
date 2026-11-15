@@ -5,6 +5,14 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
+## Unreleased
+
+### 2026-11-15
+- **Setting A4 shows one band**, A4's first partial against the pitch chosen,
+  and no partial buttons under it; the four or five bands were confusing.
+- **The temperament heads the left side of the A4 page**, in the room the
+  strobe gave; on the sampling page it stays where it was.
+
 ## 0.9.0 -- 2026-11-10
 
 ### 2026-11-14

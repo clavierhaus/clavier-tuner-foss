@@ -213,18 +213,16 @@ fun BasicHub(
         // beat shows before a string is taken as the reference (Peter, at the Steinway B). Partial 1 stands
         // against the pitch chosen, as before.
         fun hubFrame(): TuningPicture.Frame {
-            val upper = partials.filter { it.k >= 2 }
+            // one band: A4's first partial against the pitch chosen (Peter, 15 Nov 2026: "the four or five bands of
+            // setting A4 are confusing. Reduce to one bar"); until then a band for every partial heard, with its
+            // button under it
             return TuningPicture.Frame(
                 note = "A4", listened = 1, live = hubHz != null, listenedHz = hubHz, listenedTargetHz = a4,
-                partials = (hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap()) +
-                    upper.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
-                targets = mapOf(1 to a4) + upper.associate { it.k to it.hz * 2.0.pow(-it.cents / 1200.0) },
+                partials = hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap(),
+                targets = mapOf(1 to a4),
                 falsePartials = emptySet(), dropped = emptySet(),
                 matchCents = cfg.matchCents, nowMs = nowMs(),
-                // one column per partial button under the strobe, in the same order and width (Peter,
-                // 23 Oct 2026: the strobe columns correspond to the buttons below); a partial taken out
-                // keeps its empty column, so the two rows never shift against each other
-                seats = (1..controller.highestPartial(a4).coerceIn(1, Partials.MAX)).toList(),
+                seats = listOf(1),
             )
         }
         val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
