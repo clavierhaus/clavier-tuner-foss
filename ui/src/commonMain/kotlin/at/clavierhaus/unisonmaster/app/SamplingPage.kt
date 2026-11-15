@@ -57,6 +57,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.em
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import at.clavierhaus.unisonmaster.ui.SamplingKeyboard
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -138,7 +139,7 @@ internal fun SamplingPage(
     // one note with − and +, as the temperament's start and end are set
     val stepRow: @Composable (String, Int, Boolean, Boolean, (Int) -> Unit) -> Unit = { label, note, canDown, canUp, set ->
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(36.dp)) {
-            Text(label, color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false, modifier = Modifier.width(56.dp))
+            Text(label, color = muted, fontFamily = DejaVuSerif, fontSize = 14.sp, softWrap = false, modifier = Modifier.widthIn(min = 56.dp).padding(end = 4.dp))
             Text("−", color = if (canDown) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canDown) { set(note - 1) }.padding(horizontal = 10.dp))
             Text(noteName(note), color = white, fontFamily = DejaVuSerif, fontSize = 20.sp)
             Text("+", color = if (canUp) white else Color(0xFF444444), fontSize = 22.sp, modifier = Modifier.clickable(enabled = canUp) { set(note + 1) }.padding(horizontal = 10.dp))
