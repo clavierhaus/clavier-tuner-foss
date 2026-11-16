@@ -94,6 +94,8 @@ object K {
     const val sampling_strikeKey = "sampling.strikeKey"
     const val sampling_sampledLabel = "sampling.sampledLabel"
     const val sampling_atLeast = "sampling.atLeast"
+    const val sampling_needBoth = "sampling.needBoth"
+    const val sampling_needOne = "sampling.needOne"
     const val sampling_order_strings = "sampling.order.strings"
     const val sampling_order_count = "sampling.order.count"
     const val sampling_order_accept = "sampling.order.accept"
@@ -319,8 +321,10 @@ internal object StringsTable : Catalog {
         "sampling.strikeKey" to arrayOf("strike a key", "Taste anschlagen"),
         "sampling.sampledLabel" to arrayOf("Sampled", "Messpunkte"),
         "sampling.atLeast" to arrayOf("{0} · at least {1}", "{0} · mindestens {1}"),
+        "sampling.needBoth" to arrayOf("Done needs a key from {0} and one from {1}", "Fertig braucht eine Taste von {0} und eine von {1}"),
+        "sampling.needOne" to arrayOf("Done needs a key from {0}", "Fertig braucht eine Taste von {0}"),
         "sampling.order.strings" to arrayOf("Strike single strings, the others muted. Any keys up to G6, any order.", "Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten bis G6, Reihenfolge beliebig."),
-        "sampling.order.count" to arrayOf("{0} notes are the minimum; 10–15 spread up to G6 give the best accuracy.", "{0} Töne sind das Minimum; 10–15 bis G6 verteilt ergeben die beste Genauigkeit."),
+        "sampling.order.count" to arrayOf("{0} notes are the minimum, one of them in the lowest octave and one in the top octave up to G6; 10–15 spread over the range give the best accuracy.", "{0} Töne sind das Minimum, einer davon in der untersten Oktave und einer in der obersten bis G6; 10–15 über den Tonumfang verteilt ergeben die beste Genauigkeit."),
         "sampling.order.accept" to arrayOf("Let each string ring until measured, then Accept.", "Klingen lassen bis „gemessen“, dann Übernehmen."),
         "app.cancel" to arrayOf("Cancel", "Abbrechen"),
         "tuning.partialsUsed" to arrayOf("partials {0}", "Teiltöne {0}"),
@@ -426,7 +430,7 @@ internal object StringsTable : Catalog {
         "help.qs.a4.s5" to arrayOf("Pitch raises are out of scope: a piano far from pitch needs one first.", "Vorstimmen ist nicht vorgesehen: ein Klavier weit weg von der Stimmhöhe braucht zuerst eines."),
         "help.qs.sampling.s1" to arrayOf("Strike single strings, the others muted. The app catches the key by itself: let the string ring until it says measured, then Accept. Cancel drops what the strike caught, its sample too.", "Einzelne Saiten anschlagen, die anderen abgedämpft. Die App erkennt die Taste von selbst: die Saite klingen lassen, bis „gemessen“ dasteht, dann Übernehmen. Abbrechen verwirft, was der Anschlag erkannt hat, auch seinen Messpunkt."),
         "help.qs.sampling.s2" to arrayOf("Spread the samples over the whole keyboard, in any order.", "Verteilen Sie die Messpunkte über die ganze Tastatur, in beliebiger Reihenfolge."),
-        "help.qs.sampling.s3" to arrayOf("Eight samples are the minimum; ten to fifteen give the better result.", "Acht Messpunkte sind das Minimum; zehn bis fünfzehn geben das bessere Ergebnis."),
+        "help.qs.sampling.s3" to arrayOf("Eight samples are the minimum, one of them in the lowest octave and one in the top octave up to G6: without them the curve guesses the bass and the treble, and Done waits. Ten to fifteen give the better result.", "Acht Messpunkte sind das Minimum, einer davon in der untersten Oktave und einer in der obersten bis G6: ohne sie rät die Kurve Bass und Diskant, und Fertig wartet. Zehn bis fünfzehn geben das bessere Ergebnis."),
         "help.qs.sampling.s4" to arrayOf("Done ends the sampling. The piano's inharmonicity is measured from these strings, and it stays as measured for the whole tuning.", "Fertig beendet das Vermessen. Die Inharmonizität Ihres Klaviers wird aus diesen Saiten gemessen und bleibt für die ganze Stimmung so, wie sie gemessen wurde."),
         "help.qs.sampling.s5" to arrayOf("The line at the top shows the three steps: A4, Sampling, Tuning. Tap an earlier one to go back and change something; nothing measured is lost. Once a note has been tuned the way back is shut, and only the octave types can still be changed.", "Die Zeile oben zeigt die drei Schritte: A4, Vermessen, Stimmen. Ein Tipp auf einen früheren Schritt führt zurück, nichts Gemessenes geht verloren. Sobald ein Ton gestimmt ist, ist der Weg zurück zu, nur die Oktavtypen lassen sich noch ändern."),
         "help.qs.octaves.s1" to arrayOf("Settings › Stretch, for the bass, the midrange and the treble.", "Einstellungen › Spreizung, für Bass, Mittellage und Diskant."),

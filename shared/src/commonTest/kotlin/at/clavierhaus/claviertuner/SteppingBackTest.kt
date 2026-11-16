@@ -27,7 +27,7 @@ private object Quiet : AudioSource {
 class SteppingBackTest {
     private val a4 = 440.0
     private fun et(m: Int) = TuningSession.targetF1(m, a4)
-    private val keys = listOf(33, 40, 45, 52, 57, 64, 76, 81, 88)
+    private val keys = listOf(28, 40, 45, 52, 57, 64, 76, 81, 88)   // reaching the lowest octave and the top one (16 Nov 2026)
     private val samples = listOf(measuredString(69, a4, 4e-4)) + keys.map { measuredString(it, et(it), 1e-4 * (1 + (it - 33) / 20.0)) }
 
     private fun controller(sampling: Boolean, tuned: Set<Int> = setOf(69)): TuningController {

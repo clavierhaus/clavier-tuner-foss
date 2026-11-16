@@ -588,6 +588,9 @@ class TuningController(
         val samplesIn: Int = 0,
         val samplesNeeded: Int = 0,
         val samplingReady: Boolean = false,
+        /** Sampling: the keys Done still waits for, one from each range, null once one is sampled (TuningSession.spreadLow). */
+        val spreadLow: IntRange? = null,
+        val spreadHigh: IntRange? = null,
         /** Sampling: the key caught from the last strike, and whether Accept has kept it. */
         val caught: Int? = null,
         val caughtAccepted: Boolean = false,
@@ -933,6 +936,8 @@ class TuningController(
             samplesIn = s.samplesIn,
             samplesNeeded = s.samplesNeeded,
             samplingReady = s.samplingReady,
+            spreadLow = s.spreadLow.takeUnless { s.reachesLow },
+            spreadHigh = s.spreadHigh.takeUnless { s.reachesHigh },
             caught = caught?.midi,
             caughtAccepted = caught?.accepted == true,
             caughtMeasured = caught?.state ?: Measured.MEASURING,
@@ -1363,6 +1368,8 @@ class TuningController(
             samplesIn = s.samplesIn,
             samplesNeeded = s.samplesNeeded,
             samplingReady = s.samplingReady,
+            spreadLow = s.spreadLow.takeUnless { s.reachesLow },
+            spreadHigh = s.spreadHigh.takeUnless { s.reachesHigh },
             caughtAccepted = caught?.accepted == true,
             caughtMeasured = caught?.state ?: Measured.MEASURING,
             sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),

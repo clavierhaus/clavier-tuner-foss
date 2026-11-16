@@ -630,7 +630,8 @@ class TuningControllerTest {
         assertEquals(-8.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "replaced")
         assertEquals(1, t.samplesIn, "E2 was never kept")
         // seven more, kept: Done opens, and ends the sampling at A4's neighbour
-        for ((m, b) in listOf(33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
+        // the top octave the sampling takes is reached by A5 (TuningSession.spreadHigh, 16 Nov 2026)
+        for ((m, b) in listOf(33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 81 to 1.6e-3)) {
             c.hear(src, SyntheticString.strike(et(m), b, 3.0))
             assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
             assertNotNull(c.acceptLive(), "kept ${m}")
@@ -651,7 +652,7 @@ class TuningControllerTest {
         c.acceptLive()
         var t = c.tuning.value!!
         assertTrue(t.sampling); assertEquals(TunerSettings.MIN_SAMPLES, t.samplesNeeded)
-        for ((m, b) in listOf(21 to 1.2e-4, 33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
+        for ((m, b) in listOf(21 to 1.2e-4, 33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 81 to 1.6e-3)) {
             c.hear(src, SyntheticString.strike(et(m), b, 3.0))
             assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
             assertNotNull(c.acceptLive(), "kept ${m}")

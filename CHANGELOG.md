@@ -10,6 +10,11 @@ reconstructed from the commit history that day.
 ### 2026-11-15
 - **Setting A4 shows one band**, A4's first partial against the pitch chosen,
   and no partial buttons under it; the four or five bands were confusing.
+- **The sampling reaches both ends of the range.** Done waits until one key
+  in the lowest octave and one from G#5 to G6 are sampled, and the sampling
+  page says which are still missing. Eight keys from the middle alone left the
+  curve to guess the bass: measured on every key of one grand, a key not
+  sampled could stand hundreds of cents off its partial 6.
 - **Above C6, two bars, an experiment.** From C#6 up the strobe gives way to
   two bars: the key an octave below, struck alone, then the key itself, struck
   alone. The key's target follows the key below as it sounds, by the treble's

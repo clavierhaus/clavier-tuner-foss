@@ -348,7 +348,19 @@ internal fun SamplingPage(
                         // measuring while more sound still changes it, measured once it does not, and
                         // short when the next strike came first
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
-                            if (view.caught != null) {
+                            // what Done still waits for, once the string caught is kept or before one is (16 Nov 2026):
+                            // a key in the lowest octave and one in the top octave the sampling takes
+                            val range = { r: IntRange -> noteName(r.first) + "–" + noteName(r.last) }
+                            val lo = view.spreadLow; val hi = view.spreadHigh
+                            val wanted = when {
+                                lo != null && hi != null -> t(K.sampling_needBoth, range(lo), range(hi))
+                                lo != null -> t(K.sampling_needOne, range(lo))
+                                hi != null -> t(K.sampling_needOne, range(hi))
+                                else -> null
+                            }
+                            if (wanted != null && (view.caught == null || view.caughtAccepted)) {
+                                TextBlock(listOf(wanted), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.ORANGE))
+                            } else if (view.caught != null) {
                                 val (word, colour) = when (view.caughtMeasured) {
                                     TuningController.Measured.MEASURING -> t(K.sampling_measuring) to muted
                                     TuningController.Measured.MEASURED -> t(K.sampling_measured) to Color(Brand.GO_GREEN)

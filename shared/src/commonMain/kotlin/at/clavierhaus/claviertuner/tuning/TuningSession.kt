@@ -152,8 +152,24 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** How many a sampling needs: the minimum, the same for every tuner. */
     val samplesNeeded: Int get() = TunerSettings.MIN_SAMPLES
 
-    /** True once the sampling may end: the minimum is in. */
-    val samplingReady: Boolean get() = samplesIn >= TunerSettings.MIN_SAMPLES
+    /**
+     * The keys the sampling must reach (16 Nov 2026; Peter: "a simple instruction that refuses Done when the samples are
+     * not spread enough"): one in the lowest octave of the range, one in the top octave the sampling takes. Measured on
+     * the 225's every key A0-G6 (Pro research/curve_spread_rule_20261116.py, 1500 random samplings of eight keys and A4):
+     * with no rule, the worst sampling put partial 6 of a key not sampled 349 c off (p90 of its keys), the curve's falling
+     * bass part carried down from the middle alone; a wound key near the break (E2, F2) did not stop it (236 c); a key in
+     * the lowest octave and one in the top octave left 18 c in the worst sampling and 8.5 c in 95 of 100.
+     */
+    val spreadLow: IntRange get() = lowMidi..(lowMidi + 11)
+    val spreadHigh: IntRange get() = (TunerSettings.SAMPLE_HIGHEST_MIDI - 11)..TunerSettings.SAMPLE_HIGHEST_MIDI
+
+    /** Whether a key of [spreadLow] is sampled. */
+    val reachesLow: Boolean get() = measured.keys.any { it <= spreadLow.last }
+    /** Whether a key of [spreadHigh] or above is sampled. */
+    val reachesHigh: Boolean get() = measured.keys.any { it >= spreadHigh.first }
+
+    /** True once the sampling may end: the minimum is in, and it reaches the lowest octave and the top one. */
+    val samplingReady: Boolean get() = samplesIn >= TunerSettings.MIN_SAMPLES && reachesLow && reachesHigh
 
     /**
      * Ends the sampling (Done): the inharmonicity sampled so far becomes the basis of every
