@@ -61,6 +61,7 @@ data class SessionSnapshot(
  *     stretch <tempLow> <bass> <middle> <treble> <wBass> <wMiddle> <wTreble> <wBassFar|-> <wTrebleFar|-> <0|1, the size switch of 31 Oct - 9 Nov 2026: written 0, read and ignored>
  *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
  *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
+ *     temperamentHigh <midi>                    (the temperament's end, after the points; only when not A4, since 15 Nov 2026)
  *     x <text>                                  (an edition's own line, kept as it is, any number; since 12 Nov 2026)
  *     string <midi> <...> <count>               (written 10-12 Nov 2026, read as an edition's line with the count of
  *     b <...>                                    b lines after it, which follow it as edition's lines too)
