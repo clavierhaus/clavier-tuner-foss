@@ -19,6 +19,7 @@ import at.clavierhaus.unisonmaster.tuning.Inharmonicity
 import at.clavierhaus.unisonmaster.tuning.MeasuredPartial
 import at.clavierhaus.unisonmaster.tuning.KeyIdentifier
 import at.clavierhaus.unisonmaster.tuning.NoteMeasurement
+import at.clavierhaus.unisonmaster.tuning.OctaveBars
 import at.clavierhaus.unisonmaster.tuning.Notes
 import at.clavierhaus.unisonmaster.tuning.PredictedPartial
 import at.clavierhaus.unisonmaster.tuning.Temperament
@@ -606,6 +607,27 @@ class TuningController(
 
     private var session: TuningSession? = null
 
+    /**
+     * The two bars above C6 (OctaveBars, an experiment, 16 Nov 2026): the key on screen, the key an octave below, that key
+     * as read now while it sounds alone ([refHz], null when it does not), the target it is read against, and whether a
+     * strike of it has set the key's target ([taken]).
+     */
+    data class OctaveView(val midi: Int, val refMidi: Int, val refHz: Double?, val refTargetHz: Double, val taken: Boolean)
+
+    private val _octave = MutableStateFlow<OctaveView?>(null)
+    /** Null below C#6, while sampling, or with the two bars switched off. */
+    val octave: StateFlow<OctaveView?> = _octave.asStateFlow()
+
+    /** The key below [note], read alone over [refHz], sets [note]'s target (OctaveBars). */
+    private fun takeOctaveReference(note: Int, refHz: Double) {
+        val s = session ?: return
+        if (s.sampling || s.current != note) return
+        val ref = OctaveBars.refOf(note)
+        val asked = s.curveTargetF1(ref) * 2.0.pow(s.editionOffset(ref) / 1200.0)
+        s.octaveShiftCents = s.octaveShiftCents + (note to TuningSession.centsOff(refHz, asked))
+        publish(s)
+    }
+
     private val _tuning = MutableStateFlow<TuningView?>(null)
     /** Null on the hub, before A4 is set; the note being tuned after. */
     val tuning: StateFlow<TuningView?> = _tuning.asStateFlow()
@@ -694,6 +716,7 @@ class TuningController(
         session = null
         _tuning.value = null
         _reading.value = null
+        _octave.value = null
         _liveHz.value = null
         _shownPartials.value = setOf(1)
         _activePartial.value = 1
@@ -1456,6 +1479,10 @@ class TuningController(
         var identifier = KeyIdentifier(sr, DETECT_SAMPLES)
         var identifierLong = KeyIdentifier(sr, SAMPLE_LONG_SAMPLES)
         var strikeHop = -1_000_000L
+        // the two bars above C6 (OctaveBars): the key below's reader, the key it serves, and its readings while it sounds
+        var octaveReader: PhaseReader? = null
+        var octaveNote = -1
+        var octaveSum = 0.0; var octaveN = 0
         var livePartialsStrike = -1L
         var strikePeakDb = -200.0
         var candidate: Int? = null
@@ -1606,6 +1633,31 @@ class TuningController(
                 if (_liveLevel.value == 0.0) _heardMidi.value = null
                 val heard = _heardMidi.value
                 val s = session
+                // Above C6 the two bars (OctaveBars, an experiment, 16 Nov 2026): the key an octave below, struck alone and
+                // named by the identifier, is read on its partial 1 against its own target, and the screen stays on the key
+                // it serves. Its readings while it sounds, taken together once it stops (no fewer than the reading's memory
+                // holds), move that key's target. Nothing of it reaches the key's own reading: the key below's partial 2
+                // lies where the key on screen is read.
+                val oNote = if (s != null && !s.sampling && s.curve.ready && OctaveBars.on(_settings.value, s.current)) s.current else -1
+                val refSounding = oNote > 0 && heard == OctaveBars.refOf(oNote)
+                if (oNote > 0 && s != null) {
+                    val ref = OctaveBars.refOf(oNote)
+                    if (oNote != octaveNote) {
+                        octaveNote = oNote
+                        octaveReader = PhaseReader(sr, s.targetF1(ref), memoryS = _settings.value.readingMemoryS)
+                        octaveSum = 0.0; octaveN = 0
+                    }
+                    val refRead = octaveReader!!.push(chunk)
+                    val refLive = refSounding && refRead.shown
+                    if (refLive) { octaveSum += refRead.hz; octaveN++ } else {
+                        val enough = (_settings.value.readingMemoryS * sr / HOP).toInt().coerceAtLeast(1)
+                        if (octaveN >= enough) { val mean = octaveSum / octaveN; val n = oNote; afterHop += { takeOctaveReference(n, mean) } }
+                        octaveSum = 0.0; octaveN = 0
+                    }
+                    _octave.value = OctaveView(oNote, ref, if (refLive) refRead.hz else null, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote))
+                } else if (octaveNote != -1) {
+                    octaveNote = -1; octaveReader = null; octaveSum = 0.0; octaveN = 0; _octave.value = null
+                }
                 // sampling: the key of this strike, decided once — at the onset for the treble, past the thump for the rest
                 if (s != null && s.sampling && !decided && strikeHop > 0) {
                     val bgEnd = { all: FloatArray -> (all.size - since * HOP).toInt() }
@@ -1658,7 +1710,7 @@ class TuningController(
                 // temperament-first gate, and the wait for the note on screen to stop reading, which
                 // held the screen on the last key while it still rang. Never while sampling: the
                 // string just kept is still ringing when the screen moves on.
-                if (!followed && heard != null && s != null && heard != s.current &&
+                if (!followed && heard != null && s != null && heard != s.current && !refSounding &&
                     _settings.value.autoNote && !s.sampling && s.selectable(heard)) {
                     followed = true
                     selectNote(heard)
@@ -1731,13 +1783,14 @@ class TuningController(
                     // partial as its own reader had it
                     cr.cents?.let { combinedHz = w.hz * 2.0.pow(it / 1200.0) }
                 }
-                _reading.value = Reading(
+                _reading.value = if (refSounding) Reading(w.k, null, w.hz, live = false, settling = false, coarseCents = null)
+                else Reading(
                     w.k, combinedHz ?: held, w.hz,
                     live = if (combinedHz != null) true else rd?.shown == true,
                     settling = combinedHz == null && rd?.settling == true,
                     coarseCents = coarse, usedPartials = used, falsePartials = falseOnes,
                 )
-                _liveHz.value = combinedHz ?: held
+                _liveHz.value = if (refSounding) null else combinedHz ?: held
                 // The still strobe is the tuner's verdict, and the engine notices it. The listened
                 // partial read inside the match window for HOLD_S without a break, and the note is
                 // measured from this strike and recorded -- once per strike, the next strike still
@@ -1745,7 +1798,7 @@ class TuningController(
                 // that's for the tuner to decide" (Peter at the piano, 7 Oct 2026, 16:20). The screen
                 // does not move: with the key followed, the next strike is the next note. A string
                 // left flat on purpose is never still inside the window and is never recorded by this.
-                if (t != null && s != null && !s.sampling) {
+                if (t != null && s != null && !s.sampling && !refSounding) {
                     if (stillNote != t.midi) { stillNote = t.midi; stillSince = -1L; stillRecorded = -1L }
                     if (matchedNow()) {
                         if (stillSince < 0) stillSince = hop

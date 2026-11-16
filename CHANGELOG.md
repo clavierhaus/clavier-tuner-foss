@@ -10,6 +10,10 @@ reconstructed from the commit history that day.
 ### 2026-11-15
 - **Setting A4 shows one band**, A4's first partial against the pitch chosen,
   and no partial buttons under it; the four or five bands were confusing.
+- **Above C6, two bars, an experiment.** From C#6 up the strobe gives way to
+  two bars: the key an octave below, struck alone, then the key itself, struck
+  alone. The key's target follows the key below as it sounds, by the treble's
+  octave type. Settings › Stretch › Above C6 switches it off.
 - **The temperament heads the left side of the A4 page**: Temperament, then
   Start with − and + (C3 to A3) and End with − and + (A4 to C5). A3–A4 stays
   the default; the strobe gains the height the row took.

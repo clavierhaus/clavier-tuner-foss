@@ -86,6 +86,8 @@ fun TuningPictureView(
     together: Boolean = false,
     /** What an edition draws after the note's name, up to the strobe's panel (14 Nov 2026); none in the free app. */
     afterNote: (@Composable () -> Unit)? = null,
+    /** Drawn in the strobe's panel in place of the bands: the two bars above C6 (OctaveBarsView, 16 Nov 2026). */
+    strobe: (@Composable () -> Unit)? = null,
 ) {
     Pane(modifier) {
         // left: the tuning
@@ -137,7 +139,7 @@ fun TuningPictureView(
             // Their drawing was taken out on 24 Oct 2026 (Peter: "Die Glocken entfernen"); why they moved where
             // the strobe stood is not shown from a recording (SAMICK findings §33).
             if (left != null) Place(0.00f, 0.24f, 0.48f, 0.74f) { Panel { left() } }
-            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { Bands(p, marks, together) } }
+            Place(0.52f, 0.00f, 0.48f, 0.98f) { Panel { if (strobe != null) strobe() else Bands(p, marks, together) } }
         } else if (hint != null) Place(0.00f, HINT_BAND + 0.02f, 1.00f, 0.98f - HINT_BAND) {
             Panel { Bands(p, marks, together) }
         } else Place(0.00f, 0.24f, 1.00f, 0.76f) { Panel { Bands(p, marks, together) } }   // the full width, column over the button below it

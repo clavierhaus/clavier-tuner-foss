@@ -218,6 +218,10 @@ object K {
     const val table_target = "table.target"
     const val table_measured = "table.measured"
     const val table_cents = "table.cents"
+    const val octave_strike = "octave.strike"
+    const val settings_page_topOctave = "settings.page.topOctave"
+    const val settings_octaveBars = "settings.octaveBars"
+    const val settings_note_octaveBars = "settings.note.octaveBars"
 }
 
 internal object StringsTable : Catalog {
@@ -439,5 +443,9 @@ internal object StringsTable : Catalog {
         "table.target" to arrayOf("target", "Ziel"),
         "table.measured" to arrayOf("measured", "gemessen"),
         "table.cents" to arrayOf("cents", "Cent"),
+        "octave.strike" to arrayOf("Strike {0} alone, then {1} alone: one string each", "Erst {0} allein anschlagen, dann {1} allein: je eine Saite"),
+        "settings.page.topOctave" to arrayOf("Above C6", "Über C6"),
+        "settings.octaveBars" to arrayOf("Two bars, the octave below as reference", "Zwei Balken, die Oktave darunter als Bezug"),
+        "settings.note.octaveBars" to arrayOf("An experiment. From C#6 up the strobe gives way to two bars: first the key an octave below, struck alone, then the key itself, struck alone. The key's target follows the key below as it sounds, by the octave type set for the treble, so the octave stands as the stretch sets it. Off: the strobe, as below C6.", "Ein Experiment. Ab Cis6 treten zwei Balken an die Stelle des Strobes: zuerst die Taste eine Oktave tiefer, allein angeschlagen, dann die Taste selbst, allein angeschlagen. Das Ziel der Taste folgt der tieferen Taste, wie sie klingt, mit dem Oktavtyp des Diskants, sodass die Oktave so steht, wie die Spreizung sie setzt. Aus: der Strobe wie unter C6."),
     )
 }

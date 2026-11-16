@@ -47,6 +47,7 @@ import at.clavierhaus.unisonmaster.ui.CORNER_RIGHT_WIDTH
 import at.clavierhaus.unisonmaster.ui.Corners
 import at.clavierhaus.unisonmaster.ui.StateWord
 import at.clavierhaus.unisonmaster.ui.TuningPictureView
+import at.clavierhaus.unisonmaster.ui.OctaveBarsView
 import at.clavierhaus.unisonmaster.picture.TuningPicture
 import at.clavierhaus.unisonmaster.settings.TunerSettings
 import at.clavierhaus.unisonmaster.settings.StrobeMode
@@ -152,6 +153,7 @@ fun BasicHub(
     val cfg by controller.settings.collectAsState()
     val liveTarget by controller.targetHz.collectAsState()
     val reading by controller.reading.collectAsState()
+    val octave by controller.octave.collectAsState()
     val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
     val hubHz by controller.liveHz.collectAsState()          // before the session: A4's first partial, by the hub's reader
 
@@ -316,6 +318,8 @@ fun BasicHub(
                     },
                     together = cfg.strobeTogether,
                     afterNote = afterNote,
+                    // above C6, the two bars (OctaveBars, an experiment, 16 Nov 2026)
+                    strobe = octave?.takeIf { it.midi == t.midi }?.let { o -> @Composable { OctaveBarsView(o, reading, t.pace) } },
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,

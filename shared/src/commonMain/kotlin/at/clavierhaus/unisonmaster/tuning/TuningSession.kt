@@ -301,7 +301,21 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      */
     var targetOffsetCents: Map<Int, Double> = emptyMap()
 
-    private fun offset(midi: Int): Double = targetOffsetCents[midi] ?: 0.0
+    /**
+     * Above C6, how far the key an octave below, struck alone, stood from its own target when last read (OctaveBars, an
+     * experiment, 16 Nov 2026): the key's target moves with it, so the octave stands as the stretch sets it on the key
+     * below as it sounds. Laws 5 and 9 are set aside for these keys on Peter's word ("We must break the law on not using
+     * notes as reference"). Kept for the session only, never saved: the next strike of the key below sets it afresh.
+     */
+    var octaveShiftCents: Map<Int, Double> = emptyMap()
+
+    private fun offset(midi: Int): Double = (targetOffsetCents[midi] ?: 0.0) + (octaveShiftCents[midi] ?: 0.0)
+
+    /** The edition's offset over [midi]'s target alone, without the octave's ([targetOffsetCents]). */
+    fun editionOffset(midi: Int): Double = targetOffsetCents[midi] ?: 0.0
+
+    /** [midi]'s first partial where it must sit: the stretch's, moved by every offset over it. */
+    fun targetF1(midi: Int): Double = curveTargetF1(midi) * 2.0.pow(offset(midi) / 1200.0)
 
     /** What is listened to on [midi], and where it must sit: the target as computed, moved by its offset if it has one. */
     fun listening(midi: Int = current): Listening {

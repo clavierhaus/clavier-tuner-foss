@@ -216,6 +216,12 @@ data class TunerSettings(
      */
     val strobeTogether: Boolean = false,
     /**
+     * Above C6, two bars in the strobe's place (OctaveBars, an experiment, 16 Nov 2026): the key an octave below, struck
+     * alone, and the key being tuned, struck alone after it, its target taken from the key below as it sounds. Off: the
+     * strobe as below C6.
+     */
+    val octaveBars: Boolean = true,
+    /**
      * The reading's memory, seconds: how far back the shown reading looks.
      * 0.15 s shows every wobble as it happens (Verituner's); longer steadies
      * the bell in a noisy room or on a string that wanders, at the price of
@@ -590,6 +596,7 @@ class SettingsModel(
             },
             strobeCount = i("strobeCount", d.strobeCount).let { if (it <= 0) d.strobeCount else it }.coerceIn(1, TunerSettings.MAX_STROBE_COUNT),
             strobeTogether = b("strobeTogether", d.strobeTogether),
+            octaveBars = b("octaveBars", d.octaveBars),
             readingMemoryS = f("readingMemoryS", d.readingMemoryS).coerceIn(TunerSettings.MIN_MEMORY_S, TunerSettings.MAX_MEMORY_S),
             bandAveragingS = f("bandAveragingS", d.bandAveragingS).takeIf { it in TunerSettings.BAND_AVERAGING_STEPS } ?: d.bandAveragingS,
             language = store.get("language") ?: d.language,
@@ -628,6 +635,7 @@ class SettingsModel(
         store.put("strobeMode", s.strobeMode.name)
         store.put("strobeCount", s.strobeCount.toString())
         store.put("strobeTogether", s.strobeTogether.toString())
+        store.put("octaveBars", s.octaveBars.toString())
         store.put("readingMemoryS", s.readingMemoryS.toString())
         store.put("bandAveragingS", s.bandAveragingS.toString())
         store.put("language", s.language)
