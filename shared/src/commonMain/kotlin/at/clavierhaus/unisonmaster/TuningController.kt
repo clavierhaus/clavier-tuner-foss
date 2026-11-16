@@ -1648,13 +1648,13 @@ class TuningController(
                         octaveSum = 0.0; octaveN = 0
                     }
                     val refRead = octaveReader!!.push(chunk)
-                    val refLive = refSounding && refRead.shown
-                    if (refLive) { octaveSum += refRead.hz; octaveN++ } else {
+                    val refHzNow = refRead?.takeIf { refSounding && it.shown }?.hz
+                    if (refHzNow != null) { octaveSum += refHzNow; octaveN++ } else {
                         val enough = (_settings.value.readingMemoryS * sr / HOP).toInt().coerceAtLeast(1)
                         if (octaveN >= enough) { val mean = octaveSum / octaveN; val n = oNote; afterHop += { takeOctaveReference(n, mean) } }
                         octaveSum = 0.0; octaveN = 0
                     }
-                    _octave.value = OctaveView(oNote, ref, if (refLive) refRead.hz else null, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote))
+                    _octave.value = OctaveView(oNote, ref, refHzNow, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote))
                 } else if (octaveNote != -1) {
                     octaveNote = -1; octaveReader = null; octaveSum = 0.0; octaveN = 0; _octave.value = null
                 }
