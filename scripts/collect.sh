@@ -11,7 +11,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PHONE_DIR="/sdcard/Download/UnisonMaster"
+PHONE_DIR="/sdcard/Download/ClavierTuner"
 DEST="$REPO/data/sweeps/$(date +%Y-%m-%d)"
 KEEP=0
 [ "${1:-}" = "--keep" ] && KEEP=1

@@ -1,0 +1,63 @@
+package at.clavierhaus.claviertuner
+
+/**
+ * clavierhaus CI: black, white, orange.
+ *
+ * Colors live in shared code as plain ARGB values so Android (Compose) and
+ * later iOS (SwiftUI) render the identical palette.
+ *
+ * ORANGE is the official CI value, sampled from the master logo file
+ * (logo-inverted-uhd.jpg): #FF9630.
+ */
+object Brand {
+    const val ORANGE: Long = 0xFFFF9630
+    const val BLACK: Long = 0xFF000000
+    const val NEAR_BLACK: Long = 0xFF0D0D0D // panels, one step off pure black
+    /** The tuning picture's two regions, bells and strobe: a box on the ground, lighter than it by a step the eye finds and the plate's brightness does not swallow (Peter, 7 Oct 2026). */
+    const val PANEL: Long = 0xFF1C1C1C
+    const val WHITE: Long = 0xFFFFFFFF
+    const val WHITE_MUTED: Long = 0xB3FFFFFF // 70 % white for secondary text
+    // The greys every screen draws its lines, controls and dimmed words with, named once
+    // (UI-UNIFORMITY, 12 Oct 2026): until then the tuning side and the book each kept their own.
+    const val RULE: Long = 0xFF3A3A3A         // a line, a frame, a control that can be tapped
+    const val CONTROL: Long = 0xFF2A2A2A      // a control's ground, a row's divider
+    const val DIM: Long = 0xFF808080          // a word that is there but not now
+
+    /**
+     * Functional alert colour, deliberately OUTSIDE the CI palette. Reserved
+     * for a control that must not be missed: a control that blends into the
+     * orange UI is one an operator forgets. It is not a brand colour and
+     * must not be used decoratively.
+     */
+
+    /** Confirmation (the "Done" action). Functional, not decorative. */
+    const val GO_GREEN: Long = 0xFF32D74B
+
+    /** Calculated targets, and nothing else. Functional, not decorative. */
+    const val TARGET_BLUE: Long = 0xFF8FD0FF
+
+    /**
+     * A partial the engine has measured false on the strike now sounding —
+     * its bell, its button, its line in the table, and nothing else on any
+     * screen. Red-violet, bright enough to read at arm's length on black and
+     * far from the target blue; a dashed outline or a struck number carries
+     * the same meaning without colour (docs/UI.md).
+     */
+    const val FALSE_VIOLET: Long = 0xFFC040F0
+
+    /**
+     * The progress keyboard. Green marks a note that is done, which is the
+     * same functional meaning GO_GREEN carries elsewhere: a match. A black
+     * key that is done takes a deeper green, so that it stays readable as a
+     * black key against its lit neighbours instead of merging into them.
+     */
+    const val KEY_WHITE: Long = 0xFFE6E6E6
+    const val KEY_BLACK: Long = 0xFF141414
+    const val KEY_DONE_WHITE: Long = GO_GREEN
+    const val KEY_DONE_BLACK: Long = 0xFF1B7A2C
+
+    const val ALERT_RED: Long = 0xFFE02020
+    /** A sampled string measured short: the next strike came before more sound stopped changing it (18 Oct 2026). */
+    const val MEASURED_SHORT: Long = 0xFFFFD60A
+    const val ALERT_RED_DIM: Long = 0xFF7A1414
+}

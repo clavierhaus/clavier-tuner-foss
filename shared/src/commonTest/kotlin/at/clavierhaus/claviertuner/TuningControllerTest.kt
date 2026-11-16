@@ -1,0 +1,895 @@
+package at.clavierhaus.claviertuner
+
+import at.clavierhaus.claviertuner.audio.AudioSource
+import at.clavierhaus.claviertuner.measure.SyntheticString
+import at.clavierhaus.claviertuner.persistence.SessionSnapshot
+import at.clavierhaus.claviertuner.settings.TunerSettings
+import at.clavierhaus.claviertuner.tuning.Inharmonicity
+import at.clavierhaus.claviertuner.tuning.TuningSession
+import at.clavierhaus.claviertuner.tuning.measuredString
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/** Plays what it is given, one signal per start(), synchronously; [afterBuffer] sees the time after each buffer. */
+private class PlayedSource : AudioSource {
+    override val sampleRateHz = 48_000
+    var signal = FloatArray(0)
+    var afterBuffer: ((Double) -> Unit)? = null
+    override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {
+        var pos = 0
+        val buf = FloatArray(bufferSize)
+        while (pos + bufferSize <= signal.size) {
+            signal.copyInto(buf, 0, pos, pos + bufferSize)
+            onBuffer(buf)
+            pos += bufferSize
+            afterBuffer?.invoke(pos.toDouble() / sampleRateHz)
+        }
+    }
+    override fun stop() = Unit
+}
+
+class TuningControllerTest {
+    private val a4 = 443.1
+    // the temperament-first way, once the free app's pin and since 4 Oct 2026 the tuner's choice: the tests below describe it
+    private val settings = TunerSettings(lowestKeyMidi = 17, lowestUnwoundMidi = 40, temperamentFirst = true)
+
+    private fun et(midi: Int) = TuningSession.targetF1(midi, a4)
+
+    /** Plays [signal] through the controller, as one stretch of listening. */
+    private fun TuningController.hear(source: PlayedSource, signal: FloatArray) {
+        stopLive()
+        source.signal = signal
+        assertTrue(startLive())
+    }
+
+    private fun controller(s: TunerSettings = settings): Pair<TuningController, PlayedSource> {
+        val src = PlayedSource()
+        val c = TuningController(src) { 1000L }
+        c.applySettings(s)
+        return c to src
+    }
+
+    /**
+     * A publish while sampling -- the key caught, its measurement redone -- does not cost the clean
+     * partials a hop of sound (18 Oct 2026). Published mid-hop, the rest of that hop returned at the
+     * generation check and the clean partials' readers missed 1024 samples, losing their phase across
+     * them. A steady string read through the catch at 0.85 s and the remeasure: its clean partials,
+     * which the screen reads together, do not jump at either.
+     */
+    /** Where the curve puts [midi]'s first partial, with [measured] as its basis: the targets as a session computes them. */
+    private fun curveF1(midi: Int, measured: List<at.clavierhaus.claviertuner.tuning.NoteMeasurement>, st: TunerSettings): Double {
+        val s = TuningSession(a4, st, sampling = false)
+        for (m in measured) s.record(m)
+        return s.curveTargetF1(midi)
+    }
+
+    @Test
+    fun aPublishWhileSamplingDoesNotCostTheCleanPartialsAHopOfSound() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 69, listOf(measuredString(69, a4, 8e-4)), sampling = true))
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        c.hear(src, SyntheticString.strike(a4, 8e-4, 4.0, decayS = 6.0))
+        val combined = trail.filter { it.first in 1.2..3.4 && it.second.usedPartials.isNotEmpty() }
+        assertTrue(combined.size > 40, "the clean partials are read together while sampling: ${combined.size} hops")
+        val cents = combined.map { it.second.cents!! }.sorted()
+        val med = cents[cents.size / 2]
+        val worst = combined.maxBy { abs(it.second.cents!! - med) }
+        assertTrue(abs(worst.second.cents!! - med) < 0.05,
+            "the clean partials jump %+.3f c at %.2f s against their median %+.3f".format(worst.second.cents!! - med, worst.first - 0.3, med))
+    }
+
+    @Test
+    fun theHubsA4ReadingDiesWithItsSound() {
+        // Law 3 on the sampling page (Peter, 4 Oct 2026: "a frequency display that actually reflects the A4 from the piano"):
+        // a string struck and gone leaves no number behind
+        val (c, src) = controller()
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 6.0, decayS = 0.3))
+        assertNull(c.liveHz.value, "the string has died away: no A4 is shown")
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertNotNull(c.liveHz.value, "struck and sounding: read")
+    }
+
+    /**
+     * The A4 page shows the A4 string's partials as strobes, not only its first, so a false beat shows
+     * before a string is chosen as the reference (Peter, 22 Oct 2026, at the Steinway B: "No bells on
+     * A4, just strobe. Strobe shows false beats"). Each partial is read by its own reader at the place
+     * the strike put it -- with no B measured yet, the strike is the only lawful place (Rule 0) -- and
+     * shown against the pitch chosen by the ratio the strike measured to partial 1.
+     */
+    @Test
+    fun theA4PageReadsTheStringsPartialsWhereTheStrikePutThem() {
+        val (c, src) = controller()
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        val live = c.livePartials.value.associateBy { it.k }
+        for (k in 2..4) {
+            val p = assertNotNull(live[k], "partial $k of A4 is read on the A4 page: ${live.keys}")
+            val at = k * 443.12 * Inharmonicity.ratio(k, 8e-4)
+            assertTrue(abs(TuningSession.centsOff(p.hz, at)) < 1.0, "partial $k read at %.3f Hz, the string's at %.3f".format(p.hz, at))
+            // against the pitch chosen, as partial 1 is: the string's partials move together (Law 1; Peter,
+            // 22 Oct 2026: partial 1 moved and the others stood still, which made no sense)
+            val off = TuningSession.centsOff(443.12, c.referenceA4Hz.value)
+            assertTrue(abs(p.cents - off) < 1.0, "partial $k stands %.2f c from the pitch chosen, partial 1 %.2f c".format(p.cents, off))
+        }
+        // a tap takes a partial out, and another brings it back; partial 1 always stays
+        c.tapPartial(3)
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertTrue(c.livePartials.value.none { it.k == 3 }, "partial 3 taken out: ${c.livePartials.value.map { it.k }}")
+        assertTrue(c.livePartials.value.any { it.k == 2 })
+        c.tapPartial(3)
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        assertTrue(c.livePartials.value.any { it.k == 3 }, "and back")
+        c.tapPartial(1)
+        assertTrue(1 !in c.hiddenPartials.value)
+    }
+
+    /**
+     * Superseded 5 Oct 2026. Until then Done took the A4 string as it stood
+     * and made *that* the reference, so the tuner had nothing to tune A4 to:
+     * the pitch was whatever the string happened to be. Peter, 15:55: "we
+     * define the initial pitch for A4" — it starts at 440.0 Hz, the two steps
+     * move it by a tenth, and the string is brought to it. Done keeps the
+     * pitch that was chosen and records the string as it was measured.
+     */
+    @Test
+    fun theHubReadsTheA4StringAndDoneKeepsTheChosenPitch() {
+        val (c, src) = controller()
+        assertEquals(TuningController.DEFAULT_REFERENCE_HZ, c.referenceA4Hz.value, 1e-9, "the pitch starts at 440")
+        c.setReference(441.0)
+        c.hear(src, SyntheticString.strike(443.12, 8e-4, 3.0))
+        val hz = assertNotNull(c.liveHz.value, "the A4 string is read")
+        assertTrue(abs(hz - 443.12) < 0.02, "read %.3f".format(hz))
+        assertEquals(441.0, c.acceptLive()!!, 1e-9, "the pitch chosen, not the string as it stands")
+        assertEquals(441.0, c.referenceA4Hz.value, 1e-9)
+        val m = assertNotNull(c.measurements()[69])
+        assertTrue(abs(m.b - 8e-4) / 8e-4 < 0.15, "A4 measured with its inharmonicity: B %.2e".format(m.b))
+        assertTrue(m.partials.size >= 4)
+        val t = c.tuning.value!!
+        assertTrue(t.sampling, "on to the sampling")
+        assertNull(t.caught, "nothing struck yet")
+        assertFalse(c.acceptReady()); assertFalse(c.doneReady())
+    }
+
+    @Test
+    fun aTemperamentNoteMatchesOnTargetAndDoneRefusesItOffTarget() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = c.tuning.value!!
+        assertEquals(1, t.listening.k)
+        // four cents flat: read, not matched
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-4.0 / 1200), 7e-4, 3.0))
+        val r = c.reading.value!!
+        assertTrue(r.live)
+        assertEquals(-4.0, r.cents!!, 0.1)
+        assertFalse(c.matchedNow())
+        assertNull(c.acceptLive(), "Done is refused off target")
+        // on target
+        c.hear(src, SyntheticString.strike(et(68) + 0.02, 7e-4, 3.0))
+        assertTrue(c.matchedNow())
+        assertNotNull(c.acceptLive())
+        assertEquals(et(68), c.measurements()[68]!!.f1Hz, 0.05)
+        assertEquals(67, c.tuning.value!!.midi)
+    }
+
+    @Test
+    fun everyPartialOfASoundingStringIsReadOnEveryNoteWithoutAnyMode() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        assertFalse(c.fullSpectrum.value, "no mode is switched on")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val live = c.livePartials.value
+        assertTrue(live.size >= 4, "the string's partials are read as it sounds: ${live.map { it.k }}")
+        assertTrue(live.any { it.k == 1 } && live.any { it.k >= 3 }, "the listened one and the others alike: ${live.map { it.k }}")
+        assertTrue(live.all { it.level in 0.0..1.0 } && live.any { it.level < 1.0 },
+            "each with its level, not all at one: ${live.map { "%d:%.2f".format(it.k, it.level) }}")
+        val cap = c.highestPartial(c.tuning.value!!.targetHz)
+        assertEquals(c.targets.value.map { it.k }.filter { it <= cap }.toSet() + 1, c.shownPartials.value,
+            "every partial the strike showed is read, up to the highest the setting offers")
+        assertTrue(c.shownPartials.value.size > 1)
+    }
+
+    /**
+     * A partial the tuner takes off the tuning screen stays off (Peter, 22 Oct 2026, at his Steinway B:
+     * "I can eliminate partials in tuning mode, but they return ... Tapping a partial button is a
+     * deliberate choice and should not automagically be changed back"). Until then the tap took it out
+     * of the shown set only, and the next strike built that set again from the strike's partials less
+     * those hidden on the hub, so it came back with the next strike.
+     */
+    @Test
+    fun aPartialTakenOffStaysOffThroughTheNextStrikeAndComesBackOnlyByATap() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val k = c.shownPartials.value.filter { it != c.tuning.value!!.listening.k }.max()
+        c.tapPartial(k)
+        assertFalse(k in c.shownPartials.value, "taken off")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertFalse(k in c.shownPartials.value, "struck again, partial $k stays off: ${c.shownPartials.value}")
+        assertTrue(c.shownPartials.value.size > 1, "the others are read as before")
+        c.tapPartial(k)
+        assertTrue(k in c.shownPartials.value, "a tap brings it back")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertTrue(k in c.shownPartials.value, "and it stays: ${c.shownPartials.value}")
+    }
+
+    /**
+     * A partial taken off a note stays off for that note when the tuner goes to another note and comes back
+     * (Peter, 1 Nov 2026: "when I remove one of them by tapping on the corresponding note, this deactivation for
+     * the note must stay"). Until then a new note started with none hidden, and coming back to the note brought
+     * the partial back. Another note keeps its own partials; a new tuning starts with none hidden.
+     */
+    @Test
+    fun aPartialTakenOffANoteStaysOffWhenTheTunerComesBackToIt() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        val k = c.shownPartials.value.filter { it != c.tuning.value!!.listening.k }.max()
+        c.tapPartial(k)
+        assertFalse(k in c.shownPartials.value, "taken off")
+        c.selectNote(70)
+        c.hear(src, SyntheticString.strike(et(70), 7e-4, 3.0))
+        assertTrue(c.hiddenPartials.value.isEmpty(), "another note keeps its own: ${c.hiddenPartials.value}")
+        c.selectNote(68)
+        assertEquals(68, c.tuning.value!!.midi)
+        assertTrue(k in c.hiddenPartials.value, "back on the note, partial $k is still off: ${c.hiddenPartials.value}")
+        assertFalse(k in c.shownPartials.value, "and not shown: ${c.shownPartials.value}")
+        c.hear(src, SyntheticString.strike(et(68), 7e-4, 3.0))
+        assertFalse(k in c.shownPartials.value, "struck again, still off: ${c.shownPartials.value}")
+        c.tapPartial(k)
+        c.selectNote(70); c.selectNote(68)
+        assertTrue(k in c.shownPartials.value, "brought back by a tap, it stays back: ${c.shownPartials.value}")
+    }
+
+    /**
+     * A string of its own stiffness, struck once; its partial 4 — the one
+     * being tuned — dies away at 2.7 s while the others ring on. Once the
+     * strike has spoken (1.5 s in) the string's own series is the targets of
+     * every partial, and the reading, when another partial stands in for
+     * the dead one, is the same string seen another way: it must not move.
+     * Until 3 Oct 2026 the clean partials were read against the model's
+     * series for the whole strike, and the stand-in carried the model's
+     * error at its partial — on the Samick's F3-C-s1 through the probe the
+     * reading hopped 8 c as partial 1 stood in for partial 4 at 5.76 s.
+     */
+    @Test
+    fun whenThePartialBeingTunedDiesTheStandInIsReadAgainstTheStringsOwnSeries() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        val gs4 = measuredString(68, et(68), 7e-4)
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4), sampling = false))
+        val t = c.tuning.value!!
+        assertEquals(4, t.listening.k)
+        val target = t.listening.targetHz
+        // the model's B for the unmeasured G#3 comes off the curve through G#4 and A4 (about 1.4e-4); the string's is 4e-4
+        val b = 4e-4
+        val f1 = target / (4 * Inharmonicity.ratio(4, b))
+        val sr = 48_000
+        val sig = FloatArray(5 * sr)
+        run {
+            val phase = DoubleArray(9); val start = (0.3 * sr).toInt()
+            val rng = kotlin.random.Random(5)
+            for (i in sig.indices) {
+                var x = 1e-4 * (rng.nextDouble() * 2 - 1)
+                if (i >= start) {
+                    val tt = (i - start).toDouble() / sr
+                    val env = exp(-tt / 3.0) * (1 - exp(-tt / 0.002))
+                    for (k in 1..8) {
+                        val hz = SyntheticString.partialHz(f1, b, k)
+                        val gone = if (k == 4 && tt > 2.4) exp(-(tt - 2.4) / 0.03) else 1.0
+                        phase[k] += 2 * PI * hz / sr
+                        x += 0.2 * env * gone * 10.0.pow(-3.0 * (k - 1) / 20) * sin(phase[k])
+                    }
+                }
+                sig[i] = x.toFloat()
+            }
+        }
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        c.hear(src, sig)
+        val before = trail.filter { it.first in 2.3..2.6 }.map { it.second }
+        assertTrue(before.isNotEmpty() && before.all { it.live && 4 in it.usedPartials }, "partial 4 is read before it dies")
+        val after = trail.filter { it.first in 3.6..4.9 }.map { it.second }
+        assertTrue(after.isNotEmpty() && after.all { it.live }, "the string is still read once partial 4 is gone")
+        assertTrue(after.all { 4 !in it.usedPartials && it.usedPartials.isNotEmpty() }, "another partial stands in: ${after.map { it.usedPartials }.distinct()}")
+        val was = before.last().cents!!
+        val worst = after.maxByOrNull { abs(it.cents!! - was) }!!
+        assertTrue(abs(worst.cents!! - was) < 0.3,
+            "the stand-in is the same string: read %+.2f c on partial 4, %+.2f c on %s".format(was, worst.cents, worst.usedPartials))
+    }
+
+    /**
+     * Each live partial carries its width — the robust spread of its last
+     * half second of readings (blueprint §14, 3 Oct 2026). A loud partial is
+     * read to hundredths of a cent; one standing a dozen dB over the floor
+     * scatters by the floor's phase, and its width says so. The width is
+     * cleared at a strike: a string whose fundamental beat on the strike
+     * before must not lend that width to the clean string struck next.
+     */
+    /**
+     * The bells show the string, not its distance from the target: a string
+     * standing well below where it is to be tuned has partials to show, and
+     * they stack on the anchor wherever the pitch stands (the blueprint's §2).
+     * Peter at the piano, 4 Oct 2026, 17:11: at 45 and 31 cents flat the screen
+     * said only "flat" and drew no bell at all; the bells appeared when he had
+     * pulled the string to within ten cents.
+     */
+    @Test
+    fun aStringFarBelowItsTargetStillShowsItsPartials() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = c.tuning.value!!
+        val b = 2.1e-4
+        val off = -45.0
+        // the string as it stands: its target's own f1, pulled 45 cents down
+        val f1 = t.listening.targetHz / (t.listening.k * Inharmonicity.ratio(t.listening.k, b)) * 2.0.pow(off / 1200)
+        c.hear(src, SyntheticString.strike(f1, b, 4.0))
+        val partials = c.livePartials.value
+        assertTrue(partials.size >= 3, "the strike's partials are there to be drawn: ${partials.map { it.k }}")
+        for (p in partials) assertEquals(off, p.cents, 3.0, "partial ${p.k} stands with the string, ${p.cents} c")
+        val r = assertNotNull(c.reading.value)
+        assertEquals(off, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0, "and the reading says how far the string is from its target")
+    }
+
+    @Test
+    fun aPartialsWidthSaysHowWellItIsReadAndStartsAfreshAtAStrike() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = c.tuning.value!!
+        val b = 2.1e-4
+        val f1 = t.listening.targetHz / (t.listening.k * Inharmonicity.ratio(t.listening.k, b))
+        val sr = 48_000
+        // strike 1: partial 1 split 1.5 Hz (a false beat); strike 2 at 5.0 s: the same string clean;
+        // white noise under it all, loud enough that partial 8 stands only a dozen dB over the
+        // floor in its own band while partial 1 stands forty
+        val sig = FloatArray(8 * sr)
+        run {
+            val rng = kotlin.random.Random(9)
+            val phase = DoubleArray(9); val phase2 = DoubleArray(9)
+            for (i in sig.indices) {
+                val tt = i.toDouble() / sr
+                var x = 0.08 * (rng.nextDouble() * 2 - 1)
+                val strikeAt = if (tt < 5.0) 0.3 else 5.0
+                if (tt >= strikeAt) {
+                    val since = tt - strikeAt
+                    // the first strike dies in two seconds so that the second stands clear of it
+                    val env = exp(-since / (if (tt < 5.0) 2.0 else 3.0)) * (1 - exp(-since / 0.002))
+                    for (k in 1..8) {
+                        val hz = SyntheticString.partialHz(f1, b, k)
+                        val a = 0.2 * env * 10.0.pow(-3.0 * (k - 1) / 20)
+                        if (k == 1 && tt < 5.0) {
+                            phase[1] += 2 * PI * (hz - 0.75) / sr; phase2[1] += 2 * PI * (hz + 0.75) / sr
+                            x += a / 2 * sin(phase[1]) + a / 2 * sin(phase2[1])
+                        } else { phase[k] += 2 * PI * hz / sr; x += a * sin(phase[k]) }
+                    }
+                }
+                sig[i] = x.toFloat()
+            }
+        }
+        val trail = ArrayList<Pair<Double, List<at.clavierhaus.claviertuner.measure.LivePartial>>>()
+        src.afterBuffer = { at -> trail += at to c.livePartials.value }
+        c.hear(src, sig)
+        fun width(at: Double, k: Int) = trail.lastOrNull { it.first <= at }?.second?.firstOrNull { it.k == k }?.widthCents
+        val w1 = width(2.4, 1); val w2 = width(2.4, 2); val w8 = width(2.4, 8)
+        assertTrue(w1 != null && w1 > 0.5, "the split fundamental is wide on the first strike: $w1")
+        assertTrue(w2 != null && w2 < 0.1, "a loud clean partial is a needle: $w2")
+        assertTrue(w8 != null && w8 > 2 * w2 && w8 > 0.15, "a partial near the floor is wide against the needle: $w8 vs $w2")
+        // the second strike: the first readings of partial 1 after its settle carry no width from the beat before
+        val first = trail.firstOrNull { (at, lp) -> at > 5.1 && lp.any { it.k == 1 && it.widthCents != null } }
+        assertTrue(first != null, "partial 1 is read again on the second strike")
+        val w1b = first!!.second.first { it.k == 1 }.widthCents!!
+        assertTrue(w1b < 0.3, "the clean string's fundamental starts afresh at %.2f s: %.2f c wide".format(first.first, w1b))
+    }
+
+    /**
+     * Cancel on the sampling page (Peter, 12 Oct 2026): "cancel automatically resets data caught
+     * by a strike and requires new strike and new reading". What the last strike caught goes --
+     * its sample too, once Accept had taken it -- and nothing can be accepted until a key is
+     * struck again.
+     */
+    @Test
+    fun cancelDropsWhatTheStrikeCaughtAndWaitsForANewStrike() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 69, listOf(measuredString(69, a4, 8e-4)), sampling = true))
+        val c3 = 48
+        // caught and accepted, then cancelled: the sample goes with the catch
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught, "the strike is caught as C3")
+        assertNotNull(c.acceptLive(), "Accept keeps it")
+        assertTrue(c3 in c.measurements())
+        assertTrue(c.cancelCaught())
+        assertNull(c.tuning.value!!.caught, "nothing caught after Cancel")
+        assertFalse(c3 in c.measurements(), "the sample it took went with it")
+        assertFalse(c.acceptReady(), "nothing to accept until a new strike")
+        // caught and not accepted, then cancelled: the catch goes, the samples stay as they were
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught)
+        val before = c.measurements().keys
+        assertTrue(c.cancelCaught())
+        assertNull(c.tuning.value!!.caught)
+        assertEquals(before, c.measurements().keys)
+        assertFalse(c.acceptReady())
+        // a new strike is caught afresh
+        c.hear(src, SyntheticString.strike(et(c3), 2e-4, 3.0))
+        assertEquals(c3, c.tuning.value!!.caught, "struck again, caught again")
+        assertTrue(c.acceptReady())
+    }
+
+    @Test
+    fun belowTheOctaveTheStringIsTunedByItsPartialToThePartnersPartial() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        // G#4 where the curve puts it: the temperament octave stretched to a beatless 4:2 since 29 Oct 2026
+        val gs4 = measuredString(68, curveF1(68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4)), settings.copy(temperamentFirst = false)), 7e-4)
+        c.restore(SessionSnapshot(0, a4, 56, listOf(measuredString(69, a4, 8e-4), gs4), sampling = false))
+        val t = c.tuning.value!!
+        assertEquals(4, t.listening.k)
+        val target = gs4.partialHz(2)!!
+        assertEquals(target, t.listening.targetHz, 1e-9)
+        // a string of its own stiffness, tuned so that its fourth partial meets the target
+        val b = 3e-4
+        val f1 = target / (4 * Inharmonicity.ratio(4, b))
+        c.hear(src, SyntheticString.strike(f1, b, 3.0))
+        val r = c.reading.value!!
+        assertEquals(4, r.k)
+        assertTrue(abs(r.hz!! - target) < 0.03, "partial 4 read %.3f for %.3f".format(r.hz, target))
+        assertTrue(c.matchedNow())
+        assertNotNull(c.acceptLive())
+        val m = c.measurements()[56]!!
+        assertEquals(target, m.partialHz(4)!!, 0.03, "the partial tuned is kept as read")
+        assertTrue(abs(m.b - b) / b < 0.2, "and the string's own B: %.2e".format(m.b))
+    }
+
+    /**
+     * Superseded 4 Oct 2026. This test asserted the opposite — that a string
+     * 70 cents off its target is *not* read and only placed coarsely by the
+     * finder ("70 cents off is outside the band"). At the Samick that evening
+     * Peter found what that costs: "In the beginning there was nothing except
+     * 'flat'. Only when tuning up did the bells appear." The band is the
+     * reader's, around where it listens, and is no statement about what the
+     * piano is allowed to stand at (Rule 0); the reader now goes to the
+     * string and the cents are worked out against the target that stands.
+     */
+    /**
+     * Superseded 4 Oct 2026. This test asserted the opposite — that a string
+     * 70 cents off its target is *not* read and only placed coarsely by the
+     * finder ("70 cents off is outside the band"). At the Samick that evening
+     * Peter found what that costs: "In the beginning there was nothing except
+     * 'flat'. Only when tuning up did the bells appear." The reader's band is
+     * the reader's and says nothing about what the piano may be standing at
+     * (Rule 0), so the reader now goes to the string.
+     *
+     * The limit is no longer the band but half a semitone, and it is not a
+     * figure anyone chose: past 50 cents the key identifier names the
+     * neighbouring key, because that is the nearer string, and the engine
+     * cannot tell "G#4 pulled 70 cents flat" from "G4 struck" from the sound
+     * alone. Measured here on 4 Oct 2026, G#4 with B = 7e-4: read exactly,
+     * on all five partials, at 20, 30, 40 and 45 cents off; from 50 cents the
+     * identifier says G4 and the screen has the coarse word only.
+     */
+    @Test
+    fun aStringIsReadWhereItStandsUntilItIsNearerTheNextKey() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-45.0 / 1200), 7e-4, 3.0))
+        val r = assertNotNull(c.reading.value)
+        assertTrue(r.live, "45 cents flat is read where it stands, not merely called flat")
+        assertEquals(-45.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
+        assertFalse(c.matchedNow(), "and 45 cents off is not a match")
+        assertTrue(c.livePartials.value.size >= 4, "with its partials to draw: ${c.livePartials.value.map { it.k }}")
+
+        // past half a semitone the nearer string is the next key, and the engine says so
+        // the note pinned by hand: with the key followed the screen would go to G4, as the identifier
+        // names it, and read the string there (7 Oct 2026: following is unrestricted after sampling)
+        val (c2, src2) = controller(settings.copy(autoNote = false))
+        c2.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c2.hear(src2, SyntheticString.strike(et(68) * 2.0.pow(-60.0 / 1200), 7e-4, 3.0))
+        val r2 = assertNotNull(c2.reading.value)
+        assertEquals(68, c2.tuning.value?.midi, "pinned, the screen stays on G#4")
+        assertFalse(r2.live, "60 cents flat stands nearer G4 than G#4 and is not claimed as a reading")
+        assertEquals(-60.0, assertNotNull(r2.coarseCents, "the finder still places it"), 3.0)
+    }
+
+    /**
+     * A string 23 cents sharp, struck after one 29 cents flat, is read (Peter, 12 Nov 2026, at the 225's A3: "A string 23 c
+     * out showing nothing at all ... should be fixed"). The flat string moved the reader to where it stood; the sharp one
+     * stood 52 cents from that place but within the band of the target, so no coarse figure was taken and the reader was
+     * never sent back: the screen stayed dark for the whole ring (the 225's A3 of 12 Nov 2026 fed to the engine, 26.0 and 32.1 s). The reader
+     * reads a partial as far as 25 cents from where it listens (measured 12 Nov: shown 98 % at 25 c, 0 % at 28 c).
+     */
+    @Test
+    fun aStringWithinTheBandOfItsTargetIsReadAfterOneThatMovedTheReaderAway() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 57, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val b = 2.7e-4
+        // the flat string still ringing when the sharp one is struck, as at the piano: the screen never went silent between
+        val flat = SyntheticString.strike(et(57) * 2.0.pow(-29.0 / 1200), b, 9.0)
+        val sharp = SyntheticString.strike(et(57) * 2.0.pow(23.0 / 1200), b, 4.0, seed = 2)
+        val at = 5 * 48_000
+        for (i in sharp.indices) flat[at + i] += sharp[i]
+        c.hear(src, flat)
+        val r = assertNotNull(c.reading.value)
+        assertEquals(57, c.tuning.value?.midi)
+        assertTrue(r.live, "the string 23 cents sharp is read, not left dark: $r")
+        assertEquals(23.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
+    }
+
+    @Test
+    fun leavingANoteKeepsItOnlyWhenItWasHeardNearItsTarget() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.stepNote(-1)                                  // not struck: nothing kept
+        assertNull(c.measurements()[68])
+        c.selectNote(68)
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(1.0 / 1200), 7e-4, 3.0))
+        c.stepNote(-1)                                  // struck, a cent sharp: kept as it stood
+        val m = assertNotNull(c.measurements()[68])
+        assertEquals(1.0, TuningSession.centsOff(m.f1Hz, et(68)), 0.1)
+    }
+
+    @Test
+    fun aTappedPartialIsReadAgainstItsOwnPlace() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4)), sampling = false))
+        c.toggleFullSpectrum()
+        c.activatePartial(3)
+        assertEquals(3, c.activePartial.value)
+        val t = c.tuning.value!!
+        val p3 = 3 * t.targetHz * Inharmonicity.ratio(3, t.b)
+        c.hear(src, SyntheticString.strike(t.targetHz, t.b, 3.0))
+        val r = c.reading.value!!
+        assertEquals(3, r.k)
+        assertTrue(abs(r.hz!! - p3) < 0.05, "partial 3 read %.3f for %.3f".format(r.hz, p3))
+        assertTrue(c.liveAudible.value.containsAll(setOf(1, 2, 3)), "Full Spectrum hears ${c.liveAudible.value}")
+    }
+
+    @Test
+    fun theScreenFollowsTheKeyStruckAndKeepsTheNoteItLeft() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val first = SyntheticString.strike(et(68), 7e-4, 2.5)
+        val second = SyntheticString.strike(et(66) * 2.0.pow(-8.0 / 1200), 7e-4, 2.5, seed = 2)
+        c.hear(src, first + second)
+        assertEquals(66, c.tuning.value!!.midi, "the screen moved to the key struck")
+        assertEquals(et(68), c.measurements()[68]!!.f1Hz, 0.05, "and kept G#4 as it was heard, not as F#4")
+        assertEquals(-8.0, c.reading.value!!.cents!!, 0.3, "F#4 read on its own target")
+    }
+
+    @Test
+    fun withoutFollowingTheKeyStruckIsNamed() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false, autoNote = false))
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        c.hear(src, SyntheticString.strike(et(66), 7e-4, 1.2))
+        assertEquals(68, c.tuning.value!!.midi)
+        assertEquals(66, c.heardMidi.value)
+    }
+
+    /**
+     * Done on the A4 page (Peter, 24 Oct 2026, from two testers' reports): it opens once A4's strike is
+     * measured in full and stays open, the string sounding or not, and a tap on the glass -- a short
+     * loud transient, a strike to the microphone -- does not close it. Until then it took the live
+     * reading at the tap, and the tap itself left no reading for about 0.2 s.
+     */
+    @Test
+    fun doneOnTheA4PageStaysOpenOnceA4IsMeasuredThroughSilenceAndATap() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.setReference(a4)
+        val strike = SyntheticString.strike(a4, 8e-4, 3.0)
+        val openAt = ArrayList<Pair<Double, Boolean>>()
+        src.afterBuffer = { at -> openAt += at to c.a4Status.value.ready }
+        // the strike, then silence, then a tap: 5 ms of noise as loud as the strike's peak
+        val tapAt = strike.size + 48_000
+        val sig = FloatArray(strike.size + 2 * 48_000)
+        strike.copyInto(sig)
+        val peak = strike.maxOf { kotlin.math.abs(it) }
+        val rnd = kotlin.random.Random(1)
+        for (i in 0 until 240) sig[tapAt + i] = ((rnd.nextDouble() * 2 - 1) * peak).toFloat()
+        c.hear(src, sig)
+        val firstOpen = openAt.firstOrNull { it.second }?.first
+        assertNotNull(firstOpen, "Done never opened")
+        assertTrue(firstOpen > 0.3 + 0.5, "Done opened at %.2f s, before A4's strike at 0.3 s could be measured".format(firstOpen))
+        assertTrue(openAt.filter { it.first >= firstOpen }.all { it.second }, "Done closed again after it opened: through the silence or at the tap")
+        assertEquals(TuningController.Measured.MEASURED, c.a4Status.value.measured)
+        assertEquals(a4, c.acceptLive(), "Done keeps A4 in silence, after the tap")
+        assertTrue(c.tuning.value!!.sampling)
+    }
+
+    @Test
+    fun samplingCatchesTheKeyStruckAndAcceptKeepsIt() {
+        // Pro: any key, in any order; six besides A4 and Done ends it
+        val (c, src) = controller(settings.copy(lowestKeyMidi = 21, temperamentFirst = false))
+        c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
+        c.acceptLive()
+        assertTrue(c.tuning.value!!.sampling)
+        // A0 struck, twelve cents flat of its key: caught as A0, not yet kept
+        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-12.0 / 1200), 1.2e-4, 3.0))
+        var t = c.tuning.value!!
+        assertEquals(21, t.caught, "caught"); assertFalse(t.caughtAccepted)
+        assertEquals(21, t.midi, "the screen is the key caught")
+        assertTrue(c.acceptReady()); assertFalse(c.doneReady())
+        assertNull(c.measurements()[21], "not kept until Accept")
+        assertNotNull(c.acceptLive())
+        t = c.tuning.value!!
+        assertTrue(t.caughtAccepted); assertTrue(21 in t.sampled); assertEquals(1, t.samplesIn)
+        assertEquals(-12.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "kept as it stood")
+        assertFalse(c.acceptReady(), "kept once")
+        // another key: caught afresh, Accept open again
+        c.hear(src, SyntheticString.strike(et(40) * 2.0.pow(8.0 / 1200), 1.9e-4, 3.0))
+        t = c.tuning.value!!
+        assertEquals(40, t.caught); assertFalse(t.caughtAccepted); assertTrue(c.acceptReady())
+        // A0 struck again, now eight cents flat: already sampled, so the new measurement replaces it, still accepted
+        c.hear(src, SyntheticString.strike(et(21) * 2.0.pow(-8.0 / 1200), 1.2e-4, 3.0))
+        t = c.tuning.value!!
+        assertEquals(21, t.caught); assertTrue(t.caughtAccepted); assertFalse(c.acceptReady())
+        assertEquals(-8.0, TuningSession.centsOff(c.measurements()[21]!!.f1Hz, et(21)), 0.5, "replaced")
+        assertEquals(1, t.samplesIn, "E2 was never kept")
+        // seven more, kept: Done opens, and ends the sampling at A4's neighbour
+        for ((m, b) in listOf(33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
+            c.hear(src, SyntheticString.strike(et(m), b, 3.0))
+            assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
+            assertNotNull(c.acceptLive(), "kept ${m}")
+        }
+        t = c.tuning.value!!
+        assertEquals(8, t.samplesIn); assertEquals(8, t.samplesNeeded); assertTrue(t.samplingReady); assertTrue(c.doneReady())
+        c.finishSampling()
+        t = c.tuning.value!!
+        assertFalse(t.sampling); assertEquals(68, t.midi); assertTrue(t.curveReady)
+    }
+
+    @Test
+    fun theTemperamentFirstWalkSamplesLikeAnyOther() {
+        // one sampling law (4 Oct 2026): the walk's preference changes the route after the sampling, not what is sampled —
+        // eight strings wherever the tuner strikes them end it, none of the set of 25 Sept required
+        val (c, src) = controller(settings.copy(lowestKeyMidi = 21, temperamentFirst = true))
+        c.hear(src, SyntheticString.strike(443.1, 8e-4, 2.5))
+        c.acceptLive()
+        var t = c.tuning.value!!
+        assertTrue(t.sampling); assertEquals(TunerSettings.MIN_SAMPLES, t.samplesNeeded)
+        for ((m, b) in listOf(21 to 1.2e-4, 33 to 8e-5, 40 to 1.1e-4, 45 to 1.3e-4, 52 to 1.6e-4, 60 to 3.4e-4, 72 to 7e-4, 76 to 1.0e-3)) {
+            c.hear(src, SyntheticString.strike(et(m), b, 3.0))
+            assertEquals(m, c.tuning.value!!.caught, "caught ${m}")
+            assertNotNull(c.acceptLive(), "kept ${m}")
+        }
+        t = c.tuning.value!!
+        assertEquals(8, t.samplesIn); assertTrue(t.samplingReady); assertTrue(c.doneReady())
+        c.finishSampling()
+        t = c.tuning.value!!
+        assertFalse(t.sampling); assertFalse(t.recordsOnLeaving, "the walk itself is still the temperament octave first, asking Done")
+    }
+
+    @Test
+    fun fullSpectrumBellsStandStillOnThreeSteadyStrings() {
+        // three strings a few hundredths of a cent apart, sounding together: every
+        // shown partial is read by phase and stays within hundredths of a hertz
+        val c = TuningController(TappedSource) { 0L }
+        c.applySettings(settings)
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 7e-4)), sampling = false))
+        c.toggleFullSpectrum()
+        val t = c.tuning.value!!
+        val strings = listOf(0.0, 0.04, -0.03).mapIndexed { i, cts -> SyntheticString.strike(t.targetHz * 2.0.pow(cts / 1200), t.b, 3.0, seed = 3 + i) }
+        TappedSource.signal = FloatArray(strings[0].size) { i -> strings.sumOf { it[i].toDouble() }.toFloat() / 3 }
+        val seen = HashMap<Int, MutableList<Double>>()
+        TappedSource.afterHop = { pos -> if (pos > 48_000) for (lp in c.livePartials.value) seen.getOrPut(lp.k) { ArrayList() } += lp.hz }
+        c.startLive()
+        assertTrue(seen.size >= 4, "partials shown: ${seen.keys}")
+        for ((k, hz) in seen) {
+            val swing = hz.max() - hz.min()
+            assertTrue(swing < 0.06 * k, "partial $k swings %.3f Hz over the strike".format(swing))
+        }
+    }
+    @Test
+    fun theScreenKnowsWhetherTheReferenceWasMeasuredOrAssumed() {
+        // 440 Hz is where the reference starts, not where this piano stands. A
+        // session that never measured the A4 string tunes to an assumption, and on
+        // a piano at 439.4 that is 2.3 cents -- more than a tuner works to. The
+        // screen has to be able to say which it is.
+        val (c, _) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(measuredString(60, et(60), 2.2e-4)), sampling = false))
+        assertFalse(assertNotNull(c.tuning.value).referenceMeasured,
+            "no A4 was measured: the reference is assumed")
+        c.restore(SessionSnapshot(0, a4, 53, listOf(
+            measuredString(TuningSession.MIDI_A4, a4, 4.0e-4), measuredString(60, et(60), 2.2e-4),
+        ), sampling = false))
+        assertTrue(assertNotNull(c.tuning.value).referenceMeasured,
+            "A4 was measured from the piano: the reference is a measurement")
+    }
+
+    @Test
+    fun theCurveIsComputedForEveryKeyFromTheMeasuredInharmonicity() {
+        // The sample set is a handful of notes; the curve it asks for covers the
+        // whole range. Progress drew only how far the measured notes stand from
+        // equal temperament -- a result, not a target -- while this was computed for
+        // every key and shown for none.
+        val (c, _) = controller()
+        val samples = listOf(
+            measuredString(36, et(36), 0.6e-4), measuredString(48, et(48), 1.1e-4),
+            measuredString(60, et(60), 2.2e-4), measuredString(69, a4, 4.0e-4),
+            measuredString(81, et(81), 1.2e-3), measuredString(93, et(93), 4.0e-3),
+        )
+        c.restore(SessionSnapshot(0, a4, 60, samples, sampling = false))
+        val t = assertNotNull(c.tuning.value)
+        val curve = t.curve
+        assertTrue(curve.isNotEmpty(), "the curve is computed from the samples")
+        for (m in t.lowestMidi..TuningSession.MIDI_C8) {
+            assertTrue(m in curve, "every key of the range has a target: $m is missing")
+        }
+        // the shape inharmonicity forces: the treble stretched sharp of equal
+        // temperament, the bass flat of it, both growing with distance from A4
+        val a4c = curve.getValue(TuningSession.MIDI_A4)
+        assertTrue(curve.getValue(96) > a4c + 1.0, "the treble is stretched sharp: C7 ${curve[96]}")
+        assertTrue(curve.getValue(36) < a4c - 1.0, "the bass is stretched flat: C2 ${curve[36]}")
+        assertTrue(curve.getValue(96) > curve.getValue(84), "the stretch grows upward")
+        assertTrue(curve.getValue(36) < curve.getValue(48), "the stretch grows downward")
+    }
+
+    @Test
+    fun theTargetsFollowTheStringThatWasStruck() {
+        // The partial ratios are a live measurement and are not stored. A string whose
+        // inharmonicity is nothing like the model's must pull the targets onto its
+        // own partials within one strike, so that its bells stand on one line.
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(measuredString(69, a4, 8e-4)), sampling = false))
+        val t = assertNotNull(c.tuning.value)
+        val k = t.listening.k
+        val playedB = 5.0e-4                       // the model for F3 predicts far less
+        val f1 = t.listening.targetHz / (k * Inharmonicity.ratio(k, playedB))
+        val before = c.targets.value.first { it.k == 2 }.hz
+        c.hear(src, SyntheticString.strike(f1, playedB, 3.0))
+        val after = c.targets.value
+        // the partial being tuned still sits exactly on its own target
+        assertEquals(t.listening.targetHz, after.first { it.k == k }.hz, t.listening.targetHz * 1e-6,
+            "the listened partial stays on the target it is tuned to")
+        // and every other partial is now where this string put it, not where the model did
+        // within the measurement's own repeatability: on the 30 Sept recordings one
+        // string's ratios repeat from strike to strike within 0.04-0.11 cents, so a
+        // quarter of a cent is the honest bar for a single synthetic strike
+        for (p in after.filter { it.k in 2..6 }) {
+            val want = p.k * f1 * Inharmonicity.ratio(p.k, playedB)
+            val off = abs(TuningSession.centsOff(p.hz, want))
+            assertTrue(off < 0.25, "partial ${p.k} follows the string that sounded: %.3f c off".format(off))
+        }
+        assertTrue(abs(TuningSession.centsOff(after.first { it.k == 2 }.hz, before)) > 0.5,
+            "the targets really moved off the model's prediction")
+    }
+
+    @Test
+    fun everyPartialShownIsPlacedFromTheOneBeingTuned() {
+        // The target of the listened partial comes from the interval it must make;
+        // the partial table of a measured string is its own. The two are not the same
+        // number, and before 30 Sept the table showed the second while the bell used
+        // the first, so the row being tuned disagreed with the bell above it -- on the
+        // Samick's F3, 697.0 against 697.77, and a clean string's partials scattered
+        // over 2.5 cents instead of standing together within 0.24.
+        val (c, _) = controller()
+        c.restore(SessionSnapshot(0, a4, 53, listOf(
+            measuredString(69, a4, 8e-4),
+            measuredString(53, et(53), 2.2e-4, offsetK = 4, offsetCents = 2.0),
+        ), sampling = false))
+        val t = c.tuning.value!!
+        val targets = c.targets.value
+        val listened = targets.firstOrNull { it.k == t.listening.k }
+        assertNotNull(listened, "the partial being tuned is in the table: ${targets.map { it.k }}")
+        assertEquals(t.listening.targetHz, listened.hz, t.listening.targetHz * 1e-9,
+            "the table's target for the listened partial is the one it is tuned to")
+        // the ratios between the partials survive: anchoring moves the series bodily,
+        // it does not reshape the string. Partial k over partial 1 must still be the
+        // string's own, as it was measured.
+        // Nothing has been struck, so the partials are the model's placing, from this
+        // note's own measured B. The stored partial table must not reach the targets
+        // partial 4 of the stored measurement was deliberately put two
+        // cents off, and that offset must be nowhere in what the screen is tuned to.
+        val m = assertNotNull(c.measurements()[53])
+        val one = targets.first { it.k == 1 }
+        for (p in targets) {
+            val want = p.k * one.hz * Inharmonicity.ratio(p.k, m.b) / Inharmonicity.ratio(1, m.b)
+            assertEquals(want, p.hz, want * 1e-9, "partial ${p.k} follows the string's own B")
+        }
+        val stored = m.partials.first { it.k == 4 }.cents - m.partials.first { it.k == 1 }.cents
+        val modelled = 1200.0 * kotlin.math.ln(Inharmonicity.ratio(4, m.b) / Inharmonicity.ratio(1, m.b)) / kotlin.math.ln(2.0)
+        assertTrue(abs(stored - modelled) > 1.0, "the stored table really does differ from the model here")
+        val four = targets.first { it.k == 4 }
+        assertTrue(abs(TuningSession.centsOff(four.hz, 4 * one.hz * 2.0.pow(stored / 1200.0))) > 1.0,
+            "the stored partial table does not reach the targets")
+    }
+
+    /**
+     * The strobe comes up with the strike (Peter, 17 Oct 2026, 22:24: "build a strobe that comes up
+     * reasonably fast, significantly faster than now"). G#4 is read on its fundamental, 418 Hz here:
+     * until then the reader's four stages waited twenty time constants after the strike, 0.52 s,
+     * before reading anything. The strobe's reader is a window now whose length is the time the
+     * neighbouring key needs to lie outside it, 0.16 s at 418 Hz (SAMICK findings §27). And it
+     * reads the string from its first reading on: a wrong number shown earlier in place of a right
+     * one later is what Amendment 3 forbids, and the faster strobe must not buy its speed with one.
+     */
+    @Test
+    fun theStrobeComesUpWithinAFifthOfASecondOfTheStrikeAndReadsTheStringFromItsFirstReading() {
+        val (c, src) = controller()
+        // G#4 sampled, as the temperament octave always is: the partials that stand in for the
+        // fundamental while it is still being judged are then placed by the string's own B
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4)), sampling = false))
+        assertEquals(1, c.tuning.value!!.listening.k)
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { trail += at to it } }
+        // struck at 0.3 s, four cents flat
+        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(-4.0 / 1200), 7e-4, 3.0))
+        val live = trail.filter { it.first > 0.3 && it.second.live }
+        val first = live.first()
+        assertTrue(first.first - 0.3 <= 0.20, "the strobe is up %.2f s after the strike".format(first.first - 0.3))
+        val worst = live.filter { it.first <= 2.5 }.maxBy { abs(it.second.cents!! + 4.0) }
+        assertTrue(abs(worst.second.cents!! + 4.0) < 0.1,
+            "every reading is the string, the first one too: %+.2f c at %.2f s".format(worst.second.cents, worst.first - 0.3))
+    }
+
+    /**
+     * Another key struck: the screen follows it once the identifier has named it, 0.28 s after the
+     * strike, and the strobe's reader is moved there. Until 17 Oct 2026 the move emptied its filter
+     * while the wait still ran from the strike, which is where the walk's wrong first readings in the
+     * bass came from (SAMICK findings §27: B1 +8.2 c with half the wait). The window holds the
+     * samples it has heard and reads them again at the new key's partial, so the strobe is up as soon
+     * as the key is named, and right.
+     */
+    @Test
+    fun aKeyStruckAndFollowedIsOnTheStrobeAsSoonAsItIsNamedAndRight() {
+        val (c, src) = controller()
+        c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4), measuredString(67, et(67), 7e-4)), sampling = false))
+        val trail = ArrayList<Pair<Double, TuningController.Reading>>()
+        src.afterBuffer = { at -> c.reading.value?.let { r -> trail += at to r } }
+        val midi = mutableListOf<Pair<Double, Int?>>()
+        val log = src.afterBuffer!!
+        src.afterBuffer = { at -> log(at); midi += at to c.tuning.value?.midi }
+        // G4 struck while G#4 is on screen, three cents sharp of its target (the stretched temperament octave, 29 Oct 2026)
+        val g4 = curveF1(67, listOf(measuredString(69, a4, 8e-4), measuredString(68, et(68), 7e-4), measuredString(67, et(67), 7e-4)), settings)
+        c.hear(src, SyntheticString.strike(g4 * 2.0.pow(3.0 / 1200), 7e-4, 3.0))
+        val followedAt = midi.first { it.first > 0.3 && it.second == 67 }.first
+        // named from the fourth hop after the strike (30 Oct 2026, SAMICK findings §35): from the eighth, 0.26 s
+        assertTrue(followedAt - 0.3 <= 0.22, "G4 named %.2f s after the strike".format(followedAt - 0.3))
+        val live = trail.filter { it.first >= followedAt && it.second.live }
+        val first = live.first()
+        assertTrue(first.first - 0.3 <= 0.40, "followed at %.2f s, the strobe up at %.2f s after the strike".format(followedAt - 0.3, first.first - 0.3))
+        // the strobe's own reading, until the clean partials take over: those are read by their own
+        // four stages, which the move empties as it emptied the strobe's (17 Oct 2026: they come in
+        // at 0.87 s 0.15 c under the string and close on it over 0.4 s; their own change, measured)
+        val own = live.filter { it.second.usedPartials.isEmpty() }
+        assertTrue(own.size >= 10, "the strobe's own reading holds the screen until the clean partials come in")
+        val worst = own.maxBy { abs(it.second.cents!! - 3.0) }
+        assertTrue(abs(worst.second.cents!! - 3.0) < 0.1,
+            "the followed key is read right from its first reading: %+.2f c at %.2f s".format(worst.second.cents, worst.first - 0.3))
+    }
+
+    /**
+     * What the strobe shows is changed beside the strobe and the note on screen takes it at once (Peter, 31 Oct 2026:
+     * "Octave partial still shows all strobes"). Until then the shown partials were set only on a change of note, so the
+     * note on screen kept every strobe after the switch to one band. One band shows the clean partials together.
+     */
+    @Test
+    fun theStrobesModeChangedMidNoteIsTakenAtOnce() {
+        val (c, src) = controller(settings.copy(temperamentFirst = false))
+        c.restore(SessionSnapshot(0, a4, 67, listOf(measuredString(69, a4, 8e-4), measuredString(67, et(67), 7e-4)), sampling = false))
+        c.selectNote(67)
+        c.hear(src, SyntheticString.strike(et(67), 7e-4, 2.5))
+        val before = c.shownPartials.value
+        assertTrue(before.size > 1, "all partials: $before")
+        c.applySettings(c.settings.value.copy(strobeMode = at.clavierhaus.claviertuner.settings.StrobeMode.ONE))
+        assertEquals(setOf(c.tuning.value!!.listening.k), c.shownPartials.value, "one band, at once, on the note on screen")
+        c.applySettings(c.settings.value.copy(strobeMode = at.clavierhaus.claviertuner.settings.StrobeMode.ALL))
+        assertTrue(c.shownPartials.value.size > 1, "all again: ${c.shownPartials.value}")
+    }
+}
+
+/** Plays [signal] and calls [afterHop] with the position after every buffer. */
+private object TappedSource : AudioSource {
+    override val sampleRateHz = 48_000
+    var signal = FloatArray(0)
+    var afterHop: (Int) -> Unit = {}
+    override fun start(bufferSize: Int, onBuffer: (FloatArray) -> Unit) {
+        val buf = FloatArray(bufferSize); var p = 0
+        while (p + bufferSize <= signal.size) { signal.copyInto(buf, 0, p, p + bufferSize); onBuffer(buf); p += bufferSize; afterHop(p) }
+    }
+    override fun stop() = Unit
+}

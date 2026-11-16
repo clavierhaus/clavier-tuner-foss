@@ -1,0 +1,392 @@
+package at.clavierhaus.claviertuner.app
+
+import kotlin.math.pow
+import at.clavierhaus.claviertuner.ui.fmt
+import at.clavierhaus.claviertuner.ui.nowMs
+import at.clavierhaus.claviertuner.ui.num
+import at.clavierhaus.claviertuner.i18n.noteName
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import at.clavierhaus.claviertuner.Brand
+import at.clavierhaus.claviertuner.i18n.K
+import at.clavierhaus.claviertuner.i18n.Strings
+import at.clavierhaus.claviertuner.i18n.t
+import at.clavierhaus.claviertuner.TuningController
+import at.clavierhaus.claviertuner.tuning.OctaveSuggestion
+import at.clavierhaus.claviertuner.tuning.Notes
+import at.clavierhaus.claviertuner.tuning.TuningSession
+import at.clavierhaus.claviertuner.ui.DejaVuSerif
+import at.clavierhaus.claviertuner.ui.NotePicker
+import at.clavierhaus.claviertuner.ui.PartialChips
+import at.clavierhaus.claviertuner.ui.ProgressButton
+import at.clavierhaus.claviertuner.ui.ProgressKeyboard
+import at.clavierhaus.claviertuner.ui.ProbeButton
+import at.clavierhaus.claviertuner.ui.CORNER_RIGHT_WIDTH
+import at.clavierhaus.claviertuner.ui.Corners
+import at.clavierhaus.claviertuner.ui.StateWord
+import at.clavierhaus.claviertuner.ui.TuningPictureView
+import at.clavierhaus.claviertuner.ui.OctaveBarsView
+import at.clavierhaus.claviertuner.picture.TuningPicture
+import at.clavierhaus.claviertuner.settings.TunerSettings
+import at.clavierhaus.claviertuner.settings.StrobeMode
+import at.clavierhaus.claviertuner.measure.Partials
+import at.clavierhaus.claviertuner.ui.formatHz
+import kotlin.math.abs
+
+/**
+ * The one main screen. Before A4 is set it is the hub (define A4 on one
+ * string). After Done it is the tuning screen of docs/SCREEN.md: one note,
+ * the partial listened to and its target, where the target comes from
+ * (docs/ENGINE.md), the partial as read, the beat as motion, a scale
+ * magnified at the match window, one state word — and Done. "Partials" opens Full Spectrum (the bells, the readout
+ * column and the partial row); "Progress" the keyboard. The corners are
+ * every screen's (ui/Corners.kt): the gear top left, the name and home top
+ * right; no back arrow (blueprint §18–§19). In the band between them, the
+ * state word and — in Pro, switched on in the settings — the red recording
+ * button ([recordButton], Pro's own) and the play button.
+ */
+/**
+ * Whether the tuning screen colours a partial by the engine's false-beat claim. Off from 7 Oct
+ * 2026, 15:56: the claim was a spread in cents and the ear's criterion is a rate in hertz, and the
+ * two disagree in both directions on the recordings (SAMICK-2026-09-30-FINDINGS §20, §21). On again
+ * since 8 Oct 2026: the claim is the rate, measured from the band power (BeatMeasure) with the
+ * string alone while sampling and kept as the string's facts, and in tuning the colour is those
+ * facts -- never a beat heard with other strings sounding, which could be theirs. Off again since 10 Nov 2026
+ * (Peter: "It does not make sense to have it this way"): the facts came from keys struck three times while sampling and
+ * from no other, and stood violet where the tuner could see no pattern. A false beat is now the string check's, of
+ * one string alone, and what it leads to is the tuner's choice: a partial he takes out is grey and has no band.
+ */
+private const val FALSE_MARKS_ON_TUNING = false
+
+/** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
+private val SAMPLING_SEATS: List<Int> = (1..5).toList()
+
+/**
+ * The tuning screen's bands, in seats fixed for the note from the moment it is on screen, so the whole row
+ * stands at once and never grows band by band (Peter, 30 Oct 2026: "make all partials you can catch visible at
+ * the same time"). The seats are the partials offered under the strobe (1 to [offered], the chips' row) less the
+ * ones the tuner took out, the lowest [count] of them with the band being tuned always among them, or all for 0.
+ * A seat whose partial is not read stands empty. One strobe (strobeOne) is one band, the partial tuned, moved by the
+ * clean partials' average; which partials make it up the buttons under it say (Peter, 14 Nov 2026: "one strobe actually
+ * shows two strobes and lights up A5. It must be one strobe and the notes on the bottom should show which partials are
+ * the result of averaging"). Until then its seats were the partials the engine read, and a partial tapped in, or one
+ * still shown from the strike before, stood as a second band.
+ */
+internal fun strobeSeats(offered: Int, tuned: Int, hidden: Set<Int>, count: Int, oneBand: Boolean, shown: Set<Int>): List<Int> {
+    if (oneBand) return listOf(tuned)
+    val all = ((1..offered).toSet() - hidden + tuned).sorted()
+    if (count <= 0 || all.size <= count) return all
+    val lowest = all.take(count)
+    return if (tuned in lowest) lowest else (lowest.dropLast(1) + tuned).sorted()
+}
+
+@Composable
+fun BasicHub(
+    controller: TuningController,
+    /**
+     * Pro's red recording button, drawn by the edition that owns a recorder;
+     * null in the free edition, which has none. The band the button sits in is
+     * drawn here, once, for both editions; what goes in it, and the recorder
+     * behind it, are Pro's (Peter, 5 Oct 2026: the recorder leaves foss).
+     */
+    recordButton: (@Composable () -> Unit)? = null,
+    onSettings: () -> Unit,
+    /** Home: the hub, from the corner every screen shares. */
+    onHome: () -> Unit,
+    feeding: String? = null,
+    onPickRecording: (() -> Unit)? = null,
+    onUseMicrophone: () -> Unit = {},
+    /** Switches TunerSettings.autoNote: off when the tuner names a key by hand, on when he taps the name again. */
+    onAutoNote: ((Boolean) -> Unit)? = null,
+    /** Moves the temperament octave's low note (C3…A3) from the sampling page; null when the app does not offer it. */
+    onTemperamentLow: ((Int) -> Unit)? = null,
+    /** The temperament's end set on the A4 page, A4 to C5 (15 Nov 2026). */
+    onTemperamentHigh: ((Int) -> Unit)? = null,
+    /**
+     * Opens Settings at the stretch of region 0..3 (TunerSettings.regionOf). Nothing on the screen calls it since the
+     * "partial N" line it hung on left (26 Oct 2026); kept so both editions' calls stand until a place for it is chosen.
+     */
+    onStretch: ((Int) -> Unit)? = null,
+    /** The tuning screen's left panel, drawn by an edition; null leaves it blank. */
+    leftPanel: (@Composable () -> Unit)? = null,
+    /** Changes the settings in force: the window behind the info line (TuningInfo.kt); null, no window. */
+    onChangeSettings: (((TunerSettings) -> TunerSettings) -> Unit)? = null,
+    /** What an edition asks on the A4 page, under the orders (SamplingPage); none in the free app. */
+    a4Left: (@Composable () -> Unit)? = null,
+    /** What an edition draws after the note's name on the tuning screen; none in the free app. */
+    afterNote: (@Composable () -> Unit)? = null,
+) {
+    val partials by controller.livePartials.collectAsState()
+    val audible by controller.liveAudible.collectAsState()
+    var showProgress by remember { mutableStateOf(false) }
+    // the one picture: built frame by frame from the engine's readings of the strike now sounding
+    val pictureBuilder = remember { TuningPicture.Builder() }
+    val a4 by controller.referenceA4Hz.collectAsState()
+    val tuning by controller.tuning.collectAsState()
+    val shownTuning by controller.shownPartials.collectAsState()
+    val hiddenTuning by controller.hiddenPartials.collectAsState()
+    val suggested by controller.suggested.collectAsState()
+    val active by controller.activePartial.collectAsState()
+    val targets by controller.targets.collectAsState()
+    val cfg by controller.settings.collectAsState()
+    val liveTarget by controller.targetHz.collectAsState()
+    val reading by controller.reading.collectAsState()
+    val octave by controller.octave.collectAsState()
+    val language by Strings.language.collectAsState()          // read so the screen recomposes on a change
+    val hubHz by controller.liveHz.collectAsState()          // before the session: A4's first partial, by the hub's reader
+
+    val t = tuning
+    Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
+    // the tuning's settings between the gear and the name, a tap opening the ones that matter while tuning
+    var infoOpen by remember { mutableStateOf(false) }
+    // the window opens by itself when the tuner ends the sampling with Done (Peter, 29 Oct 2026: after A4
+    // and the samples, the octave types); never on a tuning restored past it
+    val samplingDone by controller.samplingDone.collectAsState()
+    val seenDone = remember { mutableStateOf(samplingDone) }
+    LaunchedEffect(samplingDone) {
+        if (samplingDone != seenDone.value) { seenDone.value = samplingDone; if (onChangeSettings != null) infoOpen = true }
+    }
+    Corners(onSettings = onSettings, onHome = onHome, info = tuningInfoLine(cfg, a4),
+        onInfo = if (onChangeSettings != null) ({ infoOpen = true }) else null)
+    if (infoOpen && onChangeSettings != null) {
+        // what the sampling suggests for the bass (10 Nov 2026): from the sampled strings only, worked out when the window
+        // opens; a string tuned afterwards is not a sample (Rule 9)
+        val sampledDone = t != null && !t.sampling
+        val suggestion = remember(infoOpen, sampledDone, cfg.temperamentLowMidi) {
+            if (!sampledDone) null else controller.snapshot()?.let { snap ->
+                val keys = snap.basis?.keys
+                OctaveSuggestion.bass(snap.measurements.filter { keys == null || it.midi in keys }, cfg.temperamentLowMidi)
+            }
+        }
+        TuningInfoDialog(
+            cfg, onChangeSettings, onClose = { infoOpen = false },
+            onStep = if (t != null && !t.sampling && t.canStepBack) { n -> infoOpen = false; if (n == 1) controller.backToA4() else controller.backToSampling() } else null,
+            suggestion = suggestion, sampled = sampledDone,
+        )
+    }
+    Box(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
+        // the start of a tuning — A4, the temperament octave, the sampling — is its own page (Peter, 4 Oct 2026)
+        // The one picture, built here once for every state of the screen -- one place puts the number
+        // on it (Amendment 3). Before the session: A4's first partial as the hub's reader hears it,
+        // against the pitch chosen, and only that partial, because without a measured B no other
+        // partial has a lawful target (Rule 0). From the session on, sampling or tuning: the engine's
+        // reading of the note on screen -- its partials as read, their targets placed from the
+        // measured B, its false claims from the three-strike tally -- the frame the tuning screen has
+        // always had. Until 6 Oct 2026 the sampling page built a frame of its own beside this one, a
+        // synthetic partial 1 with the false set hardcoded empty, and so could never show a false
+        // beat, which is what the sampling pass is for (Peter's word for "b", 22:42).
+        fun engineFrame(t: TuningController.TuningView): TuningPicture.Frame {
+            val read = reading; val l = t.listening
+            return TuningPicture.Frame(
+                note = noteName(t.midi), listened = read?.k ?: l.k, live = read?.live == true,
+                listenedHz = read?.hz, listenedTargetHz = read?.targetHz ?: l.targetHz,
+                partials = partials.associate { it.k to TuningPicture.Frame.Partial(it.hz, it.level, it.widthCents, it.overNoiseDb) },
+                targets = targets.associate { it.k to it.hz },
+                falsePartials = read?.falsePartials?.toSet() ?: emptySet(), dropped = emptySet(),
+                matchCents = cfg.matchCents, nowMs = nowMs(),
+                // while sampling the stripes are partials 1-5 in fixed seats (Peter, 7 Oct 2026)
+                seats = if (t.sampling) SAMPLING_SEATS else strobeSeats(controller.highestPartial(liveTarget), read?.k ?: l.k,
+                    hiddenTuning, if (cfg.strobeMode == StrobeMode.LIMIT) cfg.strobeCount else 0, cfg.strobeOne, shownTuning),
+                pace = t.pace,
+            )
+        }
+        // Since 22 Oct 2026 the A4 page shows the string's partials 2 and up as strobes too, each against the
+        // place the strike put it -- a measured place, which is what the note above asked for -- so a false
+        // beat shows before a string is taken as the reference (Peter, at the Steinway B). Partial 1 stands
+        // against the pitch chosen, as before.
+        fun hubFrame(): TuningPicture.Frame {
+            // one band: A4's first partial against the pitch chosen (Peter, 15 Nov 2026: "the four or five bands of
+            // setting A4 are confusing. Reduce to one bar"); until then a band for every partial heard, with its
+            // button under it
+            return TuningPicture.Frame(
+                note = "A4", listened = 1, live = hubHz != null, listenedHz = hubHz, listenedTargetHz = a4,
+                partials = hubHz?.let { mapOf(1 to TuningPicture.Frame.Partial(it, 1.0, null, null)) } ?: emptyMap(),
+                targets = mapOf(1 to a4),
+                falsePartials = emptySet(), dropped = emptySet(),
+                matchCents = cfg.matchCents, nowMs = nowMs(),
+                seats = listOf(1),
+            )
+        }
+        val picture = pictureBuilder.build(if (t == null) hubFrame() else engineFrame(t))
+        if (t == null || t.sampling) {
+            SamplingPage(controller, t, picture, onTemperamentLow, onTemperamentHigh, feeding, onPickRecording, onUseMicrophone, a4Left)
+            return@Box
+        }
+
+        // ---- the tuning screen ----
+        val name = noteName(t.midi)
+        // What is tuned by: the note's listened partial (or one the tuner
+        // tapped) against its target, read by phase (docs/ENGINE.md)
+        val read = reading
+        val l = t.listening
+        val shownHz = read?.hz
+        val shownTarget = read?.targetHz ?: l.targetHz
+        val live = read?.live == true
+        val origin = when (l.source) {
+            TuningSession.Source.REFERENCE -> t(K.origin_reference)
+            TuningSession.Source.TEMPERAMENT -> t(K.origin_temperament, formatHz(a4))
+            TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, noteName(l.refMidi!!)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else if (l.widthCents < 0.0) t(K.origin_narrow, fmt("%.1f", -l.widthCents)) else t(K.origin_beatless))
+            TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, noteName(l.refMidi!!))
+            TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, noteName(l.refMidi!!)) +
+                (if (l.widthCents > 0.0) t(K.origin_wide, fmt("%.1f", l.widthCents)) else if (l.widthCents < 0.0) t(K.origin_narrow, fmt("%.1f", -l.widthCents)) else t(K.origin_beatless)) +
+                (l.checkCents?.let { t(K.origin_check, noteName(l.refMidi!!), num(abs(it), 1), if (it >= 0) t(K.origin_wideWord) else t(K.origin_narrowWord)) } ?: "")
+        }
+        // Every number on this screen is derived from the A4 reference, and the
+        // screen showed the target, the measurement, the cents, the octave and its
+        // width -- and never the one figure the rest hangs from. Four rounds at the
+        // piano on 1 Oct 2026 went into deducing it from where the bells landed. It
+        // is said here, always, whatever it is and wherever it came from.
+        val originLine = "A4 ${formatHz(a4)} \u00b7 $origin"
+        // the picture is `picture`, built above for every state of the screen so the header's state
+        // word and the picture say the same thing; the picture decides what is shown, the view how (docs/UI.md)
+        // The word above the picture says only whether the engine hears the string: nothing about
+        // where it stands. "33 cents sharp", "That's F5", "flat" -- every word about pitch is gone
+        // (Peter, 7 Oct 2026, 15:33: irritating, serving no purpose): the strobe says which way and
+        // how far, the bells say where the partials agree, and a word beside them was a third
+        // place saying the same thing. "Complete" stays, said once when the range is done.
+        val state: Pair<String, Color> = when {
+            t.sampling -> "" to Color(Brand.WHITE_MUTED)
+            t.complete && !live -> t(K.state_complete) to Color(Brand.GO_GREEN)
+            // "listening" left on 23 Oct 2026 (Peter: it serves no purpose): an empty strobe already says
+            // nothing is heard, and the word stood over the info line in the band
+            else -> "" to Color(Brand.WHITE_MUTED)
+        }
+        val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete) && !t.sampling
+        // which partials the reading is made of, when the clean partials are read together; a false one is named
+        // the same claim in words waits with the colour (FALSE_MARKS_ON_TUNING)
+        val partialsLine = read?.takeIf { it.combined || (FALSE_MARKS_ON_TUNING && it.falsePartials.isNotEmpty()) }?.let { r ->
+            (if (r.combined) t(K.tuning_partialsUsed, r.usedPartials.joinToString(" ")) else t(K.tuning_partialOne, r.k)) +
+                (if (FALSE_MARKS_ON_TUNING && r.falsePartials.isNotEmpty()) t(K.tuning_partialsNot, r.falsePartials.joinToString(" ")) else "")
+        }
+        val status = if (t.sampling) "" else (if (follows) t(K.tuning_follows) else "") + when {
+            !cfg.temperamentFirst -> t(K.tuning_leavingKeeps)
+            t.temperamentComplete -> t(K.tuning_temperamentDone)
+            else -> t(K.tuning_temperamentFirst)
+        } + (partialsLine?.let { " · $it" } ?: "")
+
+        // the band between the corners: the state word, and Pro's two buttons
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = CORNER_RIGHT_WIDTH)) {
+            if (!t.sampling) StateWord(state.first, state.second)
+            if (recordButton != null && !t.sampling) {
+                Spacer(Modifier.width(18.dp))
+                recordButton()
+            }
+            if (onPickRecording != null && !t.sampling) {
+                Spacer(Modifier.width(4.dp))
+                ProbeButton(feeding = feeding, onPick = onPickRecording, onStop = onUseMicrophone)
+            }
+        }
+
+        // the note name is the picture's one control: following the key struck is the default; a tap
+        // opens the picker and the key chosen there holds until the name is tapped again
+        var pickingNote by remember { mutableStateOf(false) }
+        when {
+            !showProgress && !t.sampling -> {
+                TuningPictureView(
+                    picture,
+                    matchCents = cfg.matchCents,
+                    modifier = Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp),
+                    follows = follows,
+                    // the left panel: what the strobe shows, chosen beside it (StrobeChoice, 31 Oct 2026), and at the end of
+                    // its third line whatever an edition draws there
+                    left = {
+                        if (onChangeSettings != null) StrobeChoice(cfg, onChangeSettings, Modifier.padding(8.dp), beside = leftPanel, pinPace = t.pace < 1.0)
+                        else leftPanel?.invoke()
+                    },
+                    together = cfg.strobeTogether,
+                    afterNote = afterNote,
+                    // above C6, the two bars (OctaveBars, an experiment, 16 Nov 2026)
+                    strobe = octave?.takeIf { it.midi == t.midi }?.let { o -> @Composable { OctaveBarsView(o, reading, t.pace) } },
+                    // No red-violet on the tuning screen until the engine measures a rate. The claim
+                    // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
+                    // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,
+                    // under the audible floor, so the line catches the inaudible polarisation doublets
+                    // and coloured a clean string on three strikes (Peter at the piano, 7 Oct 2026,
+                    // 15:53-15:56: "the sudden change to red-blue made the whole thing moot"); on the
+                    // Samick's A4 it missed an audible 0.67 Hz (SAMICK findings §20). The detection
+                    // and the tally run on and the claim stays in the picture; only the colour waits
+                    // for a verdict that is a measurement.
+                    marks = FALSE_MARKS_ON_TUNING,
+                    onNoteTap = { if (cfg.autoNote) pickingNote = true else onAutoNote?.invoke(true) },
+                )
+                if (pickingNote) NotePicker(
+                    lowMidi = t.stepLowMidi,
+                    highMidi = t.stepHighMidi,
+                    current = t.midi,
+                    onPick = { midi -> controller.selectNote(midi); onAutoNote?.invoke(false); pickingNote = false },
+                    onDismiss = { pickingNote = false },
+                )
+            }
+            showProgress -> {
+                ProgressKeyboard(
+                    done = t.tuned,
+                    current = t.midi,
+                    deviations = t.deviations,
+                    curve = t.curve,
+                    lowestMidi = t.lowestMidi,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 40.dp)
+                        .width(640.dp)
+                        .height(216.dp),
+                )
+            }
+        }
+
+        // the bottom row: Progress · the partials · Done
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth(),
+        ) {
+            ProgressButton(showingProgress = showProgress, onClick = { showProgress = !showProgress })
+            Spacer(Modifier.width(10.dp))
+            if (!showProgress) {
+                // the partials to tap: one row that always fits; a false one is violet, and a
+                // tap on it takes it out of the bells
+                PartialChips(
+                    a4Hz = a4,
+                    baseHz = liveTarget,
+                    count = controller.highestPartial(liveTarget),
+                    // one strobe: lit, the partials its band is the average of (the reading's own), or the partial tuned
+                    // while nothing is averaged; otherwise the partials shown (14 Nov 2026)
+                    shown = if (cfg.strobeOne) reading?.usedPartials?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf(t.listening.k) else shownTuning,
+                    falseMarked = if (FALSE_MARKS_ON_TUNING) picture.falseMarked else emptySet(),
+                    tappable = (targets.map { it.k }.toSet() + audible) - t.listening.k,
+                    onTap = { k -> controller.tapPartial(k) },
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                Text(status, color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, maxLines = 1)
+                Spacer(Modifier.weight(1f))
+            }
+            // No Done while tuning: the strobe still is the verdict and the engine records the note
+            // from it (Peter, 7 Oct 2026, 16:20). Done stays on the sampling page, where it ends a pass.
+        }
+    }
+    }
+}

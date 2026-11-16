@@ -10,7 +10,7 @@ val gitShortHash: String = runCatching {
 }.getOrNull() ?: "nogit"
 
 android {
-    namespace = "at.clavierhaus.unisonmaster.app"
+    namespace = "at.clavierhaus.claviertuner.app"
     compileSdk = 37
 
     // Pinned: F-Droid's reproducible-build guidance asks for the exact build-tools, because a

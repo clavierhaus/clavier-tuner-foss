@@ -7,7 +7,7 @@ kotlin {
     // AGP 9 KMP integration: the android target is configured here,
     // via the com.android.kotlin.multiplatform.library plugin.
     androidLibrary {
-        namespace = "at.clavierhaus.unisonmaster.shared"
+        namespace = "at.clavierhaus.claviertuner.shared"
         compileSdk = 37
         minSdk = 26
 

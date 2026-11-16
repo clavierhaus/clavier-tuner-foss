@@ -16,7 +16,7 @@ plugins {
 // a few expect/actual declarations; everything else is commonMain.
 kotlin {
     androidLibrary {
-        namespace = "at.clavierhaus.unisonmaster.ui"
+        namespace = "at.clavierhaus.claviertuner.ui"
         compileSdk = 37
         minSdk = 26
         androidResources { enable = true }

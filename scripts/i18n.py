@@ -13,8 +13,8 @@ One table per catalogue, every language side by side, the code never holds a
 word. FOSS runs it as is; Pro runs the same script on its own table:
 
   core/scripts/i18n.py --table i18n/strings.tsv \\
-      --out pro/src/commonMain/kotlin/at/clavierhaus/unisonmaster/pro/ProStringsTable.kt \\
-      --object ProStringsTable --package at.clavierhaus.unisonmaster.pro --catalog clavier-tuner-pro
+      --out pro/src/commonMain/kotlin/at/clavierhaus/claviertuner/pro/ProStringsTable.kt \\
+      --object ProStringsTable --package at.clavierhaus.claviertuner.pro --catalog clavier-tuner-pro
 
 The table's header may carry "# version: 2026-09-28" — the day its English
 last changed, kept apart from the app's version; it goes into the .po headers
@@ -41,9 +41,9 @@ def opt(name, default):
     return default
 
 TABLE = pathlib.Path(opt("--table", "i18n/strings.tsv"))
-OUT = pathlib.Path(opt("--out", "shared/src/commonMain/kotlin/at/clavierhaus/unisonmaster/i18n/StringsTable.kt"))
+OUT = pathlib.Path(opt("--out", "shared/src/commonMain/kotlin/at/clavierhaus/claviertuner/i18n/StringsTable.kt"))
 OBJECT = opt("--object", "StringsTable")
-PACKAGE = opt("--package", "at.clavierhaus.unisonmaster.i18n")
+PACKAGE = opt("--package", "at.clavierhaus.claviertuner.i18n")
 CATALOG = opt("--catalog", "clavier-tuner")
 PO_DIR = pathlib.Path(opt("--po-dir", str(TABLE.parent / "languages")))
 IMPORT = opt("--import", None)
@@ -80,8 +80,8 @@ def load():
 def kotlin(version, langs, table):
     def esc(s): return s.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
     lines = [f"package {PACKAGE}", ""]
-    if PACKAGE != "at.clavierhaus.unisonmaster.i18n":
-        lines += ["import at.clavierhaus.unisonmaster.i18n.Catalog", ""]
+    if PACKAGE != "at.clavierhaus.claviertuner.i18n":
+        lines += ["import at.clavierhaus.claviertuner.i18n.Catalog", ""]
     lines += [f"// GENERATED from {TABLE.as_posix()} by scripts/i18n.py — edit the table, not this file.", "",
               "/** Every key of the table, as a constant: the compiler catches a key that is not there. */",
               f"object {'K' if OBJECT == 'StringsTable' else OBJECT.replace('StringsTable', 'K')} {{"]

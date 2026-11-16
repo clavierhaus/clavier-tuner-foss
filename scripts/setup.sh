@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# One-time setup for building UnisonMaster on this machine (Linux / macOS).
+# One-time setup for building Clavier Tuner on this machine (Linux / macOS).
 # Installs the Android SDK command-line tools into ~/android-sdk, the needed
 # SDK packages, and writes local.properties. Safe to re-run.
 #

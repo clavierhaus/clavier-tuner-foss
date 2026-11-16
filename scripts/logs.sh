@@ -16,5 +16,5 @@ if [ -n "$PID" ]; then
   exec "$ADB" logcat --pid="$PID"
 else
   echo "(App not running yet — showing crash-relevant log; start the app on the phone.)"
-  exec "$ADB" logcat AndroidRuntime:E UnisonMaster:V "*:S"
+  exec "$ADB" logcat AndroidRuntime:E ClavierTuner:V "*:S"
 fi

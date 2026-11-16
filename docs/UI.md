@@ -38,7 +38,7 @@ be both orientations.
 One tuner, two editions: the screens — `TunerHub`, `BasicHub`,
 `TunerSettingsScreen`, `RecordStrikesScreen`, `SessionRecorder`,
 `PrefsStore` — live in the `ui` library (package
-`at.clavierhaus.unisonmaster.app`), and both apps' `MainActivity` mount them.
+`at.clavierhaus.claviertuner.app`), and both apps' `MainActivity` mount them.
 Nothing is copied by hand any more. Pro adds the book beside them: its own
 tabs and pages go into the settings screen through `extraPianoPages` and
 `extraTabs`, its own door — *Pianos* — into the hub through `TunerHub(extra)`,
