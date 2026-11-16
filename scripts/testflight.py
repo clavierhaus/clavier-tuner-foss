@@ -10,7 +10,7 @@ tooling, as release.sh is. In order:
   2. writes What to Test from <notes>/<locale>.txt for every such file (en-US is required); the file's first line must be
      the version, so notes left from an earlier version are refused rather than shown. The API names the field
      whatsNew, though TestFlight shows it as What to Test: "whatToTest" was refused with 409 on build 175, 10 Nov 2026;
-  3. gives the build to every beta group that does not take every build by itself, and submits it to Beta App Review
+  3. gives the build to every beta group (with --internal-only, to the team's own groups only, never to Beta App Review) that does not take every build by itself, and submits it to Beta App Review
      when an external group is among them and it has not been submitted yet.
 
 Only the Python standard library and openssl: the App Store Connect token is signed by openssl (ES256) and its DER
@@ -129,6 +129,9 @@ def main():
     a.add_argument("--version", required=True)
     a.add_argument("--build", required=True)
     a.add_argument("--notes", required=True)
+    a.add_argument("--internal-only", action="store_true",
+                   help="give the build to the team's own (internal) groups only: an external group is passed over and "
+                        "nothing goes to Beta App Review, for an app kept private")
     a.add_argument("--wait", type=float, default=45, help="minutes to wait for Apple's processing")
     a.add_argument("--poll", type=float, default=30, help="seconds between two looks")
     o = a.parse_args()
@@ -177,6 +180,9 @@ def main():
         at = g["attributes"]
         if at.get("isInternalGroup") and at.get("hasAccessToAllBuilds"):
             print(f"  ok {at['name']}: takes every build by itself")
+            continue
+        if o.internal_only and not at.get("isInternalGroup"):
+            print(f"  .. {at['name']}: external, passed over (--internal-only)")
             continue
         asc.ok("POST", f"/v1/betaGroups/{g['id']}/relationships/builds", data={"data": [{"type": "builds", "id": build}]})
         print(f"  ok {at['name']}: build given")
