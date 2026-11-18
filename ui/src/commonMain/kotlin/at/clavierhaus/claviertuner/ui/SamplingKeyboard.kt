@@ -35,6 +35,10 @@ fun SamplingKeyboard(
     modifier: Modifier = Modifier,
     /** Kept strings whose measurement the next strike cut short: yellow, until struck again in full. */
     short: Set<Int> = emptySet(),
+    /** The stretches of keys the curve is still blind in (the lowest octave, G#5-G6 until sampled): a faint outline. */
+    wanted: List<IntRange> = emptyList(),
+    /** The one key offered next: a dot on it. */
+    suggested: Int? = null,
 ) {
     val lowest = lowestMidi.coerceAtMost(A0)
     val keys = lowest..C8
@@ -63,6 +67,20 @@ fun SamplingKeyboard(
             val x = whitesBelow(lowest, m) * w - w * 0.31f
             drawRect(fill(m), Offset(x, 0f), Size(w * 0.62f, h * 0.62f))
             if (m == caught && m !in sampled) drawRect(orange, Offset(x, 0f), Size(w * 0.62f, h * 0.62f), style = Stroke(4f))
+        }
+        // where the curve is still blind: a faint outline round the stretch, gone once a key in it is sampled (18 Nov
+        // 2026, a gap the tuner sees for himself rather than an order)
+        for (r in wanted) {
+            val a = r.first.coerceIn(keys); val b = r.last.coerceIn(keys)
+            val xa = whitesBelow(lowest, a) * w
+            val xb = (whitesBelow(lowest, b) + if (black(b)) 0 else 1) * w
+            drawRect(Color(Brand.WHITE_MUTED).copy(alpha = 0.7f), Offset(xa + 1f, 1f), Size((xb - xa - 2f).coerceAtLeast(1f), h - 2f), style = Stroke(3f))
+        }
+        // the key offered next: an orange dot near the foot of the key
+        if (suggested != null && suggested in keys && suggested !in sampled) {
+            val cx = if (black(suggested)) whitesBelow(lowest, suggested) * w else (whitesBelow(lowest, suggested) + 0.5f) * w
+            val cy = if (black(suggested)) h * 0.5f else h * 0.82f
+            drawCircle(orange, radius = (w * 0.32f).coerceAtLeast(3f), center = Offset(cx, cy))
         }
         // the temperament octave: a line under its keys
         val x0 = whitesBelow(lowest, temperament.first) * w

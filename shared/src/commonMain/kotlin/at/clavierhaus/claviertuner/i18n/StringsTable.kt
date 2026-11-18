@@ -94,9 +94,7 @@ object K {
     const val sampling_strikeKey = "sampling.strikeKey"
     const val sampling_sampledLabel = "sampling.sampledLabel"
     const val sampling_atLeast = "sampling.atLeast"
-    const val sampling_needBoth = "sampling.needBoth"
-    const val sampling_needLow = "sampling.needLow"
-    const val sampling_needHigh = "sampling.needHigh"
+    const val sampling_next = "sampling.next"
     const val sampling_order_strings = "sampling.order.strings"
     const val sampling_order_count = "sampling.order.count"
     const val sampling_order_accept = "sampling.order.accept"
@@ -322,9 +320,7 @@ internal object StringsTable : Catalog {
         "sampling.strikeKey" to arrayOf("strike a key", "Taste anschlagen"),
         "sampling.sampledLabel" to arrayOf("Sampled", "Messpunkte"),
         "sampling.atLeast" to arrayOf("{0} · at least {1}", "{0} · mindestens {1}"),
-        "sampling.needBoth" to arrayOf("Done needs {0} and a key from {1}", "Fertig braucht {0} und eine Taste von {1}"),
-        "sampling.needLow" to arrayOf("Done needs {0}", "Fertig braucht {0}"),
-        "sampling.needHigh" to arrayOf("Done needs a key from {0}", "Fertig braucht eine Taste von {0}"),
+        "sampling.next" to arrayOf("Next: {0}", "Als Nächstes: {0}"),
         "sampling.order.strings" to arrayOf("Strike single strings, the others muted. Any keys up to G6, any order.", "Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten bis G6, Reihenfolge beliebig."),
         "sampling.order.count" to arrayOf("{0} notes are the minimum, C1 and one key from G#5 to G6 among them; 10–15 spread over the range give the best accuracy.", "{0} Töne sind das Minimum, darunter C1 und eine Taste von G#5 bis G6; 10–15 über den Tonumfang verteilt ergeben die beste Genauigkeit."),
         "sampling.order.accept" to arrayOf("Let each string ring until measured, then Accept.", "Klingen lassen bis „gemessen“, dann Übernehmen."),

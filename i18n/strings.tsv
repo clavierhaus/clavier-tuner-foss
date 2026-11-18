@@ -94,9 +94,7 @@ sampling.caughtLabel	Caught	Erkannt
 sampling.strikeKey	strike a key	Taste anschlagen
 sampling.sampledLabel	Sampled	Messpunkte
 sampling.atLeast	{0} · at least {1}	{0} · mindestens {1}
-sampling.needBoth	Done needs {0} and a key from {1}	Fertig braucht {0} und eine Taste von {1}
-sampling.needLow	Done needs {0}	Fertig braucht {0}
-sampling.needHigh	Done needs a key from {0}	Fertig braucht eine Taste von {0}
+sampling.next	Next: {0}	Als Nächstes: {0}
 sampling.order.strings	Strike single strings, the others muted. Any keys up to G6, any order.	Einzelne Saiten anschlagen, die anderen abdämpfen. Tasten bis G6, Reihenfolge beliebig.
 sampling.order.count	{0} notes are the minimum, C1 and one key from G#5 to G6 among them; 10–15 spread over the range give the best accuracy.	{0} Töne sind das Minimum, darunter C1 und eine Taste von G#5 bis G6; 10–15 über den Tonumfang verteilt ergeben die beste Genauigkeit.
 sampling.order.accept	Let each string ring until measured, then Accept.	Klingen lassen bis „gemessen“, dann Übernehmen.

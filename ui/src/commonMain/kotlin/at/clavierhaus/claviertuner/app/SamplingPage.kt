@@ -350,19 +350,14 @@ internal fun SamplingPage(
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
                             // what Done still waits for, once the string caught is kept or before one is (16 Nov 2026):
                             // a key in the lowest octave and one in the top octave the sampling takes
-                            val range = { r: IntRange -> noteName(r.first) + "–" + noteName(r.last) }
-                            // the lowest octave is asked for by one key, C1, wherever the range holds it (Peter, 18 Nov
-                            // 2026: "make C1 a default necessity"); any key of that octave still counts
-                            val lo = view.spreadLow?.let { if (C1 in it) noteName(C1) else range(it) }
-                            val hi = view.spreadHigh?.let(range)
-                            val wanted = when {
-                                lo != null && hi != null -> t(K.sampling_needBoth, lo, hi)
-                                lo != null -> t(K.sampling_needLow, lo)
-                                hi != null -> t(K.sampling_needHigh, hi)
-                                else -> null
-                            }
-                            if (wanted != null && (view.caught == null || view.caughtAccepted)) {
-                                TextBlock(listOf(wanted), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.ORANGE))
+                            // one key offered, never an order (Peter, 18 Nov 2026: "without making him feel he's on a
+                            // leash"): C1 and a key of G#5-G6 first, Done waiting for them, then the widest gap; the
+                            // keyboard outlines where the curve is still blind and dots the key offered
+                            val next = view.suggested
+                            val ends = view.spreadLow != null || view.spreadHigh != null
+                            if (next != null && (view.caught == null || view.caughtAccepted)) {
+                                TextBlock(listOf(t(K.sampling_next, noteName(next))), Modifier.fillMaxWidth(), size = 14.sp,
+                                    color = if (ends) Color(Brand.ORANGE) else muted)
                             } else if (view.caught != null) {
                                 val (word, colour) = when (view.caughtMeasured) {
                                     TuningController.Measured.MEASURING -> t(K.sampling_measuring) to muted
@@ -385,7 +380,9 @@ internal fun SamplingPage(
             short = view?.sampledShort.orEmpty(),
             caught = view?.caught,
             referenceSet = true,
-            temperament = low..TuningSession.MIDI_A4,
+            temperament = low..high,
+            wanted = listOfNotNull(view?.spreadLow, view?.spreadHigh),
+            suggested = view?.suggested,
             modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().height(keyboardH),
         )
     }
@@ -464,6 +461,3 @@ private const val SLIDE_STEP_DP = 8
 private const val STEP_HOLD_MS = 450L
 /** ... and then steps this often, ms: a tenth of a hertz every 160 ms. */
 private const val STEP_REPEAT_MS = 160L
-
-/** C1, the key the sampling asks for in the lowest octave (18 Nov 2026). */
-private const val C1 = 24

@@ -168,6 +168,24 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     /** Whether a key of [spreadHigh] or above is sampled. */
     val reachesHigh: Boolean get() = measured.keys.any { it >= spreadHigh.first }
 
+    /**
+     * The one key the sampling would gain most from next, offered, never required (18 Nov 2026; Peter: "get the best
+     * necessary samples without making him feel he's on a leash"): C1 while the lowest octave has none (the octave's
+     * lowest key where the range holds no C1), C6 while G#5-G6 has none, then the middle of the widest stretch of keys
+     * with no sample between the range's lowest key and G6, A4 counting as sampled. Null outside the sampling and from
+     * the fifteenth sample on, the top of the advice's 10 to 15.
+     */
+    fun suggestedNext(): Int? {
+        if (!sampling || samplesIn >= SUGGEST_UNTIL) return null
+        if (!reachesLow) return if (C1 in spreadLow) C1 else spreadLow.first
+        if (!reachesHigh) return if (C6 in spreadHigh) C6 else spreadHigh.first
+        val top = TunerSettings.SAMPLE_HIGHEST_MIDI
+        val ks = (measured.keys + MIDI_A4).filter { it in lowMidi..top }.sorted()
+        val edges = listOf(lowMidi - 1) + ks + listOf(top + 1)
+        val (a, b) = edges.zipWithNext().maxByOrNull { (x, y) -> y - x } ?: return null
+        return if (b - a < 2) null else (a + b) / 2
+    }
+
     /** True once the sampling may end: the minimum is in, and it reaches the lowest octave and the top one. */
     val samplingReady: Boolean get() = samplesIn >= TunerSettings.MIN_SAMPLES && reachesLow && reachesHigh
 
@@ -493,6 +511,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
     fun isMeasured(midi: Int = current): Boolean = measured.containsKey(midi)
 
     companion object {
+        private const val C1 = 24
+        private const val C6 = 84
+        /** The suggestion stops at the top of the advice's 10 to 15 samples (suggestedNext). */
+        const val SUGGEST_UNTIL = 15
         const val MIDI_A4 = 69
         /** Top of the range. */
         const val MIDI_C8 = 108
