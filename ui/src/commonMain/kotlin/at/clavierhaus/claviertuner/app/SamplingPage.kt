@@ -351,11 +351,14 @@ internal fun SamplingPage(
                             // what Done still waits for, once the string caught is kept or before one is (16 Nov 2026):
                             // a key in the lowest octave and one in the top octave the sampling takes
                             val range = { r: IntRange -> noteName(r.first) + "–" + noteName(r.last) }
-                            val lo = view.spreadLow; val hi = view.spreadHigh
+                            // the lowest octave is asked for by one key, C1, wherever the range holds it (Peter, 18 Nov
+                            // 2026: "make C1 a default necessity"); any key of that octave still counts
+                            val lo = view.spreadLow?.let { if (C1 in it) noteName(C1) else range(it) }
+                            val hi = view.spreadHigh?.let(range)
                             val wanted = when {
-                                lo != null && hi != null -> t(K.sampling_needBoth, range(lo), range(hi))
-                                lo != null -> t(K.sampling_needOne, range(lo))
-                                hi != null -> t(K.sampling_needOne, range(hi))
+                                lo != null && hi != null -> t(K.sampling_needBoth, lo, hi)
+                                lo != null -> t(K.sampling_needLow, lo)
+                                hi != null -> t(K.sampling_needHigh, hi)
                                 else -> null
                             }
                             if (wanted != null && (view.caught == null || view.caughtAccepted)) {
@@ -461,3 +464,6 @@ private const val SLIDE_STEP_DP = 8
 private const val STEP_HOLD_MS = 450L
 /** ... and then steps this often, ms: a tenth of a hertz every 160 ms. */
 private const val STEP_REPEAT_MS = 160L
+
+/** C1, the key the sampling asks for in the lowest octave (18 Nov 2026). */
+private const val C1 = 24

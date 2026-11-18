@@ -32,8 +32,8 @@ No account, no tracking: nothing is recorded or sent.
 
 **Getting started:** tap New Tuning. Mute A4 to one string, choose its pitch, tune the string until the strobe
 stands still, then Done. Then sample: strike single strings with the others muted, any keys up to G6, in any order.
-Let each string ring until it says measured, then tap Accept. Eight keys are the minimum, one of them in the
-lowest octave and one from G#5 to G6; 10 to 15 spread from the
+Let each string ring until it says measured, then tap Accept. Eight keys are the minimum, C1 and one from G#5
+to G6 among them; 10 to 15 spread from the
 low bass to G6 give the best accuracy. Before your first tuning, look at the octave types under Settings › Stretch.
 
 **Tuning:** the screen follows the key you strike and shows its target. The temperament comes first. When the
@@ -49,8 +49,8 @@ New Tuning; Continue is only for the piano you sampled. Settings › Help has th
   starts (C3 to A3, A3 by default) and where it ends (A4 to C5, A4 by
   default).
 - **Measures first.** Strike single strings, mutes in, any keys up to G6 in
-  any order: eight are the minimum, one of them in the lowest octave and one from
-  G#5 to G6, and 10 to 15 spread up to G6 give the best result.
+  any order: eight are the minimum, C1 and one from G#5 to G6 among
+  them, and 10 to 15 spread up to G6 give the best result.
   From those strings the app measures the inharmonicity of the piano and
   computes where every note belongs before you tune the first one. The
   stretch comes from this instrument, not from a table. Each key says
@@ -108,9 +108,11 @@ first. Unisons are tuned by ear.
 Since 0.9.0, in the next release:
 
 - **Setting A4 shows one band**, A4's first partial against the pitch chosen.
-- **The sampling reaches both ends.** Done waits for a key in the lowest
-  octave and one from G#5 to G6: without them the curve guessed the bass or
-  the treble from the middle, and on one piano missed by hundreds of cents.
+- **The sampling reaches both ends.** Done waits for C1 (or another key of
+  the lowest octave) and one key from G#5 to G6. They matter more than the
+  count: without them the curve guessed the bass from the middle and on one
+  piano missed by hundreds of cents, and eight keys with them did better
+  than fifteen without.
 - **The temperament's start and end** are set on the A4 page: the start from
   C3 to A3, the end from A4 to C5.
 
