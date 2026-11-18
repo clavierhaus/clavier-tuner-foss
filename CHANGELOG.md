@@ -7,6 +7,8 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.10.0 -- 2026-11-18
+
 ### 2026-11-18
 - **Above C6 the bars show one pitch per strike.** Strings there ring for
   about half a second, and a display that follows every moment showed the

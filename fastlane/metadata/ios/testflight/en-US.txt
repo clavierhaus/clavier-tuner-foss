@@ -1,17 +1,13 @@
-0.9.0
+0.10.0
 
 New
-- After sampling, the app suggests the bass's octave type from your sampled strings, with the reason behind the (i). One tap uses it; the choice stays yours. Sample two bass keys an octave apart (A1 and A2, say) to get one.
+- From C#6 up, two bars in the strobe's place. Strings there ring for about half a second, and a display that follows every moment flutters with the strike's attack and its fading tail. Now each strike gives one value, the string's pitch over its loud part, held on the bar until the next strike, with its cents and the change from the strike before. Turn the pin, strike again: the bar moves by what the pin did.
+- The left bar is the key an octave below as tuned, white and fixed; the key's target is set from it by the treble's octave type. Help › Quick start › Above C6 explains the bars.
 
 Changed
-- From C6 up the strobe moves at the pin's pace: the shorter the string, the slower the bands, so a turn of the pin looks alike on every key. The left panel says so.
-- The A4 page is plainer: no line of steps, a narrower strobe, more room for the orders.
-- One strobe is one band, and the partial buttons under it show which partials it is the average of.
-- The false-beat check has moved to Clavier Tuner Pro.
-- No violet partials while tuning.
-- A string a little off its target, struck after one further off, is read: the strobe no longer stays dark or comes and goes.
-- A new phone starts on the six-point stretch. Three points stay one tap away in Settings › Stretch, and every octave type and width stays yours.
+- The sampling asks for C1 and one key from G#5 to G6 before Done, and offers the next key with a dot on the keyboard.
+- Setting A4 shows one band.
+- The temperament's start (C3 to A3) and end (A4 to C5) are set on the A4 page.
 
 Please try
-- Strike a string well off its target, then one nearer to it: does the strobe stay lit?
-- Sample two bass keys an octave apart: does the suggested octave type match what you would choose?
+- Tune C#5, then C#6 with one string: strike, turn, strike. Does the right bar follow the pin, and stand still when you leave it?

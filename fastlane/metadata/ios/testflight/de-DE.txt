@@ -1,17 +1,13 @@
-0.9.0
+0.10.0
 
 Neu
-- Nach dem Vermessen schlägt die App den Oktavtyp für den Bass aus Ihren gemessenen Saiten vor, die Begründung hinter dem (i). Ein Tippen übernimmt ihn; die Wahl bleibt Ihre. Dafür zwei Basstasten im Oktavabstand messen, etwa A1 und A2.
+- Ab C#6 zwei Balken an der Stelle des Stroboskops. Die Saiten klingen dort nur etwa eine halbe Sekunde, und eine Anzeige, die jedem Augenblick folgt, flackert mit dem Einschwingen und dem Ausklingen. Jetzt gibt jeder Anschlag einen Wert, die Tonhöhe der Saite über ihren lauten Teil, gehalten bis zum nächsten Anschlag, mit den Cent und der Änderung zum Anschlag davor. Wirbel drehen, wieder anschlagen: der Balken zeigt, was der Wirbel bewirkt hat.
+- Der linke Balken ist die Taste eine Oktave tiefer wie gestimmt, weiß und fest; das Ziel der Taste wird daraus mit dem Oktavtyp des Diskants gesetzt. Hilfe › Schnellstart › Über C6 erklärt die Balken.
 
 Geändert
-- Ab C6 bewegt sich der Strobe im Tempo des Stimmwirbels: Je kürzer die Saite, desto langsamer die Bänder, damit eine Drehung am Wirbel auf jeder Taste gleich aussieht. Das linke Feld sagt es an.
-- Die A4-Seite ist schlichter: keine Schrittleiste mehr, ein schmalerer Strobe, mehr Platz für die Anleitung.
-- Ein Strobe ist ein Band, und die Teiltontasten darunter zeigen, aus welchen Teiltönen es gemittelt ist.
-- Die Prüfung unreiner Saiten ist zu Clavier Tuner Pro gewandert.
-- Keine violetten Teiltöne mehr beim Stimmen.
-- Eine Saite, die etwas neben ihrem Ziel steht und nach einer weiter entfernten angeschlagen wird, wird gelesen: Der Strobe bleibt nicht mehr dunkel und kommt und geht nicht mehr.
-- Ein neues Telefon beginnt mit der Spreizung mit sechs Punkten. Drei Punkte bleiben einen Tipp entfernt, unter Einstellungen › Spreizung, und jeder Oktavtyp und jede Breite bleibt Ihre Wahl.
+- Das Vermessen verlangt vor Fertig C1 und eine Taste von G#5 bis G6 und schlägt die nächste Taste mit einem Punkt auf der Tastatur vor.
+- A4 einstellen zeigt ein Band.
+- Anfang (C3 bis A3) und Ende (A4 bis C5) der Temperatur werden auf der A4-Seite eingestellt.
 
-Bitte probieren
-- Schlagen Sie eine Saite weit neben ihrem Ziel an, dann eine näher daran: Bleibt der Strobe sichtbar?
-- Messen Sie zwei Basstasten im Oktavabstand: Passt der vorgeschlagene Oktavtyp zu Ihrer Wahl?
+Bitte ausprobieren
+- C#5 stimmen, dann C#6 mit einer Saite: anschlagen, drehen, anschlagen. Folgt der rechte Balken dem Wirbel und steht er still, wenn Sie ihn lassen?
