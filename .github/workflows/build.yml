@@ -13,7 +13,9 @@
 #            "let's work on getting it deployed on testflight"). Needs the repository's secrets APPLE_TEAM_ID,
 #            ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's text). After the upload scripts/testflight.py
 #            writes What to Test from fastlane/metadata/ios/testflight/ and gives the build to the tester groups
-#            (10 Nov 2026). Started by scripts/release-ios.sh, after the yes on Android.
+#            (10 Nov 2026). Started by scripts/release-ios.sh, after the yes on Android. Since 18 Nov 2026 the Mac only
+#            builds and uploads; the wait for Apple's processing, the notes and the testers are testflight-testers' on
+#            Linux, and ipa is left out when TestFlight is chosen.
 #
 # Why by hand (Peter, 2 Nov 2026): "only when I decide that a new version needs to be churned out and
 # that will only happen after I test android". The same rule as Pro's, whose free allowance the two
@@ -111,7 +113,8 @@ jobs:
             ui/build/reports/tests
 
   ipa:
-    if: github.event_name == 'workflow_dispatch' && inputs.notes_for_build == ''
+    # not with a TestFlight upload, which builds the same app signed (18 Nov 2026: three Mac jobs for one release)
+    if: github.event_name == 'workflow_dispatch' && !inputs.testflight && inputs.notes_for_build == ''
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -157,8 +160,11 @@ jobs:
   testflight:
     if: github.event_name == 'workflow_dispatch' && inputs.testflight && inputs.notes_for_build == ''
     runs-on: macos-latest
-    # the archive, the upload and up to 45 minutes of Apple's processing before What to Test can be written
-    timeout-minutes: 110
+    # the archive and the upload only; the wait for Apple's processing is the next job's, on Linux (18 Nov 2026: 0.10.0
+    # waited 45 minutes here for a build Apple processed in about an hour, and failed)
+    timeout-minutes: 60
+    outputs:
+      build: ${{ steps.archive.outputs.build }}
     env:
       TEAM: ${{ secrets.APPLE_TEAM_ID }}
       KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -195,12 +201,14 @@ jobs:
       # second run of 8 Nov 2026), which needs a registered device: Peter's iPhone 15 Plus, registered that night; the
       # export re-signs the archive for the App Store
       - name: The archive, signed by Apple's automatic signing
+        id: archive
         run: |
           cd iosApp
           # a build number above Android's versionCode and above every earlier upload: 100 + this run's number
           BUILD=$((100 + ${{ github.run_number }}))
           echo "build $BUILD"
           echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
           xcodebuild -project ClavierTuner.xcodeproj -scheme ClavierTuner -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/ClavierTuner.xcarchive \
             -allowProvisioningUpdates -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
@@ -226,12 +234,32 @@ jobs:
             -exportPath build/export -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
             -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"
-      # what the testers read, and the build to them (Peter, 10 Nov 2026: "Could you do this as a release-ios.sh in foss
-      # as soon as new things happen?"); the notes' first line must be this version, or nothing is sent
+      - name: The key removed
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
+
+  # what the testers read, and the build to them (Peter, 10 Nov 2026: "Could you do this as a release-ios.sh in foss as
+  # soon as new things happen?"); the notes' first line must be this version, or nothing is sent. On Linux, after the
+  # upload: Apple's processing took about an hour for 0.10.0 (18 Nov 2026), and a Mac waiting for it is a Mac paid for
+  # doing nothing
+  testflight-testers:
+    needs: testflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+      BUILD: ${{ needs.testflight.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The App Store Connect key, for this run only
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
       - name: What to Test, and the build to the testers
         run: |
           python3 scripts/testflight.py --key "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" --key-id "$KEY_ID" --issuer "$ISSUER" \
-            --bundle-id at.clavierhaus.claviertuner --build "$BUILD" --notes fastlane/metadata/ios/testflight \
+            --bundle-id at.clavierhaus.claviertuner --build "$BUILD" --notes fastlane/metadata/ios/testflight --wait 90 \
             --version "$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"/\1/p' iosApp/project.yml)"
       - name: The key removed
         if: always()

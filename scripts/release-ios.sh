@@ -91,7 +91,7 @@ if [ -n "$NOTES_FOR" ]; then
   ok "run $RUN started: the notes and the testers for build $BUILD, a few minutes"
 else
   BUILD=$((100 + NUMBER)); JOB=testflight
-  ok "run $RUN started: build $BUILD, about 40 minutes with Apple's processing"
+  ok "run $RUN started: build $BUILD; the Mac builds and uploads, then Linux waits for Apple's processing (up to 90 minutes)"
 fi
 
 # 4. followed to its end: a line when a job changes, and a line for each step of the TestFlight job, so the screen
