@@ -319,7 +319,7 @@ fun BasicHub(
                     together = cfg.strobeTogether,
                     afterNote = afterNote,
                     // above C6, the two bars (OctaveBars, an experiment, 16 Nov 2026)
-                    strobe = octave?.takeIf { it.midi == t.midi }?.let { o -> @Composable { OctaveBarsView(o, reading, t.pace) } },
+                    strobe = octave?.takeIf { it.midi == t.midi }?.let { o -> @Composable { OctaveBarsView(o) } },
                     // No red-violet on the tuning screen until the engine measures a rate. The claim
                     // behind it is a spread over 0.5 cents, and the ear's criterion is a rate in hertz
                     // (0.5-8 Hz, second plane within 10 dB): at partial 2 of G#4, 0.5 c is 0.24 Hz,

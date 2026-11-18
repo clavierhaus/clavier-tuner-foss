@@ -20,6 +20,7 @@ import at.clavierhaus.claviertuner.tuning.MeasuredPartial
 import at.clavierhaus.claviertuner.tuning.KeyIdentifier
 import at.clavierhaus.claviertuner.tuning.NoteMeasurement
 import at.clavierhaus.claviertuner.tuning.OctaveBars
+import at.clavierhaus.claviertuner.tuning.StrikePitch
 import at.clavierhaus.claviertuner.tuning.Notes
 import at.clavierhaus.claviertuner.tuning.PredictedPartial
 import at.clavierhaus.claviertuner.tuning.Temperament
@@ -615,9 +616,15 @@ class TuningController(
     /**
      * The two bars above C6 (OctaveBars, an experiment, 16 Nov 2026): the key on screen, the key an octave below, that key
      * as read now while it sounds alone ([refHz], null when it does not), the target it is read against, and whether a
-     * strike of it has set the key's target ([taken]).
+     * strike of it has set the key's target ([taken]). Each bar shows one pitch per strike, held after the sound (StrikePitch,
+     * 18 Nov 2026): the key's partial [keyK] against [keyTargetHz] ([held]), and the key below's partial 1 against
+     * [refTargetHz] ([refHeld]).
      */
-    data class OctaveView(val midi: Int, val refMidi: Int, val refHz: Double?, val refTargetHz: Double, val taken: Boolean)
+    data class OctaveView(
+        val midi: Int, val refMidi: Int, val refHz: Double?, val refTargetHz: Double, val taken: Boolean,
+        val held: StrikePitch.Value? = null, val keyTargetHz: Double = 0.0, val keyK: Int = 1,
+        val refHeld: StrikePitch.Value? = null,
+    )
 
     private val _octave = MutableStateFlow<OctaveView?>(null)
     /** Null below C#6, while sampling, or with the two bars switched off. */
@@ -1493,7 +1500,10 @@ class TuningController(
         // the two bars above C6 (OctaveBars): the key below's reader, the key it serves, and its readings while it sounds
         var octaveReader: PhaseReader? = null
         var octaveNote = -1
-        var octaveSum = 0.0; var octaveN = 0
+        // one pitch per strike on each bar, held after the sound (StrikePitch, 18 Nov 2026)
+        val keyPitch = StrikePitch()
+        val refPitch = StrikePitch()
+        var refTaken = true
         var livePartialsStrike = -1L
         var strikePeakDb = -200.0
         var candidate: Int? = null
@@ -1646,9 +1656,10 @@ class TuningController(
                 val s = session
                 // Above C6 the two bars (OctaveBars, an experiment, 16 Nov 2026): the key an octave below, struck alone and
                 // named by the identifier, is read on its partial 1 against its own target, and the screen stays on the key
-                // it serves. Its readings while it sounds, taken together once it stops (no fewer than the reading's memory
-                // holds), move that key's target. Nothing of it reaches the key's own reading: the key below's partial 2
-                // lies where the key on screen is read.
+                // it serves. Its one pitch for the strike (StrikePitch, 18 Nov 2026; the mean of its readings until then),
+                // once it stops, moves that key's target. Nothing of it reaches the key's own reading: the key below's
+                // partial 2 lies where the key on screen is read. Each bar holds its strike's pitch after the sound, until
+                // the next strike (Law 3 set aside here, an experiment; Peter, 18 Nov 2026, 21:09).
                 val oNote = if (s != null && !s.sampling && s.curve.ready && OctaveBars.on(_settings.value, s.current)) s.current else -1
                 val refSounding = oNote > 0 && heard == OctaveBars.refOf(oNote)
                 if (oNote > 0 && s != null) {
@@ -1656,18 +1667,29 @@ class TuningController(
                     if (oNote != octaveNote) {
                         octaveNote = oNote
                         octaveReader = PhaseReader(sr, s.targetF1(ref), memoryS = _settings.value.readingMemoryS)
-                        octaveSum = 0.0; octaveN = 0
+                        keyPitch.reset(); refPitch.reset(); refTaken = true
                     }
+                    val hopS = HOP.toDouble() / sr
+                    if (strike) { keyPitch.strike(); refPitch.strike() }
                     val refRead = octaveReader!!.push(chunk)
-                    val refHzNow = refRead?.takeIf { refSounding && it.shown }?.hz
-                    if (refHzNow != null) { octaveSum += refHzNow; octaveN++ } else {
-                        val enough = (_settings.value.readingMemoryS * sr / HOP).toInt().coerceAtLeast(1)
-                        if (octaveN >= enough) { val mean = octaveSum / octaveN; val n = oNote; afterHop += { takeOctaveReference(n, mean) } }
-                        octaveSum = 0.0; octaveN = 0
+                    val refShown = refRead?.takeIf { refSounding && it.shown }
+                    val refHzNow = refShown?.hz
+                    refPitch.push(refHzNow, refShown?.levelDbfs ?: -400.0, hopS)
+                    // the key below's strike, once its sound has ended, sets the key's target: its one pitch, read for no
+                    // less than the reading's memory (as the mean of its readings did, 16-18 Nov 2026)
+                    val rv = refPitch.value
+                    if (rv?.sounding == true) refTaken = false
+                    if (!refTaken && rv != null && !rv.sounding && rv.readS >= _settings.value.readingMemoryS) {
+                        refTaken = true; val n = oNote; val hz = rv.hz; afterHop += { takeOctaveReference(n, hz) }
                     }
-                    _octave.value = OctaveView(oNote, ref, refHzNow, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote))
+                    // the key's own strike: its listened partial, by the strobe's reader, while the key below is not what
+                    // sounds; a strike named as the key below after its first readings gives nothing to the key
+                    if (refSounding) keyPitch.cancel()
+                    else keyPitch.push(rd?.takeIf { it.shown && (heard == null || heard == oNote) }?.hz, rd?.levelDbfs ?: -400.0, hopS)
+                    _octave.value = OctaveView(oNote, ref, refHzNow, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote),
+                        held = keyPitch.value, keyTargetHz = w.hz, keyK = w.k, refHeld = refPitch.value)
                 } else if (octaveNote != -1) {
-                    octaveNote = -1; octaveReader = null; octaveSum = 0.0; octaveN = 0; _octave.value = null
+                    octaveNote = -1; octaveReader = null; keyPitch.reset(); refPitch.reset(); refTaken = true; _octave.value = null
                 }
                 // sampling: the key of this strike, decided once — at the onset for the treble, past the thump for the rest
                 if (s != null && s.sampling && !decided && strikeHop > 0) {
