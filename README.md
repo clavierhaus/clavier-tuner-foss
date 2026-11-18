@@ -77,6 +77,13 @@ New Tuning; Continue is only for the piano you sampled. Settings › Help has th
   it back. From C6 up the strobe moves at the pin's pace: it slows as the
   strings get shorter, by an amount taken from the piano's own inharmonicity,
   so a turn of the pin looks alike on every key.
+- **Reads the top two octaves strike by strike, an experiment.** From C#6
+  up, where strings ring for half a second, the strobe gives way to two bars.
+  Each strike gives one value, the string's pitch over its loud part, held on
+  the bar until the next strike with the change from the one before; a turn
+  of the pin shows on the next strike. The left bar is the key an octave
+  below as tuned, and the key's target is set from it by the treble's octave
+  type. Settings › Stretch › Above C6 brings back the strobe.
 - **Shows the tuning at a glance.** A line at the top says what this tuning
   is tuned to — A4, the temperament, the octave types. A tap on it opens
   those settings.

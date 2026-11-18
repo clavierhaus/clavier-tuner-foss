@@ -7,6 +7,25 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-18
+- **Above C6 the bars show one pitch per strike.** Strings there ring for
+  about half a second, and a display that follows every moment showed the
+  strike's attack and fading tail: it fluttered where the ear hears one
+  pitch. Now each strike gives one value, the string's pitch over its loud
+  part, held on the bar after the sound until the next strike, with its
+  cents and the change from the strike before. Strike, turn the pin, strike
+  again: the bar moves by what the pin did. A strike cut short by the next
+  is an outline only. Measured on a grand's top string: strikes a second
+  apart, pin untouched, gave the same value within a third of a cent.
+- **The left bar is the key below as tuned.** Once the key an octave below
+  is tuned, its bar stands white and fixed where it was tuned, and the key's
+  target is set from it by the treble's octave type; it no longer needs to
+  be struck. Help › Quick start › Above C6 explains the two bars.
+
+### 2026-11-16
+- **The code takes the app's own name**, at.clavierhaus.claviertuner
+  throughout. Nothing the phone keeps changes.
+
 ### 2026-11-15
 - **Setting A4 shows one band**, A4's first partial against the pitch chosen,
   and no partial buttons under it; the four or five bands were confusing.

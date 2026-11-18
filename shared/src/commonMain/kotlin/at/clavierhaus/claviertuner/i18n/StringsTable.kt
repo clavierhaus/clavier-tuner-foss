@@ -216,6 +216,12 @@ object K {
     const val help_qs_tuning_s4 = "help.qs.tuning.s4"
     const val help_qs_tuning_s5 = "help.qs.tuning.s5"
     const val help_qs_tuning_s6 = "help.qs.tuning.s6"
+    const val help_qs_top_title = "help.qs.top.title"
+    const val help_qs_top_s1 = "help.qs.top.s1"
+    const val help_qs_top_s2 = "help.qs.top.s2"
+    const val help_qs_top_s3 = "help.qs.top.s3"
+    const val help_qs_top_s4 = "help.qs.top.s4"
+    const val help_qs_top_s5 = "help.qs.top.s5"
     const val table_target = "table.target"
     const val table_measured = "table.measured"
     const val table_cents = "table.cents"
@@ -443,6 +449,12 @@ internal object StringsTable : Catalog {
         "help.qs.tuning.s4" to arrayOf("Progress shows the tuning so far. Continue Tuning on the home screen takes you back to where you stopped.", "Fortschritt zeigt die Stimmung bis hierher. „Stimmung fortsetzen“ auf der Startseite führt Sie dorthin zurück, wo Sie aufgehört haben."),
         "help.qs.tuning.s5" to arrayOf("Unisons are tuned by ear.", "Chöre werden nach Gehör gestimmt."),
         "help.qs.tuning.s6" to arrayOf("Beside the strobe, three ways of showing it. One strobe: one band for the note, moved by its clean partials together. Limit to N: the lowest N partials, a band each. All partials: a band for every partial. A tap changes it at once.", "Neben dem Strobe drei Darstellungen. Ein Strobe: ein Band für die Note, bewegt von ihren sauberen Teiltönen gemeinsam. Nur N: die tiefsten N Teiltöne, je ein Band. Alle Teiltöne: ein Band für jeden Teilton. Ein Tipp wechselt sofort."),
+        "help.qs.top.title" to arrayOf("5 · Above C6", "5 · Über C6"),
+        "help.qs.top.s1" to arrayOf("From C#6 up the strobe gives way to two bars. Strings there ring for about half a second: a display that follows every moment shows the strike's attack and its fading tail, and flutters, where the ear hears one pitch.", "Ab Cis6 treten zwei Balken an die Stelle des Stroboskops. Die Saiten klingen dort nur etwa eine halbe Sekunde: eine Anzeige, die jedem Augenblick folgt, zeigt den Einschwingvorgang und das Ausklingen und flackert, wo das Ohr eine Tonhöhe hört."),
+        "help.qs.top.s2" to arrayOf("So each strike gives one value: the string's pitch over its loud part, past the attack. It stays on the bar after the sound, dimmed, until the next strike. Under the bar: the cents against the target and, in brackets, the change from the strike before.", "Darum gibt jeder Anschlag einen Wert: die Tonhöhe der Saite über ihren lauten Teil, nach dem Einschwingen. Er bleibt nach dem Klang gedimmt am Balken stehen, bis zum nächsten Anschlag. Unter dem Balken: die Cent gegen das Ziel und in Klammern die Änderung zum Anschlag davor."),
+        "help.qs.top.s3" to arrayOf("Above the line is sharp, below is flat. Strike, turn the pin, strike again: the bar moves by what the pin did. A strike cut short by the next one is drawn as an outline only, too brief to trust.", "Über der Linie ist zu hoch, darunter zu tief. Anschlagen, Wirbel drehen, wieder anschlagen: der Balken bewegt sich um das, was der Wirbel bewirkt hat. Ein Anschlag, den der nächste abschneidet, steht nur als Umriss da, zu kurz, um ihm zu trauen."),
+        "help.qs.top.s4" to arrayOf("The left bar is the key an octave below. Once it is tuned, the bar shows it as tuned, white and fixed, and the key's target is set from it by the treble's octave type. Not yet tuned: strike it alone first, then the key.", "Der linke Balken ist die Taste eine Oktave tiefer. Ist sie gestimmt, zeigt der Balken sie wie gestimmt, weiß und fest, und das Ziel der Taste wird daraus mit dem Oktavtyp des Diskants gesetzt. Noch nicht gestimmt: zuerst sie allein anschlagen, dann die Taste."),
+        "help.qs.top.s5" to arrayOf("One string each, the others muted. Settings › Stretch › Above C6 brings back the strobe.", "Je eine Saite, die anderen abgedämpft. Einstellungen › Spreizung › Über C6 bringt das Stroboskop zurück."),
         "table.target" to arrayOf("target", "Ziel"),
         "table.measured" to arrayOf("measured", "gemessen"),
         "table.cents" to arrayOf("cents", "Cent"),
@@ -450,6 +462,6 @@ internal object StringsTable : Catalog {
         "octave.tuned" to arrayOf("{0} as tuned. Strike {1}, one string", "{0} wie gestimmt. {1} anschlagen, eine Saite"),
         "settings.page.topOctave" to arrayOf("Above C6", "Über C6"),
         "settings.octaveBars" to arrayOf("Two bars, the octave below as reference", "Zwei Balken, die Oktave darunter als Bezug"),
-        "settings.note.octaveBars" to arrayOf("An experiment. From C#6 up the strobe gives way to two bars: first the key an octave below, struck alone, then the key itself, struck alone. The key's target follows the key below as it sounds, by the octave type set for the treble, so the octave stands as the stretch sets it. Off: the strobe, as below C6.", "Ein Experiment. Ab Cis6 treten zwei Balken an die Stelle des Strobes: zuerst die Taste eine Oktave tiefer, allein angeschlagen, dann die Taste selbst, allein angeschlagen. Das Ziel der Taste folgt der tieferen Taste, wie sie klingt, mit dem Oktavtyp des Diskants, sodass die Oktave so steht, wie die Spreizung sie setzt. Aus: der Strobe wie unter C6."),
+        "settings.note.octaveBars" to arrayOf("An experiment. From C#6 up the strobe gives way to two bars: left, the key an octave below, as tuned once it is; right, the key itself, one value per strike, held until the next. The key's target follows the key below by the octave type set for the treble. Help › Quick start › Above C6 says more. Off: the strobe, as below C6.", "Ein Experiment. Ab Cis6 treten zwei Balken an die Stelle des Stroboskops: links die Taste eine Oktave tiefer, wie gestimmt, sobald sie es ist; rechts die Taste selbst, ein Wert je Anschlag, gehalten bis zum nächsten. Das Ziel der Taste folgt der tieferen Taste mit dem Oktavtyp des Diskants. Mehr unter Hilfe › Schnellstart › Über C6. Aus: das Stroboskop wie unter C6."),
     )
 }

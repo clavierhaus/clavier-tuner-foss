@@ -6,7 +6,7 @@ import at.clavierhaus.claviertuner.ui.HelpTopic
 
 /*
  * The Help tab's first page (Peter, 12 Oct 2026): the way through a tuning, from A4 to the
- * tuning screen, in four short sections -- A4, the sampling, the octave types, the tuning. It
+ * tuning screen, in short sections -- A4, the sampling, the octave types, the tuning, and since 18 Nov 2026 the two bars above C6. It
  * holds words and no logic; each line says what the screens it names do as they are written
  * (SamplingPage, TunerSettingsScreen's Stretch tab, BasicHub), and is changed when they are.
  * It is the first topic of Help's index; an edition adds its own topics after it
@@ -19,6 +19,7 @@ internal fun quickStartTopic(): HelpTopic = HelpTopic(
     listOf(
         t(K.help_qs_a4_title) to steps("a4", 5), t(K.help_qs_sampling_title) to steps("sampling", 5),
         t(K.help_qs_octaves_title) to steps("octaves", 5), t(K.help_qs_tuning_title) to steps("tuning", 6),
+        t(K.help_qs_top_title) to steps("top", 5),
     ),
 )
 
