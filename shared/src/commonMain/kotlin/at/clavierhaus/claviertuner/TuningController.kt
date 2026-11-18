@@ -624,6 +624,13 @@ class TuningController(
         val midi: Int, val refMidi: Int, val refHz: Double?, val refTargetHz: Double, val taken: Boolean,
         val held: StrikePitch.Value? = null, val keyTargetHz: Double = 0.0, val keyK: Int = 1,
         val refHeld: StrikePitch.Value? = null,
+        /**
+         * The key below as it was tuned in this session: its partial 1 as recorded when its strobe stood still, the stiff
+         * left bar, and the source of the key's target (Peter, 18 Nov 2026, 21:19: "a fixed place that represents the tuned
+         * note ... The constant is a measured value, so we can make it a stiff bar that represents what was tuned before").
+         * Null while the key below is not tuned; then a strike of it sets the target, as from 16 Nov.
+         */
+        val refTunedHz: Double? = null,
     )
 
     private val _octave = MutableStateFlow<OctaveView?>(null)
@@ -1504,6 +1511,7 @@ class TuningController(
         val keyPitch = StrikePitch()
         val refPitch = StrikePitch()
         var refTaken = true
+        var octaveTunedHz: Double? = null
         var livePartialsStrike = -1L
         var strikePeakDb = -200.0
         var candidate: Int? = null
@@ -1664,10 +1672,16 @@ class TuningController(
                 val refSounding = oNote > 0 && heard == OctaveBars.refOf(oNote)
                 if (oNote > 0 && s != null) {
                     val ref = OctaveBars.refOf(oNote)
+                    // the key below as tuned: what it was recorded at when its strobe stood still, partial 1
+                    val refTunedHz = if (ref in s.tuned) s.measurements[ref]?.let { it.partialHz(1) ?: it.f1Hz } else null
                     if (oNote != octaveNote) {
                         octaveNote = oNote
                         octaveReader = PhaseReader(sr, s.targetF1(ref), memoryS = _settings.value.readingMemoryS)
-                        keyPitch.reset(); refPitch.reset(); refTaken = true
+                        keyPitch.reset(); refPitch.reset(); refTaken = true; octaveTunedHz = null
+                    }
+                    // the stiff left bar sets the key's target from the key below as tuned, once for each value it holds
+                    if (refTunedHz != null && refTunedHz != octaveTunedHz) {
+                        octaveTunedHz = refTunedHz; val n = oNote; afterHop += { takeOctaveReference(n, refTunedHz) }
                     }
                     val hopS = HOP.toDouble() / sr
                     if (strike) { keyPitch.strike(); refPitch.strike() }
@@ -1679,7 +1693,7 @@ class TuningController(
                     // less than the reading's memory (as the mean of its readings did, 16-18 Nov 2026)
                     val rv = refPitch.value
                     if (rv?.sounding == true) refTaken = false
-                    if (!refTaken && rv != null && !rv.sounding && rv.readS >= _settings.value.readingMemoryS) {
+                    if (refTunedHz == null && !refTaken && rv != null && !rv.sounding && rv.readS >= _settings.value.readingMemoryS) {
                         refTaken = true; val n = oNote; val hz = rv.hz; afterHop += { takeOctaveReference(n, hz) }
                     }
                     // the key's own strike: its listened partial, by the strobe's reader, while the key below is not what
@@ -1687,9 +1701,9 @@ class TuningController(
                     if (refSounding) keyPitch.cancel()
                     else keyPitch.push(rd?.takeIf { it.shown && (heard == null || heard == oNote) }?.hz, rd?.levelDbfs ?: -400.0, hopS)
                     _octave.value = OctaveView(oNote, ref, refHzNow, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote),
-                        held = keyPitch.value, keyTargetHz = w.hz, keyK = w.k, refHeld = refPitch.value)
+                        held = keyPitch.value, keyTargetHz = w.hz, keyK = w.k, refHeld = refPitch.value, refTunedHz = refTunedHz)
                 } else if (octaveNote != -1) {
-                    octaveNote = -1; octaveReader = null; keyPitch.reset(); refPitch.reset(); refTaken = true; _octave.value = null
+                    octaveNote = -1; octaveReader = null; keyPitch.reset(); refPitch.reset(); refTaken = true; octaveTunedHz = null; _octave.value = null
                 }
                 // sampling: the key of this strike, decided once — at the onset for the treble, past the thump for the rest
                 if (s != null && s.sampling && !decided && strikeHop > 0) {
