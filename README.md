@@ -83,7 +83,8 @@ New Tuning; Continue is only for the piano you sampled. Settings › Help has th
   the bar until the next strike with the change from the one before; a turn
   of the pin shows on the next strike. The left bar is the key an octave
   below as tuned, and the key's target is set from it by the treble's octave
-  type. Settings › Stretch › Above C6 brings back the strobe.
+  type. Settings › Tuning › Above C6 brings back the strobe, for every
+  tuning.
 - **Shows the tuning at a glance.** A line at the top says what this tuning
   is tuned to — A4, the temperament, the octave types. A tap on it opens
   those settings.

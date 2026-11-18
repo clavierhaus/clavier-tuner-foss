@@ -7,6 +7,11 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-18
+- **The two bars above C6 are switched in Settings › Tuning › Above C6**, for
+  every tuning, no longer under Stretch, which is each tuning's own. A tuner
+  who prefers the strobe up there switches them off once.
+
 ## 0.10.0 -- 2026-11-18
 
 ### 2026-11-18

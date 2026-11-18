@@ -204,6 +204,13 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
                 onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.1) * 10) / 10) } },
             )
         }),
+    // the two bars above C6, an experiment (OctaveBars, 16 Nov 2026), with a way back to the strobe at the piano. Here
+    // since 18 Nov 2026, among the settings of the app and not with the stretch, which is each tuning's own (Peter: "not in
+    // settings per tuning. Some tuners may not like it and should have the option to continue as they did")
+    SettingsPage(t(K.settings_page_topOctave), left = {
+        SwitchRow(t(K.settings_octaveBars), s.octaveBars) { on -> model.update { it.copy(octaveBars = on) } }
+        TextBlock(listOf(t(K.settings_note_octaveBars)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
+    }),
 )
 
 /** The Stretch tab: one page per region, named as the engine names them. */
@@ -221,12 +228,7 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
     val breaks = breaksPage(s)
-    // the two bars above C6, an experiment (OctaveBars, 16 Nov 2026), with a way back to the strobe at the piano
-    val top = SettingsPage(t(K.settings_page_topOctave), left = {
-        SwitchRow(t(K.settings_octaveBars), s.octaveBars) { on -> model.update { it.copy(octaveBars = on) } }
-        TextBlock(listOf(t(K.settings_note_octaveBars)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
-    })
-    if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }), breaks, top)
+    if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }), breaks)
     return listOf(
         choice,
         SettingsPage(t(K.settings_page_bass),
@@ -238,7 +240,6 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
             left = { RegionLeft(t(K.settings_note_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
         breaks,
-        top,
     )
 }
 
