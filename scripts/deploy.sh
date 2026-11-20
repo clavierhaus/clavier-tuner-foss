@@ -71,6 +71,15 @@ for f in sys.argv[1:]:
   return 1
 }
 
+# A second Kotlin/Native toolchain in ~/.konan beside KONAN_DATA_DIR is removed (20 Nov 2026: with both there, the iPhone
+# compile check found every iOS library twice and failed). ~/.konan is only a download, the same one KONAN_DATA_DIR holds;
+# what was compiled against it is compiled again.
+if [ -n "${KONAN_DATA_DIR:-}" ] && [ -d "$HOME/.konan" ] && [ "$HOME/.konan" != "$KONAN_DATA_DIR" ]; then
+  echo "==> Removing the second iPhone toolchain in $HOME/.konan (KONAN_DATA_DIR is $KONAN_DATA_DIR)"
+  ./gradlew --stop -q >/dev/null 2>&1 || true
+  rm -rf "$HOME/.konan" */build/classes/kotlin/iosArm64
+fi
+
 if [ "$DO_PULL" = 1 ]; then
   echo "==> git pull"
   SELF_BEFORE="$(md5sum < "$REPO_DIR/scripts/deploy.sh")"
