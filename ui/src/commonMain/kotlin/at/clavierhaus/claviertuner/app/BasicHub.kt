@@ -7,11 +7,11 @@ import at.clavierhaus.claviertuner.ui.num
 import at.clavierhaus.claviertuner.i18n.noteName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -79,6 +79,10 @@ import kotlin.math.abs
  * one string alone, and what it leads to is the tuner's choice: a partial he takes out is grey and has no band.
  */
 private const val FALSE_MARKS_ON_TUNING = false
+
+/** The Progress keyboard's share of the room's width, and its width over its height (640 x 216 dp until 20 Nov 2026). */
+private const val PROGRESS_WIDTH = 0.8f
+private const val PROGRESS_ASPECT = 640f / 216f
 
 /** The partials shown while sampling, in fixed seats: "maybe 5" (Peter, 7 Oct 2026, 10:18). */
 private val SAMPLING_SEATS: List<Int> = (1..5).toList()
@@ -340,18 +344,17 @@ fun BasicHub(
                     onDismiss = { pickingNote = false },
                 )
             }
-            showProgress -> {
+            // the keyboard and its curve in the room the tuning picture takes, sized to it: [PROGRESS_WIDTH] of its width
+            // in the proportion the box had at 640 x 216 dp, or as large as the height allows (20 Nov 2026: the fixed size,
+            // set on 18 Sept, broke the layout rule of 2 Nov on every screen but one)
+            showProgress -> Box(Modifier.fillMaxSize().padding(top = 52.dp, bottom = 84.dp), contentAlignment = Alignment.Center) {
                 ProgressKeyboard(
                     done = t.tuned,
                     current = t.midi,
                     deviations = t.deviations,
                     curve = t.curve,
                     lowestMidi = t.lowestMidi,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 40.dp)
-                        .width(640.dp)
-                        .height(216.dp),
+                    modifier = Modifier.fillMaxWidth(PROGRESS_WIDTH).aspectRatio(PROGRESS_ASPECT),
                 )
             }
         }
