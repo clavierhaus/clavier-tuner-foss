@@ -51,6 +51,17 @@ gradle_quietly() {
   # what the compiler and gradle actually said, in the order they said it
   grep -nE '^(e:|FAILURE|\* What went wrong|\* Try|Caused by|Execution failed|> |[[:space:]]+at )' "$GRADLE_LOG" \
     | head -60 | sed 's/^/   /'
+  # what a failed test said, whole, from gradle's own test reports (20 Nov 2026: the short form shows only that a test
+  # failed, never the layout check's list of faults)
+  find . -path '*/build/test-results/*' -name 'TEST-*.xml' -newer "$GRADLE_LOG" -print0 2>/dev/null \
+    | xargs -0 -r python3 -c '
+import sys, xml.etree.ElementTree as E
+for f in sys.argv[1:]:
+    for c in E.parse(f).iter("testcase"):
+        for x in c.findall("failure"):
+            print("\n   " + c.get("classname", "").rsplit(".", 1)[-1] + "." + c.get("name", "") + " said:")
+            for l in (x.get("message") or "").splitlines()[:60]: print("     " + l)
+' 2>/dev/null || true
   local errs
   errs=$(grep -cE '^e:' "$GRADLE_LOG" || true)
   echo ""
@@ -75,6 +86,19 @@ echo "==> Building debug APK"
 gradle_quietly "building the app" :androidApp:assembleDebug -q || exit 1
 APK="androidApp/build/outputs/apk/debug/androidApp-debug.apk"
 echo "    $APK"
+
+# The iPhone compile check (Peter, 20 Nov 2026): the engine and the screens compiled for the iPhone on this machine, so an
+# iPhone error shows here before a TestFlight run instead of on GitHub's minutes. Linking and signing need a Mac and stay
+# on GitHub. The first run downloads the Kotlin/Native toolchain (about 770 MB, into KONAN_DATA_DIR when that is set).
+# A failure is said; it does not stop the Android install.
+if [ "$DO_TEST" = 1 ]; then
+  echo "==> iPhone compile check (engine and screens)"
+  if gradle_quietly "the iPhone compile check" :shared:compileKotlinIosArm64 :ui:compileKotlinIosArm64; then
+    echo "    compiles for the iPhone."
+  else
+    echo "    (the Android install goes on)"
+  fi
+fi
 
 echo "==> Looking for device"
 if [ ! -x "$ADB" ]; then
