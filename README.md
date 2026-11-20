@@ -13,15 +13,15 @@ Made by [clavierhaus.at](https://clavierhaus.at), a recording studio in Vienna w
 1887 Steinway D, by someone who wanted to see what his instruments actually do.
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="100%" alt="Tuning G3 on its sixth partial: the strobe">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/6.png" width="100%" alt="Tuning G#2: a band for every partial">
 </p>
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="Sampling the piano: a single string measured">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="49%" alt="The stretch computed from this piano">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="49%" alt="Setting A4 and the temperament octave">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="49%" alt="Sampling the piano: the keys measured, the next one offered">
 </p>
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="49%" alt="The hub">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="49%" alt="Settings">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="This tuning's stretch: octave types per region">
 </p>
 
 ## Quickstart
