@@ -10,6 +10,9 @@ reconstructed from the commit history that day.
 ## 0.10.1 -- 2026-11-20
 
 ### 2026-11-20
+- **The Progress keyboard keeps a piano's proportions** and the band for the
+  curve as tuned stands above it from the start, empty until a key is tuned;
+  before, the keys stretched to fill the whole box.
 - **New screenshots** of 0.10.0 for F-Droid and the README.
 
 ### 2026-11-18

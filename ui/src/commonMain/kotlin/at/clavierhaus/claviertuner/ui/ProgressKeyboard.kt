@@ -42,7 +42,7 @@ fun ProgressKeyboard(
     done: Set<Int>,
     current: Int?,
     deviations: Map<Int, Double> = emptyMap(),
-    /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. Not drawn since 8 Oct 2026; kept so the band can still size itself when nothing is measured yet. */
+    /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. Not drawn since 8 Oct 2026, and since 20 Nov 2026 the band no longer sizes itself by it: the parameter is kept for its callers. */
     curve: Map<Int, Double> = emptyMap(),
     lowestMidi: Int = MIDI_A0,
     modifier: Modifier = Modifier,
@@ -51,13 +51,17 @@ fun ProgressKeyboard(
     val whiteKeys = (lowest..MIDI_C8).count { !isBlack(it) }
     fun whitesBelow(midi: Int) = whitesFrom(lowest, midi)
     Canvas(modifier) {
-        // the curve stands above the keys, over the same note axis
-        val curveBand = if (deviations.isEmpty()) 0f else size.height * 0.42f
+        // the curve stands above the keys, over the same note axis. The keys keep a piano's own proportion, a white key
+        // [KEY_LENGTH] times as long as it is wide, and the band above them is there from the first key on: until 20 Nov
+        // 2026 the band appeared only once a note was tuned, and before that the keys took the whole box, sixteen times
+        // as long as wide (Peter: "looks weird and disproportional")
         val labelBand = 26f
         val tickBand = 8f
-        val keyboardTop = curveBand
-        val keyboardHeight = (size.height - curveBand - labelBand - tickBand).coerceAtLeast(1f)
         val w = size.width / whiteKeys
+        val room = (size.height - labelBand - tickBand).coerceAtLeast(1f)
+        val keyboardHeight = minOf(w * KEY_LENGTH, room * 0.62f).coerceAtLeast(1f)
+        val curveBand = room - keyboardHeight
+        val keyboardTop = curveBand
         val blackW = w * 0.62f
         val blackH = keyboardHeight * 0.62f
 
@@ -91,7 +95,7 @@ fun ProgressKeyboard(
         // note stands out to be "corrected" from here: one note's reading
         // apart from its neighbours is not a wrong note, it is the octave
         // links doing their work, or a reading to be struck again.
-        if ((deviations.isNotEmpty() || curve.isNotEmpty()) && curveBand > 12f) {
+        if (curveBand > 12f) {
             val pts = deviations.keys.sorted()
             val smooth = pts.associateWith { midi ->
                 var num = 0.0; var den = 0.0
@@ -167,6 +171,12 @@ fun ProgressKeyboard(
         }
     }
 }
+
+/**
+ * A white key's length over its width as the keyboard draws it, about a piano's own (a key's visible length about
+ * 150 mm, its width about 23.5 mm, 20 Nov 2026).
+ */
+private const val KEY_LENGTH = 6f
 
 /** Where equal temperament sits in the curve band, as a fraction of its height from the top. */
 private const val CURVE_ZERO = 0.36f
