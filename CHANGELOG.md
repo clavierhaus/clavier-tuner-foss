@@ -7,6 +7,11 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+## 0.10.1 -- 2026-11-20
+
+### 2026-11-20
+- **New screenshots** of 0.10.0 for F-Droid and the README.
+
 ### 2026-11-18
 - **The two bars above C6 are switched in Settings › Tuning › Above C6**, for
   every tuning, no longer under Stretch, which is each tuning's own. A tuner

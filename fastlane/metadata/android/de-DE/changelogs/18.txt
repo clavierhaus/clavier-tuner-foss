@@ -1,0 +1,1 @@
+0.10.1: Die zwei Balken über C6 werden unter Einstellungen › Stimmen › Über C6 geschaltet, einmal für jede Stimmung, nicht mehr unter Spreizung. Neue Bildschirmfotos.

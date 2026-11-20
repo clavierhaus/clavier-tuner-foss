@@ -1,0 +1,1 @@
+0.10.1: The two bars above C6 are switched in Settings › Tuning › Above C6, once for every tuning, no longer under Stretch. New screenshots.
