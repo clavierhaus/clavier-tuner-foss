@@ -409,9 +409,10 @@ private fun a4Orders(): List<String> = listOf(t(K.sampling_a4_mute), t(K.samplin
 /**
  * The left side's share of the width; the right side, with the controls, has the rest. 0.42 until 20 Nov 2026, when the count
  * line, longer since 18 Nov by C1 and the key from G#5 to G6, pushed the last order out of its box in German at text x1.3 on
- * the 890 x 406 dp phone (LayoutCheckTest.largestTextGerman); Peter chose the wider box over shorter words.
+ * the 890 x 406 dp phone (LayoutCheckTest.largestTextGerman); Peter chose the wider box over shorter words. 0.46 still cut the
+ * last order by a line; 0.50 is the share that check drew whole, run in the session that day.
  */
-private const val LEFT_SHARE = 0.46f
+private const val LEFT_SHARE = 0.50f
 
 /**
  * The same on the A4 screen, whose right side holds the picture of the string. 0.30 until 14 Nov 2026, when the strobe gave
