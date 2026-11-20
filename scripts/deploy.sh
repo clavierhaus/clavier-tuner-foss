@@ -73,7 +73,14 @@ for f in sys.argv[1:]:
 
 if [ "$DO_PULL" = 1 ]; then
   echo "==> git pull"
+  SELF_BEFORE="$(md5sum < "$REPO_DIR/scripts/deploy.sh")"
   git pull --ff-only
+  # a script that changed with the pull is read again: bash goes on with the old one it has open (20 Nov 2026: the
+  # run of 16:00 pulled a new deploy.sh and ran the old one)
+  if [ "$(md5sum < "$REPO_DIR/scripts/deploy.sh")" != "$SELF_BEFORE" ]; then
+    echo "==> deploy.sh changed with the pull: running the new one"
+    exec "$REPO_DIR/scripts/deploy.sh" --no-pull "$@"
+  fi
 fi
 
 if [ "$DO_TEST" = 1 ]; then
