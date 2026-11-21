@@ -21,7 +21,10 @@ class StringsTest {
         Strings.use("de-AT")
         assertEquals("de", Strings.language.value)
         assertEquals("3 von 19", t(K.sampling_count, 3, 19))
-        Strings.use("fr")
+        // French is a column of its own since 21 Nov 2026; a language no table holds (Swedish) falls back to English
+        Strings.use("fr-CA")
+        assertEquals("fr", Strings.language.value)
+        Strings.use("sv")
         assertEquals("en", Strings.language.value)
         assertEquals("3 of 19", t(K.sampling_count, 3, 19))
         assertEquals("no.such.key", t("no.such.key"))
@@ -47,9 +50,10 @@ class StringsTest {
         assertEquals("Strasse", t("extra.street"))
         assertEquals("Wort", t("extra.word"))                 // de-CH empty → de
         assertEquals("3 von 19", t(K.sampling_count, 3, 19))  // FOSS has no de-CH column → de
-        Strings.use("fr")
+        Strings.use("sv")
         assertEquals("en", Strings.language.value)
-        assertEquals(listOf("clavier-tuner", "test-extra"), Strings.missing("fr").map { it.name })
+        assertEquals(listOf("clavier-tuner", "test-extra"), Strings.missing("sv").map { it.name })
+        assertEquals(listOf("test-extra"), Strings.missing("fr").map { it.name })
         assertEquals(emptyList(), Strings.missing("de"))
         Strings.use(null)
         Strings.unregister(Extra.name)
