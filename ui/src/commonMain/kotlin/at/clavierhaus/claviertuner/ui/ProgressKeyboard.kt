@@ -149,7 +149,9 @@ fun ProgressKeyboard(
             }
             drawLabel(fmt("%+.0f c", (roomUp / pxPerCent).toDouble()), 2f, mid - roomUp + 14f, Color(Brand.WHITE_MUTED), 18f)
             drawLabel(fmt("%+.0f c", (-roomDown / pxPerCent).toDouble()), 2f, mid + roomDown, Color(Brand.WHITE_MUTED), 18f)
-            drawLabel(t(K.progress_caption), 2f, curveBand - 2f, Color(Brand.WHITE_MUTED), 18f)
+            // the caption centred under the band, clear of the lower scale's figure at the left (21 Nov 2026: the two stood
+            // on each other on the 225's tuning)
+            drawLabel(t(K.progress_caption), size.width / 2f, curveBand - 2f, Color(Brand.WHITE_MUTED), 18f, LabelAlign.CENTER)
         }
 
         // where the session stands
