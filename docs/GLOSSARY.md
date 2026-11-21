@@ -217,9 +217,9 @@ speaking technician. Address: *vous*; short orders in the imperative (*Frappez u
 | Settings | Einstellungen | Réglages | — |
 | Home | Start | Accueil ? | — |
 
-**Not decided:** note names. The French trade names keys do, ré, mi … and numbers octaves one lower:
-"La3 à 440 Hz" (MP), our A4. The screens show A4 in French as in English; whether French gets *La3* is
-Peter's word, asked here first.
+**Note names: A4, decided 21 Nov 2026** (Peter: "French tuners use english language etd, so A4 is A4"). The
+trade's solfège (do, ré, mi; "La3 à 440 Hz", MP) is not used on the screens; French shows the letter names and
+octave numbers of the English screens.
 
 **Changed in the French strings, 21 Nov 2026** (foss `i18n/strings.tsv`): *Stretch* → *Étirement* (the
 tab, *Étirement supplémentaire*, *Étirement en six points*, *Étirement des nouveaux accords*); *Octave du
