@@ -1512,6 +1512,7 @@ class TuningController(
         val refPitch = StrikePitch()
         var refTaken = true
         var octaveTunedHz: Double? = null
+        var keyRecorded = false
         var livePartialsStrike = -1L
         var strikePeakDb = -200.0
         var candidate: Int? = null
@@ -1684,7 +1685,7 @@ class TuningController(
                         octaveTunedHz = refTunedHz; val n = oNote; afterHop += { takeOctaveReference(n, refTunedHz) }
                     }
                     val hopS = HOP.toDouble() / sr
-                    if (strike) { keyPitch.strike(); refPitch.strike() }
+                    if (strike) { keyPitch.strike(); refPitch.strike(); keyRecorded = false }
                     val refRead = octaveReader!!.push(chunk)
                     val refShown = refRead?.takeIf { refSounding && it.shown }
                     val refHzNow = refShown?.hz
@@ -1700,6 +1701,20 @@ class TuningController(
                     // sounds; a strike named as the key below after its first readings gives nothing to the key
                     if (refSounding) keyPitch.cancel()
                     else keyPitch.push(rd?.takeIf { it.shown && (heard == null || heard == oNote) }?.hz, rd?.levelDbfs ?: -400.0, hopS)
+                    // the key is tuned when its strike's one pitch stands within the match window: recorded as the strike
+                    // ends, not when the next key is struck (Peter, 21 Nov 2026: "key should turn green when it's actually
+                    // caught, not waiting for the next strike ... there is no next strike after C8"). The still strobe's
+                    // half second inside the window cannot come from a string that rings half a second; a rough strike, read
+                    // too briefly to be firm, is not a verdict
+                    val kv = keyPitch.value
+                    if (!keyRecorded && !refSounding && kv != null && !kv.sounding && !kv.rough && keyPitch.readThisStrike &&
+                        TuningSession.matched(kv.hz, w.hz, _settings.value.matchCents)) {
+                        keyRecorded = true; val k = w.k; val hz = kv.hz; val n = oNote
+                        afterHop += {
+                            val tv = _tuning.value
+                            if (tv != null && tv.midi == n) measureNote(tv, k, hz)?.let { m -> if (s.record(m)) recorded(s) }
+                        }
+                    }
                     _octave.value = OctaveView(oNote, ref, refHzNow, s.targetF1(ref), s.octaveShiftCents.containsKey(oNote),
                         held = keyPitch.value, keyTargetHz = w.hz, keyK = w.k, refHeld = refPitch.value, refTunedHz = refTunedHz)
                 } else if (octaveNote != -1) {

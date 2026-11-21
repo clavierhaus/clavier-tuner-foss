@@ -35,6 +35,9 @@ class StrikePitch {
     /** The value to show: this strike's while it sounds, the last strike's after. */
     val value: Value? get() = current
 
+    /** Whether the strike now under way has given a reading of its own (the value shown may still be the one before). */
+    val readThisStrike: Boolean get() = hops > 0
+
     private var standing: Value? = null
     private var standingBefore: Double? = null
 

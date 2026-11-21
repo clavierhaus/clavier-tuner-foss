@@ -73,4 +73,15 @@ class StrikePitchTest {
         p.push(1108.0, -31.0, hop)
         assertEquals(1120.0, p.value!!.hz, 1e-9)
     }
+
+    @Test
+    fun aNewStrikeHasReadNothingUntilItsFirstReading() {
+        val p = StrikePitch()
+        p.ring(1120.0, 15)
+        p.push(null, -200.0, hop)
+        p.strike()
+        assertFalse(p.readThisStrike, "the value standing is the strike before's, not a verdict on this one")
+        p.push(1121.0, -30.0, hop)
+        assertTrue(p.readThisStrike)
+    }
 }

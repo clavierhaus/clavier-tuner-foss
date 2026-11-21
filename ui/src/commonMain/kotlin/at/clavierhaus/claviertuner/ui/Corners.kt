@@ -60,9 +60,11 @@ val CORNER_LEFT_WIDTH = 60.dp
  * left of it. It depends on the edition: "clavier tuner" with the home door
  * takes 250 dp, and the Pro mark in script after it another 70 (Peter, 7 Oct 2026, 15:33: the
  * probe button and the record button stood under the inscription, because the band was measured
- * for the free app's name). Read when a screen lays out, so the mark set at start is counted.
+ * for the free app's name). Read when a screen lays out, so the mark set at start is counted. Since 21 Nov 2026
+ * the mark's room grows with its letters, 24 dp each (70 for "Pro" as before): a four-letter mark stood on the header
+ * beside it at the largest text on a tablet (the layout check, 1280 x 800, German, text x1.3).
  */
-val CORNER_RIGHT_WIDTH: Dp get() = if (Edition.mark == null) 250.dp else 320.dp
+val CORNER_RIGHT_WIDTH: Dp get() = Edition.mark?.let { 250.dp + (it.length * 24 - 2).dp } ?: 250.dp
 
 /** The edition's mark beside the name, in script: null in the free app, "Pro" in Pro. Set once by the app before its first screen. */
 object Edition {
