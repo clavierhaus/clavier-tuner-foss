@@ -13,7 +13,8 @@ manual 3.2; **PM** = PianoMeter's published pages; **PTG** = usage in the
 Piano Technicians Guild's publications; **ours** = a coinage of this
 project, where the trade has no word because the thing is new. German
 column: to be reviewed by a German-speaking technician (Peter) before the
-German pass; a word marked ? is a proposal.
+German pass; a word marked ? is a proposal. French: §10 (21 Nov 2026), every
+word of the tables above with its French and the French source.
 
 ## 1. Words that were wrong, and what replaces them
 
@@ -155,3 +156,74 @@ its words are in Pro's table; they stand here as the words it was given.*
 | Suggested for the bass: 10:5 | *Vorschlag für den Bass: 10:5* | the window behind the tuning line, after the sampling |
 | Use 10:5 | *10:5 verwenden* | takes the suggestion; the type stays the tuner's |
 | No suggestion for the bass yet | *Noch kein Vorschlag für den Bass* | no two bass keys an octave apart sampled |
+
+## 10. 21 November 2026 — French
+
+French became the third language of the screens without a French column here: the strings were translated
+first and the glossary was not asked (Peter, 21 Nov 2026: "We have decided to have French as a third language
+weeks ago and the glossary should be in French as well"). This section is that column, made from the French
+trade's own texts; the French strings follow it from the same day (below, *changed*).
+
+Sources: **IT** = ITEMM, Le Mans, the French school of the trade (course outlines: "construction de la
+partition", "techniques d'extension des octaves", "l'étirement des octaves (stretching) dès la partition",
+"mise au diapason", "accord des unissons"); **WP** = fr.wikipedia, *Inharmonicité du piano* (partiel vs
+harmonique, inharmonicité, corde filée, sans battement, plan de cordes); **TH** = Thureau Pianos, *partiels,
+battements et consonance* (coïncidence de partiels, cheville, accordeur électronique); **PL** = pianolab.fr,
+*techniques d'accordage* (partition, étirement, unissons, bandes de feutre, coins, clé d'accord, marteau
+d'accordage, calage de cheville); **PMU** = Pianos Mullet, *glossaire* (cheville, sommier, agrafe, chevalet,
+cadre en fonte, barre, table d'harmonie, chœur, longueur vibrante, étouffoir); **DP** = DP Pianos, *lexique*
+(unisson, cordes filées, étendue, harmonisation, réglage); **MP** = monpiano.free.fr, *dictionnaire*
+(battement, intervalle pur, diapason, La3 = 440 Hz); **PEF** = piano-e-forte, *glossaire* (partiel,
+inharmonicité, clé d'accord). A word marked ? is a proposal no source above shows; it waits for a French-
+speaking technician. Address: *vous*; short orders in the imperative (*Frappez une touche*).
+
+| English | German | French | Source |
+|---|---|---|---|
+| partial (1st, 2nd …); fundamental | Teilton; Grundton | partiel; fondamental | WP, TH, PEF — never *harmonique* for a piano string (WP) |
+| coincident partials | koinzidierende Teiltöne ? | partiels coïncidents | TH "coïncidence de partiels" |
+| inharmonicity; inharmonicity constant (B) | Inharmonizität; Inharmonizitätskonstante | inharmonicité; coefficient d'inharmonicité (B) ? | WP, TH ("facteur" in WP) |
+| beats, beats per second; beatless | Schwebungen; schwebungsfrei | battements, battements par seconde; sans battement | MP, WP, PL |
+| false beat; false-beating string | Schwebung der Saite in sich; unreine Saite | faux battement; corde à faux battement ? | trade usage ?; no source above defines it |
+| unison; trichord | Chor; dreichörig | unisson; chœur (the strings of one note); trois cordes | DP, IT, PMU |
+| temperament; temperament octave; equal temperament | Temperatur; Temperaturoktave; gleichstufige Stimmung | tempérament; **partition**; tempérament égal | IT, PL — the French trade's own word for the temperament octave |
+| cent | Cent | cent | WP |
+| pitch; pitch standard (A4 = 440) | Tonhöhe; Kammerton | hauteur; diapason | TH, MP, DP |
+| pitch raise | Stimmung anheben | mise au diapason | IT — *remontée de diapason* is in no source above |
+| octave types 2:1, 4:2, 6:3, 8:4, 10:5; wide / narrow | Oktavtypen; weit / eng | types d'octave 2:1, 4:2 …; large / étroite | ours from TL; "octave dilatée" WP |
+| double octave | Doppeloktave | double octave | — |
+| stretch | Spreizung | **étirement** (des octaves) | IT "l'étirement des octaves (stretching)", PL "étirement de l'accordage"; WP "dilatation" |
+| extra stretch (the width setting) | Zusätzliche Spreizung | étirement supplémentaire | ours, from the above |
+| tuning curve | Stimmkurve | courbe d'accord ? | — |
+| tuning lever | Stimmhammer | clé d'accord; marteau d'accordage | PL, PEF, PMU |
+| tuning pin, pinblock, hitch pin, agraffe, bridge, plate, plate strut, soundboard | Stimmwirbel, Stimmstock, Anhangstift, Agraffe, Steg, Gussrahmen, Strebe, Resonanzboden | cheville, sommier (de chevilles), pointe d'accroche ?, agrafe, chevalet, cadre (en fonte), barre (du cadre), table d'harmonie | PMU, DP, TH |
+| bass, tenor, treble; break | Bass, Tenor, Diskant; Übergang | basses, médium, aigus; rupture ? | TH, PL ("le médium, l'aigu et le grave") |
+| wound string; plain string | umsponnene Saite; blanke Saite | corde filée; corde non filée (corde simple ?) | WP, DP, PMU; WP says "monofilament" |
+| stringing scale | Mensur | plan de cordes | WP |
+| range | Tonumfang | étendue | DP "étendue des sons, du grave à l'aigu" |
+| speaking length | klingende Länge | longueur vibrante | PMU |
+| electronic tuning device | elektronisches Stimmgerät | accordeur électronique | TH |
+| test blow | Probeschlag | coup d'essai ? | PL describes it ("frapper fortement") without naming it |
+| setting the pin | Wirbel setzen | calage de cheville | PL |
+| regulating; voicing | Regulierung; Intonation | réglage; harmonisation | DP |
+| aural tuning | Gehörstimmung | accord à l'oreille | — |
+| mute; wedge mute; temperament strip | Stimmkeil; Dämpfstreifen | coin; coin; bande de feutre | PL ("bandes de feutre … coins … sourdines"); *sourdine* is also the moderator pedal (PMU, MP), so the screens say *coin* |
+| damper; to mute the other strings | Dämpfer; abdämpfen | étouffoir; étouffer les autres | PMU, DP |
+| tuning (the act; one tuning) | Stimmen; Stimmung | accordage; accord | DP, PL |
+| sampling / measuring the piano | Vermessen | mesure | ours (§7) |
+| reading | Anzeige | lecture; mesure | ours |
+| strobe | Strobe | stroboscope | ours |
+| Progress | Fortschritt | Progression | ours |
+| Accept / Cancel / Done | Übernehmen / Abbrechen / Fertig | Accepter / Annuler / Terminé | §6 |
+| Settings | Einstellungen | Réglages | — |
+| Home | Start | Accueil ? | — |
+
+**Not decided:** note names. The French trade names keys do, ré, mi … and numbers octaves one lower:
+"La3 à 440 Hz" (MP), our A4. The screens show A4 in French as in English; whether French gets *La3* is
+Peter's word, asked here first.
+
+**Changed in the French strings, 21 Nov 2026** (foss `i18n/strings.tsv`): *Stretch* → *Étirement* (the
+tab, *Étirement supplémentaire*, *Étirement en six points*, *Étirement des nouveaux accords*); *Octave du
+tempérament* → *Partition*, and *l'octave du tempérament* → *la partition* in the notes and the help;
+*Le tempérament d'abord* → *La partition d'abord*; *sourdine* → *coin* for a mute and *étouffées* for strings
+muted; *remontées de diapason* → *mises au diapason*; *corde simple* → *corde non filée*, one word for one
+thing.

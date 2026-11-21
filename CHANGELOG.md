@@ -8,8 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-11-21
-- **French.** The app speaks French on a phone set to French; where the
-  trade's French word is not settled the English one stands (Stretch).
+- **French.** The app speaks French on a phone set to French, in the French
+  trade's words: *étirement*, *partition*, *coin*, *mise au diapason*
+  (docs/GLOSSARY.md §10).
 
 ## 0.10.1 -- 2026-11-20
 
