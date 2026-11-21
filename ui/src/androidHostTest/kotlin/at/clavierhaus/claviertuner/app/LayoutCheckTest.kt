@@ -255,6 +255,9 @@ class LayoutCheckTest {
     @Test @Config(qualifiers = "w829dp-h392dp-land-440dpi") fun pixel4German() = check("829x392", "de")
     @Test @Config(qualifiers = "w829dp-h392dp-land-440dpi") fun pixel4English() = check("829x392", "en")
     @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun largestTextGerman() = check("890x406", "de", 1.3f)
+    // French (21 Nov 2026, Peter: French as an option in the next version), on the smallest phone and at the largest text
+    @Test @Config(qualifiers = "w829dp-h392dp-land-440dpi") fun pixel4French() = check("829x392", "fr")
+    @Test @Config(qualifiers = "w890dp-h406dp-land-480dpi") fun largestTextFrench() = check("890x406", "fr", 1.3f)
     // the Pixel 8 Pro (2992 × 1344 px at 3.0), the phone the store's screenshots are taken on
     @Test @Config(qualifiers = "w997dp-h448dp-land-480dpi") fun pixel8ProEnglish() = check("997x448", "en")
 
