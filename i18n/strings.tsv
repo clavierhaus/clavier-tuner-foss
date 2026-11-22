@@ -140,8 +140,8 @@ settings.cleanTogether	Average the clean partials	Saubere Teiltöne mitteln	Moye
 tuning.strobeAll	All partials	Alle Teiltöne	Tous les partiels
 tuning.strobeAll.note	A band for every partial.	Ein Band für jeden Teilton.	Une bande pour chaque partiel.
 tuning.pinPace	Strobe at the pin's pace	Strobe im Tempo des Stimmwirbels	Stroboscope au rythme de la cheville
-tuning.strobeLimit.note	lowest partials	tiefste Teiltöne	partiels les plus bas
-tuning.strobeOne.note	One band, moved by the clean partials together.	Ein Band, bewegt von allen sauberen Teiltönen.	Une bande, mue par les partiels propres ensemble.
+tuning.strobeLimit.note	lowest partials	tiefste Teiltöne	partiels graves
+tuning.strobeOne.note	One band, moved by the clean partials together.	Ein Band, bewegt von allen sauberen Teiltönen.	Une bande pour tous les partiels propres.
 tuning.strobeLimit	Limit to	Nur	Limiter à
 tuning.strobeOne	One strobe	Ein Strobe	Un stroboscope
 settings.strobeTogether	Strobes appear together	Strobes erscheinen gemeinsam	Les stroboscopes apparaissent ensemble
@@ -156,7 +156,7 @@ settings.matchWindow	Tolerance	Toleranz	Tolérance
 settings.theLowestKey	the lowest key	der tiefsten Taste	la touche la plus grave
 settings.octave	The octave	Oktave	L'octave
 settings.octaveType	Octave type	Oktavtyp	Type d'octave
-settings.octaveWidth	Extra stretch	Zusätzliche Spreizung	Étirement supplémentaire
+settings.octaveWidth	Extra stretch	Zusätzliche Spreizung	Étirement ajouté
 settings.beatless	none (pure)	keine (rein)	aucun (pure)
 settings.cWide	+{0} c	+{0} c	+{0} c
 settings.cNarrow	−{0} c	−{0} c	−{0} c

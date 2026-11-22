@@ -192,7 +192,7 @@ speaking technician. Address: *vous*; short orders in the imperative (*Frappez u
 | octave types 2:1, 4:2, 6:3, 8:4, 10:5; wide / narrow | Oktavtypen; weit / eng | types d'octave 2:1, 4:2 …; large / étroite | ours from TL; "octave dilatée" WP |
 | double octave | Doppeloktave | double octave | — |
 | stretch | Spreizung | **étirement** (des octaves) | IT "l'étirement des octaves (stretching)", PL "étirement de l'accordage"; WP "dilatation" |
-| extra stretch (the width setting) | Zusätzliche Spreizung | étirement supplémentaire | ours, from the above |
+| extra stretch (the width setting) | Zusätzliche Spreizung | étirement ajouté | ours, from the above; *étirement supplémentaire* until 22 Nov 2026, cut on the smallest phone at text ×1.3 |
 | tuning curve | Stimmkurve | courbe d'accord ? | — |
 | tuning lever | Stimmhammer | clé d'accord; marteau d'accordage | PL, PEF, PMU |
 | tuning pin, pinblock, hitch pin, agraffe, bridge, plate, plate strut, soundboard | Stimmwirbel, Stimmstock, Anhangstift, Agraffe, Steg, Gussrahmen, Strebe, Resonanzboden | cheville, sommier (de chevilles), pointe d'accroche ?, agrafe, chevalet, cadre (en fonte), barre (du cadre), table d'harmonie | PMU, DP, TH |
@@ -222,7 +222,7 @@ trade's solfège (do, ré, mi; "La3 à 440 Hz", MP) is not used on the screens; 
 octave numbers of the English screens.
 
 **Changed in the French strings, 21 Nov 2026** (foss `i18n/strings.tsv`): *Stretch* → *Étirement* (the
-tab, *Étirement supplémentaire*, *Étirement en six points*, *Étirement des nouveaux accords*); *Octave du
+tab, *Étirement ajouté* (first *Étirement supplémentaire*, too long for the smallest phone, 22 Nov 2026), *Étirement en six points*, *Étirement des nouveaux accords*); *Octave du
 tempérament* → *Partition*, and *l'octave du tempérament* → *la partition* in the notes and the help;
 *Le tempérament d'abord* → *La partition d'abord*; *sourdine* → *coin* for a mute and *étouffées* for strings
 muted; *remontées de diapason* → *mises au diapason*; *corde simple* → *corde non filée*, one word for one
