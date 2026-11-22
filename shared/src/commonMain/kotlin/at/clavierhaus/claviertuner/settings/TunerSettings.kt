@@ -167,14 +167,6 @@ data class TunerSettings(
     val language: String = "",
     /** The Help tab's text size, sp: A− and A+ on every Help page step it (Peter, 12 Oct 2026). Help only. */
     val helpTextSp: Int = 14,
-    // SAMPLING
-    /**
-     * Where the inharmonicity curve breaks: notes at which a new run of
-     * scaling begins (a bridge break, a strut, a change of wire). Pro marks
-     * them on the sampling screen; FOSS has none beyond the wound/plain
-     * floor. An instrument's property, kept with the settings.
-     */
-    val curveBreaks: Set<Int> = emptySet(),
     // WORKFLOW
     /**
      * The tuning screen follows the key struck: when a strike is another
@@ -601,7 +593,6 @@ class SettingsModel(
             bandAveragingS = f("bandAveragingS", d.bandAveragingS).takeIf { it in TunerSettings.BAND_AVERAGING_STEPS } ?: d.bandAveragingS,
             language = store.get("language") ?: d.language,
             helpTextSp = i("helpTextSp", d.helpTextSp).coerceIn(TunerSettings.MIN_HELP_SP, TunerSettings.MAX_HELP_SP),
-            curveBreaks = store.get("curveBreaks")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.filter { it in 1..127 }?.toSet() ?: d.curveBreaks,
             matchCents = f("matchCents", d.matchCents),
             highestPartialMidi = i("highestPartialMidi", d.highestPartialMidi),
             recordPcm = b("recordPcm", d.recordPcm),
@@ -640,7 +631,6 @@ class SettingsModel(
         store.put("bandAveragingS", s.bandAveragingS.toString())
         store.put("language", s.language)
         store.put("helpTextSp", s.helpTextSp.toString())
-        store.put("curveBreaks", s.curveBreaks.sorted().joinToString(","))
         store.put("matchCents", s.matchCents.toString())
         store.put("highestPartialMidi", s.highestPartialMidi.toString())
         store.put("recordPcm", s.recordPcm.toString())

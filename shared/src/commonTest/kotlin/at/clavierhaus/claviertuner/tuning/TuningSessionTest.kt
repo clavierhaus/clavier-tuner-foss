@@ -351,7 +351,7 @@ class TuningSessionTest {
     }
 
     @Test
-    fun theCurveIsOneSmoothLineAndBreaksOnlyWhereTheTunerMarksOne() {
+    fun theCurveIsOneSmoothLine() {
         // a part rising up the plain wire and a part falling down the wound bass, sampled at nine keys
         fun b(m: Int) = 1.2e-4 * kotlin.math.exp(0.06 * (m - 60)) + 2.0e-4 * kotlin.math.exp(-0.08 * (m - 21))
         val samples = listOf(21, 28, 36, 41, 45, 50, 57, 64, 76).associateWith { b(it) }
@@ -362,10 +362,7 @@ class TuningSessionTest {
         assertEquals(1.0, c.b(96)!! / b(96), 0.05, "beyond the top, on the line")
         // no cut at the lowest plain string any more (29 Oct 2026): the line runs through it
         assertEquals(1.0, c.b(43)!! / c.b(42)!!, 0.06, "G2 against F#2: one step of the same line")
-        // a break the tuner marks at C4 splits it: below it, one flat run; above, another
-        val split = (40..56 step 4).associateWith { 2e-4 } + (60..96 step 4).associateWith { 8e-4 }
-        val d = InharmonicityCurve(split, breaks = setOf(60))
-        assertEquals(2e-4, d.b(58)!!, 1e-9); assertEquals(8e-4, d.b(61)!!, 1e-9)
+        // no break anywhere since 22 Nov 2026: the tuner cannot mark one
     }
 
     @Test

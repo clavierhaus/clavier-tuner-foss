@@ -47,7 +47,7 @@ private fun tenths(x: Double) = round(x * 10.0) / 10.0
  * entry means behind its (i), nothing scrolling.
  *
  * - Tuning: Temperament · Reading
- * - Stretch: Wound · Bass · Middle · Treble · Breaks
+ * - Stretch: Wound · Bass · Middle · Treble (the scale breaks left on 22 Nov 2026)
  * - Piano: Range
  * - Help: one page, the index of topics on the left and the open topic on the right (14 Oct 2026);
  *   Quick start is the first topic, an edition adds its own after it, Pro the book's
@@ -227,8 +227,7 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
             TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
-    val breaks = breaksPage(s)
-    if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }), breaks)
+    if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
     return listOf(
         choice,
         SettingsPage(t(K.settings_page_bass),
@@ -239,25 +238,8 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
         SettingsPage(t(K.settings_page_treble),
             left = { RegionLeft(t(K.settings_note_treble), TunerSettings.TREBLE_OCTAVES, s.octaveTreble, s.widthTreble, { t -> model.update { it.copy(octaveTreble = t) } }, { w -> model.update { it.copy(widthTreble = w) } }) },
             right = { RegionRight(s.widthTreble, s.widthTrebleFar, "C8") { w -> model.update { it.copy(widthTrebleFar = w) } } }),
-        breaks,
     )
 }
-
-/** The page of the scale breaks, the same with either stretch. */
-private fun breaksPage(s: TunerSettings) = SettingsPage(t(K.settings_page_breaks),
-    left = {
-        SettingsSection(t(K.settings_curveBreaks), info = BREAKS_NOTE)
-        val breaks = s.curveBreaks.sorted()
-        if (breaks.isEmpty()) ReadOnlyRow(t(K.settings_page_breaks), t(K.settings_none))
-        for (b in breaks.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
-    },
-    right = {
-        val rest = s.curveBreaks.sorted().drop(5)
-        if (rest.isNotEmpty()) {
-            SettingsSection("…")
-            for (b in rest.take(5)) ReadOnlyRow(t(K.settings_breakAt), noteName(b))
-        }
-    })
 
 /**
  * The Stretch tab's page for a note's [region] (0 bass, 1 middle, 2 treble; TunerSettings.regionOf): the tuning screen
@@ -316,7 +298,6 @@ private val TEMPERAMENT_NOTE: String get() = t(K.settings_note_temperament)
 private val READING_NOTE: String get() = t(K.settings_note_reading)
 private val RANGE_NOTE: String get() = t(K.settings_note_range)
 private val UNWOUND_NOTE: String get() = t(K.settings_note_unwound)
-private val BREAKS_NOTE: String get() = t(K.settings_note_breaks)
 private val ABOUT_NOTE: String get() = t(K.settings_note_about)
 
 /**

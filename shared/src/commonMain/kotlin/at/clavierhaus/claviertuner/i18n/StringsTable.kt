@@ -61,7 +61,6 @@ object K {
     const val settings_page_middle = "settings.page.middle"
     const val settings_page_treble = "settings.page.treble"
     const val settings_page_range = "settings.page.range"
-    const val settings_page_breaks = "settings.page.breaks"
     const val settings_page_language = "settings.page.language"
     const val settings_page_probe = "settings.page.probe"
     const val settings_page_quickstart = "settings.page.quickstart"
@@ -155,9 +154,6 @@ object K {
     const val settings_readingMemory = "settings.readingMemory"
     const val settings_matchWindow = "settings.matchWindow"
     const val settings_theLowestKey = "settings.theLowestKey"
-    const val settings_curveBreaks = "settings.curveBreaks"
-    const val settings_none = "settings.none"
-    const val settings_breakAt = "settings.breakAt"
     const val settings_octave = "settings.octave"
     const val settings_octaveType = "settings.octaveType"
     const val settings_octaveWidth = "settings.octaveWidth"
@@ -188,7 +184,6 @@ object K {
     const val settings_note_reading = "settings.note.reading"
     const val settings_note_range = "settings.note.range"
     const val settings_note_unwound = "settings.note.unwound"
-    const val settings_note_breaks = "settings.note.breaks"
     const val settings_note_about = "settings.note.about"
     const val help_index = "help.index"
     const val help_qs_a4_title = "help.qs.a4.title"
@@ -294,7 +289,6 @@ internal object StringsTable : Catalog {
         "settings.page.middle" to arrayOf("Midrange", "Mittellage", "Médium"),
         "settings.page.treble" to arrayOf("Treble", "Diskant", "Aigus"),
         "settings.page.range" to arrayOf("Range", "Tonumfang", "Étendue"),
-        "settings.page.breaks" to arrayOf("Scale breaks", "Bruchstellen", "Ruptures"),
         "settings.page.language" to arrayOf("Language", "Sprache", "Langue"),
         "settings.page.probe" to arrayOf("Probe", "Sonde", "Sonde"),
         "settings.page.quickstart" to arrayOf("Quick start", "Schnellstart", "Démarrage rapide"),
@@ -388,9 +382,6 @@ internal object StringsTable : Catalog {
         "settings.readingMemory" to arrayOf("Averaging time", "Mittelungszeit", "Durée de moyenne"),
         "settings.matchWindow" to arrayOf("Tolerance", "Toleranz", "Tolérance"),
         "settings.theLowestKey" to arrayOf("the lowest key", "der tiefsten Taste", "la touche la plus grave"),
-        "settings.curveBreaks" to arrayOf("Breaks in the inharmonicity curve", "Brüche der Inharmonizitätskurve", "Ruptures de la courbe d'inharmonicité"),
-        "settings.none" to arrayOf("none", "keine", "aucune"),
-        "settings.breakAt" to arrayOf("Break at", "Bruch bei", "Rupture à"),
         "settings.octave" to arrayOf("The octave", "Oktave", "L'octave"),
         "settings.octaveType" to arrayOf("Octave type", "Oktavtyp", "Type d'octave"),
         "settings.octaveWidth" to arrayOf("Extra stretch", "Zusätzliche Spreizung", "Étirement supplémentaire"),
@@ -421,7 +412,6 @@ internal object StringsTable : Catalog {
         "settings.note.reading" to arrayOf("The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.", "Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert.", "La tolérance est la vôtre, pas celle de la mesure : le stroboscope lit une corde au dixième de cent. Dans la tolérance et immobile, la note est gardée."),
         "settings.note.range" to arrayOf("The range is the 88 keys, A0 to C8.", "Der Tonumfang sind die 88 Tasten, A0 bis C8.", "L'étendue est de 88 touches, de A0 à C8."),
         "settings.note.unwound" to arrayOf("The first plain string. The tuning curve does not depend on it: until the measured strings have drawn the inharmonicity curve, a note not yet measured borrows from the nearest measured string of its own kind of wire.", "Die erste Blanksaite. Die Stimmkurve hängt nicht von ihr ab: bis die gemessenen Saiten die Inharmonizitätskurve gezogen haben, borgt ein noch nicht gemessener Ton von der nächsten gemessenen Saite gleicher Art.", "La première corde non filée. La courbe d'accord n'en dépend pas : tant que les cordes mesurées n'ont pas tracé la courbe d'inharmonicité, une note pas encore mesurée emprunte à la corde mesurée la plus proche du même genre de fil."),
-        "settings.note.breaks" to arrayOf("The inharmonicity curve is drawn as one smooth line over the keys, through the strings measured. A break starts a new line, so a note not yet measured is read from its own side of the bridge or strut. A measured string keeps its own measurement. Set on the piano’s page (Pro).", "Die Inharmonizitätskurve wird als eine glatte Linie über die Tasten gezogen, durch die gemessenen Saiten. Ein Bruch beginnt eine neue Linie, so wird ein noch nicht gemessener Ton von seiner eigenen Seite des Stegs oder der Spreize her gelesen. Eine gemessene Saite behält ihre eigene Messung. Gesetzt auf der Seite des Klaviers (Pro).", "La courbe d'inharmonicité est tracée comme une seule ligne lisse sur les touches, par les cordes mesurées. Une rupture commence une nouvelle ligne, de sorte qu'une note pas encore mesurée est lue de son propre côté du chevalet ou de la barre. Une corde mesurée garde sa propre mesure. Se règle sur la page du piano (Pro)."),
         "settings.note.about" to arrayOf("Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.", "Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository.", "Libre d'utiliser, d'étudier, de modifier et de partager, avec attribution et sans garantie — le texte complet est LICENSE dans le dépôt."),
         "help.index" to arrayOf("Topics", "Themen", "Sujets"),
         "help.qs.a4.title" to arrayOf("1 · A4", "1 · A4", "1 · A4"),

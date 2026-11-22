@@ -7,6 +7,12 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-22
+- **No scale breaks.** The inharmonicity curve is one smooth line over the
+  whole range, always; the Breaks page under Stretch is gone. With the six
+  points and the sampling's suggested keys no tuner needed one, and a break
+  kept on a phone from before no longer cuts the curve.
+
 ### 2026-11-21
 - **French.** The app speaks French on a phone set to French, in the French
   trade's words: *étirement*, *partition*, *coin*, *mise au diapason*

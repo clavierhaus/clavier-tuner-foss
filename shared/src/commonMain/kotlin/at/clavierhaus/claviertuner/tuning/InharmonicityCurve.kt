@@ -14,33 +14,23 @@ import kotlin.math.ln
  * are predicted within 9 % median (p90 23 %), against 19 % (p90 31–42 %) for the old straight line per side of the
  * floor; at partial 10, 1.4 c median against 2.7 c.
  *
- * Breaks are the tuner's: a break the tuner marks (Pro) starts a new line, for a bridge break or a strut that does
- * change the scaling. Within a line: four samples or more fit the two parts; two or three a straight line in ln B;
- * one its value throughout; none borrows the nearest sample. Every string keeps its own measured B once it has
+ * No breaks at all since 22 Nov 2026 (Peter: with six points and eight well-chosen samples the scale breaks are "an old
+ * concept that no one would use. Scale breaks can go away, fully", in all three editions); until then a break the tuner
+ * marked started a new line. Four samples or more fit the two parts; two or three a straight line in ln B; one its value
+ * throughout; none borrows the nearest sample. Every string keeps its own measured B once it has
  * one; the curve is for the notes not yet measured.
  *
  * The fit: for given slopes (s, t) the model is linear in (a, c) and is solved by least squares on the relative
  * error, a and c not below zero; the slopes are searched on a grid (0–0.2 and 0–0.3 per key, 0.005) and then
  * finely (0.0002) around the best. A grid and not an iteration, so the result does not depend on a start value.
  */
-class InharmonicityCurve(
-    samples: Map<Int, Double>,
-    /** Notes at which a new line starts (the note itself is in the upper line). */
-    breaks: Set<Int> = emptySet(),
-) {
-    private class Segment(val from: Int, val to: Int, val model: ((Int) -> Double)?)
-
-    private val segments: List<Segment>
+class InharmonicityCurve(samples: Map<Int, Double>) {
     // Ascending by key, as the sorted map it was until 30 Oct 2026; built with common
     // collections (toSortedMap exists only on the JVM), so the fit adds in the same order.
     private val all: Map<Int, Double> = samples.filter { it.value > 0.0 }.entries.sortedBy { it.key }.associate { it.toPair() }
 
-    init {
-        val cuts = breaks.filter { it in 1..127 }.sorted()
-        val starts = listOf(0) + cuts
-        val ends = cuts.map { it - 1 } + listOf(127)
-        segments = starts.zip(ends).map { (from, to) -> Segment(from, to, fit(all.filter { it.key in from..to })) }
-    }
+    /** The one line over the range. */
+    private val model: ((Int) -> Double)? = fit(all)
 
     /** How many strings the curve stands on. */
     val count: Int get() = all.size
@@ -48,10 +38,10 @@ class InharmonicityCurve(
     /** True when at least two strings are in: a line can be drawn. */
     val ready: Boolean get() = all.size >= 2
 
-    /** B expected of [midi]: its own sample, else its line's, else the nearest sample. */
+    /** B expected of [midi]: its own sample, else the line's, else the nearest sample. */
     fun b(midi: Int): Double? {
         all[midi]?.let { return it }
-        segments.firstOrNull { midi in it.from..it.to }?.model?.let { return it(midi) }
+        model?.let { return it(midi) }
         val near = all.keys.minByOrNull { abs(it - midi) } ?: return null
         return all[near]
     }

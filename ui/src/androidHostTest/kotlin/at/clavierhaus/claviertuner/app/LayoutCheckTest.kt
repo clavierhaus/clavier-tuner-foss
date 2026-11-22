@@ -203,13 +203,13 @@ class LayoutCheckTest {
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
         c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
         // settings, every page but Help's (Help scrolls by law)
-        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 1 to 4, 2 to 0, 4 to 0, 4 to 1)) {
+        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
             show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }
             look(where, dir, "09-settings-$tab-$page")
         }
-        // the Stretch tab with six points on: the choice, the six places, the breaks
+        // the Stretch tab with six points on: the choice and the six places (the breaks' page left on 22 Nov 2026)
         model.update { it.withSixPoints(true) }
-        for (page in 0..2) {
+        for (page in 0..1) {
             show("settings six $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to page) }
             look(where, dir, "09-settings-six-$page")
         }

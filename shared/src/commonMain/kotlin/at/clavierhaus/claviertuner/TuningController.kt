@@ -605,8 +605,6 @@ class TuningController(
         val curveReady: Boolean = false,
         /** The strings sampled so far (for the sampling screen's row). */
         val sampled: Set<Int> = emptySet(),
-        /** True when a curve break is marked at this note (Pro). */
-        val breakHere: Boolean = false,
         /** The strobe's pace at this key: 1, or under it in the treble, where the bands move at the pin's pace (PinPace). */
         val pace: Double = 1.0,
     )
@@ -961,7 +959,6 @@ class TuningController(
             sampledShort = shortSamples.filter { it in s.measurements }.toSet(),
             curveReady = s.curve.ready,
             sampled = s.measurements.keys.filter { it != TuningSession.MIDI_A4 }.toSet(),
-            breakHere = midi in s.settings.curveBreaks,
             pace = at.clavierhaus.claviertuner.picture.PinPace.of(midi) { m -> s.predictedB(m) },
         )
         _targetHz.value = f1

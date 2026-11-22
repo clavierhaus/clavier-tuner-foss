@@ -61,7 +61,6 @@ settings.page.bass	Bass	Bass	Basses
 settings.page.middle	Midrange	Mittellage	Médium
 settings.page.treble	Treble	Diskant	Aigus
 settings.page.range	Range	Tonumfang	Étendue
-settings.page.breaks	Scale breaks	Bruchstellen	Ruptures
 settings.page.language	Language	Sprache	Langue
 settings.page.probe	Probe	Sonde	Sonde
 settings.page.quickstart	Quick start	Schnellstart	Démarrage rapide
@@ -155,9 +154,6 @@ settings.reading	Strobe	Stroboskop	Stroboscope
 settings.readingMemory	Averaging time	Mittelungszeit	Durée de moyenne
 settings.matchWindow	Tolerance	Toleranz	Tolérance
 settings.theLowestKey	the lowest key	der tiefsten Taste	la touche la plus grave
-settings.curveBreaks	Breaks in the inharmonicity curve	Brüche der Inharmonizitätskurve	Ruptures de la courbe d'inharmonicité
-settings.none	none	keine	aucune
-settings.breakAt	Break at	Bruch bei	Rupture à
 settings.octave	The octave	Oktave	L'octave
 settings.octaveType	Octave type	Oktavtyp	Type d'octave
 settings.octaveWidth	Extra stretch	Zusätzliche Spreizung	Étirement supplémentaire
@@ -188,7 +184,6 @@ settings.note.temperament	Tuned first, downward from A4, to equal temperament on
 settings.note.reading	The tolerance is yours, not the measurement’s: the strobe reads a string to a tenth of a cent. Inside the tolerance and still, the note is kept.	Die Toleranz ist Ihre, nicht die der Messung: das Stroboskop liest eine Saite auf ein Zehntel Cent. Steht es innerhalb der Toleranz still, ist der Ton gespeichert.	La tolérance est la vôtre, pas celle de la mesure : le stroboscope lit une corde au dixième de cent. Dans la tolérance et immobile, la note est gardée.
 settings.note.range	The range is the 88 keys, A0 to C8.	Der Tonumfang sind die 88 Tasten, A0 bis C8.	L'étendue est de 88 touches, de A0 à C8.
 settings.note.unwound	The first plain string. The tuning curve does not depend on it: until the measured strings have drawn the inharmonicity curve, a note not yet measured borrows from the nearest measured string of its own kind of wire.	Die erste Blanksaite. Die Stimmkurve hängt nicht von ihr ab: bis die gemessenen Saiten die Inharmonizitätskurve gezogen haben, borgt ein noch nicht gemessener Ton von der nächsten gemessenen Saite gleicher Art.	La première corde non filée. La courbe d'accord n'en dépend pas : tant que les cordes mesurées n'ont pas tracé la courbe d'inharmonicité, une note pas encore mesurée emprunte à la corde mesurée la plus proche du même genre de fil.
-settings.note.breaks	The inharmonicity curve is drawn as one smooth line over the keys, through the strings measured. A break starts a new line, so a note not yet measured is read from its own side of the bridge or strut. A measured string keeps its own measurement. Set on the piano’s page (Pro).	Die Inharmonizitätskurve wird als eine glatte Linie über die Tasten gezogen, durch die gemessenen Saiten. Ein Bruch beginnt eine neue Linie, so wird ein noch nicht gemessener Ton von seiner eigenen Seite des Stegs oder der Spreize her gelesen. Eine gemessene Saite behält ihre eigene Messung. Gesetzt auf der Seite des Klaviers (Pro).	La courbe d'inharmonicité est tracée comme une seule ligne lisse sur les touches, par les cordes mesurées. Une rupture commence une nouvelle ligne, de sorte qu'une note pas encore mesurée est lue de son propre côté du chevalet ou de la barre. Une corde mesurée garde sa propre mesure. Se règle sur la page du piano (Pro).
 settings.note.about	Free to use, study, change and share, with attribution and no warranty — the full text is LICENSE in the repository.	Frei zu nutzen, zu studieren, zu ändern und weiterzugeben, mit Namensnennung und ohne Gewähr — der volle Text steht als LICENSE im Repository.	Libre d'utiliser, d'étudier, de modifier et de partager, avec attribution et sans garantie — le texte complet est LICENSE dans le dépôt.
 help.index	Topics	Themen	Sujets
 help.qs.a4.title	1 · A4	1 · A4	1 · A4

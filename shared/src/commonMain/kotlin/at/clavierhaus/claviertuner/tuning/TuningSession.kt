@@ -246,9 +246,9 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      */
     val curve: InharmonicityCurve
         get() {
-            val key = basis to settings.curveBreaks
+            val key = basis
             curveKept?.let { (k, c) -> if (k == key) return c }
-            return InharmonicityCurve(basis, settings.curveBreaks).also { curveKept = key to it }
+            return InharmonicityCurve(basis).also { curveKept = key to it }
         }
 
     /**
