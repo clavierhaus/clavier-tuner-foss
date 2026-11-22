@@ -1,0 +1,1 @@
+0.11.0: French. No scale breaks: the inharmonicity curve is one smooth line over the range. Above C6 a key turns tuned as its strike ends, C8 included.

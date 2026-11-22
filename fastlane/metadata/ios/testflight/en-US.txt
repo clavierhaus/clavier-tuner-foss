@@ -1,14 +1,11 @@
-0.10.1
+0.11.0
 
 New
-- From C#6 up, two bars in the strobe's place. Strings there ring for about half a second, and a display that follows every moment flutters with the strike's attack and its fading tail. Now each strike gives one value, the string's pitch over its loud part, held on the bar until the next strike, with its cents and the change from the strike before. Turn the pin, strike again: the bar moves by what the pin did.
-- The left bar is the key an octave below as tuned, white and fixed; the key's target is set from it by the treble's octave type. Help › Quick start › Above C6 explains the bars.
+- French: the app speaks French on a phone set to French.
 
 Changed
-- The two bars above C6 are switched in Settings › Tuning › Above C6, once for every tuning.
-- The sampling asks for C1 and one key from G#5 to G6 before Done, and offers the next key with a dot on the keyboard.
-- Setting A4 shows one band.
-- The temperament's start (C3 to A3) and end (A4 to C5) are set on the A4 page.
+- No scale breaks: the inharmonicity curve is one smooth line over the whole range, and the Breaks page under Stretch is gone.
+- Above C6 a key turns tuned as its strike ends with its pitch inside the match window, not when the next key is struck. C8 turns green too.
 
 Please try
-- Tune C#5, then C#6 with one string: strike, turn, strike. Does the right bar follow the pin, and stand still when you leave it?
+- Tune up to C8 with the two bars. Does each key turn green after its own strike?

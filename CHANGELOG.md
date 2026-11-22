@@ -5,7 +5,7 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
-## Unreleased
+## 0.11.0 -- 2026-11-22
 
 ### 2026-11-22
 - **No scale breaks.** The inharmonicity curve is one smooth line over the
@@ -14,6 +14,9 @@ reconstructed from the commit history that day.
   kept on a phone from before no longer cuts the curve.
 
 ### 2026-11-21
+- **Above C6 a key turns tuned as its strike ends** with its pitch inside the
+  match window, not when the next key is struck; C8, with no key after it,
+  now turns green too.
 - **French.** The app speaks French on a phone set to French, in the French
   trade's words: *étirement*, *partition*, *coin*, *mise au diapason*
   (docs/GLOSSARY.md §10).

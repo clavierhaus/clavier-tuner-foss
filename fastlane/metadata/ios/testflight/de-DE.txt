@@ -1,14 +1,11 @@
-0.10.1
+0.11.0
 
 Neu
-- Ab C#6 zwei Balken an der Stelle des Stroboskops. Die Saiten klingen dort nur etwa eine halbe Sekunde, und eine Anzeige, die jedem Augenblick folgt, flackert mit dem Einschwingen und dem Ausklingen. Jetzt gibt jeder Anschlag einen Wert, die Tonhöhe der Saite über ihren lauten Teil, gehalten bis zum nächsten Anschlag, mit den Cent und der Änderung zum Anschlag davor. Wirbel drehen, wieder anschlagen: der Balken zeigt, was der Wirbel bewirkt hat.
-- Der linke Balken ist die Taste eine Oktave tiefer wie gestimmt, weiß und fest; das Ziel der Taste wird daraus mit dem Oktavtyp des Diskants gesetzt. Hilfe › Schnellstart › Über C6 erklärt die Balken.
+- Französisch: Auf einem Telefon in Französisch spricht die App Französisch.
 
 Geändert
-- Die zwei Balken über C6 werden unter Einstellungen › Stimmen › Über C6 geschaltet, einmal für jede Stimmung.
-- Das Vermessen verlangt vor Fertig C1 und eine Taste von G#5 bis G6 und schlägt die nächste Taste mit einem Punkt auf der Tastatur vor.
-- A4 einstellen zeigt ein Band.
-- Anfang (C3 bis A3) und Ende (A4 bis C5) der Temperatur werden auf der A4-Seite eingestellt.
+- Keine Brüche mehr: Die Inharmonizitätskurve ist eine glatte Linie über den ganzen Tonumfang, die Seite Brüche unter Spreizung ist weg.
+- Über C6 ist eine Taste gestimmt, sobald ihr Anschlag mit der Tonhöhe innerhalb der Toleranz endet, nicht erst beim Anschlag der nächsten Taste. Auch C8 wird grün.
 
 Bitte ausprobieren
-- C#5 stimmen, dann C#6 mit einer Saite: anschlagen, drehen, anschlagen. Folgt der rechte Balken dem Wirbel und steht er still, wenn Sie ihn lassen?
+- Bis C8 mit den zwei Balken stimmen. Wird jede Taste nach ihrem eigenen Anschlag grün?

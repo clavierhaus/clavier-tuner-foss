@@ -1,0 +1,1 @@
+0.11.0: Französisch. Keine Brüche mehr: die Inharmonizitätskurve ist eine glatte Linie über den ganzen Tonumfang. Über C6 ist eine Taste gestimmt, sobald ihr Anschlag endet, auch C8.
