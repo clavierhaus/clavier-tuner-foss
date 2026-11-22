@@ -640,7 +640,7 @@ class TuningController(
         val s = session ?: return
         if (s.sampling || s.current != note) return
         val ref = OctaveBars.refOf(note)
-        val asked = s.curveTargetF1(ref) * 2.0.pow(s.editionOffset(ref) / 1200.0)
+        val asked = s.curveTargetF1(ref) * 2.0.pow((s.editionOffset(ref) + s.temperamentCents(ref)) / 1200.0)
         s.octaveShiftCents = s.octaveShiftCents + (note to TuningSession.centsOff(refHz, asked))
         publish(s)
     }
@@ -937,7 +937,7 @@ class TuningController(
             // and not a target. Empty until the curve has enough samples to stand on.
             curve = if (!s.curve.ready) emptyMap() else
                 (s.lowMidi..TuningSession.MIDI_C8).associateWith { m ->
-                    TuningSession.centsOff(s.curveTargetF1(m), TuningSession.targetF1(m, s.a4Hz))
+                    TuningSession.centsOff(s.curveTargetF1(m), TuningSession.targetF1(m, s.a4Hz)) + s.temperamentCents(m)
                 },
             temperamentComplete = s.temperamentComplete,
             referenceMeasured = s.measurements.containsKey(TuningSession.MIDI_A4),

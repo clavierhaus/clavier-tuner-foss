@@ -343,7 +343,13 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
      */
     var octaveShiftCents: Map<Int, Double> = emptyMap()
 
-    private fun offset(midi: Int): Double = (targetOffsetCents[midi] ?: 0.0) + (octaveShiftCents[midi] ?: 0.0)
+    private fun offset(midi: Int): Double = (targetOffsetCents[midi] ?: 0.0) + (octaveShiftCents[midi] ?: 0.0) + temperamentCents(midi)
+
+    /**
+     * [midi]'s place in the tuning's temperament, cents from equal temperament, A at 0 (22 Nov 2026): laid over the
+     * stretch as an edition's offset is, so every octave of a note carries the same; zero in equal temperament.
+     */
+    fun temperamentCents(midi: Int): Double = settings.temperament.offsetCents(midi)
 
     /** The edition's offset over [midi]'s target alone, without the octave's ([targetOffsetCents]). */
     fun editionOffset(midi: Int): Double = targetOffsetCents[midi] ?: 0.0
@@ -390,7 +396,9 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val width = settings.widthFor(midi)
         // wide: the lower note flatter, the upper sharper
         val sign = if (midi < refMidi) -1.0 else 1.0
-        val hz = refHz * 2.0.pow(sign * width / 1200.0)
+        // the partner as tuned already stands at its place in the temperament: only the difference is laid over it here,
+        // as [listening] adds this key's whole place (an octave partner has the same name, and so nothing)
+        val hz = refHz * 2.0.pow((sign * width - temperamentCents(refMidi)) / 1200.0)
         return Listening(midi, ownK, hz, Source.OCTAVE, type, refMidi, refHz, width, refModelled = measuredHz == null)
     }
 

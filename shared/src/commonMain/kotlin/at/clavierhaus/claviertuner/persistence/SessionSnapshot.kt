@@ -62,6 +62,7 @@ data class SessionSnapshot(
  *                                               (the tuning's own stretch, octave types by name; optional, since 5 Nov 2026)
  *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
  *     temperamentHigh <midi>                    (the temperament's end, after the points; only when not A4, since 15 Nov 2026)
+ *     temperament <name>                        (the temperament, after its end; only when not equal, since 22 Nov 2026)
  *     x <text>                                  (an edition's own line, kept as it is, any number; since 12 Nov 2026)
  *     string <midi> <...> <count>               (written 10-12 Nov 2026, read as an edition's line with the count of
  *     b <...>                                    b lines after it, which follow it as edition's lines too)
@@ -125,6 +126,8 @@ object SessionCodec {
             if (t.points.isNotEmpty()) append("points ${StretchPoint.encode(t.points)}\n")
             // the temperament's end, only where it is not A4: a file of before 15 Nov 2026 has none and reads A4
             if (t.temperamentHighMidi != TunerSettings.TEMPERAMENT_HIGH) append("temperamentHigh ${t.temperamentHighMidi}\n")
+            // the temperament, only where it is not equal: a file of before 22 Nov 2026 has none and reads equal
+            if (t.temperament != at.clavierhaus.claviertuner.tuning.Temperament.EQUAL) append("temperament ${t.temperament.name}\n")
         }
         for (l in s.editionLines) if (editionLineOk(l)) append("x $l\n")
         s.leftOut.toList().sortedBy { it.first }.forEach { (midi, ks) ->
@@ -217,6 +220,10 @@ object SessionCodec {
             if (i < lines.size && lines[i].startsWith("temperamentHigh ")) {
                 val h = tokens("temperamentHigh", 1)[0].toIntOrNull()
                 if (h != null && h in TunerSettings.TEMPERAMENT_HIGH..TunerSettings.MAX_TEMPERAMENT_HIGH) stretch = stretch?.copy(temperamentHighMidi = h)
+            }
+            if (i < lines.size && lines[i].startsWith("temperament ")) {
+                val n = tokens("temperament", 1)[0]
+                at.clavierhaus.claviertuner.tuning.Temperament.entries.firstOrNull { it.name == n }?.let { stretch = stretch?.copy(temperament = it) }
             }
         }
         // an edition's own lines, kept as they are; a file of 10-12 Nov 2026 has its single strings checked here as

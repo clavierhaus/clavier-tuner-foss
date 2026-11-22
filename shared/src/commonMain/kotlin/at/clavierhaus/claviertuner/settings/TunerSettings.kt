@@ -95,6 +95,11 @@ data class TunerSettings(
      */
     val temperamentHighMidi: Int = 69,         // A4
     /**
+     * The temperament the tuning is laid out in (Peter, 22 Nov 2026): equal, or a named historical one, as offsets from
+     * equal temperament by note name, A at 0, over the stretch ([at.clavierhaus.claviertuner.tuning.Temperament]).
+     */
+    val temperament: at.clavierhaus.claviertuner.tuning.Temperament = at.clavierhaus.claviertuner.tuning.Temperament.EQUAL,
+    /**
      * The order of working: on, the temperament octave is walked first and
      * each of its notes asks for Done (leaving one does not register it);
      * off, leaving any note registers it. A preference of the route only —
@@ -467,7 +472,7 @@ data class TunerSettings(
     /** The stretch this tuning is tuned to ([Stretch]). */
     fun stretch(): Stretch = Stretch(
         temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
-        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints, temperamentHighMidi,
+        widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints, temperamentHighMidi, temperament,
     )
 
     /** These settings with [s] as the stretch. */
@@ -475,7 +480,7 @@ data class TunerSettings(
         temperamentLowMidi = s.temperamentLowMidi, octaveBass = s.octaveBass, octaveMiddle = s.octaveMiddle,
         octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
         widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, stretchPoints = s.points,
-        temperamentHighMidi = s.temperamentHighMidi,
+        temperamentHighMidi = s.temperamentHighMidi, temperament = s.temperament,
     )
 }
 
@@ -500,6 +505,8 @@ data class Stretch(
     val points: List<StretchPoint> = emptyList(),
     /** The temperament's end ([TunerSettings.temperamentHighMidi]); A4 for a tuning saved before 15 Nov 2026. */
     val temperamentHighMidi: Int = TunerSettings.TEMPERAMENT_HIGH,
+    /** The tuning's temperament ([TunerSettings.temperament]); equal for a tuning saved before 22 Nov 2026. */
+    val temperament: at.clavierhaus.claviertuner.tuning.Temperament = at.clavierhaus.claviertuner.tuning.Temperament.EQUAL,
 )
 
 /**
@@ -561,6 +568,8 @@ class SettingsModel(
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
             temperamentHighMidi = i("temperamentHighMidi", d.temperamentHighMidi)
                 .coerceIn(TunerSettings.TEMPERAMENT_HIGH, TunerSettings.MAX_TEMPERAMENT_HIGH),
+            temperament = store.get("temperament")?.let { n -> at.clavierhaus.claviertuner.tuning.Temperament.entries.firstOrNull { it.name == n } }
+                ?: d.temperament,
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),
             octaveTreble = o("octaveTreble", d.octaveTreble),
@@ -605,6 +614,7 @@ class SettingsModel(
     private fun save(s: TunerSettings) {
         store.put("temperamentLowMidi", s.temperamentLowMidi.toString())
         store.put("temperamentHighMidi", s.temperamentHighMidi.toString())
+        store.put("temperament", s.temperament.name)
         store.put("octaveBass", s.octaveBass.name)
         store.put("octaveMiddle", s.octaveMiddle.name)
         store.put("octaveTreble", s.octaveTreble.name)

@@ -5,6 +5,15 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
+## Unreleased
+
+### 2026-11-22
+- **The engine knows the named temperaments**: Werckmeister III, Kirnberger
+  III, Vallotti, Young II, Kellner and quarter-comma meantone besides equal,
+  each worked out from its definition (which fifths are narrowed, by what
+  share of which comma), laid over the stretch with A4 unmoved and kept with
+  the tuning. Equal temperament, as before, unless another is chosen.
+
 ## 0.11.0 -- 2026-11-22
 
 ### 2026-11-22
