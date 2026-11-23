@@ -6,6 +6,7 @@ New
 
 Changed
 - Settings as one list per tab: Tuning, Stretch, Piano, App, Advanced, Help, About.
+- Help in nine topics: a five-line Quick start, then A4, the sampling, the octave types, the temperaments, the tuning screen, above C6, and what each setting does.
 - Done in the sampling sets the bass to the octave type your sampled strings suggest, and the tuning starts.
 
 Please try

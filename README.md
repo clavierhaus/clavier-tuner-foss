@@ -13,15 +13,15 @@ Made by [clavierhaus.at](https://clavierhaus.at), a recording studio in Vienna w
 1887 Steinway D, by someone who wanted to see what his instruments actually do.
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/6.png" width="100%" alt="Tuning G#2: a band for every partial">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="100%" alt="Tuning E4: a band for every partial, the keys tuned in green at the foot">
 </p>
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="49%" alt="Setting A4 and the temperament octave">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="49%" alt="Sampling the piano: the keys measured, the next one offered">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="49%" alt="The tuning screen: A4, the octave types and the strobe along the top, the three steps, the keyboard">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="49%" alt="The strobe's three choices: one strobe, the lowest partials, all partials">
 </p>
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="49%" alt="The hub">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="This tuning's stretch: octave types per region">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="49%" alt="The home screen">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="49%" alt="Settings: one list per tab">
 </p>
 
 ## Quickstart

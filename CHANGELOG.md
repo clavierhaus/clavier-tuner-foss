@@ -31,6 +31,9 @@ reconstructed from the commit history that day.
   stretch preset and the tolerance are under Tuning, how the screen reads
   under Advanced.
 - The home screen's doors: the first word white, the rest orange.
+- **Help in nine topics.** A Quick start of five lines from A4 to the first
+  note, then a topic each for A4, the sampling, the octave types and stretch,
+  the temperaments, the tuning screen, above C6, and what each setting does.
 
 ### 2026-11-22
 - **The engine knows the named temperaments**: Werckmeister III, Kirnberger

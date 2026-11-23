@@ -111,7 +111,7 @@ fun TunerSettingsScreen(
                 }),
         )),
         SettingsTab(t(K.settings_tab_advanced), listOf(readingPage(s, model))),
-        SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic(), temperamentsTopic()) + extraHelpTopics)),
+        SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), helpTopics(rangeFixed = lowestKeyRow == null) + extraHelpTopics)),
         SettingsTab(t(K.settings_page_about), listOf(
             SettingsPage(t(K.settings_page_about),
                 left = {

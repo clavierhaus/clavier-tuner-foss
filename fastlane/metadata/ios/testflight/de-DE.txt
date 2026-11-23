@@ -6,6 +6,7 @@ Neu
 
 Geändert
 - Einstellungen als eine Liste je Reiter: Stimmen, Spreizung, Klavier, App, Erweitert, Hilfe, Über.
+- Hilfe in neun Themen: ein Schnellstart in fünf Zeilen, dann A4, das Vermessen, die Oktavtypen, die Temperaturen, der Stimmbildschirm, über C6 und was jede Einstellung tut.
 - Fertig beim Vermessen setzt den Bass auf den Oktavtyp, den Ihre vermessenen Saiten nahelegen, und die Stimmung beginnt.
 
 Bitte ausprobieren
