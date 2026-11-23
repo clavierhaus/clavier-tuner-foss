@@ -1,0 +1,19 @@
+Clavier Tuner is a piano tuning app for technicians, built on one idea: the only truth about a string is a measurement of that string.
+
+A4 ON THE STRING YOU CHOOSE
+Set the pitch with − and +, or slide a finger across them. Strike each string of A4 alone and tune it until the strobe stands still.
+
+MEASURE FIRST
+Strike single strings with the others muted, any keys in any order: eight at least, one in the lowest octave and one from G#5 to G6 among them, spread over the keyboard. The keyboard at the foot dots and names the next key to sample. From those strings the app measures the inharmonicity of your piano and works out where every note belongs, before you tune the first one. The stretch comes from this instrument, not from a table.
+
+TUNE BY THE STROBE
+The app follows the key you strike and listens to the partial a tuner would listen to in that register. The strobe shows that partial against its target to a tenth of a cent, at 47 readings a second; a string that wobbles is shown wobbling. Show one strobe, the lowest partials or every partial, each in its own band: a clean string is one pattern that comes to a standstill, a false partial is the one out of step. When the strobe stands still within your tolerance, the note is kept and its key turns green. Above C6, where strings ring for half a second, two bars show each strike's pitch against the key an octave below.
+
+YOUR PIANO, YOUR DEVICE
+The edge across the top shows what this tuning is tuned to: A4, the temperament octave, the octave types. A tap changes them. Octave type and extra stretch at three or six points of the range, from 2:1 to 10:5, the double octave 4:1 and the twelfth 3:1; the sampling suggests the bass's type from your strings. Equal temperament. The tuning is kept on your device in one sealed file: continue tomorrow where you stopped. No account, no server, nothing leaves the device. The microphone is read with the system's processing kept to its minimum.
+
+HONEST ABOUT WHAT IT IS NOT
+Pitch raises are out of scope by design: a piano far from pitch needs a pitch raise first. Unisons are tuned by ear.
+
+OPEN SOURCE, NOT FREE BEER
+The code is open (Apache 2.0): the engine, its tests and the documents it is judged by. Anyone who knows how can build the app and put it on their own iPhone; be our guest. The price here pays for the infrastructure and for the time it saves you: you install it, and nothing wastes your time.

@@ -1,0 +1,1 @@
+Sample your piano's strings and the app works out where every note belongs on this instrument. Then tune by the strobe, to a tenth of a cent.

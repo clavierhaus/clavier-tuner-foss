@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 #
 # release-ios.sh -- the iPhone app to TestFlight, with what its testers read (Peter, 10 Nov 2026: "Could you do this
-# as a release-ios.sh in foss as soon as new things happen?").
+# as a release-ios.sh in foss as soon as new things happen?"), built on Codemagic since 23 Nov 2026 (Peter, 22:35: "Now I
+# would like to try out my new ios build service at Codemagic").
 #
 #   ./scripts/release-ios.sh          the checks, then one question
 #   ./scripts/release-ios.sh --yes    without the question: Peter's yes on Android is already given
-#   ./scripts/release-ios.sh --notes-for 175
-#                                     only the notes and the testers, for build 175 already on TestFlight; nothing
-#                                     is built (10 Nov 2026: 175 was uploaded and its notes refused)
+#   ./scripts/release-ios.sh --notes-for 1003
+#                                     only the notes and the testers, for a build already on TestFlight; nothing is built
 #
 # The order does not change: the iPhone is built after Android, never before. Android is built on the X1, Peter tests
-# it and says yes, and only then does this run, on the X1 or in a session on his word. What it does:
+# it and says yes, and only then does this run, on the X1. What it does:
 #   1. checks: a clean tree on main, in sync with origin; the iPhone's version the same as Android's; the notes
 #      fastlane/metadata/ios/testflight/<locale>.txt written for this version (first line the version, en-US at
-#      least, at most 4000 characters); gh signed in;
-#   2. starts the build workflow by hand with TestFlight chosen: the iPhone's checks, the app signed and uploaded;
-#   3. in that run scripts/testflight.py waits for Apple's processing, writes What to Test from the notes and gives
-#      the build to the tester groups (Beta App Review when an external group is among them);
-#   4. follows the run here until it ends and says what came of it, the build number with it.
-# A session keeps the notes current with every change a tester would notice, as it keeps CHANGELOG.md.
+#      least, at most 4000 characters); App Store Connect ready for testers (scripts/testflight_ready.py);
+#   2. starts codemagic.yaml's foss-testflight through Codemagic's API and follows it: the framework, the archive signed,
+#      the upload;
+#   3. here, on the X1, scripts/testflight.py waits for Apple's processing, writes What to Test from the notes and gives
+#      the build to the tester groups (Beta App Review when an external group is among them): an hour of waiting costs
+#      no Mac minute.
+# Codemagic's API token: ~/.clavier-codemagic/token (Codemagic > Teams > Personal Account > Integrations > Codemagic API);
+# the app's id is looked up once and kept in ~/.clavier-codemagic/app-foss. The App Store Connect key: ASC_KEY, or the
+# newest AuthKey_<ID>.p8 in ~/Downloads, as testflight_ready.py finds it. A session keeps the notes current with every
+# change a tester would notice, as it keeps CHANGELOG.md.
 #
 set -euo pipefail
 B=$'\033[1m'; X=$'\033[0m'
@@ -37,10 +41,17 @@ done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 cd "$ROOT"
+BUNDLE=at.clavierhaus.claviertuner
 VERSION="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' androidApp/build.gradle.kts)"
 IOS="$(sed -n 's/^ *MARKETING_VERSION: "\(.*\)"/\1/p' iosApp/project.yml)"
 NOTES=fastlane/metadata/ios/testflight
-REPO="$(git remote get-url origin | sed -E 's#\.git$##; s#.*[/:]([^/]+/[^/]+)$#\1#')"
+ISSUER_DEFAULT="4aff3636-5757-45f5-b9f5-58987d53bb80"   # the team's, as testflight_ready.py has it
+
+# the App Store Connect key on the X1, for testflight.py here
+KEY="${ASC_KEY:-$(ls -t "$HOME"/Downloads/AuthKey_*.p8 2>/dev/null | head -n1 || true)}"
+[ -n "$KEY" ] && [ -f "$KEY" ] || die "no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in ~/Downloads"
+KEY_ID="${ASC_KEY_ID:-$(basename "$KEY" .p8 | sed 's/^AuthKey_//')}"
+ISSUER="${ASC_ISSUER:-$ISSUER_DEFAULT}"
 
 # 1. the checks
 [ -n "$VERSION" ] || die "no versionName in androidApp/build.gradle.kts"
@@ -56,65 +67,71 @@ done
 [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || die "not on main"
 git fetch -q origin
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || die "main not in sync with origin"
-command -v gh >/dev/null || die "gh missing"
-gh api "repos/$REPO" --jq .full_name >/dev/null 2>&1 || die "gh cannot reach $REPO"
-HEAD="$(git rev-parse HEAD)"
 ok "$VERSION, $(git rev-parse --short HEAD), notes: $(cd "$NOTES" && ls *.txt | sed 's/\.txt$//' | paste -sd' ')"
+ASC_KEY="$KEY" ASC_KEY_ID="$KEY_ID" ASC_ISSUER="$ISSUER" python3 scripts/testflight_ready.py --bundle-id "$BUNDLE" \
+  || die "App Store Connect not ready (above)"
+
+notes() {  # notes <build>: What to Test and the testers, here on the X1
+  python3 scripts/testflight.py --key "$KEY" --key-id "$KEY_ID" --issuer "$ISSUER" --bundle-id "$BUNDLE" \
+    --version "$VERSION" --build "$1" --notes "$NOTES" --wait 120
+}
 
 if [ -n "$NOTES_FOR" ]; then
-  YES=1    # the build is already on TestFlight: nothing new goes to Apple but its notes
+  notes "$NOTES_FOR"
+  ok "notes and testers for build $NOTES_FOR"
+  exit 0
 fi
+
+# 2. Codemagic
+CM="$HOME/.clavier-codemagic"
+TOKEN="${CODEMAGIC_TOKEN:-$(cat "$CM/token" 2>/dev/null || true)}"
+APP="${CODEMAGIC_APP:-$(cat "$CM/app-foss" 2>/dev/null || true)}"
+[ -n "$TOKEN" ] || die "no Codemagic token: Codemagic > Teams > Personal Account > Integrations > Codemagic API, show, into $CM/token"
+api() {  # api GET|POST path [json]
+  curl -sS -f -X "$1" "https://api.codemagic.io$2" -H "x-auth-token: $TOKEN" -H "Content-Type: application/json" ${3:+-d "$3"}
+}
+if [ -z "$APP" ]; then
+  APP="$(api GET /apps | python3 -c '
+import json, sys
+apps = json.load(sys.stdin).get("applications", [])
+hits = [a["_id"] for a in apps if "clavier-tuner-foss" in json.dumps(a.get("repository", {})) or a.get("appName") == "clavier-tuner-foss"]
+print(hits[0] if len(hits) == 1 else "")')" || true
+  [ -n "$APP" ] || die "Codemagic shows no single app for clavier-tuner-foss with this token: add the repository on codemagic.io first"
+  mkdir -p "$CM" && printf '%s\n' "$APP" > "$CM/app-foss"
+  ok "Codemagic app $APP, kept in $CM/app-foss"
+fi
+api GET "/apps/$APP" >/dev/null || die "Codemagic does not know app $APP with this token"
+
 if [ "$YES" -ne 1 ]; then
-  printf '  Send %s to TestFlight? Only after the yes on Android. [y/N] ' "$VERSION"
+  printf '  Send Clavier Tuner %s to TestFlight? Only after the yes on Android. [y/N] ' "$VERSION"
   read -r answer
   [ "$answer" = "y" ] || [ "$answer" = "Y" ] || die "not sent"
 fi
 
-# 2. the run
-SINCE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-if [ -n "$NOTES_FOR" ]; then
-  gh workflow run build.yml -R "$REPO" --ref main -f notes_for_build="$NOTES_FOR" >/dev/null
-else
-  gh workflow run build.yml -R "$REPO" --ref main -f testflight=true >/dev/null
-fi
-RUN=""
-for _ in $(seq 1 30); do
-  RUN="$(gh run list -R "$REPO" --workflow build.yml --event workflow_dispatch --limit 5 \
-    --json databaseId,createdAt,headSha --jq ".[] | select(.createdAt >= \"$SINCE\" and .headSha == \"$HEAD\") | .databaseId" | head -n1)"
-  [ -n "$RUN" ] && break
-  sleep 4
-done
-[ -n "$RUN" ] || die "the run did not appear on GitHub within two minutes"
-NUMBER="$(gh run view "$RUN" -R "$REPO" --json number --jq .number)"
-if [ -n "$NOTES_FOR" ]; then
-  BUILD="$NOTES_FOR"; JOB=testflight-notes
-  ok "run $RUN started: the notes and the testers for build $BUILD, a few minutes"
-else
-  BUILD=$((100 + NUMBER)); JOB=testflight
-  ok "run $RUN started: build $BUILD; the Mac builds and uploads, then Linux waits for Apple's processing (up to 90 minutes)"
-fi
+ID="$(api POST /builds "{\"appId\":\"$APP\",\"workflowId\":\"foss-testflight\",\"branch\":\"main\"}" \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["buildId"])')" || die "Codemagic refused the build"
+ok "Codemagic build $ID started: https://codemagic.io/app/$APP/build/$ID"
 
-# 4. followed to its end: a line when a job changes, and a line for each step of the TestFlight job, so the screen
-# moves every few minutes (Peter, 10 Nov 2026: "CLI is static", twenty minutes without a line)
-seen=""; step=""
+seen=""
 while :; do
-  state="$(gh run view "$RUN" -R "$REPO" --json status,conclusion,jobs \
-    --jq '[.status, (.conclusion // ""), (.jobs | map(.name + ":" + (if .status == "completed" then .conclusion else .status end)) | join(" ")),
-           ((.jobs[] | select(.name == "'"$JOB"'") | .steps | map(select(.status == "in_progress")) | .[0].name) // "")] | join("|")' 2>/dev/null || true)"
-  if [ -n "$state" ] && [ "$(echo "$state" | cut -d'|' -f1-3)" != "$(echo "$seen" | cut -d'|' -f1-3)" ]; then
-    printf '  .. %s\n' "$(echo "$state" | cut -d'|' -f3)"
+  state="$(api GET "/builds/$ID" | python3 -c '
+import json, sys
+b = json.load(sys.stdin)["build"]
+now = next((a["name"] for a in b.get("buildActions", []) if a.get("status") in ("building", "in_progress")), "")
+print(b["status"] + "|" + str(b.get("buildNumber", "")) + "|" + now)' 2>/dev/null || true)"
+  if [ -n "$state" ] && [ "$state" != "$seen" ]; then
+    printf '  .. %s  %s  %s\n' "$(date +%H:%M)" "$(cut -d'|' -f1 <<<"$state")" "$(cut -d'|' -f3 <<<"$state")"
+    seen="$state"
   fi
-  now="$(echo "$state" | cut -d'|' -f4)"
-  if [ -n "$now" ] && [ "$now" != "$step" ]; then
-    printf '  .. %s  %s: %s\n' "$(date +%H:%M)" "$JOB" "$now"
-    step="$now"
-  fi
-  [ -n "$state" ] && seen="$state"
-  [ "$(echo "$state" | cut -d'|' -f1)" = "completed" ] && break
+  case "$(cut -d'|' -f1 <<<"$state")" in
+    finished) break ;;
+    failed|canceled|timeout|skipped) die "Codemagic build $ID: $(cut -d'|' -f1 <<<"$state") (https://codemagic.io/app/$APP/build/$ID)" ;;
+  esac
   sleep 30
 done
-if [ "$(echo "$seen" | cut -d'|' -f2)" = "success" ]; then
-  ok "$VERSION build $BUILD on TestFlight, What to Test written, given to the testers"
-else
-  die "run $RUN: $(echo "$seen" | cut -d'|' -f2); what failed: gh run view $RUN -R $REPO --log-failed"
-fi
+BUILD=$((1000 + $(cut -d'|' -f2 <<<"$seen")))
+ok "uploaded: Clavier Tuner $VERSION build $BUILD"
+
+# 3. the notes and the testers, here
+notes "$BUILD"
+ok "Clavier Tuner $VERSION build $BUILD on TestFlight, notes and testers set"

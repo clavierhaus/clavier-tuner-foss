@@ -1,0 +1,19 @@
+Clavier Tuner est une app d’accord de piano pour les techniciens, bâtie sur une idée : la seule vérité sur une corde est la mesure de cette corde.
+
+A4 SUR LA CORDE DE VOTRE CHOIX
+Réglez le diapason avec − et +, ou glissez le doigt dessus. Frappez chaque corde de A4 seule et accordez-la jusqu’à ce que le stroboscope s’arrête.
+
+MESURER D’ABORD
+Frappez des cordes seules, les autres étouffées, n’importe quelles touches dans n’importe quel ordre : huit au moins, dont une dans l’octave la plus grave et une de G#5 à G6, réparties sur le clavier. Le clavier en bas marque et nomme la prochaine touche à mesurer. De ces cordes, l’app mesure l’inharmonicité de votre piano et établit où chaque note doit se tenir, avant que vous accordiez la première. L’étirement vient de cet instrument, pas d’une table.
+
+ACCORDER AU STROBOSCOPE
+L’app suit la touche frappée et écoute le partiel qu’un accordeur écouterait dans ce registre. Le stroboscope montre ce partiel contre sa cible au dixième de cent, 47 fois par seconde ; une corde qui oscille est montrée oscillant. Un stroboscope, les partiels les plus graves ou chaque partiel, chacun dans sa bande : une corde propre est un motif qui s’immobilise, un partiel faux est celui qui sort du pas. Quand le stroboscope s’arrête dans votre tolérance, la note est gardée et sa touche passe au vert. Au-dessus de C6, où les cordes sonnent une demi-seconde, deux barres montrent la hauteur de chaque frappe contre la touche une octave plus bas.
+
+VOTRE PIANO, VOTRE APPAREIL
+Le bord en haut montre sur quoi cet accord est fait : A4, l’octave de partition, les types d’octave. Un toucher les change. Type d’octave et étirement supplémentaire en trois ou six points de l’étendue, de 2:1 à 10:5, la double octave 4:1 et la douzième 3:1 ; la mesure suggère le type des basses d’après vos cordes. Tempérament égal. L’accord est gardé sur l’appareil dans un fichier scellé : reprenez demain là où vous vous êtes arrêté. Pas de compte, pas de serveur, rien ne quitte l’appareil. Le micro est lu avec le moins de traitement du système possible.
+
+HONNÊTE SUR CE QU’ELLE N’EST PAS
+La mise au diapason d’un piano très bas est hors de propos, par choix : elle doit être faite d’abord. Les unissons s’accordent à l’oreille.
+
+CODE OUVERT, PAS GRATUIT
+Le code est ouvert (Apache 2.0) : le moteur, ses tests et les documents qui le jugent. Qui sait le faire peut construire l’app et l’installer sur son propre iPhone ; faites donc. Le prix ici paie l’infrastructure et le temps qu’il vous épargne : vous installez, et rien ne vous fait perdre de temps.

@@ -1,0 +1,19 @@
+Clavier Tuner ist eine Stimm-App für Klaviertechniker, auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
+
+A4 AUF DER SAITE IHRER WAHL
+Die Tonhöhe mit − und + einstellen oder mit dem Finger darüber wischen. Jede Saite von A4 allein anschlagen und stimmen, bis der Strobe stillsteht.
+
+ZUERST MESSEN
+Einzelne Saiten anschlagen, die übrigen abgedämpft, beliebige Tasten in beliebiger Reihenfolge: mindestens acht, darunter eine in der tiefsten Oktave und eine von G#5 bis G6, über die Tastatur verteilt. Die Tastatur unten markiert und nennt die nächste Taste zum Vermessen. Aus diesen Saiten misst die App die Inharmonizität Ihres Klaviers und bestimmt, wohin jeder Ton gehört, bevor der erste gestimmt wird. Die Spreizung kommt von diesem Instrument, nicht aus einer Tabelle.
+
+NACH DEM STROBE STIMMEN
+Die App folgt der angeschlagenen Taste und hört auf den Teilton, auf den ein Stimmer in dieser Lage hört. Der Strobe zeigt diesen Teilton gegen sein Ziel auf ein Zehntel Cent, 47-mal in der Sekunde; eine Saite, die schwankt, wird schwankend gezeigt. Ein Strobe, die tiefsten Teiltöne oder jeder Teilton, jeder in seinem Band: Eine saubere Saite ist ein Muster, das zum Stillstand kommt, ein falscher Teilton ist der, der aus dem Takt fällt. Steht der Strobe innerhalb Ihrer Toleranz still, ist der Ton gestimmt und seine Taste wird grün. Über C6, wo die Saiten eine halbe Sekunde klingen, zeigen zwei Balken die Tonhöhe jedes Anschlags gegen die Taste eine Oktave tiefer.
+
+IHR KLAVIER, IHR GERÄT
+Der Rand oben zeigt, worauf diese Stimmung gestimmt wird: A4, die Temperaturoktave, die Oktavtypen. Ein Tippen ändert sie. Oktavtyp und zusätzliche Spreizung an drei oder sechs Punkten des Tonumfangs, von 2:1 bis 10:5, die Doppeloktave 4:1 und die Duodezime 3:1; das Vermessen schlägt den Oktavtyp des Basses aus Ihren Saiten vor. Gleichstufige Temperatur. Die Stimmung bleibt in einer versiegelten Datei auf dem Gerät; morgen geht es weiter, wo Sie aufgehört haben. Kein Konto, kein Server, nichts verlässt das Gerät. Das Mikrofon wird mit so wenig Klangbearbeitung des Systems gelesen, wie es zulässt.
+
+EHRLICH DARIN, WAS SIE NICHT IST
+Vorstimmen ist mit Absicht nicht vorgesehen: Ein Klavier weit weg von der Stimmhöhe braucht zuerst ein Vorstimmen. Chöre werden nach dem Gehör gestimmt.
+
+OFFENER CODE, KEIN FREIBIER
+Der Code ist offen (Apache 2.0): die Engine, ihre Tests und die Dokumente, an denen sie gemessen wird. Wer weiß, wie es geht, kann die App selbst bauen und auf sein eigenes iPhone bringen; nur zu. Der Preis hier bezahlt die Infrastruktur und die Zeit, die er Ihnen erspart: installieren, und nichts kostet Sie Zeit.
