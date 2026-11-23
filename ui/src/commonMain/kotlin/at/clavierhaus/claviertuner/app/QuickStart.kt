@@ -35,6 +35,7 @@ internal fun temperamentsTopic(): HelpTopic = HelpTopic(
     t(K.help_temp_title),
     listOf(
         t(K.help_temp_h1) to listOf(t(K.help_temp_choose)),
-        t(K.help_temp_h2) to NamedTemperament.entries.map { named -> temperamentName(named) + ": " + t("help.temp." + temperamentKey(named).removePrefix("temperament.")) },
+        t(K.help_temp_h2) to NamedTemperament.entries.map { named -> temperamentName(named) + ": " + t("help.temp." + temperamentKey(named).removePrefix("temperament.")) } +
+            listOf(t(K.temperament_schubert) + ": " + t(K.help_temp_schubert)),
     ),
 )

@@ -22,6 +22,7 @@ import at.clavierhaus.claviertuner.Brand
 import at.clavierhaus.claviertuner.i18n.K
 import at.clavierhaus.claviertuner.i18n.noteName
 import at.clavierhaus.claviertuner.i18n.t
+import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.TunerSettings
@@ -94,7 +95,7 @@ internal fun OctavesWork(
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED)
     Row(modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.weight(0.6f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (s.hasPlaces) StretchPlaces(s, onChange) else {
+            if (SchubertTune.isOn(s)) MixedPlaces(s) else if (s.hasPlaces) StretchPlaces(s, onChange) else {
                 RegionRow(t(K.settings_page_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass,
                     { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBass = w) } })
                 RegionRow(t(K.settings_page_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle,

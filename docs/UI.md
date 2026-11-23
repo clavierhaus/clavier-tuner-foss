@@ -17,6 +17,10 @@ Four rules bind every screen. They are checked, not remembered.
    stuff under Help, that rule does not apply" — its documents will be longer
    than a page): the Help tab's text wraps and scrolls, drawn by `HelpSteps`
    in `ui/HelpParts.kt`, the one file `LawWallsTest` exempts by name.
+   *And the settings' tabs* (Peter, 23 Nov 2026: "foss and pro get the same look of settings as plus. Strike the law
+   about scrolling for the settings tabs"): each tab is one list of cards that scrolls, drawn by `SettingsGear` in
+   `ui/SettingsGear.kt`, exempt by name beside HelpParts; LayoutCheckTest counts a text scrolled out of the window as
+   scrolled, not cut. Every other screen still does not scroll.
 3. **No text is ever cut.** No clipping, no ellipsis. A page's content is
    budgeted for the smallest supported pane at the smallest legible size;
    type that steps down is a safety net that must never fire on a supported

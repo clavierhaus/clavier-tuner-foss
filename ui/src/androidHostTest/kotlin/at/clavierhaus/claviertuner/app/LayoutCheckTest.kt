@@ -38,6 +38,7 @@ import at.clavierhaus.claviertuner.audio.WavPcm
 import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.MemoryStore
+import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.SettingsModel
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import org.junit.Assert.fail
@@ -64,7 +65,8 @@ import java.io.File
  * - **too small**: stepped down below [MIN_SP], which is no longer type a tuner reads at the piano;
  * - **two sizes in one element**: a node tagged [ELEMENT] holds text of more than one size.
  * Every picture is written to `ui/build/layout-check/<pane>-<language>/`, so the eye can follow the
- * machine. Help scrolls by law (docs/UI.md) and is not drawn here.
+ * machine. Help scrolls by law (docs/UI.md) and is not drawn here; the settings' tabs scroll since 23 Nov 2026, and a text
+ * scrolled out of their window is not counted as cut.
  *
  * Says so when it cannot find its recordings, instead of passing (ledger, 5 Oct 2026). The recordings are found
  * as every recording test finds it: `CLAVIER_DATA`, or `data/recordings` above the working directory.
@@ -141,7 +143,10 @@ class LayoutCheckTest {
             if ((0 until r.lineCount).any { r.getLineRight(it) - r.getLineLeft(it) > w + 1.5f } || r.getLineBottom(r.lineCount - 1) > h + 1.5f)
                 problems += "$at is cut (runs past its box)"
             val shown = n.boundsInRoot
-            if (shown.width < n.size.width - 1.5f || shown.height < n.size.height - 1.5f)
+            // in a list that scrolls (the settings' tabs since 23 Nov 2026, Peter: "Strike the law about scrolling for the
+            // settings tabs") a text below or above the window is scrolled to, not cut: only its width is asked there
+            val scrolls = generateSequence(n.parent) { it.parent }.any { it.config.contains(SemanticsProperties.VerticalScrollAxisRange) }
+            if (shown.width < n.size.width - 1.5f && !(scrolls && shown.height <= 0f) || !scrolls && shown.height < n.size.height - 1.5f)
                 problems += "$at is cut by its container (shows ${shown.width.toInt()}×${shown.height.toInt()} of ${n.size.width}×${n.size.height} px)"
             (0 until r.lineCount - 1).map { r.getLineEnd(it) }
                 .firstOrNull { e -> e in 1 until text.length && text[e - 1].isLetterOrDigit() && text[e].isLetterOrDigit() }
@@ -213,18 +218,24 @@ class LayoutCheckTest {
         // the octave types in the work's place, from the edge's Octaves
         octavesOpen = true
         show("octaves", tune); look(where, dir, "08-octaves")
+        // Ron Koval's Schubert, chosen under Temperament: its places in the octaves' work and in the Stretch tab
+        val before = model.settings.value
+        change { SchubertTune.applyTo(it) }
+        show("octaves schubert", tune); look(where, dir, "08-octaves-schubert")
+        show("settings schubert") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to 0) }
+        look(where, dir, "09-settings-schubert")
+        change { before }
         octavesOpen = false
-        // settings, every page but Help's (Help scrolls by law)
-        for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
-            show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }
-            look(where, dir, "09-settings-$tab-$page")
+        // settings, every tab but Help (Help scrolls by law): Tuning, Stretch, Piano, App, Advanced, About; each tab one list
+        // that scrolls since 23 Nov 2026, so the tab is opened and its page is the list's top
+        for (tab in listOf(0, 1, 2, 3, 4, 6)) {
+            show("settings $tab") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to 0) }
+            look(where, dir, "09-settings-$tab")
         }
-        // the Stretch tab with six points on: the choice and the six places (the breaks' page left on 22 Nov 2026)
+        // the Stretch tab with six points on: the six places (the breaks' page left on 22 Nov 2026)
         model.update { it.withSixPoints(true) }
-        for (page in 0..1) {
-            show("settings six $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to page) }
-            look(where, dir, "09-settings-six-$page")
-        }
+        show("settings six") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to 0) }
+        look(where, dir, "09-settings-six")
         model.update { it.withSixPoints(false) }
         // the hub, with a tuning to continue
         show("hub") { TunerHub(last = c.snapshot()?.let { SessionStore.Load.Ok(it) } ?: SessionStore.Load.None, onContinue = {}, onNew = {}, onSettings = {}) }

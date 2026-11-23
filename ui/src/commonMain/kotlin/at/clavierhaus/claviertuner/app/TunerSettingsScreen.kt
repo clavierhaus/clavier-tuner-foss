@@ -25,13 +25,14 @@ import at.clavierhaus.claviertuner.ui.LocalHelpText
 import androidx.compose.runtime.CompositionLocalProvider
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.SettingsModel
+import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.Notes
 import at.clavierhaus.claviertuner.ui.ChoiceRow
 import at.clavierhaus.claviertuner.ui.ReadOnlyRow
 import at.clavierhaus.claviertuner.ui.SettingsPage
-import at.clavierhaus.claviertuner.ui.SettingsScreen
+import at.clavierhaus.claviertuner.ui.SettingsGear
 import at.clavierhaus.claviertuner.ui.SettingsSection
 import at.clavierhaus.claviertuner.ui.SettingsTab
 import at.clavierhaus.claviertuner.ui.StepperRow
@@ -42,30 +43,23 @@ import kotlin.math.round
 private fun tenths(x: Double) = round(x * 10.0) / 10.0
 
 /**
- * The foss settings, drawn to the map of 3 Oct 2026 (Pro's
- * docs/SCREEN-REVAMP.md, "Settings: tabs, sub-tabs and sections"): four tabs
- * by function, each page two columns of rows that say their name, what an
- * entry means behind its (i), nothing scrolling.
+ * The settings, in the gear of the restructured interface (Plus's of 21-22 Nov 2026; the free app's and Pro's since 23 Nov
+ * 2026, Peter: "foss and pro get the same look of settings as plus. Strike the law about scrolling for the settings tabs"):
+ * tab buttons across the top, the open tab one list of cards that scrolls (SettingsGear), sorted by how often a tuner needs a
+ * thing:
  *
- * - Tuning: Temperament · Reading
- * - Stretch: Wound · Bass · Middle · Treble (the scale breaks left on 22 Nov 2026)
- * - Piano: Range
- * - Help: one page, the index of topics on the left and the open topic on the right (14 Oct 2026);
- *   Quick start is the first topic, an edition adds its own after it, Pro the book's
- * - App: About
+ * - Tuning: the temperament's order and the tolerance, the stretch preset, the two bars above C6;
+ * - Stretch: each region, or the six places;
+ * - Piano: the range, and an edition's piano pages; an edition's tabs after it;
+ * - App: an edition's pages, the phone's bars;
+ * - Advanced: how the screen reads;
+ * - Help: one page, the index of topics and the open topic, scrolling on their own;
+ * - About.
  *
- * The same in both editions since 4 Oct 2026 (CLAUDE.md, "What Pro is"):
- * this screen lives in the ui library, both apps mount it, and Pro adds the
- * book's own pages and tabs through [extraPianoPages], [extraTabs] and
- * [extraAppPages]. Language and Probe left the App tab on 10 Oct 2026 for the
- * free edition's release (Peter: "remove the language tab, the probe tab --
- * and that should be it"): the free app follows the phone's language, and the
- * probe -- the engine fed a recording -- is a working tool of Pro's. Both are
- * Pro's pages now (ProSettings.kt) and arrive through [extraAppPages].
- *
- * A4 is not here: it is the piano's, set at the hub where the session starts.
- * [open] names a tab and page to start on — the tuning screen reaches the
- * stretch of the region it is in with one tap.
+ * Every row is the one it was, saying and changing the same setting; only the tabs they stand in change. Until 23 Nov 2026
+ * the tabs were Tuning (Temperament, Reading, Above C6), Stretch, Piano, an edition's, Help, App (its pages, the bars, About),
+ * each page two columns and nothing scrolling (the map of 3 Oct 2026). [open] names a tab to start on; the page within it
+ * is the list's top.
  */
 @Composable
 fun TunerSettingsScreen(
@@ -101,57 +95,78 @@ fun TunerSettingsScreen(
 
     // Help's text size reaches every help page, whichever edition built it (HelpParts.LocalHelpText)
     CompositionLocalProvider(LocalHelpText provides HelpText(s.helpTextSp) { sp -> model.update { it.copy(helpTextSp = sp) } }) {
-    SettingsScreen(
+    val stretch = stretchPages(s, model)
+    val tabs = listOf(
+        SettingsTab(t(K.settings_tab_tuning), listOf(temperamentPage(s, model), stretch.first(), topOctavePage(s, model))),
+        SettingsTab(t(K.settings_tab_stretch), stretch.drop(1)),
+        SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow, lowestPlainRow) })) + extraPianoPages),
+    ) + extraTabs + listOf(
+        SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
+            // the phone's bars outside the tuning screen (Peter, 23 Oct 2026)
+            SettingsPage(t(K.settings_page_display),
+                left = {
+                    SettingsSection(t(K.settings_page_display), info = t(K.settings_note_bars))
+                    SwitchRow(t(K.settings_navigationBar), s.showNavigationBar) { on -> model.update { it.copy(showNavigationBar = on) } }
+                    SwitchRow(t(K.settings_statusBar), s.showStatusBar) { on -> model.update { it.copy(showStatusBar = on) } }
+                }),
+        )),
+        SettingsTab(t(K.settings_tab_advanced), listOf(readingPage(s, model))),
+        SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic(), temperamentsTopic()) + extraHelpTopics)),
+        SettingsTab(t(K.settings_page_about), listOf(
+            SettingsPage(t(K.settings_page_about),
+                left = {
+                    SettingsSection("Clavier Tuner")
+                    ReadOnlyRow(t(K.about_version), version)
+                    ReadOnlyRow(t(K.about_core), "clavier-tuner-foss")
+                    ReadOnlyRow(t(K.about_typeface), t(K.about_typefaceValue))
+                    ReadOnlyRow(t(K.about_icon), "Material Design icons · Apache 2.0")
+                },
+                right = {
+                    SettingsSection(t(K.about_licence), info = ABOUT_NOTE)
+                    ReadOnlyRow("Clavier Tuner", "Apache License 2.0")
+                    ReadOnlyRow("clavierhaus.at", t(K.about_vienna))
+                    // which microphone the app hears through
+                    MicrophoneRow()
+                }),
+        )),
+    )
+    SettingsGear(
+        tabs = tabs,
         onClose = onBack,
         onHome = onHome,
         open = open,
-        tabs = listOf(
-            SettingsTab(t(K.settings_tab_tuning), tuningPages(s, model)),
-            SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
-            SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow, lowestPlainRow) })) + extraPianoPages),
-        ) + extraTabs + listOf(
-            SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic(), temperamentsTopic()) + extraHelpTopics)),
-            SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
-                // the phone's bars outside the tuning screen (Peter, 23 Oct 2026)
-                SettingsPage(t(K.settings_page_display),
-                    left = {
-                        SettingsSection(t(K.settings_page_display), info = t(K.settings_note_bars))
-                        SwitchRow(t(K.settings_navigationBar), s.showNavigationBar) { on -> model.update { it.copy(showNavigationBar = on) } }
-                        SwitchRow(t(K.settings_statusBar), s.showStatusBar) { on -> model.update { it.copy(showStatusBar = on) } }
-                    }),
-                SettingsPage(t(K.settings_page_about),
-                    left = {
-                        SettingsSection("Clavier Tuner")
-                        ReadOnlyRow(t(K.about_version), version)
-                        ReadOnlyRow(t(K.about_core), "clavier-tuner-foss")
-                        ReadOnlyRow(t(K.about_typeface), t(K.about_typefaceValue))
-                        ReadOnlyRow(t(K.about_icon), "Material Design icons · Apache 2.0")
-                    },
-                    right = {
-                        SettingsSection(t(K.about_licence), info = ABOUT_NOTE)
-                        ReadOnlyRow("Clavier Tuner", "Apache License 2.0")
-                        ReadOnlyRow("clavierhaus.at", t(K.about_vienna))
-                        // which microphone the app hears through: on the right, where the small phone has the room
-                        MicrophoneRow()
-                    }),
-            )),
-        ),
+        // Help as one page: its index and its text scroll on their own (a list that scrolls cannot hold one that scrolls)
+        fullPage = setOf(tabs.size - 2),
     )
     }
 }
 
-/** The Tuning tab: what today's tuning does and how it reads. */
-private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> = listOf(
+
+/** The Tuning tab's first page: the temperament octave's order, and the tolerance that makes a key green. */
+private fun temperamentPage(s: TunerSettings, model: SettingsModel): SettingsPage =
     SettingsPage(t(K.settings_page_temperament),
         left = {
-            SettingsSection(t(K.settings_temperament))
-            // unequal temperaments are not offered until they run: nothing on a screen that does nothing
-            ReadOnlyRow(t(K.settings_temperamentOctave), "A3–A4", info = TEMPERAMENT_NOTE)
+            // the temperament itself and its octave are on the start screen's edge (its strip sets start, end and the
+            // temperament); the gear keeps the order, set once (Plus, 21 Nov 2026: a row that sets nothing is clutter)
+            SettingsSection(t(K.settings_order), info = TEMPERAMENT_NOTE)
+            SwitchRow(t(K.settings_temperamentFirst), s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
         },
         right = {
-            SettingsSection(t(K.settings_order))
-            SwitchRow(t(K.settings_temperamentFirst), s.temperamentFirst) { on -> model.update { it.copy(temperamentFirst = on) } }
-        }),
+            // the tolerance a general setting of the tuning (Plus, 22 Nov 2026, Peter: "That precision should be a general
+            // setting a tuner sets in regular settings")
+            SettingsSection(t(K.settings_matchWindow))
+            StepperRow(
+                t(K.settings_matchWindow), "±" + num(s.matchCents, 1) + " c",
+                canDecrease = s.matchCents > 0.101,
+                canIncrease = s.matchCents < 4.99,
+                info = READING_NOTE,
+                onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.1) * 10) / 10) } },
+                onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.1) * 10) / 10) } },
+            )
+        })
+
+/** Advanced: how the screen reads. */
+private fun readingPage(s: TunerSettings, model: SettingsModel): SettingsPage =
     SettingsPage(t(K.settings_page_reading),
         left = {
             SettingsSection(t(K.settings_screen))
@@ -196,23 +211,16 @@ private fun tuningPages(s: TunerSettings, model: SettingsModel): List<SettingsPa
                 onDecrease = { model.update { it.copy(readingMemoryS = steps[i - 1]) } },
                 onIncrease = { model.update { it.copy(readingMemoryS = steps[i + 1]) } },
             )
-            StepperRow(
-                t(K.settings_matchWindow), "±" + num(s.matchCents, 1) + " c",
-                canDecrease = s.matchCents > 0.101,
-                canIncrease = s.matchCents < 4.99,
-                info = READING_NOTE,
-                onDecrease = { model.update { it.copy(matchCents = round((it.matchCents - 0.1) * 10) / 10) } },
-                onIncrease = { model.update { it.copy(matchCents = round((it.matchCents + 0.1) * 10) / 10) } },
-            )
-        }),
-    // the two bars above C6, an experiment (OctaveBars, 16 Nov 2026), with a way back to the strobe at the piano. Here
-    // since 18 Nov 2026, among the settings of the app and not with the stretch, which is each tuning's own (Peter: "not in
-    // settings per tuning. Some tuners may not like it and should have the option to continue as they did")
-    SettingsPage(t(K.settings_page_topOctave), left = {
-        SwitchRow(t(K.settings_octaveBars), s.octaveBars) { on -> model.update { it.copy(octaveBars = on) } }
-        TextBlock(listOf(t(K.settings_note_octaveBars)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
-    }),
-)
+        })
+
+/**
+ * The two bars above C6, an experiment (OctaveBars, 16 Nov 2026), with a way back to the strobe: in the Tuning tab, what a
+ * tuner chooses once for every tuning (Peter, 18 Nov 2026); its note behind the i (Plus, 21 Nov 2026).
+ */
+private fun topOctavePage(s: TunerSettings, model: SettingsModel): SettingsPage = SettingsPage(t(K.settings_page_topOctave), left = {
+    SettingsSection(t(K.settings_page_topOctave), info = t(K.settings_note_octaveBars))
+    SwitchRow(t(K.settings_octaveBars), s.octaveBars) { on -> model.update { it.copy(octaveBars = on) } }
+})
 
 /** The Stretch tab: one page per region, named as the engine names them. */
 private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsPage> {
@@ -228,6 +236,8 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
             TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
+    // Ron Koval's octaves, set under Temperament (SchubertTune): shown, not set here
+    if (SchubertTune.isOn(s)) return listOf(choice, SettingsPage(t(K.temperament_schubert), left = { MixedPlaces(s) }))
     if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
     return listOf(
         choice,

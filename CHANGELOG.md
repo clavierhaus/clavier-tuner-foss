@@ -19,8 +19,17 @@ reconstructed from the commit history that day.
   switching. Done in the sampling sets the bass to the octave type your
   sampled strings suggest, and the tuning starts.
 - **Temperaments to choose.** Temperament on the edge lists them all:
-  equal, Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner and
-  quarter-comma meantone. Help has a topic on them.
+  equal, Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner,
+  quarter-comma meantone, and Schubert: Ron Koval's concert tuning as he
+  published it on Piano World (22 April 2014), equal temperament with his
+  octaves (the temperament octave about 70 % 4:2 and 30 % 2:1, the lowest
+  octave about 75 % 12:6). Another temperament takes his octaves out and the
+  stretch returns to the six points. Help has a topic on them. With thanks to
+  Ron Koval.
+- **Settings as one list per tab.** Tabs across the top (Tuning, Stretch,
+  Piano, App, Advanced, Help, About), each tab one list that scrolls. The
+  stretch preset and the tolerance are under Tuning, how the screen reads
+  under Advanced.
 - The home screen's doors: the first word white, the rest orange.
 
 ### 2026-11-22

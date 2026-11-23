@@ -44,7 +44,12 @@ class LawWallsTest {
      * all stuff under Help, that rule does not apply"); its parts live in this one file so that the
      * exemption is a name and not a judgement, and a scroll in any other file still fails here.
      */
-    private val EXEMPT = setOf("ui/HelpParts.kt")
+    private val EXEMPT = setOf(
+        "ui/HelpParts.kt",
+        // the settings' tabs, each one list that scrolls (Peter, 23 Nov 2026: "Strike the law about scrolling for the
+        // settings tabs"): the one frame that draws them
+        "ui/SettingsGear.kt",
+    )
 
     private fun repoRoot(): File {
         var d: File? = File(System.getProperty("user.dir")).absoluteFile
