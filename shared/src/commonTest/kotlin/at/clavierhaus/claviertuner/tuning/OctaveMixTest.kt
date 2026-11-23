@@ -107,7 +107,17 @@ class OctaveMixTest {
         }
         val t = session(ron)
         val off = (21..96).associateWith { et(t, it) }
-        for (m in 21..95) assertTrue(abs(off[m]!! - off[m + 1]!!) < 3.0, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: a border")
+        // Below A1 the octave goes over to about 75 % 12:6 at A0, and on this sampling's B there every key stands some 1-3.3 c
+        // flatter than the one above it (the X1, 23 Nov 2026: A0 -26.83 c, A#0 -23.46 c; recomputed outside the engine the
+        // same day, A0 -26.83 c, the steps from A0 up 3.26, 2.93, 2.63, 2.36 ... 0.97 c). The 3 c bound, taken from the six
+        // points' test, is a size, not a border: a border is a step out of line with its neighbours'. So there the keys fall
+        // steadily and each step differs from the next by less than half a cent; from A1 up the bounds stand as before.
+        for (m in 21..32) assertTrue(off[m]!! < off[m + 1]!!, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: not falling downward")
+        for (m in 21..30) {
+            val here = off[m + 1]!! - off[m]!!; val next = off[m + 2]!! - off[m + 1]!!
+            assertTrue(abs(here - next) < 0.5, "steps $here c at midi $m and $next c at ${m + 1}: a border")
+        }
+        for (m in 33..95) assertTrue(abs(off[m]!! - off[m + 1]!!) < 3.0, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: a border")
         for (m in 44..95) assertTrue(abs(off[m]!! - off[m + 1]!!) < 1.0, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: a border")
         assertEquals(OctaveType.O12_6, ron.octaveTypeFor(21), "the heaviest type is read: 75 % 12:6 at A0")
         assertEquals(OctaveType.O4_1, ron.octaveTypeFor(93), "60 % 4:1 at A6")
