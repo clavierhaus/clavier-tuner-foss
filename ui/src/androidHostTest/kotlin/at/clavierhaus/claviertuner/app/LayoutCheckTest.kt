@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -38,6 +39,7 @@ import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.MemoryStore
 import at.clavierhaus.claviertuner.settings.SettingsModel
+import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -184,9 +186,16 @@ class LayoutCheckTest {
             }
         }
         fun show(name: String, content: @Composable () -> Unit) { scene.value = name to content }
+        // the screens the apps mount since 23 Nov 2026 (the restructured interface): the start screen for A4 and the
+        // sampling, the tuning screen after it; BasicHub, which drew all three until then, is mounted by no app
+        val change: ((TunerSettings) -> TunerSettings) -> Unit = { ch -> model.update(ch); c.applySettings(model.settings.value) }
+        var octavesOpen = false
         val tune: @Composable () -> Unit = {
-            BasicHub(controller = c, onSettings = {}, onHome = {}, onAutoNote = {}, onStretch = {}, onTemperamentLow = {},
-                onChangeSettings = { ch -> model.update(ch); c.applySettings(model.settings.value) })
+            val tv = c.tuning.collectAsState().value
+            if (tv != null && !tv.sampling) TuningScreen(controller = c, onSettings = {}, onHome = {}, onChangeSettings = change,
+                onAutoNote = {}, octavesStep = octavesOpen)
+            else StartScreen(controller = c, onSettings = {}, onHome = {}, onTemperamentLow = {}, onTemperamentHigh = {},
+                onChangeSettings = change)
         }
         // A4, its string sounding
         c.setReference(439.4)
@@ -202,6 +211,16 @@ class LayoutCheckTest {
         // tuning, on the strings sampled
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
         c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
+        // the octave types in the work's place, from the edge's Octaves: the six places, then Ron Koval's Schubert preset
+        octavesOpen = true
+        show("octaves", tune); look(where, dir, "08-octaves")
+        val before = model.settings.value
+        change { StretchPreset.SCHUBERT.applyTo(it) }
+        show("octaves schubert", tune); look(where, dir, "08-octaves-schubert")
+        show("settings schubert") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to 1) }
+        look(where, dir, "09-settings-schubert")
+        change { before }
+        octavesOpen = false
         // settings, every page but Help's (Help scrolls by law)
         for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {
             show("settings $tab $page") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = tab to page) }

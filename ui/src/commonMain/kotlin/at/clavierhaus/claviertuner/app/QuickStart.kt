@@ -2,6 +2,7 @@ package at.clavierhaus.claviertuner.app
 
 import at.clavierhaus.claviertuner.i18n.K
 import at.clavierhaus.claviertuner.i18n.t
+import at.clavierhaus.claviertuner.tuning.NamedTemperament
 import at.clavierhaus.claviertuner.ui.HelpTopic
 
 /*
@@ -25,3 +26,15 @@ internal fun quickStartTopic(): HelpTopic = HelpTopic(
 
 /** The [n] lines of one section, from the table (help.qs.<section>.s1 … sn), in the language in force. */
 private fun steps(section: String, n: Int): List<String> = (1..n).map { t("help.qs.$section.s$it") }
+
+/**
+ * The temperaments, one line each, after the Quick start (Plus, 23 Nov 2026; in the free app since the same day): how one is
+ * chosen, and each one's author, year and narrowed fifths, the way NamedTemperament defines it.
+ */
+internal fun temperamentsTopic(): HelpTopic = HelpTopic(
+    t(K.help_temp_title),
+    listOf(
+        t(K.help_temp_h1) to listOf(t(K.help_temp_choose)),
+        t(K.help_temp_h2) to NamedTemperament.entries.map { named -> temperamentName(named) + ": " + t("help.temp." + temperamentKey(named).removePrefix("temperament.")) },
+    ),
+)

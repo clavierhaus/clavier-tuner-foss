@@ -7,6 +7,26 @@ reconstructed from the commit history that day.
 
 ## Unreleased
 
+### 2026-11-23
+- **A new way through a tuning.** A4 and the sampling are on a start screen
+  of the tuning screen's frame: the edge across the top (A4, Temperament,
+  Octaves, the samples), the three steps under it, the whole keyboard at the
+  foot with the next key to sample dotted and named. The tuning screen has the
+  same edge (A4, Octaves, Strobe), the steps, and the keyboard at the foot with
+  the keys tuned in green; Progress is gone. A4 on the edge opens A4's window
+  at any time, Octaves the octave types in place of the strobe, Strobe its
+  three choices; a tap on the note's name opens the keyboard with Auto note
+  switching. Done in the sampling sets the bass to the octave type your
+  sampled strings suggest, and the tuning starts.
+- **Temperaments to choose.** Temperament on the edge lists them all:
+  equal, Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner and
+  quarter-comma meantone. Help has a topic on them.
+- **Schubert**, the third stretch preset beside three and six points: Ron
+  Koval's concert stretch as he published it on Piano World (22 April 2014),
+  with octaves mixed of two types (the temperament about 70 % 4:2 and 30 %
+  2:1, the lowest octave about 75 % 12:6). With thanks to Ron Koval.
+- The home screen's doors: the first word white, the rest orange.
+
 ### 2026-11-22
 - **The engine knows the named temperaments**: Werckmeister III, Kirnberger
   III, Vallotti, Young II, Kellner and quarter-comma meantone besides equal,

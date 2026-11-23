@@ -63,10 +63,22 @@ fun TunerHub(
             ),
         )
         addAll(extra.map { if (it.startsOver) it.copy(onClick = afterAsking(it.onClick)) else it })
-    }
+    }.map(::firstWhiteRestOrange)
     HomeHub(entries = entries, onSettings = onSettings)
     val go = asking
     if (go != null && saved != null) StartOverDialog(saved, onStart = { asking = null; go() }, onKeep = { asking = null })
+}
+
+/**
+ * A door's words as the restructured interface draws them (Plus, 22 Nov 2026, Peter: "we have two words in the menus. Make it
+ * consistent: First word white second word orange"; here since 23 Nov 2026): the door's words read as one line, the first
+ * word white, the rest orange; a door of one word orange.
+ */
+private fun firstWhiteRestOrange(item: HomeHubItem): HomeHubItem {
+    val words = (item.lead + " " + item.verb + item.rest).trim().replace(Regex("\\s+"), " ")
+    val cut = words.indexOf(' ')
+    return if (cut < 0) item.copy(lead = "", verb = words, rest = "")
+    else item.copy(lead = words.substring(0, cut), verb = words.substring(cut + 1), rest = "")
 }
 
 /** The question before [saved] is replaced by a new tuning: which tuning, and what is lost. It says "continued", which is true in both editions. */

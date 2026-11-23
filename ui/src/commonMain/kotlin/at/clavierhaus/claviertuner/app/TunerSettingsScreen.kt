@@ -25,6 +25,7 @@ import at.clavierhaus.claviertuner.ui.LocalHelpText
 import androidx.compose.runtime.CompositionLocalProvider
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.SettingsModel
+import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.Notes
 import at.clavierhaus.claviertuner.ui.ChoiceRow
@@ -109,7 +110,7 @@ fun TunerSettingsScreen(
             SettingsTab(t(K.settings_tab_stretch), stretchPages(s, model)),
             SettingsTab(t(K.settings_tab_piano), listOf(SettingsPage(t(K.settings_page_range), left = { RangeRows(s, model, lowestKeyRow, lowestPlainRow) })) + extraPianoPages),
         ) + extraTabs + listOf(
-            SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic()) + extraHelpTopics)),
+            SettingsTab(t(K.settings_tab_help), helpPage(t(K.settings_tab_help), listOf(quickStartTopic(), temperamentsTopic()) + extraHelpTopics)),
             SettingsTab(t(K.settings_tab_app), extraAppPages + listOf(
                 // the phone's bars outside the tuning screen (Peter, 23 Oct 2026)
                 SettingsPage(t(K.settings_page_display),
@@ -220,13 +221,15 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
     // settings with an explanation"; the switch had stood at the end of the Midrange page, and he could not find it)
     val choice = SettingsPage(t(K.settings_page_stretchDefault),
         left = {
-            SettingsSection(t(K.settings_stretchDefault))
-            ChoiceRow(t(K.settings_stretchPoints), listOf(t(K.settings_stretchThree), t(K.settings_stretchSix)), if (s.hasPlaces) 1 else 0) { i ->
-                model.update { it.withSixPoints(i == 1) }
+            // Ron Koval's Schubert concert tune the third preset, its words behind the (i) (23 Nov 2026)
+            SettingsSection(t(K.settings_stretchDefault), info = t(K.help_oct_schubert))
+            ChoiceRow(t(K.settings_stretchPoints), stretchPresetLabels(), StretchPreset.of(s).ordinal) { i ->
+                model.update { StretchPreset.entries[i].applyTo(it) }
             }
             TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
+    if (StretchPreset.of(s) == StretchPreset.SCHUBERT) return listOf(choice, SettingsPage(t(K.stretch_schubert), left = { MixedPlaces(s) }))
     if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
     return listOf(
         choice,

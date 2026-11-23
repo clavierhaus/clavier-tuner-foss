@@ -22,7 +22,9 @@ import at.clavierhaus.claviertuner.TuningController
 import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.SettingsModel
+import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
+import at.clavierhaus.claviertuner.tuning.OctaveSuggestion
 import at.clavierhaus.claviertuner.ui.OnePicture
 
 /*
@@ -158,6 +160,25 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
             app.phone.systemBars(hidden = false, navigation = settings.showNavigationBar, status = settings.showStatusBar)
         }
         LaunchedEffect(screen) { app.screenShown(screen) }
+        // the sampling ended with Done: the bass takes the octave type the sampling suggests and the tuning starts (Plus,
+        // 22 Nov 2026, Peter: "We will simply choose what the app suggests. It's displayed in the tuning window and can then
+        // be changed by a tuner who wants it differently. One step less."). The suggestion is the sampled strings' own
+        // (OctaveSuggestion, Rule 9); none, and nothing is changed. Ron Koval's Schubert preset is his stretch as published,
+        // and is not changed by it.
+        val samplingDoneCount by controller.samplingDone.collectAsState()
+        val seenSamplingDone = remember { mutableStateOf(samplingDoneCount) }
+        /** The octave types open in the tuning screen's work, from the edge's Octaves. */
+        var octavesOpen by remember { mutableStateOf(false) }
+        LaunchedEffect(samplingDoneCount) {
+            if (samplingDoneCount == seenSamplingDone.value) return@LaunchedEffect
+            seenSamplingDone.value = samplingDoneCount
+            if (StretchPreset.of(controller.settings.value) == StretchPreset.SCHUBERT) return@LaunchedEffect
+            val snap = controller.snapshot() ?: return@LaunchedEffect
+            val keys = snap.basis?.keys
+            val suggested = OctaveSuggestion.bass(snap.measurements.filter { keys == null || it.midi in keys },
+                controller.settings.value.temperamentLowMidi) ?: return@LaunchedEffect
+            controller.changeInForce(settingsModel) { it.withBassOctave(suggested.type) }
+        }
         // where Settings opens: null = where it last was; the tuning screen asks for the stretch's page (tab 1)
         var settingsOpen by remember { mutableStateOf<Pair<Int, Int>?>(null) }
         fun openSettings(at: Pair<Int, Int>? = null) { settingsOpen = at; settingsFrom = screen; screen = "settings" }
@@ -182,17 +203,25 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                 }
                 "tune" -> {
                     backHandler { backToHub() }
-                    BasicHub(
+                    // the restructured interface (Plus's, 21-23 Nov 2026; here since 23 Nov 2026, Peter: "the interface
+                    // restructuring is a winner. Please apply it to foss and Pro"): A4 and the sampling on the start screen,
+                    // the tuning on the tuning screen, the same edge, steps and keyboard on both. BasicHub, which drew all
+                    // three here until then, stays in the library for an edition that still mounts it. No record button and
+                    // no probe in the free edition (blueprint §18.5; the probe since 10 Oct 2026).
+                    val tv = controller.tuning.collectAsState().value
+                    if (tv != null && !tv.sampling) TuningScreen(
                         controller = controller,
-                        // no record and no play button in the free edition (blueprint §18.5): the recorder
-                        // and the reference recording belong to the piano's record, which only Pro keeps, and
-                        // since 5 Oct 2026 the recorder's own code lives in Pro too; since 10 Oct the probe
-                        // as well, so the hub's probe slots are left at their defaults here
                         onSettings = { openSettings() },
                         onHome = { backToHub() },
-                        onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
-                        onStretch = { region -> openSettings(1 to stretchPageOf(region, settingsModel.settings.value)) },
                         // the tuning's own stretch, saved with it; without a tuning, the defaults (5 Nov 2026)
+                        onChangeSettings = { change -> tuneOrDefault(change) },
+                        onAutoNote = { on -> settingsModel.update { it.copy(autoNote = on) } },
+                        octavesStep = octavesOpen,
+                        onOctavesStep = { octavesOpen = it },
+                    ) else StartScreen(
+                        controller = controller,
+                        onSettings = { openSettings() },
+                        onHome = { backToHub() },
                         onTemperamentLow = { low -> tuneOrDefault { it.copy(temperamentLowMidi = low) } },
                         onTemperamentHigh = { high -> tuneOrDefault { it.copy(temperamentHighMidi = high) } },
                         onChangeSettings = { change -> tuneOrDefault(change) },
