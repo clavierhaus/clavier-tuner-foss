@@ -96,9 +96,9 @@ data class TunerSettings(
     val temperamentHighMidi: Int = 69,         // A4
     /**
      * The temperament the tuning is laid out in (Peter, 22 Nov 2026): equal, or a named historical one, as offsets from
-     * equal temperament by note name, A at 0, over the stretch ([at.clavierhaus.claviertuner.tuning.Temperament]).
+     * equal temperament by note name, A at 0, over the stretch ([at.clavierhaus.claviertuner.tuning.NamedTemperament]).
      */
-    val temperament: at.clavierhaus.claviertuner.tuning.Temperament = at.clavierhaus.claviertuner.tuning.Temperament.EQUAL,
+    val temperament: at.clavierhaus.claviertuner.tuning.NamedTemperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL,
     /**
      * The order of working: on, the temperament octave is walked first and
      * each of its notes asks for Done (leaving one does not register it);
@@ -506,7 +506,7 @@ data class Stretch(
     /** The temperament's end ([TunerSettings.temperamentHighMidi]); A4 for a tuning saved before 15 Nov 2026. */
     val temperamentHighMidi: Int = TunerSettings.TEMPERAMENT_HIGH,
     /** The tuning's temperament ([TunerSettings.temperament]); equal for a tuning saved before 22 Nov 2026. */
-    val temperament: at.clavierhaus.claviertuner.tuning.Temperament = at.clavierhaus.claviertuner.tuning.Temperament.EQUAL,
+    val temperament: at.clavierhaus.claviertuner.tuning.NamedTemperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL,
 )
 
 /**
@@ -568,7 +568,7 @@ class SettingsModel(
             temperamentLowMidi = i("temperamentLowMidi", d.temperamentLowMidi),
             temperamentHighMidi = i("temperamentHighMidi", d.temperamentHighMidi)
                 .coerceIn(TunerSettings.TEMPERAMENT_HIGH, TunerSettings.MAX_TEMPERAMENT_HIGH),
-            temperament = store.get("temperament")?.let { n -> at.clavierhaus.claviertuner.tuning.Temperament.entries.firstOrNull { it.name == n } }
+            temperament = store.get("temperament")?.let { n -> at.clavierhaus.claviertuner.tuning.NamedTemperament.entries.firstOrNull { it.name == n } }
                 ?: d.temperament,
             octaveBass = o("octaveBass", d.octaveBass),
             octaveMiddle = o("octaveMiddle", d.octaveMiddle),

@@ -127,7 +127,7 @@ object SessionCodec {
             // the temperament's end, only where it is not A4: a file of before 15 Nov 2026 has none and reads A4
             if (t.temperamentHighMidi != TunerSettings.TEMPERAMENT_HIGH) append("temperamentHigh ${t.temperamentHighMidi}\n")
             // the temperament, only where it is not equal: a file of before 22 Nov 2026 has none and reads equal
-            if (t.temperament != at.clavierhaus.claviertuner.tuning.Temperament.EQUAL) append("temperament ${t.temperament.name}\n")
+            if (t.temperament != at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL) append("temperament ${t.temperament.name}\n")
         }
         for (l in s.editionLines) if (editionLineOk(l)) append("x $l\n")
         s.leftOut.toList().sortedBy { it.first }.forEach { (midi, ks) ->
@@ -223,7 +223,7 @@ object SessionCodec {
             }
             if (i < lines.size && lines[i].startsWith("temperament ")) {
                 val n = tokens("temperament", 1)[0]
-                at.clavierhaus.claviertuner.tuning.Temperament.entries.firstOrNull { it.name == n }?.let { stretch = stretch?.copy(temperament = it) }
+                at.clavierhaus.claviertuner.tuning.NamedTemperament.entries.firstOrNull { it.name == n }?.let { stretch = stretch?.copy(temperament = it) }
             }
         }
         // an edition's own lines, kept as they are; a file of 10-12 Nov 2026 has its single strings checked here as
