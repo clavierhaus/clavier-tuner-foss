@@ -12,8 +12,8 @@ no recording and measures nothing. Run on the X1 after a build of this version i
   4. the newest build of this version that Apple has processed, attached to it;
   5. the contact for App Review, taken from TestFlight's Beta App Review contact, with notes on how to review an app that
      needs a piano;
-  6. the screenshots under fastlane/screenshots/ios/<locale>/*.png, by their size: iPhone 6.9"/6.7" (2868x1320,
-     2796x1290 or portrait) and iPad 13" (2752x2064, 2732x2048 or portrait); a set is replaced whole;
+  6. the screenshots under fastlane/screenshots/ios/<locale>/*.png, by their size: iPhone large (2868x1320, 2796x1290),
+     iPhone medium (2622x1206, 2556x1179) and iPad 13" (2752x2064, 2732x2048), either way round; a set is replaced whole;
   7. what only App Store Connect's own pages can do, said by name: the Paid Applications Agreement with tax and banking,
      the price, App Privacy, the age rating, and the EU trader status;
   8. with --submit, and only then: the version to App Review.
@@ -58,6 +58,10 @@ REVIEW_NOTES = (
 SIZES = {}
 for w, h in [(2868, 1320), (2796, 1290)]:
     SIZES[(w, h)] = SIZES[(h, w)] = "APP_IPHONE_67"
+# the medium Dynamic Island group (iPhone 14 Pro to 17), the one App Store Connect names as required (screenshot
+# specifications, read 23 Nov 2026); its API name is taken to be APP_IPHONE_61, unverified until the first upload
+for w, h in [(2622, 1206), (2556, 1179)]:
+    SIZES[(w, h)] = SIZES[(h, w)] = "APP_IPHONE_61"
 for w, h in [(2752, 2064), (2732, 2048)]:
     SIZES[(w, h)] = SIZES[(h, w)] = "APP_IPAD_PRO_3GEN_129"
 EDITABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED", "INVALID_BINARY"}
@@ -161,7 +165,7 @@ def screenshots(asc, version_locs):
             kind = SIZES.get(size)
             if not kind:
                 sys.exit(f"  x  {f}: {size[0]}x{size[1]} is no size App Store Connect takes here "
-                         f"(iPhone 2868x1320 or 2796x1290, iPad 2752x2064 or 2732x2048, either way round)")
+                         f"(iPhone 2868x1320, 2796x1290, 2622x1206 or 2556x1179, iPad 2752x2064 or 2732x2048, either way round)")
             by_type.setdefault(kind, []).append(f)
         sets = {s["attributes"]["screenshotDisplayType"]: s["id"] for s in asc.ok(
             "GET", f"/v1/appStoreVersionLocalizations/{version_locs[loc]}/appScreenshotSets", {"limit": 50})["data"]}
