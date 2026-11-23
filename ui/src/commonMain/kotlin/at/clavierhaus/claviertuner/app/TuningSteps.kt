@@ -94,7 +94,7 @@ internal fun OctavesWork(
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED)
     Row(modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.weight(0.6f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (StretchPreset.of(s) == StretchPreset.SCHUBERT) MixedPlaces(s) else if (s.hasPlaces) StretchPlaces(s, onChange) else {
+            if (s.hasPlaces) StretchPlaces(s, onChange) else {
                 RegionRow(t(K.settings_page_bass), TunerSettings.BASS_OCTAVES, s.octaveBass, s.widthBass,
                     { o -> onChange { it.copy(octaveBass = o) } }, { w -> onChange { it.copy(widthBass = w) } })
                 RegionRow(t(K.settings_page_middle), TunerSettings.MIDDLE_OCTAVES, s.octaveMiddle, s.widthMiddle,
@@ -124,10 +124,10 @@ internal fun OctavesWork(
                     InfoButton(short, t(K.tuning_suggestNone))
                 }
             }
-            // the presets in place of the six points' switch (23 Nov 2026): three, six, and Ron Koval's Schubert concert tune
+            // the presets in place of the six points' switch (23 Nov 2026): three points and six
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { Choices(stretchPresetLabels(), StretchPreset.of(s).ordinal) { i -> onChange { StretchPreset.entries[i].applyTo(it) } } }
-                InfoButton(t(K.settings_sixPoints), listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote), t(K.help_oct_schubert)).joinToString("\n\n"))
+                InfoButton(t(K.settings_sixPoints), listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)).joinToString("\n\n"))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(t(K.settings_temperamentOctave), color = white, fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false,
@@ -165,11 +165,10 @@ private fun RegionRow(name: String, octaves: List<OctaveType>, type: OctaveType,
     }
 }
 
-/** The three presets' names, in [StretchPreset]'s order. */
+/** The presets' names, in [StretchPreset]'s order. */
 internal fun stretchPresetLabels(): List<String> = StretchPreset.entries.map {
     when (it) {
         StretchPreset.THREE -> t(K.settings_stretchThree)
         StretchPreset.SIX -> t(K.settings_stretchSix)
-        StretchPreset.SCHUBERT -> t(K.stretch_schubert)
     }
 }

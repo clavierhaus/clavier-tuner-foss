@@ -21,10 +21,6 @@ reconstructed from the commit history that day.
 - **Temperaments to choose.** Temperament on the edge lists them all:
   equal, Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner and
   quarter-comma meantone. Help has a topic on them.
-- **Schubert**, the third stretch preset beside three and six points: Ron
-  Koval's concert stretch as he published it on Piano World (22 April 2014),
-  with octaves mixed of two types (the temperament about 70 % 4:2 and 30 %
-  2:1, the lowest octave about 75 % 12:6). With thanks to Ron Koval.
 - The home screen's doors: the first word white, the rest orange.
 
 ### 2026-11-22

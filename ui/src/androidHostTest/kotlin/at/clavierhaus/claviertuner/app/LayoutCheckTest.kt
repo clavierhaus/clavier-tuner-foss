@@ -39,7 +39,6 @@ import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.MemoryStore
 import at.clavierhaus.claviertuner.settings.SettingsModel
-import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -211,15 +210,9 @@ class LayoutCheckTest {
         // tuning, on the strings sampled
         c.snapshot()?.let { c.restore(it.copy(sampling = false, currentMidi = 55)) }
         c.hear(src, strike(recordings, "G3-C-s1", -0.2, 1.5)); look(where, dir, "08-tuning")
-        // the octave types in the work's place, from the edge's Octaves: the six places, then Ron Koval's Schubert preset
+        // the octave types in the work's place, from the edge's Octaves
         octavesOpen = true
         show("octaves", tune); look(where, dir, "08-octaves")
-        val before = model.settings.value
-        change { StretchPreset.SCHUBERT.applyTo(it) }
-        show("octaves schubert", tune); look(where, dir, "08-octaves-schubert")
-        show("settings schubert") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to 1) }
-        look(where, dir, "09-settings-schubert")
-        change { before }
         octavesOpen = false
         // settings, every page but Help's (Help scrolls by law)
         for ((tab, page) in listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1, 1 to 2, 1 to 3, 2 to 0, 4 to 0, 4 to 1)) {

@@ -22,7 +22,6 @@ import at.clavierhaus.claviertuner.TuningController
 import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.SettingsModel
-import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.OctaveSuggestion
 import at.clavierhaus.claviertuner.ui.OnePicture
@@ -163,8 +162,7 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
         // the sampling ended with Done: the bass takes the octave type the sampling suggests and the tuning starts (Plus,
         // 22 Nov 2026, Peter: "We will simply choose what the app suggests. It's displayed in the tuning window and can then
         // be changed by a tuner who wants it differently. One step less."). The suggestion is the sampled strings' own
-        // (OctaveSuggestion, Rule 9); none, and nothing is changed. Ron Koval's Schubert preset is his stretch as published,
-        // and is not changed by it.
+        // (OctaveSuggestion, Rule 9); none, and nothing is changed.
         val samplingDoneCount by controller.samplingDone.collectAsState()
         val seenSamplingDone = remember { mutableStateOf(samplingDoneCount) }
         /** The octave types open in the tuning screen's work, from the edge's Octaves. */
@@ -172,7 +170,6 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
         LaunchedEffect(samplingDoneCount) {
             if (samplingDoneCount == seenSamplingDone.value) return@LaunchedEffect
             seenSamplingDone.value = samplingDoneCount
-            if (StretchPreset.of(controller.settings.value) == StretchPreset.SCHUBERT) return@LaunchedEffect
             val snap = controller.snapshot() ?: return@LaunchedEffect
             val keys = snap.basis?.keys
             val suggested = OctaveSuggestion.bass(snap.measurements.filter { keys == null || it.midi in keys },

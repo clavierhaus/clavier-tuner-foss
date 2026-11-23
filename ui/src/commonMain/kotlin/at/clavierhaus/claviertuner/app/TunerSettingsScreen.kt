@@ -221,15 +221,13 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
     // settings with an explanation"; the switch had stood at the end of the Midrange page, and he could not find it)
     val choice = SettingsPage(t(K.settings_page_stretchDefault),
         left = {
-            // Ron Koval's Schubert concert tune the third preset, its words behind the (i) (23 Nov 2026)
-            SettingsSection(t(K.settings_stretchDefault), info = t(K.help_oct_schubert))
+            SettingsSection(t(K.settings_stretchDefault))
             ChoiceRow(t(K.settings_stretchPoints), stretchPresetLabels(), StretchPreset.of(s).ordinal) { i ->
                 model.update { StretchPreset.entries[i].applyTo(it) }
             }
             TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
-    if (StretchPreset.of(s) == StretchPreset.SCHUBERT) return listOf(choice, SettingsPage(t(K.stretch_schubert), left = { MixedPlaces(s) }))
     if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
     return listOf(
         choice,
