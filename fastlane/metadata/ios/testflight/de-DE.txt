@@ -1,11 +1,12 @@
-0.11.0
+0.12.0
 
 Neu
-- Französisch: Auf einem Telefon in Französisch spricht die App Französisch.
+- Ein neuer Weg durch die Stimmung. A4 und das Vermessen stehen auf einem Startbildschirm: der Rand oben (A4, Temperatur, Oktaven, die Proben), die drei Schritte darunter, unten die ganze Tastatur mit der nächsten Taste zum Vermessen, markiert und benannt. Der Stimmbildschirm hat denselben Rand (A4, Oktaven, Strobe) und unten die Tastatur mit den gestimmten Tasten in Grün; Fortschritt ist weg.
+- Temperaturen zur Wahl: Temperatur am Rand antippen. Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner, mitteltönig ¼ Komma und Schubert, Ron Kovals Konzertstimmung (Piano World, 2014). Hilfe › Temperaturen erklärt jede.
 
 Geändert
-- Keine Brüche mehr: Die Inharmonizitätskurve ist eine glatte Linie über den ganzen Tonumfang, die Seite Brüche unter Spreizung ist weg.
-- Über C6 ist eine Taste gestimmt, sobald ihr Anschlag mit der Tonhöhe innerhalb der Toleranz endet, nicht erst beim Anschlag der nächsten Taste. Auch C8 wird grün.
+- Einstellungen als eine Liste je Reiter: Stimmen, Spreizung, Klavier, App, Erweitert, Hilfe, Über.
+- Fertig beim Vermessen setzt den Bass auf den Oktavtyp, den Ihre vermessenen Saiten nahelegen, und die Stimmung beginnt.
 
 Bitte ausprobieren
-- Bis C8 mit den zwei Balken stimmen. Wird jede Taste nach ihrem eigenen Anschlag grün?
+- Eine ganze Stimmung über die neuen Bildschirme: A4, Vermessen, Stimmen. Steht jeder Schritt, wo Sie ihn erwarten, und führt ein Tippen auf einen früheren Schritt zurück?

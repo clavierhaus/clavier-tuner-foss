@@ -5,7 +5,7 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
-## Unreleased
+## 0.12.0 -- 2026-11-23
 
 ### 2026-11-23
 - **A new way through a tuning.** A4 and the sampling are on a start screen
