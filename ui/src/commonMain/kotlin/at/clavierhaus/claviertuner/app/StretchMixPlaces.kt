@@ -38,7 +38,7 @@ internal fun mixLabel(type: OctaveType, mix: OctaveShare?): String {
 }
 
 @Composable
-internal fun MixedPlaces(s: TunerSettings, modifier: Modifier = Modifier) {
+fun MixedPlaces(s: TunerSettings, modifier: Modifier = Modifier) {
     val white = Color(Brand.WHITE); val muted = Color(Brand.WHITE_MUTED)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         TextBlock(listOf(t(K.stretch_schubertTitle)), Modifier.fillMaxWidth(), size = 15.sp, minSize = 11.sp, color = Color(Brand.ORANGE))
