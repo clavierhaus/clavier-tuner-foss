@@ -50,8 +50,12 @@ class HelpText(val sp: Int, val set: (Int) -> Unit)
 
 val LocalHelpText = compositionLocalOf { HelpText(14) {} }
 
-/** One help topic: its [title] in the index and its [sections], each a header and its lines, on the right. */
-class HelpTopic(val title: String, val sections: List<Pair<String, List<String>>>)
+/**
+ * One help topic: its [title] in the index and its [sections], each a header and its lines, on the right. [sub]: a sub-topic
+ * of the topic above it, drawn indented under it in the index (Peter, 23 Nov 2026: "Create a nestled structure where the
+ * quick start is the main subject with sub-topics").
+ */
+class HelpTopic(val title: String, val sections: List<Pair<String, List<String>>>, val sub: Boolean = false)
 
 /**
  * The Help tab's one page (Peter, 14 Oct 2026: "The left half will become an index for various
@@ -73,7 +77,10 @@ fun helpPage(title: String, topics: List<HelpTopic>): SettingsPage {
     )
 }
 
-/** The index: one line per topic, the open one orange and bold, each a door with its ›; the lines wrap and the column scrolls, as all of Help does. */
+/**
+ * The index: one line per topic, the open one orange and bold, each a door with its ›; a sub-topic indented under its topic,
+ * with a thinner rule; the lines wrap and the column scrolls, as all of Help does.
+ */
 @Composable
 private fun HelpIndex(topics: List<HelpTopic>, open: Int, onOpen: (Int) -> Unit) {
     val size = LocalHelpText.current.sp
@@ -83,7 +90,8 @@ private fun HelpIndex(topics: List<HelpTopic>, open: Int, onOpen: (Int) -> Unit)
             val on = i == open
             val color = if (on) Color(Brand.ORANGE) else Color(Brand.WHITE)
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { onOpen(i) }.padding(vertical = 6.dp),
+                Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { onOpen(i) }
+                    .padding(start = if (topic.sub) (size * 1.5f).dp else 0.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -92,7 +100,9 @@ private fun HelpIndex(topics: List<HelpTopic>, open: Int, onOpen: (Int) -> Unit)
                 )
                 Text("›", color = color, fontSize = (size + 4).sp)
             }
-            HorizontalDivider(color = Color(Brand.CONTROL))
+            // a main topic's rule runs the full width; a sub-topic's starts at its indent, so the family reads as one block
+            val nextSub = topics.getOrNull(i + 1)?.sub == true
+            HorizontalDivider(Modifier.padding(start = if (nextSub) (size * 1.5f).dp else 0.dp), color = Color(Brand.CONTROL))
         }
     }
 }
