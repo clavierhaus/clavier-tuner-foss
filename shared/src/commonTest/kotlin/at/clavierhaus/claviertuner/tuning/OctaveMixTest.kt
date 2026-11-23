@@ -115,6 +115,16 @@ class OctaveMixTest {
     }
 
     @Test
+    fun eitherPresetTakesTheMixesOut() {
+        for (on in listOf(true, false)) {
+            val s = ron.withSixPoints(on)
+            assertNull(s.mixBass); assertNull(s.mixMiddle); assertNull(s.mixTreble)
+            assertTrue(s.stretchPoints.none { it.mix != null })
+        }
+        assertEquals(TunerSettings(), ron.withSixPoints(false).copy(stretchPoints = emptyList()), "off is the defaults, mixes and all")
+    }
+
+    @Test
     fun theMixesAreKeptByTheSettingsAndByTheTuning() {
         assertEquals(ron.stretchPoints, StretchPoint.decode(StretchPoint.encode(ron.stretchPoints)))
         assertEquals(listOf(StretchPoint(77, OctaveType.O2_1, 0.74)), StretchPoint.decode("77:O2_1:0.74"), "a place of before reads as it did")
