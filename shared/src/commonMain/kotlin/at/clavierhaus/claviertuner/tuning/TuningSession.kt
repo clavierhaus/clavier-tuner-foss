@@ -6,6 +6,7 @@ import at.clavierhaus.claviertuner.measure.Partials
 import at.clavierhaus.claviertuner.measure.StringMeasure
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.TunerSettings
+import at.clavierhaus.claviertuner.settings.octaveParts
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
@@ -435,15 +436,10 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         if (key != curveCacheKey) { curveCache.clear(); curveCacheKey = key }
         curveCache[midi]?.let { return it }
         val v = if (midi >= settings.temperamentLowMidi && midi <= settings.temperamentHighMidi) temperamentF1(midi, c) else {
-            val b = settings.blend(midi)
-            val w = b.share
-            val middle = if (w < 1.0) octaveTargetF1(midi, b.inner, c) else 0.0
-            val outer = if (w > 0.0) octaveTargetF1(midi, b.outer, c) else 0.0
-            when {
-                w <= 0.0 -> middle
-                w >= 1.0 -> outer
-                else -> exp((1 - w) * ln(middle) + w * ln(outer))
-            }
+            // every type in the octave, each where it is beatless, weighted in cents (23 Nov 2026: a place may mix two)
+            val parts = settings.blend(midi).parts
+            if (parts.size == 1) octaveTargetF1(midi, parts[0].first, c)
+            else exp(parts.sumOf { (type, w) -> w * ln(octaveTargetF1(midi, type, c)) })
         }
         curveCache[midi] = v
         return v
@@ -464,7 +460,11 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         val type = settings.octaveMiddle
         if (type.semitones != 12 || midi == MIDI_A4) return targetF1(midi, a4Hz)
         val below = MIDI_A4 - 12
-        val lowerF1 = type.high * a4Hz * Inharmonicity.ratio(type.high, bOf(MIDI_A4, c)) / (type.low * Inharmonicity.ratio(type.low, bOf(below, c))) * 2.0.pow(-settings.widthFor(below) / 1200.0)
+        // the lower note where each type of the middle's makes the octave beatless, weighted in cents when it mixes two
+        // (23 Nov 2026, Ron Koval's "about 70 % 4:2 and 30 % 2:1")
+        fun beatless(t: OctaveType) = t.high * a4Hz * Inharmonicity.ratio(t.high, bOf(MIDI_A4, c)) / (t.low * Inharmonicity.ratio(t.low, bOf(below, c)))
+        val parts = octaveParts(type, settings.middleMix())
+        val lowerF1 = (if (parts.size == 1) beatless(type) else exp(parts.sumOf { (t, w) -> w * ln(beatless(t)) })) * 2.0.pow(-settings.widthFor(below) / 1200.0)
         val octaveCents = centsOff(a4Hz, lowerF1)        // the stretched octave, 1200 c and its stretch
         return a4Hz * 2.0.pow((midi - MIDI_A4) / 12.0 * octaveCents / 1200.0)
     }

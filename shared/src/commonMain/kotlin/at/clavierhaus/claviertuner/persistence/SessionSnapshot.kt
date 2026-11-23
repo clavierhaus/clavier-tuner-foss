@@ -2,6 +2,7 @@ package at.clavierhaus.claviertuner.persistence
 
 import at.clavierhaus.claviertuner.measure.FalseBeat
 import at.clavierhaus.claviertuner.measure.Partials
+import at.clavierhaus.claviertuner.settings.OctaveShare
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.Stretch
 import at.clavierhaus.claviertuner.settings.StretchPoint
@@ -63,6 +64,7 @@ data class SessionSnapshot(
  *     points <midi:type:width,...>              (its further places, right after the stretch; only when it has some, since 8 Nov 2026)
  *     temperamentHigh <midi>                    (the temperament's end, after the points; only when not A4, since 15 Nov 2026)
  *     temperament <name>                        (the temperament, after its end; only when not equal, since 22 Nov 2026)
+ *     mixes <bass|-> <middle|-> <treble|->      (the ends' mixes, TYPE:share, after the temperament; only when one is set, since 23 Nov 2026)
  *     x <text>                                  (an edition's own line, kept as it is, any number; since 12 Nov 2026)
  *     string <midi> <...> <count>               (written 10-12 Nov 2026, read as an edition's line with the count of
  *     b <...>                                    b lines after it, which follow it as edition's lines too)
@@ -128,6 +130,11 @@ object SessionCodec {
             if (t.temperamentHighMidi != TunerSettings.TEMPERAMENT_HIGH) append("temperamentHigh ${t.temperamentHighMidi}\n")
             // the temperament, only where it is not equal: a file of before 22 Nov 2026 has none and reads equal
             if (t.temperament != at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL) append("temperament ${t.temperament.name}\n")
+            // the ends' mixes, only where there is one: a file of before 23 Nov 2026 has none
+            if (t.mixBass != null || t.mixMiddle != null || t.mixTreble != null) {
+                fun m(x: OctaveShare?) = x?.let { OctaveShare.encode(it) } ?: "-"
+                append("mixes ${m(t.mixBass)} ${m(t.mixMiddle)} ${m(t.mixTreble)}\n")
+            }
         }
         for (l in s.editionLines) if (editionLineOk(l)) append("x $l\n")
         s.leftOut.toList().sortedBy { it.first }.forEach { (midi, ks) ->
@@ -224,6 +231,10 @@ object SessionCodec {
             if (i < lines.size && lines[i].startsWith("temperament ")) {
                 val n = tokens("temperament", 1)[0]
                 at.clavierhaus.claviertuner.tuning.NamedTemperament.entries.firstOrNull { it.name == n }?.let { stretch = stretch?.copy(temperament = it) }
+            }
+            if (i < lines.size && lines[i].startsWith("mixes ")) {
+                val m = tokens("mixes", 3).map { if (it == "-") null else OctaveShare.decode(it) }
+                stretch = stretch?.copy(mixBass = m[0], mixMiddle = m[1], mixTreble = m[2])
             }
         }
         // an edition's own lines, kept as they are; a file of 10-12 Nov 2026 has its single strings checked here as

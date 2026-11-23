@@ -45,7 +45,37 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
     O4_1("4:1", 4, 1, 24),
     /** The twelfth: partial 3 of the lower note on partial 1 of the note a twelfth up (Peter, 23 Oct 2026). */
     O3_1("3:1", 3, 1, 19),
+    /**
+     * Partial 12 of the lower note on partial 6 of the upper (23 Nov 2026): the lowest octave's depth in Ron Koval's Schubert
+     * concert tune, a place's octave or one share of it, never a region's ([TunerSettings.BASS_PLACE_OCTAVES]).
+     */
+    O12_6("12:6", 12, 6),
 }
+
+/**
+ * The share [share], 0..1, that octave type [type] has in a place's octave, the rest being the place's own type (23 Nov
+ * 2026): "about 70 % 4:2 and 30 % 2:1" is 4:2 with 2:1 at 0.3. The octave's target lies that share of the way, in cents,
+ * from where the own type is beatless to where [type] is, as the octaves between two places already lay
+ * ([TuningSession.curveTargetF1]).
+ */
+data class OctaveShare(val type: OctaveType, val share: Double) {
+    companion object {
+        /** "O2_1:0.3", or null for none. */
+        fun encode(m: OctaveShare?): String = m?.let { "${it.type.name}:${it.share}" } ?: ""
+
+        /** The share a text says, null where it says none or does not read. */
+        fun decode(text: String?): OctaveShare? {
+            val p = text?.split(":") ?: return null
+            val type = OctaveType.entries.firstOrNull { it.name == p.getOrNull(0) } ?: return null
+            val share = p.getOrNull(1)?.toDoubleOrNull() ?: return null
+            return if (p.size == 2 && share.isFinite() && share > 0.0 && share < 1.0) OctaveShare(type, share) else null
+        }
+    }
+}
+
+/** An octave made of [main] and [mix]'s share of another type: the types and their weights, [main] first. */
+internal fun octaveParts(main: OctaveType, mix: OctaveShare?): List<Pair<OctaveType, Double>> =
+    if (mix == null || mix.type == main) listOf(main to 1.0) else listOf(main to 1.0 - mix.share, mix.type to mix.share)
 
 /**
  * A place between the temperament octave and the end of the range where the octave has a type and a width of its
@@ -53,10 +83,18 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
  * places move key by key from one to the other, as they always moved between the temperament octave and the lowest
  * key or C8. Worded and stored here; the targets it makes are [TuningSession.curveTargetF1]'s.
  */
-data class StretchPoint(val midi: Int, val type: OctaveType, val widthCents: Double) {
+data class StretchPoint(
+    val midi: Int,
+    val type: OctaveType,
+    val widthCents: Double,
+    /** A share of a second type in this place's octave (23 Nov 2026); none: [type] alone. */
+    val mix: OctaveShare? = null,
+) {
     companion object {
-        /** The points as a line of text, for the settings and the saved tuning. */
-        fun encode(points: List<StretchPoint>): String = points.joinToString(",") { "${it.midi}:${it.type.name}:${it.widthCents}" }
+        /** The points as a line of text, for the settings and the saved tuning; a mix after the width, ":O4_2:0.4". */
+        fun encode(points: List<StretchPoint>): String = points.joinToString(",") {
+            "${it.midi}:${it.type.name}:${it.widthCents}" + (it.mix?.let { m -> ":" + OctaveShare.encode(m) } ?: "")
+        }
 
         /** The points of a line of text; one that does not read, or stands out of range, is left out. */
         fun decode(text: String): List<StretchPoint> = text.split(",").mapNotNull { one ->
@@ -64,9 +102,10 @@ data class StretchPoint(val midi: Int, val type: OctaveType, val widthCents: Dou
             val midi = p.getOrNull(0)?.toIntOrNull()
             val type = OctaveType.entries.firstOrNull { it.name == p.getOrNull(1) }
             val width = p.getOrNull(2)?.toDoubleOrNull()
-            if (p.size == 3 && midi != null && midi in TunerSettings.MIN_LOWEST_KEY..TunerSettings.MIDI_C8 && type != null &&
+            val mix = if (p.size == 5) OctaveShare.decode(p[3] + ":" + p[4]) else null
+            if ((p.size == 3 || (p.size == 5 && mix != null)) && midi != null && midi in TunerSettings.MIN_LOWEST_KEY..TunerSettings.MIDI_C8 && type != null &&
                 width != null && width.isFinite() && width in TunerSettings.MIN_WIDTH_CENTS..TunerSettings.MAX_WIDTH_CENTS
-            ) StretchPoint(midi, type, width) else null
+            ) StretchPoint(midi, type, width, mix) else null
         }
     }
 }
@@ -75,7 +114,26 @@ data class StretchPoint(val midi: Int, val type: OctaveType, val widthCents: Dou
  * How [TunerSettings.blend] makes a key's octave: [share] of the way, in cents, from where type [inner] is beatless to
  * where [outer] is, at [width] from beatless.
  */
-data class OctaveBlend(val inner: OctaveType, val outer: OctaveType, val share: Double, val width: Double)
+data class OctaveBlend(
+    val inner: OctaveType,
+    val outer: OctaveType,
+    val share: Double,
+    val width: Double,
+    /**
+     * Every type in the octave and its weight, the weights summing to one (23 Nov 2026): [inner] at 1 - [share] and
+     * [outer] at [share] unless a place or an end carries a mix ([OctaveShare]), whose types then share their place's
+     * weight. The target is the weighted mean, in cents, of where each type is beatless.
+     */
+    val parts: List<Pair<OctaveType, Double>> = mergeParts(listOf(inner to 1.0 - share, outer to share)),
+)
+
+/** [parts] with each type once, its weights added, in the order the types first come, none of weight 0. */
+internal fun mergeParts(parts: List<Pair<OctaveType, Double>>): List<Pair<OctaveType, Double>> {
+    val order = ArrayList<OctaveType>()
+    val sum = HashMap<OctaveType, Double>()
+    for ((t, w) in parts) { if (t !in sum) order += t; sum[t] = (sum[t] ?: 0.0) + w }
+    return order.map { it to sum.getValue(it) }.filter { it.second > 0.0 }
+}
 
 /**
  * Everything the tuner sets in Settings. Values that determine a target
@@ -147,6 +205,15 @@ data class TunerSettings(
      * with none the octaves blend from the middle's type straight to the outer one ([outerShare]).
      */
     val stretchPoints: List<StretchPoint> = emptyList(),
+    /**
+     * A share of a second octave type at the lowest key, in the temperament octave and at C8 (23 Nov 2026): Ron Koval's
+     * Schubert concert tune lays the temperament "about 70 % 4:2 and 30 % 2:1" and the lowest octave "about 75 %" 12:6
+     * over 6:3. None: each end's type alone, as before. Of the types its place offers ([BASS_PLACE_OCTAVES],
+     * [MIDDLE_OCTAVES], [TREBLE_OCTAVES]); a mix of 4:1 at the lowest key counts only as [onPoints] allows a 4:1 there.
+     */
+    val mixBass: OctaveShare? = null,
+    val mixMiddle: OctaveShare? = null,
+    val mixTreble: OctaveShare? = null,
     /** Interval weights 0..10 for the stretch calculation. */
     val weightOctave: Int = 10,
     val weightTwelfth: Int = 4,
@@ -303,6 +370,13 @@ data class TunerSettings(
         val BASS_OCTAVES: List<OctaveType> = listOf(OctaveType.O4_2, OctaveType.O6_3, OctaveType.O10_5)
         val MIDDLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2)
         val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2, OctaveType.O4_1, OctaveType.O3_1)
+        /**
+         * What a place below the temperament octave may be made of, or a share of it (23 Nov 2026, Ron Koval's Schubert
+         * concert tune): the bass's types and the double octave 4:1 and 12:6. A region is never offered the last two. 4:1
+         * counts only where every key it reaches has its partner two octaves up at or below the temperament octave's end
+         * ([onPoints]): beyond it the partner is a treble key, whose chain comes back down, the loop of OctaveChoicesTest.
+         */
+        val BASS_PLACE_OCTAVES: List<OctaveType> = BASS_OCTAVES + listOf(OctaveType.O4_1, OctaveType.O12_6)
         const val MIN_TEMPERAMENT_LOW = 48     // C3
         const val MAX_TEMPERAMENT_LOW = 57     // A3
         /** Top of the temperament octave at its lowest: A4, the note the session is defined on. */
@@ -389,10 +463,37 @@ data class TunerSettings(
      * (TuneLab's manual, p. 17: the curve looks discontinuous where the partial changes, the tuning is not); it is
      * the partial that speaks for the octave the note mostly stands on.
      */
-    fun octaveTypeFor(midi: Int): OctaveType = blend(midi).let { if (it.share >= 0.5) it.outer else it.inner }
+    fun octaveTypeFor(midi: Int): OctaveType {
+        // the heaviest part; of two as heavy, the one further out, as at half way between two types
+        var best = octaveMiddle; var weight = -1.0
+        for ((t, w) in blend(midi).parts) if (w >= weight) { best = t; weight = w }
+        return best
+    }
 
     /** How [midi]'s octave is made: between the two places either side of it where there are [stretchPoints], else as [outerShare] says. */
-    fun blend(midi: Int): OctaveBlend = onPoints(midi) ?: OctaveBlend(octaveMiddle, outerTypeFor(midi), outerShare(midi), widthFor(midi))
+    fun blend(midi: Int): OctaveBlend = onPoints(midi) ?: run {
+        val w = outerShare(midi)
+        val outer = outerTypeFor(midi)
+        val outerMix = when {
+            midi < temperamentLowMidi -> bassEndMix(temperamentLowMidi - 1)
+            midi > temperamentHighMidi -> mixTreble?.takeIf { it.type in TREBLE_OCTAVES }
+            else -> null
+        }
+        val middle = octaveParts(octaveMiddle, middleMix())
+        val parts = mergeParts(middle.map { it.first to it.second * (1 - w) } + octaveParts(outer, outerMix).map { it.first to it.second * w })
+        OctaveBlend(octaveMiddle, outer, w, widthFor(midi), parts)
+    }
+
+    /** The temperament octave's mix, of the middle's types only. */
+    internal fun middleMix(): OctaveShare? = mixMiddle?.takeIf { it.type in MIDDLE_OCTAVES }
+
+    /**
+     * The mix at the lowest key, of the types a bass place may have; one of 4:1 only where the keys between the lowest
+     * and the next place up, [next], keep their partner two octaves up at or below the temperament octave's end.
+     */
+    private fun bassEndMix(next: Int): OctaveShare? = mixBass?.takeIf {
+        it.type in BASS_PLACE_OCTAVES && (it.type != OctaveType.O4_1 || next - 1 + 24 <= temperamentHighMidi)
+    }
 
     /**
      * [midi]'s octave between the places either side of it, null where its side of the range has no point: the
@@ -403,19 +504,31 @@ data class TunerSettings(
     private fun onPoints(midi: Int): OctaveBlend? {
         val below = midi < temperamentLowMidi
         if (!below && midi <= temperamentHighMidi) return null
-        val edge = StretchPoint(if (below) temperamentLowMidi - 1 else temperamentHighMidi + 1, octaveMiddle, widthMiddle)
-        val end = if (below) StretchPoint(lowestKeyMidi, octaveBass, widthBassFar ?: widthBass) else StretchPoint(MIDI_C8, octaveTreble, widthTrebleFar ?: widthTreble)
-        val inside = stretchPoints.filter { p ->
-            if (below) p.midi > end.midi && p.midi < edge.midi && p.type in BASS_OCTAVES else p.midi > edge.midi && p.midi < end.midi && p.type in TREBLE_OCTAVES
+        val edge = StretchPoint(if (below) temperamentLowMidi - 1 else temperamentHighMidi + 1, octaveMiddle, widthMiddle, middleMix())
+        val offered = if (below) BASS_PLACE_OCTAVES else TREBLE_OCTAVES
+        val candidates = stretchPoints.filter { p ->
+            (if (below) p.midi > lowestKeyMidi && p.midi < edge.midi else p.midi > edge.midi && p.midi < MIDI_C8) &&
+                p.type in offered && (p.mix == null || p.mix.type in offered)
         }.distinctBy { it.midi }.sortedBy { if (below) -it.midi else it.midi }
+        // outward from the edge, a bass place with 4:1 in it counts only where the keys from it up to the next place
+        // kept keep their partner two octaves up at or below the temperament octave's end (BASS_PLACE_OCTAVES)
+        val inside = ArrayList<StretchPoint>()
+        for (p in candidates) {
+            val next = inside.lastOrNull() ?: edge
+            if (below && (p.type == OctaveType.O4_1 || p.mix?.type == OctaveType.O4_1) && next.midi - 1 + 24 > temperamentHighMidi) continue
+            inside += p
+        }
         if (inside.isEmpty()) return null
+        val end = if (below) StretchPoint(lowestKeyMidi, octaveBass, widthBassFar ?: widthBass, bassEndMix(inside.last().midi))
+        else StretchPoint(MIDI_C8, octaveTreble, widthTrebleFar ?: widthTreble, mixTreble?.takeIf { it.type in TREBLE_OCTAVES })
         val out = abs(midi - edge.midi)
         for ((a, b) in (listOf(edge) + inside + end).zipWithNext()) {
             if (out > abs(b.midi - edge.midi)) continue
             val w = abs(midi - a.midi).toDouble() / abs(b.midi - a.midi)
-            return OctaveBlend(a.type, b.type, w, a.widthCents + (b.widthCents - a.widthCents) * w)
+            val parts = mergeParts(octaveParts(a.type, a.mix).map { it.first to it.second * (1 - w) } + octaveParts(b.type, b.mix).map { it.first to it.second * w })
+            return OctaveBlend(a.type, b.type, w, a.widthCents + (b.widthCents - a.widthCents) * w, parts)
         }
-        return OctaveBlend(end.type, end.type, 1.0, end.widthCents)   // past the end: a key below the lowest
+        return OctaveBlend(end.type, end.type, 1.0, end.widthCents, octaveParts(end.type, end.mix))   // past the end: a key below the lowest
     }
 
     /**
@@ -473,6 +586,7 @@ data class TunerSettings(
     fun stretch(): Stretch = Stretch(
         temperamentLowMidi, octaveBass, octaveMiddle, octaveTreble,
         widthBass, widthMiddle, widthTreble, widthBassFar, widthTrebleFar, stretchPoints, temperamentHighMidi, temperament,
+        mixBass, mixMiddle, mixTreble,
     )
 
     /** These settings with [s] as the stretch. */
@@ -481,6 +595,7 @@ data class TunerSettings(
         octaveTreble = s.octaveTreble, widthBass = s.widthBass, widthMiddle = s.widthMiddle, widthTreble = s.widthTreble,
         widthBassFar = s.widthBassFar, widthTrebleFar = s.widthTrebleFar, stretchPoints = s.points,
         temperamentHighMidi = s.temperamentHighMidi, temperament = s.temperament,
+        mixBass = s.mixBass, mixMiddle = s.mixMiddle, mixTreble = s.mixTreble,
     )
 }
 
@@ -507,6 +622,10 @@ data class Stretch(
     val temperamentHighMidi: Int = TunerSettings.TEMPERAMENT_HIGH,
     /** The tuning's temperament ([TunerSettings.temperament]); equal for a tuning saved before 22 Nov 2026. */
     val temperament: at.clavierhaus.claviertuner.tuning.NamedTemperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL,
+    /** The ends' mixes ([TunerSettings.mixBass]); none for a tuning saved before 23 Nov 2026. */
+    val mixBass: OctaveShare? = null,
+    val mixMiddle: OctaveShare? = null,
+    val mixTreble: OctaveShare? = null,
 )
 
 /**
@@ -579,6 +698,10 @@ class SettingsModel(
             widthBassFar = far("widthBassFar", if (kept) null else d.widthBassFar),
             widthTrebleFar = far("widthTrebleFar", if (kept) null else d.widthTrebleFar),
             stretchPoints = store.get("stretchPoints")?.let { StretchPoint.decode(it) } ?: if (kept) emptyList() else d.stretchPoints,
+            // a phone that kept settings before 23 Nov 2026 has no mixes; a new one takes the edition's start's
+            mixBass = store.get("mixBass").let { if (it == null && !kept) d.mixBass else OctaveShare.decode(it) },
+            mixMiddle = store.get("mixMiddle").let { if (it == null && !kept) d.mixMiddle else OctaveShare.decode(it) },
+            mixTreble = store.get("mixTreble").let { if (it == null && !kept) d.mixTreble else OctaveShare.decode(it) },
             weightOctave = i("weightOctave", d.weightOctave),
             weightTwelfth = i("weightTwelfth", d.weightTwelfth),
             weightDoubleOctave = i("weightDoubleOctave", d.weightDoubleOctave),
@@ -624,6 +747,9 @@ class SettingsModel(
         store.put("widthBassFar", s.widthBassFar?.toString() ?: "")
         store.put("widthTrebleFar", s.widthTrebleFar?.toString() ?: "")
         store.put("stretchPoints", StretchPoint.encode(s.stretchPoints))
+        store.put("mixBass", OctaveShare.encode(s.mixBass))
+        store.put("mixMiddle", OctaveShare.encode(s.mixMiddle))
+        store.put("mixTreble", OctaveShare.encode(s.mixTreble))
         store.put("weightOctave", s.weightOctave.toString())
         store.put("weightTwelfth", s.weightTwelfth.toString())
         store.put("weightDoubleOctave", s.weightDoubleOctave.toString())
