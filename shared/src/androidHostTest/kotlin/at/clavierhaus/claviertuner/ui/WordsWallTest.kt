@@ -14,8 +14,8 @@ import kotlin.test.fail
  * on a screen. Names that are the same in every language -- the brand, a licence's name -- are
  * the only words allowed there, listed in [SAME_IN_EVERY_LANGUAGE].
  *
- * It also asks the table for the keys the Quick start reads by name (help.qs.<section>.s<n>), which
- * the generated constants cannot check, in both languages.
+ * It also asks the table for the keys Help reads by name, which the generated constants cannot check, in every
+ * language.
  */
 class WordsWallTest {
     private val calls = Regex("""\b(Text|FitText|Chip|ReadOnlyRow|SwitchRow|StepperRow|SettingsSection|SettingsNote|ChoiceRow|ActionRow|TextRow|InfoButton|HomeHubItem|drawText)\(\s*"([^"]*)"""")
@@ -55,11 +55,22 @@ class WordsWallTest {
         if (found.isNotEmpty()) fail("words written into a screen instead of the table (i18n/strings.tsv):\n  " + found.joinToString("\n  "))
     }
 
+    /**
+     * Help's lines read by name (QuickStart.kt: t("help..."), line("..."), named("...")), which the generated constants
+     * cannot check, in every language; and the two families it counts out (help.start.s1..5, help.qs.top.s1..5). Since 23 Nov
+     * 2026 the source is read for its keys rather than a written list, so a key Help names and the table lacks fails here.
+     */
     @Test
-    fun theQuickStartsLinesAreInTheTableInEveryLanguage() {
-        val sections = mapOf("a4" to 5, "sampling" to 4, "octaves" to 5, "tuning" to 5)
-        for (lang in Strings.languages) for ((section, n) in sections) for (i in 1..n) {
-            val key = "help.qs.$section.s$i"
+    fun helpsLinesAreInTheTableInEveryLanguage() {
+        val root = repoRoot()
+        val src = listOf("ui", "core/ui").map { File(root, "$it/src/commonMain/kotlin/at/clavierhaus/claviertuner/app/QuickStart.kt") }
+            .firstOrNull { it.isFile } ?: fail("QuickStart.kt not found")
+        val named = Regex("\"([a-z]+(?:\\.[A-Za-z0-9]+)+)\"").findAll(src.readText()).map { it.groupValues[1] }
+            .filter { !it.endsWith(".") }.toSet()
+        val counted = (1..5).map { "help.start.s$it" } + (1..5).map { "help.qs.top.s$it" }
+        val keys = named + counted
+        assertTrue(keys.size > 40, "only ${keys.size} keys found in ${src.path}")
+        for (lang in Strings.languages) for (key in keys) {
             val text = Strings.get(lang, key)
             assertTrue(text != key && text.isNotBlank(), "$key has no $lang text")
         }
