@@ -29,8 +29,9 @@ class MainActivity : ComponentActivity(), Phone {
     private val app by lazy {
         TunerApp(
             controller = TuningController(createAudioSource()) { System.currentTimeMillis() },
-            // the free app's range is A0–C8 and cannot be changed (Peter, 19 Oct 2026); Pro sets it down to C0
-            settingsModel = SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)), lowestKeyFixed = TunerSettings.MIDI_A0, defaults = SettingsModel.NEW_PHONE),
+            // the free app's range is A0–C8 and cannot be changed (Peter, 19 Oct 2026); Pro sets it down to C0. Equal
+            // temperament only (Peter, 23 Nov 2026, 22:00); the editions offer the others
+            settingsModel = SettingsModel(PrefsStore(getSharedPreferences("tuner-settings", MODE_PRIVATE)), lowestKeyFixed = TunerSettings.MIDI_A0, defaults = SettingsModel.NEW_PHONE, equalOnly = true),
             // Continue last tuning: one sealed file in app-private storage, this device only
             sessionStore = SessionStore(PrivateSaveFile(java.io.File(filesDir, "session")), KeystoreSealer()),
             phone = this,

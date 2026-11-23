@@ -2,11 +2,10 @@
 
 Neu
 - Ein neuer Weg durch die Stimmung. A4 und das Vermessen stehen auf einem Startbildschirm: der Rand oben (A4, Temperatur, Oktaven, die Proben), die drei Schritte darunter, unten die ganze Tastatur mit der nächsten Taste zum Vermessen, markiert und benannt. Der Stimmbildschirm hat denselben Rand (A4, Oktaven, Strobe) und unten die Tastatur mit den gestimmten Tasten in Grün; Fortschritt ist weg.
-- Temperaturen zur Wahl: Temperatur am Rand antippen. Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner, mitteltönig ¼ Komma und Schubert, Ron Kovals Konzertstimmung (Piano World, 2014). Hilfe › Temperaturen erklärt jede.
 
 Geändert
 - Einstellungen als eine Liste je Reiter: Stimmen, Spreizung, Klavier, App, Erweitert, Hilfe, Über.
-- Hilfe in neun Themen: ein Schnellstart in fünf Zeilen, dann A4, das Vermessen, die Oktavtypen, die Temperaturen, der Stimmbildschirm, über C6 und was jede Einstellung tut.
+- Hilfe gegliedert: ein Schnellstart in fünf Zeilen, darunter A4, das Vermessen, die Oktavtypen, der Stimmbildschirm und über C6; dann was jede Einstellung tut.
 - Fertig beim Vermessen setzt den Bass auf den Oktavtyp, den Ihre vermessenen Saiten nahelegen, und die Stimmung beginnt.
 
 Bitte ausprobieren

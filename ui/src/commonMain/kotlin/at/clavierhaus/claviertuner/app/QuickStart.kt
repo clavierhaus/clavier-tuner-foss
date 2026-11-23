@@ -23,9 +23,10 @@ private fun named(label: String, vararg keys: String): String = t(label) + ": " 
  * Every topic of Help, in the order of the work: the Quick start with the work's parts as its sub-topics, then the settings
  * with Advanced under them (23 Nov 2026: the Quick start's A4 line and the A4 topic read alike side by side; nested, the
  * line is the summary and the sub-topic its detail). [rangeFixed]: the range is A0-C8 and cannot be changed (the free app);
- * false where an edition sets the lowest key itself (Pro, down to C0).
+ * false where an edition sets the lowest key itself (Pro, down to C0). [temperaments]: the edition offers the temperament list
+ * (Pro); the free app is equal temperament only (Peter, 23 Nov 2026, 22:00) and has no topic on them.
  */
-internal fun helpTopics(rangeFixed: Boolean): List<HelpTopic> = listOf(
+internal fun helpTopics(rangeFixed: Boolean, temperaments: Boolean): List<HelpTopic> = listOfNotNull(
     HelpTopic(t(K.settings_page_quickstart), listOf(
         t("help.start.h") to (1..5).map { t("help.start.s$it") },
     )),
@@ -44,7 +45,7 @@ internal fun helpTopics(rangeFixed: Boolean): List<HelpTopic> = listOf(
         t("help.oct.h2") to listOf(line("settings.stretchThreeNote"), line("settings.stretchSixNote"), line("help.oct.s1")),
         t("help.oct.h3") to listOf(line("help.oct.s2"), line("help.oct.s3")),
     ), sub = true),
-    temperamentsTopic(sub = true),
+    if (temperaments) temperamentsTopic(sub = true) else null,
     HelpTopic(t("help.scr.title"), listOf(
         t("help.scr.h1") to listOf(line("help.scr.s1")),
         t("help.scr.h2") to listOf(line("help.scr.s5"), line("help.scr.s2"), line("help.qs.tuning.s5")),

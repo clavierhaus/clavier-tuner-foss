@@ -100,6 +100,12 @@ fun StartScreen(
     feeding: String? = null,
     onPickRecording: (() -> Unit)? = null,
     onUseMicrophone: () -> Unit = {},
+    /**
+     * The temperament list under the edge's Temperament, for an edition that offers it (Pro). The free app is equal
+     * temperament only (Peter, 23 Nov 2026, 22:00): its strip holds the temperament octave's start and end, and the edge
+     * says Equal.
+     */
+    temperaments: Boolean = false,
 ) {
     val view by controller.tuning.collectAsState()
     val a4 by controller.referenceA4Hz.collectAsState()
@@ -184,7 +190,7 @@ fun StartScreen(
                     // and Ron Koval's Schubert last, equal temperament with his octaves (SchubertTune; Peter, 23 Nov 2026,
                     // 19:57: "the Schubert is just another temperament"): null in this list stands for it
                     val schubert = SchubertTune.isOn(cfg)
-                    (NamedTemperament.entries + listOf<NamedTemperament?>(null)).chunked(4).forEach { row ->
+                    if (temperaments) (NamedTemperament.entries + listOf<NamedTemperament?>(null)).chunked(4).forEach { row ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             row.forEach { named ->
                                 val chosen = if (named == null) schubert else !schubert && named == cfg.temperament

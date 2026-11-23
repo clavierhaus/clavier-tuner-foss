@@ -63,7 +63,7 @@ private val app: TunerApp by lazy {
     TunerApp(
         controller = TuningController(createAudioSource()) { nowMs() },
         // the free app's range is A0–C8 and cannot be changed, on the iPhone as on Android (Peter, 19 Oct 2026)
-        settingsModel = SettingsModel(UserDefaultsStore(), lowestKeyFixed = TunerSettings.MIDI_A0, defaults = SettingsModel.NEW_PHONE),
+        settingsModel = SettingsModel(UserDefaultsStore(), lowestKeyFixed = TunerSettings.MIDI_A0, defaults = SettingsModel.NEW_PHONE, equalOnly = true),
         sessionStore = SessionStore(IosSaveFile(), KeychainSealer()),
         phone = IosPhone,
     )

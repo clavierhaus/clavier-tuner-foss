@@ -81,6 +81,24 @@ class SettingsTest {
         assertEquals(null, pro.lowestKeyFixed)
     }
 
+    /**
+     * The free app is equal temperament only (Peter, 23 Nov 2026, 22:00): a temperament or Ron Koval's octaves stored by the
+     * build of that afternoon give way to equal and the six points, and nothing asked sets another; an edition keeps them.
+     */
+    @Test
+    fun theFreeAppIsEqualTemperamentWhateverIsStoredOrAsked() {
+        val store = MemoryStore()
+        SettingsModel(store).update { SchubertTune.applyTo(it) }
+        val free = SettingsModel(store, equalOnly = true)
+        assertEquals(at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL, free.settings.value.temperament)
+        assertTrue(!SchubertTune.isOn(free.settings.value), "Ron Koval's octaves are taken out")
+        free.update { it.copy(temperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.WERCKMEISTER_III) }
+        assertEquals(at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL, free.settings.value.temperament, "and nothing sets another")
+        val pro = SettingsModel(MemoryStore())
+        pro.update { it.copy(temperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.WERCKMEISTER_III) }
+        assertEquals(at.clavierhaus.claviertuner.tuning.NamedTemperament.WERCKMEISTER_III, pro.settings.value.temperament, "an edition keeps it")
+    }
+
     /** The phone's bars outside the tuning screen are the tuner's to show or not (Peter, 23 Oct 2026): shown until he says otherwise, and kept. */
     @Test
     fun theNavigationAndStatusBarsAreShownUntilSwitchedOffAndKept() {

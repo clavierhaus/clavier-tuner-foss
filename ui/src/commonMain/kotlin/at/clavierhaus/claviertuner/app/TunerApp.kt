@@ -225,6 +225,7 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
                         onTemperamentLow = { low -> tuneOrDefault { it.copy(temperamentLowMidi = low) } },
                         onTemperamentHigh = { high -> tuneOrDefault { it.copy(temperamentHighMidi = high) } },
                         onChangeSettings = { change -> tuneOrDefault(change) },
+                        temperaments = !settingsModel.equalOnly,
                     )
                 }
                 else -> {

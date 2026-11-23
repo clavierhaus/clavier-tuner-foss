@@ -18,29 +18,25 @@ reconstructed from the commit history that day.
   three choices; a tap on the note's name opens the keyboard with Auto note
   switching. Done in the sampling sets the bass to the octave type your
   sampled strings suggest, and the tuning starts.
-- **Temperaments to choose.** Temperament on the edge lists them all:
-  equal, Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner,
-  quarter-comma meantone, and Schubert: Ron Koval's concert tuning as he
-  published it on Piano World (22 April 2014), equal temperament with his
-  octaves (the temperament octave about 70 % 4:2 and 30 % 2:1, the lowest
-  octave about 75 % 12:6). Another temperament takes his octaves out and the
-  stretch returns to the six points. Help has a topic on them. With thanks to
-  Ron Koval.
+- **Equal temperament, always.** The edge's Temperament says Equal and sets
+  the temperament octave's start and end; the free app tunes equal
+  temperament and offers no other.
 - **Settings as one list per tab.** Tabs across the top (Tuning, Stretch,
   Piano, App, Advanced, Help, About), each tab one list that scrolls. The
   stretch preset and the tolerance are under Tuning, how the screen reads
   under Advanced.
 - The home screen's doors: the first word white, the rest orange.
-- **Help in nine topics.** A Quick start of five lines from A4 to the first
-  note, then a topic each for A4, the sampling, the octave types and stretch,
-  the temperaments, the tuning screen, above C6, and what each setting does.
+- **Help nested.** A Quick start of five lines from A4 to the first note, with
+  A4, the sampling, the octave types and stretch, the tuning screen and above
+  C6 as its sub-topics; then what each setting does, Advanced under it.
 
 ### 2026-11-22
 - **The engine knows the named temperaments**: Werckmeister III, Kirnberger
   III, Vallotti, Young II, Kellner and quarter-comma meantone besides equal,
   each worked out from its definition (which fifths are narrowed, by what
   share of which comma), laid over the stretch with A4 unmoved and kept with
-  the tuning. Equal temperament, as before, unless another is chosen.
+  the tuning, for an edition that offers them; the free app stays in equal
+  temperament (23 Nov 2026).
 
 ## 0.11.0 -- 2026-11-22
 

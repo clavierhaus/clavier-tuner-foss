@@ -10,10 +10,7 @@ TUNE BY THE STROBE
 The app follows the key you strike and listens to the partial a tuner would listen to in that register. The strobe shows that partial against its target to a tenth of a cent, at 47 readings a second — a string that wobbles is shown wobbling. The string's other partials stand beside it, each in its own band: a clean string is one pattern that comes to a standstill, a false partial is the one out of step. When the strobe stands still, the note is in, and the app notes it. No wizard, no verdict dressed up as a number.
 
 YOUR PIANO, YOUR PHONE
-The edge across the top shows what this tuning is tuned to — A4, the temperament, the octave types — and a tap on one changes it. Octave type and width per register (2:1 to 10:5, the double octave 4:1, the twelfth 3:1), the wound/plain break, the match window: the engine carries them as settings and the measurement decides the rest. The session is kept on the phone in one sealed file; continue tomorrow where you stopped. No account, no server, nothing leaves the phone. The microphone is read raw, with every effect switched off.
-
-TEMPERAMENTS
-Equal by default. One tap on Temperament lists the others: Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner, quarter-comma meantone, each worked out from its definition and laid over this piano's stretch, and Schubert: Ron Koval's concert tuning as he published it on Piano World in 2014, equal temperament with his octaves. With thanks to Ron Koval.
+The edge across the top shows what this tuning is tuned to — A4, the temperament octave, the octave types — and a tap on one changes it. Octave type and width per register (2:1 to 10:5, the double octave 4:1, the twelfth 3:1), the wound/plain break, the match window: the engine carries them as settings and the measurement decides the rest. The session is kept on the phone in one sealed file; continue tomorrow where you stopped. No account, no server, nothing leaves the phone. The microphone is read raw, with every effect switched off.
 
 HONEST ABOUT WHAT IT IS NOT
 Pitch raises are out of scope by design: a piano far from pitch needs a pitch raise first. Unisons are tuned by ear, as they should be.

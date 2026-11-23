@@ -650,6 +650,12 @@ class SettingsModel(
     private val defaults: TunerSettings = FIRST_RUN,
     /** The lowest key an edition fixes, or null where the tuner sets it (Pro). */
     val lowestKeyFixed: Int? = null,
+    /**
+     * Equal temperament only (the free app; Peter, 23 Nov 2026, 22:00: "FOSS is ET only"): whatever is stored or asked, the
+     * temperament is equal, and Ron Koval's octaves, which come with the Schubert of the editions' temperament list, are
+     * taken out to the six points. The engine keeps the named temperaments for the editions that offer them.
+     */
+    val equalOnly: Boolean = false,
 ) {
     private val _settings = MutableStateFlow(load())
     val settings: StateFlow<TunerSettings> = _settings.asStateFlow()
@@ -662,7 +668,10 @@ class SettingsModel(
 
     private fun load(): TunerSettings = fixed(loadStored())
 
-    private fun fixed(s: TunerSettings): TunerSettings = offered(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s)
+    private fun fixed(s: TunerSettings): TunerSettings = offered(equal(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s))
+
+    private fun equal(s: TunerSettings): TunerSettings =
+        if (!equalOnly) s else SchubertTune.withTemperament(s, at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL)
 
     /** A region's octave type no longer offered (30 Oct 2026), as an earlier version may have stored it: the region's default. */
     private fun offered(s: TunerSettings): TunerSettings = s.copy(

@@ -2,11 +2,10 @@
 
 New
 - A new way through a tuning. A4 and the sampling are on one start screen: the edge across the top (A4, Temperament, Octaves, the samples), the three steps under it, the whole keyboard at the foot with the next key to sample dotted and named. The tuning screen has the same edge (A4, Octaves, Strobe) and the keyboard at the foot with the keys tuned in green; Progress is gone.
-- Temperaments to choose: tap Temperament on the edge. Werckmeister III, Kirnberger III, Vallotti, Young II, Kellner, quarter-comma meantone, and Schubert, Ron Koval's concert tuning (Piano World, 2014). Help › Temperaments explains each.
 
 Changed
 - Settings as one list per tab: Tuning, Stretch, Piano, App, Advanced, Help, About.
-- Help in nine topics: a five-line Quick start, then A4, the sampling, the octave types, the temperaments, the tuning screen, above C6, and what each setting does.
+- Help nested: a five-line Quick start with A4, the sampling, the octave types, the tuning screen and above C6 under it; then what each setting does.
 - Done in the sampling sets the bass to the octave type your sampled strings suggest, and the tuning starts.
 
 Please try
