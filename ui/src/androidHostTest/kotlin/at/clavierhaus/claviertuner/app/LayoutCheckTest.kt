@@ -38,7 +38,6 @@ import at.clavierhaus.claviertuner.audio.WavPcm
 import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.MemoryStore
-import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.SettingsModel
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import org.junit.Assert.fail
@@ -218,13 +217,6 @@ class LayoutCheckTest {
         // the octave types in the work's place, from the edge's Octaves
         octavesOpen = true
         show("octaves", tune); look(where, dir, "08-octaves")
-        // Ron Koval's Schubert, chosen under Temperament: its places in the octaves' work and in the Stretch tab
-        val before = model.settings.value
-        change { SchubertTune.applyTo(it) }
-        show("octaves schubert", tune); look(where, dir, "08-octaves-schubert")
-        show("settings schubert") { TunerSettingsScreen(controller = c, model = model, version = "0.3.0", onBack = {}, onHome = {}, open = 1 to 0) }
-        look(where, dir, "09-settings-schubert")
-        change { before }
         octavesOpen = false
         // settings, every tab but Help (Help scrolls by law): Tuning, Stretch, Piano, App, Advanced, About; each tab one list
         // that scrolls since 23 Nov 2026, so the tab is opened and its page is the list's top

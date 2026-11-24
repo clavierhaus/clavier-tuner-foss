@@ -46,7 +46,6 @@ import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.i18n.noteName
 import at.clavierhaus.claviertuner.i18n.t
 import at.clavierhaus.claviertuner.picture.TuningPicture
-import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.TuningSession
 import at.clavierhaus.claviertuner.ui.AcceptButton
@@ -131,8 +130,8 @@ fun StartScreen(
         ) {
             EdgeItem("A4", formatHz(a4), false, Modifier.weight(1f)) { open = null }
             EdgeItem(t(K.edge_temperament),
-                // "Equal" too, so the edge says there is a choice (Peter, 23 Nov 2026); Schubert while Ron Koval's octaves stand
-                if (SchubertTune.isOn(cfg)) t(K.temperament_schubert) else temperamentName(cfg.temperament),
+                // "Equal" too, so the edge says there is a choice (Peter, 23 Nov 2026)
+                temperamentName(cfg.temperament),
                 open == "temperament", Modifier.weight(1.1f)) {
                 open = if (open == "temperament") null else "temperament"
             }
@@ -187,23 +186,20 @@ fun StartScreen(
                     }
                     // the named temperaments (22 Nov 2026), all of them at once, one tap choosing (23 Nov 2026, Peter: "one tap on
                     // the temperament button should bring up a list of those temperaments available"); the chosen one orange
-                    // and Ron Koval's Schubert last, equal temperament with his octaves (SchubertTune; Peter, 23 Nov 2026,
-                    // 19:57: "the Schubert is just another temperament"): null in this list stands for it
-                    val schubert = SchubertTune.isOn(cfg)
-                    if (temperaments) (NamedTemperament.entries + listOf<NamedTemperament?>(null)).chunked(4).forEach { row ->
+                    if (temperaments) NamedTemperament.entries.chunked(4).forEach { row ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             row.forEach { named ->
-                                val chosen = if (named == null) schubert else !schubert && named == cfg.temperament
+                                val chosen = named == cfg.temperament
                                 Box(
                                     Modifier.weight(1f).heightIn(min = 48.dp)
                                         .border(1.dp, if (chosen) Orange else EdgeRule, RoundedCornerShape(6.dp))
                                         .clickable {
-                                            onChangeSettings { if (named == null) SchubertTune.applyTo(it) else SchubertTune.withTemperament(it, named) }
+                                            onChangeSettings { it.copy(temperament = named) }
                                         }
                                         .padding(horizontal = 6.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    FitText(if (named == null) t(K.temperament_schubert) else temperamentName(named), 16.sp,
+                                    FitText(temperamentName(named), 16.sp,
                                         color = if (chosen) Orange else White, align = TextAlign.Center)
                                 }
                             }

@@ -461,7 +461,7 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
         if (type.semitones != 12 || midi == MIDI_A4) return targetF1(midi, a4Hz)
         val below = MIDI_A4 - 12
         // the lower note where each type of the middle's makes the octave beatless, weighted in cents when it mixes two
-        // (23 Nov 2026, Ron Koval's "about 70 % 4:2 and 30 % 2:1")
+        // (23 Nov 2026)
         fun beatless(t: OctaveType) = t.high * a4Hz * Inharmonicity.ratio(t.high, bOf(MIDI_A4, c)) / (t.low * Inharmonicity.ratio(t.low, bOf(below, c)))
         val parts = octaveParts(type, settings.middleMix())
         val lowerF1 = (if (parts.size == 1) beatless(type) else exp(parts.sumOf { (t, w) -> w * ln(beatless(t)) })) * 2.0.pow(-settings.widthFor(below) / 1200.0)

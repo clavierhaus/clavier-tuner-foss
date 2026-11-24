@@ -3,6 +3,7 @@ package at.clavierhaus.claviertuner.settings
 import at.clavierhaus.claviertuner.tuning.TuningSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SettingsTest {
@@ -82,16 +83,20 @@ class SettingsTest {
     }
 
     /**
-     * The free app is equal temperament only (Peter, 23 Nov 2026, 22:00): a temperament or Ron Koval's octaves stored by the
-     * build of that afternoon give way to equal and the six points, and nothing asked sets another; an edition keeps them.
+     * The free app is equal temperament only (Peter, 23 Nov 2026, 22:00): a temperament stored by the build of that afternoon
+     * gives way to equal, and nothing asked sets another; an edition keeps it. Octaves mixed of two types, which no screen sets
+     * since 24 Nov 2026, give way to the six points in every edition.
      */
     @Test
     fun theFreeAppIsEqualTemperamentWhateverIsStoredOrAsked() {
         val store = MemoryStore()
-        SettingsModel(store).update { SchubertTune.applyTo(it) }
+        SettingsModel(store).update { it.copy(temperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.KELLNER) }
+        store.put("mixMiddle", "O2_1:0.3")
         val free = SettingsModel(store, equalOnly = true)
         assertEquals(at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL, free.settings.value.temperament)
-        assertTrue(!SchubertTune.isOn(free.settings.value), "Ron Koval's octaves are taken out")
+        assertNull(free.settings.value.mixMiddle, "a stored mix is taken out")
+        assertEquals(TunerSettings().withSixPoints(true).stretchPoints, free.settings.value.stretchPoints, "to the six points")
+        assertNull(SettingsModel(store).settings.value.mixMiddle, "in an edition too")
         free.update { it.copy(temperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.WERCKMEISTER_III) }
         assertEquals(at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL, free.settings.value.temperament, "and nothing sets another")
         val pro = SettingsModel(MemoryStore())

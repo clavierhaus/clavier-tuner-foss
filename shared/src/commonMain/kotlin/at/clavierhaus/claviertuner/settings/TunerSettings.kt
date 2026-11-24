@@ -46,8 +46,8 @@ enum class OctaveType(val label: String, val low: Int, val high: Int, val semito
     /** The twelfth: partial 3 of the lower note on partial 1 of the note a twelfth up (Peter, 23 Oct 2026). */
     O3_1("3:1", 3, 1, 19),
     /**
-     * Partial 12 of the lower note on partial 6 of the upper (23 Nov 2026): the lowest octave's depth in Ron Koval's Schubert
-     * concert tune, a place's octave or one share of it, never a region's ([TunerSettings.BASS_PLACE_OCTAVES]).
+     * Partial 12 of the lower note on partial 6 of the upper (23 Nov 2026; kept on Peter's word, 19:57: "Keep the 12:6"): a
+     * place's octave or one share of it, never a region's ([TunerSettings.BASS_PLACE_OCTAVES]).
      */
     O12_6("12:6", 12, 6),
 }
@@ -206,9 +206,9 @@ data class TunerSettings(
      */
     val stretchPoints: List<StretchPoint> = emptyList(),
     /**
-     * A share of a second octave type at the lowest key, in the temperament octave and at C8 (23 Nov 2026): Ron Koval's
-     * Schubert concert tune lays the temperament "about 70 % 4:2 and 30 % 2:1" and the lowest octave "about 75 %" 12:6
-     * over 6:3. None: each end's type alone, as before. Of the types its place offers ([BASS_PLACE_OCTAVES],
+     * A share of a second octave type at the lowest key, in the temperament octave and at C8 (23 Nov 2026): the octave's
+     * target that share of the way, in cents, towards where the second type is beatless. Offered by no screen since
+     * 24 Nov 2026, and taken out of stored settings ([SettingsModel]). None: each end's type alone, as before. Of the types its place offers ([BASS_PLACE_OCTAVES],
      * [MIDDLE_OCTAVES], [TREBLE_OCTAVES]); a mix of 4:1 at the lowest key counts only as [onPoints] allows a 4:1 there.
      */
     val mixBass: OctaveShare? = null,
@@ -371,8 +371,8 @@ data class TunerSettings(
         val MIDDLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2)
         val TREBLE_OCTAVES: List<OctaveType> = listOf(OctaveType.O2_1, OctaveType.O4_2, OctaveType.O4_1, OctaveType.O3_1)
         /**
-         * What a place below the temperament octave may be made of, or a share of it (23 Nov 2026, Ron Koval's Schubert
-         * concert tune): the bass's types and the double octave 4:1 and 12:6. A region is never offered the last two. 4:1
+         * What a place below the temperament octave may be made of, or a share of it (23 Nov 2026): the bass's types and
+         * the double octave 4:1 and 12:6. A region is never offered the last two. 4:1
          * counts only where every key it reaches has its partner two octaves up at or below the temperament octave's end
          * ([onPoints]): beyond it the partner is a treble key, whose chain comes back down, the loop of OctaveChoicesTest.
          */
@@ -652,8 +652,7 @@ class SettingsModel(
     val lowestKeyFixed: Int? = null,
     /**
      * Equal temperament only (the free app; Peter, 23 Nov 2026, 22:00: "FOSS is ET only"): whatever is stored or asked, the
-     * temperament is equal, and Ron Koval's octaves, which come with the Schubert of the editions' temperament list, are
-     * taken out to the six points. The engine keeps the named temperaments for the editions that offer them.
+     * temperament is equal. The engine keeps the named temperaments for the editions that offer them.
      */
     val equalOnly: Boolean = false,
 ) {
@@ -668,10 +667,19 @@ class SettingsModel(
 
     private fun load(): TunerSettings = fixed(loadStored())
 
-    private fun fixed(s: TunerSettings): TunerSettings = offered(equal(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s))
+    private fun fixed(s: TunerSettings): TunerSettings = offered(unmixed(equal(lowestKeyFixed?.let { s.copy(lowestKeyMidi = it) } ?: s)))
 
     private fun equal(s: TunerSettings): TunerSettings =
-        if (!equalOnly) s else SchubertTune.withTemperament(s, at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL)
+        if (!equalOnly) s else s.copy(temperament = at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL)
+
+    /**
+     * No screen sets an octave mixed of two types since 24 Nov 2026 (Peter, 13:55: the preset that was made of them "fully
+     * removed from all repos"), so mixes a phone stored on 23 Nov give way to the six points, which is what choosing
+     * another temperament after them did, and nothing on screen stands on octaves it does not show.
+     */
+    private fun unmixed(s: TunerSettings): TunerSettings =
+        if (s.mixBass == null && s.mixMiddle == null && s.mixTreble == null && s.stretchPoints.none { it.mix != null }) s
+        else s.withSixPoints(true)
 
     /** A region's octave type no longer offered (30 Oct 2026), as an earlier version may have stored it: the region's default. */
     private fun offered(s: TunerSettings): TunerSettings = s.copy(

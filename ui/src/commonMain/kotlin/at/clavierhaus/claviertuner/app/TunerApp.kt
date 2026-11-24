@@ -22,7 +22,6 @@ import at.clavierhaus.claviertuner.TuningController
 import at.clavierhaus.claviertuner.i18n.Strings
 import at.clavierhaus.claviertuner.persistence.SessionStore
 import at.clavierhaus.claviertuner.settings.SettingsModel
-import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.OctaveSuggestion
 import at.clavierhaus.claviertuner.ui.OnePicture
@@ -171,8 +170,6 @@ fun TunerAppScreen(app: TunerApp, backHandler: @Composable (onBack: () -> Unit) 
         LaunchedEffect(samplingDoneCount) {
             if (samplingDoneCount == seenSamplingDone.value) return@LaunchedEffect
             seenSamplingDone.value = samplingDoneCount
-            // Ron Koval's Schubert is his octaves as published: the suggestion does not change them (23 Nov 2026)
-            if (SchubertTune.isOn(controller.settings.value)) return@LaunchedEffect
             val snap = controller.snapshot() ?: return@LaunchedEffect
             val keys = snap.basis?.keys
             val suggested = OctaveSuggestion.bass(snap.measurements.filter { keys == null || it.midi in keys },

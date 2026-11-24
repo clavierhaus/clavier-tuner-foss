@@ -5,9 +5,8 @@ package at.clavierhaus.claviertuner.settings
  * octave types, their widths and their places, the tuner's choice; every target is still worked out by the engine from the
  * inharmonicity the sampling measured (TuningSession.curveTargetF1).
  *
- * Ron Koval's Schubert concert tune stood here as a third preset from 23 Nov 2026, 11:38 to 19:52, and left the octave
- * selection on Peter's word ("Quite honestly, the Schubert tuning was a joke. Please remove it from the octave selection").
- * The engine keeps the octave mixes it was made of (OctaveShare, 12:6, a 4:1 place in the bass), offered by no screen.
+ * A third preset stood here on 23 Nov 2026 and is gone. The engine keeps the octave mixes (OctaveShare, 12:6, a 4:1 place in
+ * the bass), offered by no screen.
  */
 enum class StretchPreset {
     THREE, SIX;

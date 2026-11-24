@@ -16,8 +16,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Octaves mixed of two types (23 Nov 2026), as Ron Koval's Schubert concert tune lays them: the temperament "about 70 %
- * 4:2 and 30 % 2:1", A6 "about 60 % 4:1 and 40 % 4:2", A1 "80 % 4:1", the lowest octave "about 75 %" 12:6 over 6:3. A
+ * Octaves mixed of two types (23 Nov 2026), an engine capability that no screen offers since 24 Nov 2026. A
  * mix of a share s puts the octave's target s of the way, in cents, from where the place's own type is beatless to where
  * the other is. Each check here is against the same session with the pure types, so that it cannot pass by the model it
  * tests; the sampling is StretchPointsTest's sparse one.
@@ -35,15 +34,15 @@ class OctaveMixTest {
 
     private fun et(t: TuningSession, m: Int) = TuningSession.centsOff(t.curveTargetF1(m), TuningSession.targetF1(m, a4))
 
-    /** Ron Koval's places, without a name: what the engine must be able to hold. */
-    private val ron = TunerSettings(
+    /** Mixes at every kind of place, the shares the engine's own choice for the check: what it must be able to hold. */
+    private val mixed = TunerSettings(
         octaveBass = OctaveType.O6_3, octaveMiddle = OctaveType.O4_2, octaveTreble = OctaveType.O4_1,
-        mixBass = OctaveShare(OctaveType.O12_6, 0.75), mixMiddle = OctaveShare(OctaveType.O2_1, 0.3),
+        mixBass = OctaveShare(OctaveType.O12_6, 0.6), mixMiddle = OctaveShare(OctaveType.O2_1, 0.5),
         stretchPoints = listOf(
-            StretchPoint(33, OctaveType.O4_1, 0.0, OctaveShare(OctaveType.O6_3, 0.2)),
+            StretchPoint(33, OctaveType.O6_3, 0.0, OctaveShare(OctaveType.O4_1, 0.5)),
             StretchPoint(45, OctaveType.O6_3, 0.0),
             StretchPoint(81, OctaveType.O4_2, 0.0),
-            StretchPoint(93, OctaveType.O4_1, 0.0, OctaveShare(OctaveType.O4_2, 0.4)),
+            StretchPoint(93, OctaveType.O4_1, 0.0, OctaveShare(OctaveType.O4_2, 0.3)),
         ),
     )
 
@@ -100,56 +99,42 @@ class OctaveMixTest {
     }
 
     @Test
-    fun ronKovalsPlacesGiveEveryKeyATargetAndNoStep() {
+    fun mixedPlacesGiveEveryKeyATarget() {
         for (low in TunerSettings.MIN_TEMPERAMENT_LOW..TunerSettings.MAX_TEMPERAMENT_LOW) {
-            val t = session(ron.copy(temperamentLowMidi = low))
+            val t = session(mixed.copy(temperamentLowMidi = low))
             for (m in 21..108) assertTrue(t.listening(m).targetHz.let { it.isFinite() && it > 0 }, "key $m, temperament from $low")
         }
-        val t = session(ron)
-        val off = (21..96).associateWith { et(t, it) }
-        // Below A1 the octave goes over to about 75 % 12:6 at A0, and on this sampling's B there every key stands some 1-3.3 c
-        // flatter than the one above it (the X1, 23 Nov 2026: A0 -26.83 c, A#0 -23.46 c; recomputed outside the engine the
-        // same day, A0 -26.83 c, the steps from A0 up 3.26, 2.93, 2.63, 2.36 ... 0.97 c). The 3 c bound, taken from the six
-        // points' test, is a size, not a border: a border is a step out of line with its neighbours'. So there the keys fall
-        // steadily and each step differs from the next by less than half a cent; from A1 up the bounds stand as before.
-        for (m in 21..32) assertTrue(off[m]!! < off[m + 1]!!, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: not falling downward")
-        for (m in 21..30) {
-            val here = off[m + 1]!! - off[m]!!; val next = off[m + 2]!! - off[m + 1]!!
-            assertTrue(abs(here - next) < 0.5, "steps $here c at midi $m and $next c at ${m + 1}: a border")
-        }
-        for (m in 33..95) assertTrue(abs(off[m]!! - off[m + 1]!!) < 3.0, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: a border")
-        for (m in 44..95) assertTrue(abs(off[m]!! - off[m + 1]!!) < 1.0, "midi $m stands ${off[m]} c from ET, ${m + 1} ${off[m + 1]} c: a border")
-        assertEquals(OctaveType.O12_6, ron.octaveTypeFor(21), "the heaviest type is read: 75 % 12:6 at A0")
-        assertEquals(OctaveType.O4_1, ron.octaveTypeFor(93), "60 % 4:1 at A6")
-        assertEquals(OctaveType.O4_2, ron.octaveTypeFor(81))
+        assertEquals(OctaveType.O12_6, mixed.octaveTypeFor(21), "the heaviest type is read: 60 % 12:6 at A0")
+        assertEquals(OctaveType.O4_1, mixed.octaveTypeFor(93), "70 % 4:1 at A6")
+        assertEquals(OctaveType.O4_2, mixed.octaveTypeFor(81))
     }
 
     @Test
     fun eitherPresetTakesTheMixesOut() {
         for (on in listOf(true, false)) {
-            val s = ron.withSixPoints(on)
+            val s = mixed.withSixPoints(on)
             assertNull(s.mixBass); assertNull(s.mixMiddle); assertNull(s.mixTreble)
             assertTrue(s.stretchPoints.none { it.mix != null })
         }
-        assertEquals(TunerSettings(), ron.withSixPoints(false).copy(stretchPoints = emptyList()), "off is the defaults, mixes and all")
+        assertEquals(TunerSettings(), mixed.withSixPoints(false).copy(stretchPoints = emptyList()), "off is the defaults, mixes and all")
     }
 
     @Test
     fun theMixesAreKeptByTheSettingsAndByTheTuning() {
-        assertEquals(ron.stretchPoints, StretchPoint.decode(StretchPoint.encode(ron.stretchPoints)))
+        assertEquals(mixed.stretchPoints, StretchPoint.decode(StretchPoint.encode(mixed.stretchPoints)))
         assertEquals(listOf(StretchPoint(77, OctaveType.O2_1, 0.74)), StretchPoint.decode("77:O2_1:0.74"), "a place of before reads as it did")
         assertEquals(emptyList(), StretchPoint.decode("77:O2_1:0.74:O4_1:1.5"), "a share out of range drops the place")
         assertNull(OctaveShare.decode("O2_1:0")); assertNull(OctaveShare.decode("")); assertNull(OctaveShare.decode("nonsense:0.3"))
 
+        // the settings no longer keep them: no screen sets a mix since 24 Nov 2026, and a stored one gives way to the six points
         val store = MemoryStore()
-        SettingsModel(store).update { ron }
+        SettingsModel(store).update { mixed }
         val back = SettingsModel(store).settings.value
-        assertEquals(ron.stretch(), back.stretch())
-        val kept = MemoryStore().apply { put("octaveBass", "O6_3") }
-        assertNull(SettingsModel(kept, defaults = ron).settings.value.mixMiddle, "a phone that kept settings before has no mixes")
+        assertNull(back.mixMiddle); assertNull(back.mixBass); assertTrue(back.stretchPoints.none { it.mix != null })
+        assertEquals(TunerSettings().withSixPoints(true).stretchPoints, back.stretchPoints)
 
-        val text = SessionCodec.encode(SessionSnapshot(0, a4, 60, emptyList(), sampling = false, stretch = ron.stretch()))
-        assertEquals(ron.stretch(), SessionCodec.decode(text).stretch)
+        val text = SessionCodec.encode(SessionSnapshot(0, a4, 60, emptyList(), sampling = false, stretch = mixed.stretch()))
+        assertEquals(mixed.stretch(), SessionCodec.decode(text).stretch)
         val none = SessionCodec.encode(SessionSnapshot(0, a4, 60, emptyList(), sampling = false, stretch = TunerSettings().stretch()))
         assertTrue("mixes " !in none, "a tuning without mixes is written as before")
         assertNull(SessionCodec.decode(none).stretch?.mixMiddle)

@@ -25,7 +25,6 @@ import at.clavierhaus.claviertuner.ui.LocalHelpText
 import androidx.compose.runtime.CompositionLocalProvider
 import at.clavierhaus.claviertuner.settings.OctaveType
 import at.clavierhaus.claviertuner.settings.SettingsModel
-import at.clavierhaus.claviertuner.settings.SchubertTune
 import at.clavierhaus.claviertuner.settings.StretchPreset
 import at.clavierhaus.claviertuner.settings.TunerSettings
 import at.clavierhaus.claviertuner.tuning.Notes
@@ -236,8 +235,6 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
             TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
-    // Ron Koval's octaves, set under Temperament (SchubertTune): shown, not set here
-    if (SchubertTune.isOn(s)) return listOf(choice, SettingsPage(t(K.temperament_schubert), left = { MixedPlaces(s) }))
     if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
     return listOf(
         choice,
