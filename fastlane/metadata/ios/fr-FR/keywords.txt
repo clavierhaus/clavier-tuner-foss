@@ -1,1 +1,1 @@
-piano,accord,accordeur,accordage,étirement,inharmonicité,stroboscope,partiels,octave,diapason
+gratuit,open source,piano,accord,accordeur,accordage,étirement,inharmonicité,stroboscope,partiels

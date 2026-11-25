@@ -14,8 +14,8 @@ no recording and measures nothing. Run on the X1 after a build of this version i
      needs a piano;
   6. the screenshots under fastlane/screenshots/ios/<locale>/*.png, by their size: iPhone large (2868x1320, 2796x1290),
      iPhone medium (2622x1206, 2556x1179) and iPad 13" (2752x2064, 2732x2048), either way round; a set is replaced whole;
-  7. what only App Store Connect's own pages can do, said by name: the Paid Applications Agreement with tax and banking,
-     the price, App Privacy, the age rating, and the EU trader status;
+  7. what only App Store Connect's own pages can do, said by name: the price (free), App Privacy, the age rating, and
+     the EU trader status;
   8. with --submit, and only then: the version to App Review.
 
 Every step reads before it writes, so a second run changes only what differs. The key: ASC_KEY (the .p8), ASC_KEY_ID and
@@ -291,9 +291,8 @@ def main():
 
     # 7. what only App Store Connect's pages can do
     print("\n  In App Store Connect, by hand, once:")
-    for line in ["Business: the Paid Applications Agreement, tax forms and bank account (a paid app needs all three)",
-                 "Business › your trader status for the EU (the DSA): the company's address, phone and email, shown on the store",
-                 "the app › Pricing and Availability: the price, all countries",
+    for line in ["Business › your trader status for the EU (the DSA): the company's address, phone and email, shown on the store",
+                 "the app › Pricing and Availability: Free, all countries",
                  "the app › App Privacy: Data Not Collected",
                  "the app › App Information › Age Rating: every answer None/No (4+)"]:
         print(f"   - {line}")

@@ -1,1 +1,1 @@
-Sample your piano's strings and the app works out where every note belongs on this instrument. Then tune by the strobe, to a tenth of a cent.
+Free and open source: a professional piano tuner with no price, no ads, no account. Sample your strings and tune every note to where it belongs on this piano.

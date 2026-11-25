@@ -15,5 +15,5 @@ Le bord en haut montre sur quoi cet accord est fait : A4, l’octave de partitio
 HONNÊTE SUR CE QU’ELLE N’EST PAS
 La mise au diapason d’un piano très bas est hors de propos, par choix : elle doit être faite d’abord. Les unissons s’accordent à l’oreille.
 
-CODE OUVERT, PAS GRATUIT
-Le code est ouvert (Apache 2.0) : le moteur, ses tests et les documents qui le jugent. Qui sait le faire peut construire l’app et l’installer sur son propre iPhone ; faites donc. Le prix ici paie l’infrastructure et le temps qu’il vous épargne : vous installez, et rien ne vous fait perdre de temps.
+GRATUIT ET OPEN SOURCE
+Clavier Tuner est gratuit : pas de prix, pas d’achat intégré, pas d’abonnement, pas de publicité, pas de compte. Et le code est ouvert (Apache 2.0) : le moteur, ses tests et les documents qui le jugent sont publics, pour que chacun les lise, les vérifie et les construise. Un logiciel professionnel pour les techniciens du piano, gratuit.

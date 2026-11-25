@@ -1,1 +1,1 @@
-piano,tuning,tuner,stretch,inharmonicity,strobe,partials,technician,octave,grand,upright,A4
+free,open source,piano,tuning,tuner,stretch,inharmonicity,strobe,partials,technician,octave,grand

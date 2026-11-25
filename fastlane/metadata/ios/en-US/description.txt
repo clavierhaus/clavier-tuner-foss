@@ -15,5 +15,5 @@ The edge across the top shows what this tuning is tuned to: A4, the temperament 
 HONEST ABOUT WHAT IT IS NOT
 Pitch raises are out of scope by design: a piano far from pitch needs a pitch raise first. Unisons are tuned by ear.
 
-OPEN SOURCE, NOT FREE BEER
-The code is open (Apache 2.0): the engine, its tests and the documents it is judged by. Anyone who knows how can build the app and put it on their own iPhone; be our guest. The price here pays for the infrastructure and for the time it saves you: you install it, and nothing wastes your time.
+FREE AND OPEN SOURCE
+Clavier Tuner is free: no price, no in-app purchase, no subscription, no advertising, no account. And it is open source (Apache 2.0): the engine, its tests and the documents it is judged by are public, for anyone to read, check and build. Professional software for piano technicians, free to use.

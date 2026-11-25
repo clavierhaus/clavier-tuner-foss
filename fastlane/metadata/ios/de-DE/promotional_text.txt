@@ -1,1 +1,1 @@
-Vermessen Sie die Saiten Ihres Klaviers, und die App bestimmt, wohin jeder Ton auf diesem Instrument gehört. Dann stimmen Sie nach dem Strobe, auf ein Zehntel Cent.
+Kostenlos und Open Source: ein professionelles Klavierstimmgerät ohne Preis, ohne Werbung, ohne Konto. Saiten vermessen und jeden Ton dorthin stimmen, wo er hingehört.

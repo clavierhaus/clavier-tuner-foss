@@ -15,5 +15,5 @@ Der Rand oben zeigt, worauf diese Stimmung gestimmt wird: A4, die Temperaturokta
 EHRLICH DARIN, WAS SIE NICHT IST
 Vorstimmen ist mit Absicht nicht vorgesehen: Ein Klavier weit weg von der Stimmhöhe braucht zuerst ein Vorstimmen. Chöre werden nach dem Gehör gestimmt.
 
-OFFENER CODE, KEIN FREIBIER
-Der Code ist offen (Apache 2.0): die Engine, ihre Tests und die Dokumente, an denen sie gemessen wird. Wer weiß, wie es geht, kann die App selbst bauen und auf sein eigenes iPhone bringen; nur zu. Der Preis hier bezahlt die Infrastruktur und die Zeit, die er Ihnen erspart: installieren, und nichts kostet Sie Zeit.
+KOSTENLOS UND OPEN SOURCE
+Clavier Tuner ist kostenlos: kein Preis, kein In-App-Kauf, kein Abo, keine Werbung, kein Konto. Und der Code ist offen (Apache 2.0): die Engine, ihre Tests und die Dokumente, an denen sie gemessen wird, sind öffentlich, für jeden zum Lesen, Prüfen und Bauen. Professionelle Software für Klaviertechniker, kostenlos.

@@ -1,1 +1,1 @@
-Mesurez les cordes de votre piano, et l’app établit où chaque note doit se tenir sur cet instrument. Puis accordez au stroboscope, au dixième de cent.
+Gratuit et open source : un accordeur de piano professionnel sans prix, sans publicité, sans compte. Mesurez vos cordes et accordez chaque note là où elle doit être.
