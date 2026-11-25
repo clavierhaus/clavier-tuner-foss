@@ -68,7 +68,7 @@ New Tuning; Continue is only for the piano you sampled. Settings › Help has th
 - **Tunes by the strobe.** For every note the app picks the partial a tuner
   would listen to in that register, synthesises its target, and shows the
   string against it as a strobe, to a tenth of a cent, about 47 readings a
-  second. Beside the strobe, three ways of showing it: *One strobe* (the
+  second. Strobe, along the top, offers three ways of showing it: *One strobe* (the
   default), one band moved by the string's clean partials together; *Limit
   to*, the lowest few partials, a band each; *All partials*. With bands for
   several partials a clean string is one pattern that comes to a standstill,
@@ -85,12 +85,13 @@ New Tuning; Continue is only for the piano you sampled. Settings › Help has th
   below as tuned, and the key's target is set from it by the treble's octave
   type. Settings › Tuning › Above C6 brings back the strobe, for every
   tuning.
-- **Shows the tuning at a glance.** A line at the top says what this tuning
-  is tuned to — A4, the temperament, the octave types. A tap on it opens
-  those settings.
+- **Shows the tuning at a glance.** Along the top, A4, the octave types and
+  the strobe, each opened with a tap. Under the note, what it is tuned to:
+  the octave type and the key, and how wide; once that key is measured, how
+  far it stands from the tuning curve.
 - **Knows when the note is in.** When the strobe stands still inside the
-  tolerance you set, the app keeps the note, and Progress shows the tuning
-  as it stands on the keyboard.
+  tolerance you set, the app keeps the note, and its key turns green on the
+  keyboard at the foot of the screen.
 - **Keeps the session.** One sealed file on the phone, under a key that never
   leaves it. Continue tomorrow where you stopped.
 - **Carries your choices as settings.** A new phone starts on the six-point

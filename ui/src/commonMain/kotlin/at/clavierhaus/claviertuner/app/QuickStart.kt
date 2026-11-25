@@ -48,7 +48,7 @@ internal fun helpTopics(rangeFixed: Boolean, temperaments: Boolean): List<HelpTo
     if (temperaments) temperamentsTopic(sub = true) else null,
     HelpTopic(t("help.scr.title"), listOf(
         t("help.scr.h1") to listOf(line("help.scr.s1")),
-        t("help.scr.h2") to listOf(line("help.scr.s5"), line("help.scr.s2"), line("help.qs.tuning.s5")),
+        t("help.scr.h2") to listOf(line("help.scr.s5"), line("help.scr.s6"), line("help.scr.s2"), line("help.qs.tuning.s5")),
         t("help.scr.h3") to listOf(line("help.scr.s4"), line("help.qs.tuning.s3")),
         t("help.scr.h4") to listOf(line("help.scr.s3")),
     ), sub = true),

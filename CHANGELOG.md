@@ -5,6 +5,14 @@ day the change was made at the instrument or on the recordings; commits
 carry the detail. Kept from 27 September 2026 on; the earlier entries were
 reconstructed from the commit history that day.
 
+## Unreleased
+
+### 2026-11-25
+- **What the note is tuned to, back on the tuning screen.** Under the note:
+  the octave type and the key it is tuned to, and how wide; once that key is
+  measured, how far it stands from the tuning curve. It left with the line at
+  the top on 23 Nov. Help's tuning screen says it.
+
 ## 0.12.0 -- 2026-11-23
 
 ### 2026-11-23

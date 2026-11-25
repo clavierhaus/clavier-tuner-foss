@@ -50,6 +50,7 @@ object K {
     const val origin_narrowWord = "origin.narrowWord"
     const val origin_octave = "origin.octave"
     const val origin_untuned = "origin.untuned"
+    const val origin_named = "origin.named"
     const val settings_tab_tuning = "settings.tab.tuning"
     const val settings_tab_stretch = "settings.tab.stretch"
     const val settings_tab_piano = "settings.tab.piano"
@@ -271,6 +272,7 @@ object K {
     const val help_scr_s3 = "help.scr.s3"
     const val help_scr_s4 = "help.scr.s4"
     const val help_scr_s5 = "help.scr.s5"
+    const val help_scr_s6 = "help.scr.s6"
     const val help_set_title = "help.set.title"
     const val help_set_s1 = "help.set.s1"
     const val help_set_s2 = "help.set.s2"
@@ -337,6 +339,7 @@ internal object StringsTable : Catalog {
         "origin.narrowWord" to arrayOf("narrow", "eng", "étroite"),
         "origin.octave" to arrayOf("{0} octave to {1}", "{0}-Oktave zu {1}", "octave {0} vers {1}"),
         "origin.untuned" to arrayOf("equal temperament — {0} not tuned yet", "gleichstufig — {0} noch nicht gestimmt", "tempérament égal — {0} pas encore accordée"),
+        "origin.named" to arrayOf("{0} on A4 {1}", "{0} auf A4 {1}", "{0} sur A4 {1}"),
         "settings.tab.tuning" to arrayOf("Tuning", "Stimmen", "Accord"),
         "settings.tab.stretch" to arrayOf("Stretch", "Spreizung", "Étirement"),
         "settings.tab.piano" to arrayOf("Piano", "Klavier", "Piano"),
@@ -558,6 +561,7 @@ internal object StringsTable : Catalog {
         "help.scr.s3" to arrayOf("At the foot, the whole keyboard: the keys tuned in green, the key on screen marked, and above them the curve of how far each tuned key stands from its target. Continue Tuning on the home screen goes back to where you stopped.", "Unten die ganze Tastatur: die gestimmten Tasten grün, die Taste am Bildschirm markiert, darüber die Kurve, wie weit jede gestimmte Taste von ihrem Ziel steht. Stimmung fortsetzen auf dem Startbildschirm führt dorthin zurück, wo Sie aufgehört haben.", "En bas, tout le clavier : les touches accordées en vert, la touche à l’écran marquée, et au-dessus la courbe de l’écart de chaque touche accordée à sa cible. Continuer l’accord, sur l’écran d’accueil, ramène là où vous vous êtes arrêté."),
         "help.scr.s4" to arrayOf("Strobe on the edge, three ways of showing it. One strobe: one band for the note, moved by its clean partials together. Limit to N: the lowest N partials, a band each. All partials: a band for every partial. A tap changes it at once.", "Strobe am Rand, drei Darstellungen. Ein Strobe: ein Band für die Note, bewegt von ihren sauberen Teiltönen gemeinsam. Nur N: die tiefsten N Teiltöne, je ein Band. Alle Teiltöne: ein Band für jeden Teilton. Ein Tipp wechselt sofort.", "Strobe au bord, trois façons de l'afficher. Un stroboscope : une bande pour la note, mue par ses partiels propres ensemble. Limiter à N : les N partiels les plus bas, une bande chacun. Tous les partiels : une bande pour chaque partiel. Un toucher change aussitôt."),
         "help.scr.s5" to arrayOf("Strike a key and the screen is on it. Tap the note's name: a keyboard opens. Tap a key and the screen stays on it, Auto note switching off; turn Auto note switching on there and the screen goes to each note you strike again.", "Eine Taste anschlagen, und der Bildschirm ist auf ihr. Den Namen des Tons antippen: Eine Tastatur öffnet sich. Eine Taste antippen, und der Bildschirm bleibt auf ihr, Automatischer Tonwechsel aus; dort Automatischer Tonwechsel einschalten, und der Bildschirm geht wieder auf jeden angeschlagenen Ton.", "Frappez une touche et l’écran est sur elle. Touchez le nom de la note : un clavier s’ouvre. Touchez une touche et l’écran y reste, Changement de note automatique désactivé ; activez-y Changement de note automatique et l’écran passe de nouveau à chaque note frappée."),
+        "help.scr.s6" to arrayOf("Under the note, what it is tuned to: the octave type and the key, and how wide. Once that key is measured, the line below says how far it stands from the tuning curve.", "Unter dem Ton, wonach er gestimmt wird: Oktavtyp und Taste, und wie weit. Ist diese Taste gemessen, sagt die Zeile darunter, wie weit sie von der Stimmkurve abweicht.", "Sous la note, ce sur quoi elle s’accorde : le type d’octave et la touche, et de combien large. Une fois cette touche mesurée, la ligne suivante dit de combien elle s’écarte de la courbe d’accord."),
         "help.set.title" to arrayOf("Settings: Tuning, Stretch, Piano, App", "Einstellungen: Stimmen, Spreizung, Klavier, App", "Réglages : Accord, Étirement, Piano, App"),
         "help.set.s1" to arrayOf("on, the temperament octave is tuned first, each of its notes waiting for Done; off, leaving any note keeps it. Off unless you turn it on.", "ein, wird die Temperaturoktave zuerst gestimmt, jeder ihrer Töne wartet auf Fertig; aus, gilt jeder verlassene Ton als gestimmt. Aus, solange Sie es nicht einschalten.", "activé, la partition est accordée d’abord, chacune de ses notes attendant Terminé ; désactivé, toute note quittée est retenue. Désactivé tant que vous ne l’activez pas."),
         "help.set.s2" to arrayOf("three or six points, the defaults for new tunings (Octave types and stretch).", "drei oder sechs Punkte, die Vorgabe für neue Stimmungen (Oktavtypen und Spreizung).", "trois ou six points, la valeur par défaut des nouveaux accords (Types d’octave et étirement)."),

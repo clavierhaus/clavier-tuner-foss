@@ -45,6 +45,8 @@ fun ProgressKeyboard(
     /** The curve this piano's measured inharmonicity asks for: every key, cents from equal temperament. Not drawn since 8 Oct 2026, and since 20 Nov 2026 the band no longer sizes itself by it: the parameter is kept for its callers. */
     curve: Map<Int, Double> = emptyMap(),
     lowestMidi: Int = MIDI_A0,
+    /** Keys an edition marks (TuningScreen.marked): a red dot low on each, where a finger strikes it. None in the free app. */
+    marked: Set<Int> = emptySet(),
     modifier: Modifier = Modifier,
 ) {
     val lowest = lowestMidi.coerceIn(0, MIDI_A0)
@@ -85,6 +87,15 @@ fun ProgressKeyboard(
             )
         }
 
+
+        // an edition's marks, by the keys' own geometry (Plus drew them over this keyboard with a copy of it until 25 Nov 2026)
+        val markR = (w * 0.28f).coerceAtLeast(3f)
+        for (midi in marked) {
+            if (midi !in lowest..MIDI_C8) continue
+            val x = if (isBlack(midi)) whitesBelow(midi) * w else whitesBelow(midi) * w + w / 2f
+            val y = keyboardTop + (if (isBlack(midi)) blackH else keyboardHeight) - markR * 1.6f
+            drawCircle(Color(Brand.ALERT_RED), markR, Offset(x, y))
+        }
 
         // --- the tuning as executed -------------------------------------
         // How far the tuning stands from equal temperament across the

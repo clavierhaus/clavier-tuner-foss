@@ -115,6 +115,12 @@ fun TuningScreen(
     /** The octave types, drawn in the work's place while the edge's Octaves is open; [onOctavesStep] false closes them (Done). */
     octavesStep: Boolean = false,
     onOctavesStep: (Boolean) -> Unit = {},
+    /** Keys an edition marks: a red dot on each, on the keyboard at the foot and on the note's keyboard. None in the free app. */
+    marked: Set<Int> = emptySet(),
+    /** What an edition's marks mean, over the note's keyboard while there are any. */
+    markedLine: String? = null,
+    /** Told when A4's window opens (true) and closes (false), for an edition that judges the key on screen: A4's window is not the key. */
+    onA4Window: (Boolean) -> Unit = {},
 ) {
     val partials by controller.livePartials.collectAsState()
     val audible by controller.liveAudible.collectAsState()
@@ -145,11 +151,11 @@ fun TuningScreen(
     fun openA4() {
         if (a4Open) return
         a4Back = t.midi to cfg.autoNote
-        onOctavesStep(false); open = null; a4Open = true
+        onOctavesStep(false); open = null; a4Open = true; onA4Window(true)
         onAutoNote(false); controller.selectNote(TuningSession.MIDI_A4)
     }
     fun closeA4() {
-        a4Open = false
+        a4Open = false; onA4Window(false)
         a4Back?.let { (midi, auto) -> controller.selectNote(midi); onAutoNote(auto) }
         a4Back = null
     }
@@ -157,8 +163,12 @@ fun TuningScreen(
     // were, as X gives them (22 Nov 2026, 19:21: "All of a sudden auto detection is completely broken!" -- the switch was
     // saved off whenever the window was left another way)
     val a4BackNow = androidx.compose.runtime.rememberUpdatedState(a4Back)
+    val onA4WindowNow = androidx.compose.runtime.rememberUpdatedState(onA4Window)
     androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose { a4BackNow.value?.let { (midi, auto) -> controller.selectNote(midi); onAutoNote(auto) } }
+        onDispose {
+            a4BackNow.value?.let { (midi, auto) -> controller.selectNote(midi); onAutoNote(auto) }
+            onA4WindowNow.value(false)
+        }
     }
 
     val read = reading; val l = t.listening
@@ -227,7 +237,17 @@ fun TuningScreen(
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     TuningPictureView(
                         picture, matchCents = cfg.matchCents, modifier = Modifier.fillMaxSize(), follows = follows,
-                        left = { if (a4Open) A4Panel(controller, a4, onClose = { closeA4() }) else leftPanel?.invoke() },
+                        left = {
+                            if (a4Open) A4Panel(controller, a4, onClose = { closeA4() })
+                            else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // what the key is tuned to, with its width, and the partner as measured against the curve:
+                                // the check, never the source (Law 5); gone with BasicHub's info line on 23 Nov, back on
+                                // Peter's word (25 Nov 2026: "Fix partner check and display offset")
+                                at.clavierhaus.claviertuner.ui.TextBlock(targetLines(l, a4, cfg), Modifier.fillMaxWidth(),
+                                    size = 14.sp, minSize = 10.sp, color = Muted)
+                                leftPanel?.let { panel -> Box(Modifier.weight(1f).fillMaxWidth()) { panel() } }
+                            }
+                        },
                         together = cfg.strobeTogether, afterNote = afterNote,
                         strobe = octave?.takeIf { it.midi == t.midi }?.let { o -> @Composable { OctaveBarsView(o) } },
                         marks = false,
@@ -247,7 +267,7 @@ fun TuningScreen(
                 Box(Modifier.fillMaxWidth().height(keyboardH)) {
                     ProgressKeyboard(
                         done = t.tuned, current = t.midi, deviations = t.deviations, curve = t.curve, lowestMidi = t.lowestMidi,
-                        modifier = Modifier.fillMaxSize(),
+                        marked = marked, modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
@@ -267,6 +287,7 @@ fun TuningScreen(
 
         if (pickingNote) FlowNotePicker(
             lowMidi = t.stepLowMidi, highMidi = t.stepHighMidi, current = t.midi, autoNote = cfg.autoNote,
+            marked = marked, markedLine = markedLine.takeIf { marked.isNotEmpty() },
             onPick = { midi -> controller.selectNote(midi); onAutoNote(false); pickingNote = false },
             onAutoNote = { on -> onAutoNote(on); if (on) pickingNote = false },
             onDismiss = { pickingNote = false },
@@ -293,6 +314,35 @@ internal fun EdgeItem(label: String, value: String, open: Boolean, modifier: Mod
 internal fun octaveLine(s: TunerSettings): String =
     (listOf(s.octaveBass) + s.stretchPoints.filter { it.midi < s.temperamentLowMidi }.sortedBy { it.midi }.map { it.type } + s.octaveMiddle +
         s.stretchPoints.filter { it.midi > s.temperamentHighMidi }.sortedBy { it.midi }.map { it.type } + s.octaveTreble).joinToString(" | ") { it.label }
+
+/**
+ * What the key on screen is tuned to, in the engine's own terms ([TuningSession.Listening]): the reference, the temperament
+ * on A4, or the octave type to its partner with the width; and, once the partner is measured, how far it stands from where
+ * the curve puts it ([TuningSession.Listening.checkCents]: the check, never the source, Law 5). The words are those of
+ * BasicHub's info line, without A4, which the edge shows. Nothing is computed here: every figure is the engine's.
+ */
+internal fun targetLines(l: TuningSession.Listening, a4: Double, cfg: TunerSettings): List<String> {
+    fun width(c: Double) = when {
+        c > 0.0 -> t(K.origin_wide, num(c, 1))
+        c < 0.0 -> t(K.origin_narrow, num(-c, 1))
+        else -> t(K.origin_beatless)
+    }
+    val source = when (l.source) {
+        TuningSession.Source.REFERENCE -> t(K.origin_reference)
+        // an edition's named temperament by its name; the free app is equal temperament only (23 Nov 2026)
+        TuningSession.Source.TEMPERAMENT -> if (cfg.temperament == at.clavierhaus.claviertuner.tuning.NamedTemperament.EQUAL)
+            t(K.origin_temperament, formatHz(a4)) else t(K.origin_named, temperamentName(cfg.temperament), formatHz(a4))
+        TuningSession.Source.OCTAVE -> t(K.origin_octave, l.type!!.label, noteName(l.refMidi!!)) + width(l.widthCents)
+        TuningSession.Source.PARTNER_UNTUNED -> t(K.origin_untuned, noteName(l.refMidi!!))
+        TuningSession.Source.CURVE -> t(K.origin_curve, l.type!!.label, noteName(l.refMidi!!)) + width(l.widthCents)
+    }
+    // its own line under the source: the table's words begin with the info line's separator, which a line of its own drops
+    val check = l.checkCents?.let { c ->
+        t(K.origin_check, noteName(l.refMidi!!), num(kotlin.math.abs(c), 1), t(if (c >= 0.0) K.origin_wideWord else K.origin_narrowWord))
+            .trimStart(' ', '·')
+    }
+    return listOfNotNull(source, check)
+}
 
 /** The strobe's mode in the words of its three choices. */
 private fun strobeWord(s: TunerSettings): String = when (s.strobeMode) {
@@ -348,6 +398,8 @@ private fun A4Panel(controller: TuningController, a4: Double, onClose: () -> Uni
 @Composable
 private fun FlowNotePicker(
     lowMidi: Int, highMidi: Int, current: Int, autoNote: Boolean,
+    /** An edition's marked keys, a red dot on each, and what they mean over the keys (TuningScreen.marked). */
+    marked: Set<Int> = emptySet(), markedLine: String? = null,
     onPick: (Int) -> Unit, onAutoNote: (Boolean) -> Unit, onDismiss: () -> Unit,
 ) {
     val lowOctave = lowMidi / 12 - 1
@@ -359,6 +411,7 @@ private fun FlowNotePicker(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             at.clavierhaus.claviertuner.ui.SwitchRow(t(K.settings_followKey), autoNote) { on -> onAutoNote(on) }
+            if (markedLine != null) FitText(markedLine, 15.sp, color = Muted)
             for (octave in lowOctave..highOctave) {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (pc in 0 until 12) {
@@ -381,6 +434,10 @@ private fun FlowNotePicker(
                                 .clickable(enabled = inRange, onClick = { onPick(midi) }),
                             contentAlignment = Alignment.Center,
                         ) {
+                            if (inRange && midi in marked) Box(
+                                Modifier.align(Alignment.TopEnd).padding(5.dp).size(10.dp)
+                                    .background(Color(Brand.ALERT_RED), androidx.compose.foundation.shape.CircleShape),
+                            )
                             if (inRange) FitText(
                                 noteName(midi), 16.sp,
                                 color = Color(if (black && !isCurrent) Brand.WHITE else Brand.BLACK),
