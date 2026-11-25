@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -222,7 +223,9 @@ private fun placesHeading(column: List<OctaveType>) {
             Text(t(K.settings_octaveType), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
         }
         Spacer(Modifier.width(8.dp))
-        Box(contentAlignment = Alignment.Center) {
+        // the heading 48 dp high where the stepper alone is lower: two lines of it at text x1.3 did not fit the stepper's own height
+        // (layout check, 25 Nov 2026: "Zusätzliche Spreizung" cut at 829 x 392, 890 x 406 and 1280 x 800)
+        Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Stepper("+3.5 c", true, true, {}, {}, valueMin = PLACE_VALUE) }
             // over the stepper's width, on two lines where one does not hold it ("Zusätzliche Spreizung", text x1.3, 25 Nov 2026)
             TextBlock(listOf(t(K.settings_octaveWidth)), Modifier.matchParentSize(), size = 13.sp, minSize = 10.sp,
