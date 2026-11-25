@@ -159,7 +159,7 @@ fun TuningScreen(
         a4Back?.let { (midi, auto) -> controller.selectNote(midi); onAutoNote(auto) }
         a4Back = null
     }
-    // the screen left with A4's window open (the unison mode, home, settings): the key and the auto note switching as they
+    // the screen left with A4's window open (another screen, home, settings): the key and the auto note switching as they
     // were, as X gives them (22 Nov 2026, 19:21: "All of a sudden auto detection is completely broken!" -- the switch was
     // saved off whenever the window was left another way)
     val a4BackNow = androidx.compose.runtime.rememberUpdatedState(a4Back)
