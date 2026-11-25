@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -223,7 +224,9 @@ private fun placesHeading(column: List<OctaveType>) {
         Spacer(Modifier.width(8.dp))
         Box(contentAlignment = Alignment.Center) {
             Box(Modifier.alpha(0f).clearAndSetSemantics {}) { Stepper("+3.5 c", true, true, {}, {}, valueMin = PLACE_VALUE) }
-            Text(t(K.settings_octaveWidth), color = Color(Brand.WHITE_MUTED), fontFamily = DejaVuSerif, fontSize = 13.sp, softWrap = false)
+            // over the stepper's width, on two lines where one does not hold it ("Zusätzliche Spreizung", text x1.3, 25 Nov 2026)
+            TextBlock(listOf(t(K.settings_octaveWidth)), Modifier.matchParentSize(), size = 13.sp, minSize = 10.sp,
+                color = Color(Brand.WHITE_MUTED), align = TextAlign.Center, gap = 0.dp)
         }
     }
 }

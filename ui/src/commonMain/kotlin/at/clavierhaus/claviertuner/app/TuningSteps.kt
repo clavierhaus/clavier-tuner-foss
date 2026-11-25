@@ -130,8 +130,8 @@ internal fun OctavesWork(
                 InfoButton(t(K.settings_sixPoints), listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)).joinToString("\n\n"))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(t(K.settings_temperamentOctave), color = white, fontFamily = DejaVuSerif, fontSize = 15.sp, softWrap = false,
-                    modifier = Modifier.weight(1f))
+                // shrinks where the column is narrow ("Temperament octave" ran past it at 829 x 392, 25 Nov 2026)
+                TextBlock(listOf(t(K.settings_temperamentOctave)), Modifier.weight(1f), size = 15.sp, minSize = 10.sp, color = white)
                 Stepper(
                     noteName(s.temperamentLowMidi) + "–" + noteName(s.temperamentHighMidi),
                     canDecrease = s.temperamentLowMidi > TunerSettings.MIN_TEMPERAMENT_LOW,

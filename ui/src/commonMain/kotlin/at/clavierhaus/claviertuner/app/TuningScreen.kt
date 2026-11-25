@@ -196,14 +196,12 @@ fun TuningScreen(
         ) {
             EdgeItem("A4", formatHz(a4), a4Open, Modifier.weight(1f)) { if (a4Open) closeA4() else openA4() }
             // the temperament left the tuning screen's edge (Peter, 21 Nov 2026: it is set before the tuning); its room is the octaves'
-            EdgeItem(t(K.edge_octaves), octaveLine(cfg), octavesStep, Modifier.weight(2.7f)) { open = null; onOctavesStep(!octavesStep) }
-            EdgeItem(t(K.edge_strobe), strobeWord(cfg), open == "strobe", Modifier.weight(1.2f)) { open = if (open == "strobe") null else "strobe" }
+            EdgeItem(t(K.edge_octaves), octaveLine(cfg), octavesStep, Modifier.weight(2.5f)) { open = null; onOctavesStep(!octavesStep) }
+            EdgeItem(t(K.edge_strobe), strobeWord(cfg), open == "strobe", Modifier.weight(1.4f)) { open = if (open == "strobe") null else "strobe" }
             if (onPiano != null) EdgeItem(t(K.edge_piano), piano ?: t(K.edge_noPiano), false, Modifier.weight(1.6f)) { open = null; onPiano() }
             if (t.complete && !live) StateWord(t(K.state_complete), Color(Brand.GO_GREEN))
             recordButton?.let { Spacer(Modifier.width(6.dp)); it() }
             onPickRecording?.let { pick -> ProbeButton(feeding = feeding, onPick = pick, onStop = onUseMicrophone) }
-            // the home corner keeps its room at the right
-            Spacer(Modifier.width(52.dp))
         }
 
         // ---- the work and the keyboard under it ----
@@ -306,7 +304,8 @@ internal fun EdgeItem(label: String, value: String, open: Boolean, modifier: Mod
         verticalArrangement = Arrangement.Center,
     ) {
         FitText(label, 10.sp, Modifier.fillMaxWidth(), color = Muted, minSize = 8.sp)
-        FitText(value, 15.sp, Modifier.fillMaxWidth(), color = White, minSize = 9.sp)
+        // never under the layout check's 10 sp (25 Nov 2026: "Un stroboscope", "0 · mindestens 8" stood at 9 at text x1.3)
+        FitText(value, 15.sp, Modifier.fillMaxWidth(), color = White, minSize = 10.sp)
     }
 }
 

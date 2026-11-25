@@ -142,7 +142,6 @@ fun StartScreen(
                 open = if (pianoFields == null) { onPianoIndex(); null } else if (open == "piano") null else "piano"
             }
             onPickRecording?.let { pick -> ProbeButton(feeding = feeding, onPick = pick, onStop = onUseMicrophone) }
-            Spacer(Modifier.width(52.dp))
         }
 
         // ---- the steps, under the edge, as on the tuning screen (PlusSteps, 22 Nov 2026): A4 is one tap back from the sampling ----
