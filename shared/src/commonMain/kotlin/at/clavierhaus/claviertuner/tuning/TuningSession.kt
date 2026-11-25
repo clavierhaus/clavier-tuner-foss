@@ -252,15 +252,6 @@ class TuningSession(a4Hz: Double, settings: TunerSettings = TunerSettings(), sam
             return InharmonicityCurve(basis).also { curveKept = key to it }
         }
 
-    /**
-     * True when leaving a note registers it as done with what was heard of
-     * it, so that the walk needs no Done: always, unless the tuner walks the
-     * temperament octave first and it is not yet complete — inside that
-     * octave the walk asks for Done on every note, because the octave is
-     * what everything else is built on.
-     */
-    val recordsOnLeaving: Boolean get() = !gated && !sampling
-
     /** Lowest note the arrows may reach: the foot of the session, always. */
     val stepLowMidi: Int get() = lowMidi
 

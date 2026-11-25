@@ -66,10 +66,6 @@ class TuningController(
         const val HUB_RETARGET_CENTS = 12.0
         /** How far either side of the target the finder looks for a string that is off: less than half the distance between neighbouring partials at k ≤ 6. */
         const val COARSE_CENTS = 120.0
-        /** Leaving a note keeps it when its partial was read this close to target... */
-        const val LEAVE_CENTS = 30.0
-        /** ... within this many hops before (about 3 s). */
-        const val LEAVE_HOPS = 140
         /** The level bar: silence below this (−72 dBFS)... */
         const val SILENCE_RMS = 0.00025
         /** ... and full height at the strike's peak, falling to zero over this. */
@@ -574,8 +570,6 @@ class TuningController(
          * to. An assumed reference is not a measurement and the screen must say so.
          */
         val referenceMeasured: Boolean = false,
-        /** True when moving to another note registers this one as done. */
-        val recordsOnLeaving: Boolean,
         /** Lowest and highest note the arrows may reach. */
         val stepLowMidi: Int,
         val stepHighMidi: Int,
@@ -607,6 +601,12 @@ class TuningController(
         val sampled: Set<Int> = emptySet(),
         /** The strobe's pace at this key: 1, or under it in the treble, where the bands move at the pin's pace (PinPace). */
         val pace: Double = 1.0,
+        /**
+         * The key the last catch made green, and how many catches this tuning has had (25 Nov 2026): a key struck and caught
+         * again is green already, so an edition that waits for the catch (Plus's red dots) is told by the count, not the set.
+         */
+        val lastTuned: Int? = null,
+        val tunedStrikes: Long = 0,
     )
 
     private var session: TuningSession? = null
@@ -817,7 +817,6 @@ class TuningController(
     fun selectNote(midi: Int) {
         val s = session ?: return
         if (!s.selectable(midi) || midi == s.current) return
-        leaveCurrent(s)
         s.select(midi)
         publish(s)
     }
@@ -827,7 +826,6 @@ class TuningController(
         val s = session ?: return
         val to = s.stepped(delta)
         if (to == s.current) return
-        leaveCurrent(s)
         s.select(to)
         publish(s)
     }
@@ -897,7 +895,9 @@ class TuningController(
      * as every measured note's does.
      */
     private fun recorded(s: TuningSession) {
+        lastTuned = _tuning.value?.midi; tunedStrikes++
         _tuning.value = _tuning.value?.copy(
+            lastTuned = lastTuned, tunedStrikes = tunedStrikes,
             measured = s.measurements.keys.toSet(),
             tuned = s.tuned,
             deviations = deviationsOf(s),
@@ -912,6 +912,10 @@ class TuningController(
 
     /** The strobe's mode the shown partials were last set for ([publish]). */
     private var shownMode: at.clavierhaus.claviertuner.settings.StrobeMode? = null
+
+    /** [TuningView.lastTuned] and [TuningView.tunedStrikes]. */
+    private var lastTuned: Int? = null
+    private var tunedStrikes = 0L
 
     private fun publish(s: TuningSession) {
         val midi = s.current
@@ -941,7 +945,7 @@ class TuningController(
                 },
             temperamentComplete = s.temperamentComplete,
             referenceMeasured = s.measurements.containsKey(TuningSession.MIDI_A4),
-            recordsOnLeaving = s.recordsOnLeaving,
+            lastTuned = lastTuned, tunedStrikes = tunedStrikes,
             stepLowMidi = s.stepLowMidi,
             stepHighMidi = s.stepHighMidi,
             complete = s.nextUntuned() == null,
@@ -1016,22 +1020,13 @@ class TuningController(
 
     // ---- Done and leaving ----
 
-    /**
-     * Leaving the current note registers it as done with what was heard of
-     * it, where the session allows that ([TuningSession.recordsOnLeaving]):
-     * only if its partial was read in the last few seconds, near its target.
-     * A note passed by without being struck, or a neighbour ringing, keeps
-     * whatever the note had.
+    /*
+     * Leaving a key records nothing (Peter, 25 Nov 2026: "Tone is measured and the moment it's 'caught' it should
+     * disappear"; "They need to turn green the moment they are caught. Right now one has to move to the next note").
+     * From 22 Sept a key left was kept as done when its partial had been read within 30 c of target in the last 3 s:
+     * green came late, on leaving, and without the tuner's tolerance. A key turns green only when it is caught -- the
+     * strobe still within the tolerance, or above C6 the strike's pitch within it -- or by Done.
      */
-    private fun leaveCurrent(s: TuningSession) {
-        if (!s.recordsOnLeaving) return
-        val t = _tuning.value ?: return
-        val last = lastShown ?: return
-        if (last.generation != generation || hops - last.hop > LEAVE_HOPS) return
-        if (abs(TuningSession.centsOff(last.hz, last.targetHz)) > LEAVE_CENTS) return
-        // measured up to that reading: a key struck since is not this string
-        measureNote(t, last.k, last.hz, upToHop = last.hop + 2)?.let { s.record(it) }
-    }
 
     /**
      * "Done".
@@ -1086,7 +1081,7 @@ class TuningController(
         if (!matchedNow()) return null
         val r = _reading.value ?: return null
         val hz = r.hz ?: return null
-        measureNote(t, r.k, hz)?.let { s.record(it) }
+        measureNote(t, r.k, hz)?.let { if (s.record(it)) { lastTuned = t.midi; tunedStrikes++ } }
         advance(s)
         return hz
     }

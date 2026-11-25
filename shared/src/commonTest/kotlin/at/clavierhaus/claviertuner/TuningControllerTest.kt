@@ -520,17 +520,29 @@ class TuningControllerTest {
         assertEquals(23.0, TuningSession.centsOff(assertNotNull(r.hz), r.targetHz), 3.0)
     }
 
+    /**
+     * A key turns green the moment it is caught and never by being left (Peter, 25 Nov 2026: "They need to turn green the
+     * moment they are caught. Right now one has to move to the next note for it to turn green"). Until that day a key left
+     * was kept as tuned when it had been read within 30 c of target in the last 3 s; this test failed on that rule.
+     */
     @Test
-    fun leavingANoteKeepsItOnlyWhenItWasHeardNearItsTarget() {
+    fun aKeyIsGreenWhenCaughtAndLeavingItKeepsNothing() {
         val (c, src) = controller(settings.copy(temperamentFirst = false))
         c.restore(SessionSnapshot(0, a4, 68, listOf(measuredString(69, a4, 8e-4)), sampling = false))
-        c.stepNote(-1)                                  // not struck: nothing kept
-        assertNull(c.measurements()[68])
+        var t = c.tuning.value!!
+        // 10 c sharp: read, never within the tolerance (1.5 c), and left
+        c.hear(src, SyntheticString.strike(t.targetHz * 2.0.pow(10.0 / 1200), t.b, 3.0))
+        c.stepNote(-1)
+        assertNull(c.measurements()[68], "a key left 10 c sharp is not kept")
+        assertFalse(68 in c.tuning.value!!.tuned, "nor green")
         c.selectNote(68)
-        c.hear(src, SyntheticString.strike(et(68) * 2.0.pow(1.0 / 1200), 7e-4, 3.0))
-        c.stepNote(-1)                                  // struck, a cent sharp: kept as it stood
-        val m = assertNotNull(c.measurements()[68])
-        assertEquals(1.0, TuningSession.centsOff(m.f1Hz, et(68)), 0.1)
+        t = c.tuning.value!!
+        val before = t.tunedStrikes
+        c.hear(src, SyntheticString.strike(t.targetHz, t.b, 3.0))
+        t = c.tuning.value!!
+        assertEquals(68, t.midi, "still on the key")
+        assertTrue(68 in t.tuned, "caught on its target: green while it rings, before any other key")
+        assertEquals(68, t.lastTuned); assertTrue(t.tunedStrikes > before, "the catch is told")
     }
 
     @Test
@@ -661,7 +673,7 @@ class TuningControllerTest {
         assertEquals(8, t.samplesIn); assertTrue(t.samplingReady); assertTrue(c.doneReady())
         c.finishSampling()
         t = c.tuning.value!!
-        assertFalse(t.sampling); assertFalse(t.recordsOnLeaving, "the walk itself is still the temperament octave first, asking Done")
+        assertFalse(t.sampling); assertFalse(t.temperamentComplete, "the walk itself is still the temperament octave first, asking Done")
     }
 
     @Test

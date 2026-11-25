@@ -39,21 +39,20 @@ class TuningSessionTest {
     fun fossWalksTheTemperamentOctaveFirstAndAsksForDoneThere() {
         val s = TuningSession(a4, foss, sampling = false)
         assertTrue(s.gated)
-        assertFalse(s.recordsOnLeaving)
         s.record(measuredString(69, a4, 8e-4))
         s.select(40)                                   // any note may be visited ...
         assertEquals(68, s.next())                     // ... Done still walks the octave
         for (m in 68 downTo 57) s.record(measuredString(m, et(m), 6e-4))
         assertTrue(s.temperamentComplete)
-        assertTrue(s.recordsOnLeaving)
+        assertFalse(s.gated)
         s.select(57)
         assertEquals(56, s.next())
     }
 
     @Test
-    fun proRecordsOnLeavingFromTheStart() {
+    fun proIsNotGatedFromTheStart() {
         val s = TuningSession(a4, pro, sampling = false)
-        assertTrue(s.recordsOnLeaving)
+        assertFalse(s.gated)
         s.select(69)
         assertEquals(68, s.next())
     }
@@ -282,7 +281,6 @@ class TuningSessionTest {
         for (way in listOf(foss, pro)) {
             val s = TuningSession(a4, way)
             assertTrue(s.sampling)
-            assertFalse(s.recordsOnLeaving)
             assertEquals(TunerSettings.MIN_SAMPLES, s.samplesNeeded, "no set is prescribed, temperamentFirst=${way.temperamentFirst}")
             s.record(measuredString(69, a4, 8e-4))
             assertFalse(s.samplingReady)

@@ -8,6 +8,11 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-11-25
+- **A key turns green the moment it is caught, and only then.** Moving to
+  another key no longer marks the one left as tuned; until now a key read
+  within 30 cents of its target in the last three seconds turned green when
+  it was left, late and outside the tolerance. C8, with no key after it, was
+  the plain case. Help's settings lines say it.
 - **What the note is tuned to, back on the tuning screen.** Under the note:
   the octave type and the key it is tuned to, and how wide; once that key is
   measured, how far it stands from the tuning curve. It left with the line at
