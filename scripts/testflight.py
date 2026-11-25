@@ -194,9 +194,16 @@ def main():
         if sent:
             print(f"  ok Beta App Review: {sent[0]['attributes'].get('betaReviewState', 'submitted')}")
         else:
-            asc.ok("POST", "/v1/betaAppReviewSubmissions",
+            status, body = asc.call("POST", "/v1/betaAppReviewSubmissions",
                    data={"data": {"type": "betaAppReviewSubmissions", "relationships": {"build": {"data": {"type": "builds", "id": build}}}}})
-            print("  ok Beta App Review: submitted (external testers get it once Apple approves)")
+            if status < 400:
+                print("  ok Beta App Review: submitted (external testers get it once Apple approves)")
+            elif status == 422 and "already in beta review" in why(body):
+                # Apple reviews one build of a version at a time (25 Nov 2026: 203 refused while 201 was in review); the
+                # build stands on TestFlight with its notes and internal testers, and is submitted again by --notes-for later
+                print(f"  .. Beta App Review: not submitted, {why(body)}")
+            else:
+                sys.exit(f"  x  POST /v1/betaAppReviewSubmissions: {status} {why(body)}")
 
 
 if __name__ == "__main__":
