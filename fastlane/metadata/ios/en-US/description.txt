@@ -1,4 +1,4 @@
-Clavier Tuner is a piano tuning app for technicians, built on one idea: the only truth about a string is a measurement of that string.
+Clavier Tuner is the first professional open source piano tuning software: free, for technicians, from a spinet to a concert grand, built on one idea: the only truth about a string is a measurement of that string.
 
 A4 ON THE STRING YOU CHOOSE
 Set the pitch with − and +, or slide a finger across them. Strike each string of A4 alone and tune it until the strobe stands still.

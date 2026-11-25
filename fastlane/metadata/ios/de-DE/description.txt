@@ -1,4 +1,4 @@
-Clavier Tuner ist eine Stimm-App für Klaviertechniker, auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
+Clavier Tuner ist die erste professionelle Open-Source-Software zum Klavierstimmen: kostenlos, für Klaviertechniker, vom Spinett bis zum Konzertflügel, auf einem Gedanken gebaut: Die einzige Wahrheit über eine Saite ist die Messung dieser Saite.
 
 A4 AUF DER SAITE IHRER WAHL
 Die Tonhöhe mit − und + einstellen oder mit dem Finger darüber wischen. Jede Saite von A4 allein anschlagen und stimmen, bis der Strobe stillsteht.

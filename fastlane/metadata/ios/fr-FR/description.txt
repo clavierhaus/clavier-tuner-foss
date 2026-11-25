@@ -1,4 +1,4 @@
-Clavier Tuner est une app d’accord de piano pour les techniciens, bâtie sur une idée : la seule vérité sur une corde est la mesure de cette corde.
+Clavier Tuner est le premier logiciel professionnel et open source d’accord de piano : gratuit, pour les techniciens, de l’épinette au piano de concert, bâti sur une idée : la seule vérité sur une corde est la mesure de cette corde.
 
 A4 SUR LA CORDE DE VOTRE CHOIX
 Réglez le diapason avec − et +, ou glissez le doigt dessus. Frappez chaque corde de A4 seule et accordez-la jusqu’à ce que le stroboscope s’arrête.
