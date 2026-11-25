@@ -51,6 +51,7 @@ import at.clavierhaus.claviertuner.tuning.TuningSession
 import at.clavierhaus.claviertuner.ui.AcceptButton
 import at.clavierhaus.claviertuner.ui.CORNER_BAND
 import at.clavierhaus.claviertuner.ui.CORNER_LEFT_WIDTH
+import at.clavierhaus.claviertuner.ui.CORNER_RIGHT_WIDTH
 import at.clavierhaus.claviertuner.ui.Corners
 import at.clavierhaus.claviertuner.ui.DejaVuSerif
 import at.clavierhaus.claviertuner.ui.DoneButton
@@ -125,7 +126,7 @@ fun StartScreen(
         Corners(onSettings = onSettings, onHome = onHome)
         // ---- the edge ----
         Row(
-            Modifier.fillMaxWidth().height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH, end = 8.dp).padding(vertical = 2.dp),
+            Modifier.fillMaxWidth().height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH, end = CORNER_RIGHT_WIDTH + 8.dp).padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             EdgeItem("A4", formatHz(a4), false, Modifier.weight(1f)) { open = null }
@@ -260,8 +261,9 @@ private fun A4Work(
                 else -> Spacer(Modifier.height(18.dp))
             }
             // one line where four orders stood: what to do now
-            TextBlock(listOf(t(K.sampling_a4_tune)), Modifier.fillMaxWidth().weight(1f, fill = false), size = 15.sp, color = White)
-            Spacer(Modifier.weight(1f))
+            // the line takes the height left above Done, whole: shared with a spacer it had half, and in German and French on
+            // the narrow phones its words ran past it (layout check, 25 Nov 2026)
+            TextBlock(listOf(t(K.sampling_a4_tune)), Modifier.fillMaxWidth().weight(1f), size = 15.sp, color = White)
             DoneButton(onClick = { controller.acceptLive() }, enabled = a4State.ready)
         }
         TuningPictureView(picture, matchCents, modifier = Modifier.weight(0.58f).fillMaxHeight(), follows = false, marks = false,

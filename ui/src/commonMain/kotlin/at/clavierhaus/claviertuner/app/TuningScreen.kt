@@ -191,7 +191,7 @@ fun TuningScreen(
         Corners(onSettings = onSettings, onHome = onHome)
         // ---- the edge, between the corners ----
         Row(
-            Modifier.fillMaxWidth().height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH, end = 8.dp).padding(vertical = 2.dp),
+            Modifier.fillMaxWidth().height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH, end = CORNER_RIGHT_WIDTH + 8.dp).padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             EdgeItem("A4", formatHz(a4), a4Open, Modifier.weight(1f)) { if (a4Open) closeA4() else openA4() }

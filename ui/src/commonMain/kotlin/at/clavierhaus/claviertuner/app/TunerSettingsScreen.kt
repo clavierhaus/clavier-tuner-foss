@@ -232,7 +232,7 @@ private fun stretchPages(s: TunerSettings, model: SettingsModel): List<SettingsP
             ChoiceRow(t(K.settings_stretchPoints), stretchPresetLabels(), StretchPreset.of(s).ordinal) { i ->
                 model.update { StretchPreset.entries[i].applyTo(it) }
             }
-            TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth().weight(1f), size = 14.sp, color = Color(Brand.WHITE_MUTED))
+            TextBlock(listOf(t(K.settings_stretchBoth)), Modifier.fillMaxWidth(), size = 14.sp, color = Color(Brand.WHITE_MUTED))
         },
         right = { TextBlock(listOf(t(K.settings_stretchThreeNote), t(K.settings_stretchSixNote)), Modifier.fillMaxSize(), size = 14.sp, color = Color(Brand.WHITE_MUTED)) })
     if (s.hasPlaces) return listOf(choice, SettingsPage(t(K.settings_page_sixPoints), left = { StretchPlaces(s) { change -> model.update(change) } }))
