@@ -8,6 +8,9 @@ reconstructed from the commit history that day.
 ## Unreleased
 
 ### 2026-11-25
+- **The edge of the tuning screen: room for what it says.** "complete" left
+  it (the keyboard, all green, says so); its room went to the octaves, which
+  now show all six types of the six points, the strobe and the piano's name.
 - **A key turns green the moment it is caught, and only then.** Moving to
   another key no longer marks the one left as tuned; until now a key read
   within 30 cents of its target in the last three seconds turned green when

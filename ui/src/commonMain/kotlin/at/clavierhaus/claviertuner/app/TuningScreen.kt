@@ -53,7 +53,6 @@ import at.clavierhaus.claviertuner.ui.OctaveBarsView
 import at.clavierhaus.claviertuner.ui.PartialChips
 import at.clavierhaus.claviertuner.ui.ProbeButton
 import at.clavierhaus.claviertuner.ui.ProgressKeyboard
-import at.clavierhaus.claviertuner.ui.StateWord
 import at.clavierhaus.claviertuner.ui.TuningPictureView
 import at.clavierhaus.claviertuner.ui.formatHz
 import at.clavierhaus.claviertuner.ui.nowMs
@@ -185,7 +184,6 @@ fun TuningScreen(
         pace = paceOf(t.pace),
     ))
     val follows = cfg.autoNote && (!cfg.temperamentFirst || t.temperamentComplete)
-    val live = read?.live == true
 
     Box(Modifier.fillMaxSize().background(Color(Brand.BLACK)).safeDrawingPadding()) {
         Corners(onSettings = onSettings, onHome = onHome)
@@ -194,12 +192,15 @@ fun TuningScreen(
             Modifier.fillMaxWidth().height(CORNER_BAND).padding(start = CORNER_LEFT_WIDTH, end = CORNER_RIGHT_WIDTH + 8.dp).padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
-            EdgeItem("A4", formatHz(a4), a4Open, Modifier.weight(1f)) { if (a4Open) closeA4() else openA4() }
+            // the widths since 25 Nov 2026 (Peter: the six types of the six points showed three, "Steinway B" lost its B): the
+            // room of "complete", which left the edge, to the octaves, the strobe and the piano
+            EdgeItem("A4", formatHz(a4), a4Open, Modifier.weight(0.8f)) { if (a4Open) closeA4() else openA4() }
             // the temperament left the tuning screen's edge (Peter, 21 Nov 2026: it is set before the tuning); its room is the octaves'
-            EdgeItem(t(K.edge_octaves), octaveLine(cfg), octavesStep, Modifier.weight(2.5f)) { open = null; onOctavesStep(!octavesStep) }
-            EdgeItem(t(K.edge_strobe), strobeWord(cfg), open == "strobe", Modifier.weight(1.4f)) { open = if (open == "strobe") null else "strobe" }
-            if (onPiano != null) EdgeItem(t(K.edge_piano), piano ?: t(K.edge_noPiano), false, Modifier.weight(1.6f)) { open = null; onPiano() }
-            if (t.complete && !live) StateWord(t(K.state_complete), Color(Brand.GO_GREEN))
+            EdgeItem(t(K.edge_octaves), octaveLine(cfg), octavesStep, Modifier.weight(3.4f)) { open = null; onOctavesStep(!octavesStep) }
+            EdgeItem(t(K.edge_strobe), strobeWord(cfg), open == "strobe", Modifier.weight(1.5f)) { open = if (open == "strobe") null else "strobe" }
+            if (onPiano != null) EdgeItem(t(K.edge_piano), piano ?: t(K.edge_noPiano), false, Modifier.weight(1.9f)) { open = null; onPiano() }
+            // "complete" left the edge (Peter, 25 Nov 2026: "irrelevant, one can immediately see when it's complete"): the
+            // keyboard under the work is all green
             recordButton?.let { Spacer(Modifier.width(6.dp)); it() }
             onPickRecording?.let { pick -> ProbeButton(feeding = feeding, onPick = pick, onStop = onUseMicrophone) }
         }
