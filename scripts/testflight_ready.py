@@ -11,7 +11,7 @@ language; the Beta App Review contact (first and last name, phone, email) is fil
 public link gets nothing, said, not refused).
 
 The key: ASC_KEY (the .p8), ASC_KEY_ID and ASC_ISSUER from the environment; without them the newest AuthKey_<ID>.p8 in
-~/Downloads, its ID from its name, and the team's issuer.
+Clavierhaus/Apple beside the repositories (or ~/Downloads), its ID from its name, and the team's issuer.
 
     testflight_ready.py --bundle-id at.clavierhaus.claviertuner
 """
@@ -19,6 +19,8 @@ import argparse
 import glob
 import os
 import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from testflight import Asc  # noqa: E402  the same token and calls as the job's
@@ -32,9 +34,13 @@ def main():
     o = a.parse_args()
     key = os.environ.get("ASC_KEY")
     if not key:
-        found = sorted(glob.glob(os.path.expanduser("~/Downloads/AuthKey_*.p8")), key=os.path.getmtime)
+        # beside the repositories first (/home/erweitert/Clavierhaus/Apple on the X1), then ~/Downloads (Peter, 25 Nov
+        # 2026: secrets are not kept as hidden files in his home)
+        beside = os.path.join(os.path.dirname(ROOT), "Clavierhaus", "Apple", "AuthKey_*.p8")
+        found = sorted(glob.glob(beside), key=os.path.getmtime) or \
+            sorted(glob.glob(os.path.expanduser("~/Downloads/AuthKey_*.p8")), key=os.path.getmtime)
         if not found:
-            sys.exit("  x  no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in ~/Downloads")
+            sys.exit("  x  no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in Clavierhaus/Apple beside the repositories")
         key = found[-1]
     key_id = os.environ.get("ASC_KEY_ID") or os.path.basename(key)[len("AuthKey_"):-len(".p8")]
     asc = Asc(key, key_id, os.environ.get("ASC_ISSUER", ISSUER))

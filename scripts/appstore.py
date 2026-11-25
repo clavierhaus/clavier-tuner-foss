@@ -19,7 +19,7 @@ no recording and measures nothing. Run on the X1 after a build of this version i
   8. with --submit, and only then: the version to App Review.
 
 Every step reads before it writes, so a second run changes only what differs. The key: ASC_KEY (the .p8), ASC_KEY_ID and
-ASC_ISSUER from the environment; without them the newest AuthKey_<ID>.p8 in ~/Downloads, as testflight_ready.py does.
+ASC_ISSUER from the environment; without them the newest AuthKey_<ID>.p8 in Clavierhaus/Apple beside the repositories, or in ~/Downloads, as testflight_ready.py does.
 
     python3 scripts/appstore.py            the version prepared, nothing submitted
     python3 scripts/appstore.py --submit   and sent to App Review
@@ -98,9 +98,13 @@ def png_size(path):
 def key():
     k = os.environ.get("ASC_KEY")
     if not k:
-        found = sorted(glob.glob(os.path.expanduser("~/Downloads/AuthKey_*.p8")), key=os.path.getmtime)
+        # beside the repositories first (/home/erweitert/Clavierhaus/Apple on the X1), then ~/Downloads (Peter, 25 Nov
+        # 2026: secrets are not kept as hidden files in his home)
+        beside = os.path.join(os.path.dirname(ROOT), "Clavierhaus", "Apple", "AuthKey_*.p8")
+        found = sorted(glob.glob(beside), key=os.path.getmtime) or \
+            sorted(glob.glob(os.path.expanduser("~/Downloads/AuthKey_*.p8")), key=os.path.getmtime)
         if not found:
-            sys.exit("  x  no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in ~/Downloads")
+            sys.exit("  x  no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in Clavierhaus/Apple beside the repositories")
         k = found[-1]
     kid = os.environ.get("ASC_KEY_ID") or os.path.basename(k)[len("AuthKey_"):-len(".p8")]
     return Asc(k, kid, os.environ.get("ASC_ISSUER", ISSUER))

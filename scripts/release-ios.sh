@@ -19,9 +19,10 @@
 #   3. here, on the X1, scripts/testflight.py waits for Apple's processing, writes What to Test from the notes and gives
 #      the build to the tester groups (Beta App Review when an external group is among them): an hour of waiting costs
 #      no Mac minute.
-# Codemagic's API token: ~/.clavier-codemagic/token (Codemagic > Teams > Personal Account > Integrations > Codemagic API);
-# the app's id is looked up once and kept in ~/.clavier-codemagic/app-foss. The App Store Connect key: ASC_KEY, or the
-# newest AuthKey_<ID>.p8 in ~/Downloads, as testflight_ready.py finds it. A session keeps the notes current with every
+# Codemagic's API token: clavier-codemagic/token beside the repositories, /home/erweitert/clavier-codemagic/token on the X1
+# (Codemagic > Teams > Personal Account > Integrations > Codemagic API; Peter, 25 Nov 2026: no hidden files in his home);
+# the app's id is looked up once and kept there in app-foss. The App Store Connect key: ASC_KEY, or the newest
+# AuthKey_<ID>.p8 in Clavierhaus/Apple beside the repositories, else in ~/Downloads, as testflight_ready.py finds it. A session keeps the notes current with every
 # change a tester would notice, as it keeps CHANGELOG.md.
 #
 set -euo pipefail
@@ -48,8 +49,9 @@ NOTES=fastlane/metadata/ios/testflight
 ISSUER_DEFAULT="4aff3636-5757-45f5-b9f5-58987d53bb80"   # the team's, as testflight_ready.py has it
 
 # the App Store Connect key on the X1, for testflight.py here
-KEY="${ASC_KEY:-$(ls -t "$HOME"/Downloads/AuthKey_*.p8 2>/dev/null | head -n1 || true)}"
-[ -n "$KEY" ] && [ -f "$KEY" ] || die "no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in ~/Downloads"
+BESIDE="$(dirname "$ROOT")"
+KEY="${ASC_KEY:-$(ls -t "$BESIDE"/Clavierhaus/Apple/AuthKey_*.p8 "$HOME"/Downloads/AuthKey_*.p8 2>/dev/null | head -n1 || true)}"
+[ -n "$KEY" ] && [ -f "$KEY" ] || die "no App Store Connect key: set ASC_KEY to the .p8, or keep AuthKey_<ID>.p8 in Clavierhaus/Apple beside the repositories"
 KEY_ID="${ASC_KEY_ID:-$(basename "$KEY" .p8 | sed 's/^AuthKey_//')}"
 ISSUER="${ASC_ISSUER:-$ISSUER_DEFAULT}"
 
@@ -83,7 +85,7 @@ if [ -n "$NOTES_FOR" ]; then
 fi
 
 # 2. Codemagic
-CM="$HOME/.clavier-codemagic"
+CM="${CLAVIER_CODEMAGIC:-$BESIDE/clavier-codemagic}"
 TOKEN="${CODEMAGIC_TOKEN:-$(cat "$CM/token" 2>/dev/null || true)}"
 APP="${CODEMAGIC_APP:-$(cat "$CM/app-foss" 2>/dev/null || true)}"
 [ -n "$TOKEN" ] || die "no Codemagic token: Codemagic > Teams > Personal Account > Integrations > Codemagic API, show, into $CM/token"
