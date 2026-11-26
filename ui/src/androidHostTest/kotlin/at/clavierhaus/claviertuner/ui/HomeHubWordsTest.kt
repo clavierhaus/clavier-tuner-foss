@@ -1,7 +1,7 @@
 package at.clavierhaus.claviertuner.ui
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.Test
+import org.junit.Assert.assertEquals
 
 /** Every door of the hub reads first word white, the rest orange (26 Nov 2026), however its words were handed in. */
 class HomeHubWordsTest {
@@ -13,5 +13,5 @@ class HomeHubWordsTest {
         assertEquals("Pitch" to "raise", whiteThenOrange(door("Pitch raise")))
     }
 
-    @Test fun oneWordIsOrange() = assertEquals("" to "Recordings", whiteThenOrange(door("Recordings")))
+    @Test fun oneWordIsOrange() { assertEquals("" to "Recordings", whiteThenOrange(door("Recordings"))) }
 }
