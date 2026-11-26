@@ -38,15 +38,17 @@ import at.clavierhaus.claviertuner.Brand
 /*
  * The hub, on the clavierhaus backgammon stencil: the concert grand full
  * screen, the corners every screen has (Corners.kt: the gear top left, the
- * name and a dim home top right), a menu of large serif lines (the verb in
- * orange) each with its short note on the same line after a dot, in the same serif and
+ * name and a dim home top right), a menu of large serif lines (first word white, the rest orange; 26 Nov 2026)
+ * each with its short note on the same line after a dot, in the same serif and
  * smaller (24 Oct 2026; a script note stood beneath until then), and the colophon bottom right.
  * Drawn for the reference device; OnePicture scales it on smaller screens.
  * Each app assembles its own hub from this: the entries are its own.
  */
 
 /**
- * One menu line: "lead [verb] rest" — the verb orange, the rest white, a [lead] word in white before it ("My Pianos") — with an optional short note after a dot on the same line.
+ * One menu line: its words "lead verb rest" read as one line and drawn first word white, the rest orange ("Continue
+ * Tuning", "My Customers", "Pitch raise"); a door of one word is orange. An optional short note follows after a dot on
+ * the same line.
  * [startsOver]: this door replaces the tuning that could be continued, and the hub asks first.
  */
 data class HomeHubItem(
@@ -122,9 +124,11 @@ private fun HubEntry(e: HomeHubItem, size: androidx.compose.ui.unit.TextUnit) {
     val entry = EntryStyle.copy(fontSize = size)
     BasicText(
         text = buildAnnotatedString {
-            if (e.lead.isNotEmpty()) append(e.lead + " ")
-            withStyle(SpanStyle(color = HubOrange)) { append(e.verb) }
-            append(e.rest)
+            // every door alike (Peter, 22 Nov 2026 for Plus, 26 Nov 2026 for every edition: "the starting screen need
+            // uniformity. First word white, second word orange"): until then the verb stood orange and the rest white
+            val (first, rest) = whiteThenOrange(e)
+            if (first.isNotEmpty()) append("$first ")
+            withStyle(SpanStyle(color = HubOrange)) { append(rest) }
             if (!e.note.isNullOrEmpty()) withStyle(SpanStyle(fontSize = entry.fontSize * NOTE_SHARE, color = HubWhite.copy(alpha = 0.75f))) {
                 append("  ·  " + e.note)
             }
@@ -132,6 +136,13 @@ private fun HubEntry(e: HomeHubItem, size: androidx.compose.ui.unit.TextUnit) {
         style = entry,
         modifier = Modifier.clickable(onClick = e.onClick).padding(vertical = 4.dp),
     )
+}
+
+/** A door's words as drawn: the first word (white) and the rest (orange); one word is all orange. */
+internal fun whiteThenOrange(e: HomeHubItem): Pair<String, String> {
+    val words = (e.lead + " " + e.verb + e.rest).trim().replace(Regex("\\s+"), " ")
+    val cut = words.indexOf(' ')
+    return if (cut < 0) "" to words else words.substring(0, cut) to words.substring(cut + 1)
 }
 
 /** A note's size beside its entry, as a share of the entry's. */
